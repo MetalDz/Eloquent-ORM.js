@@ -1,38 +1,29 @@
 {
   "name": "eloquentjs",
   "version": "1.0.0",
-  "description": "Eloquent-style ORM for Node.js using TypeScript and MySQL.",
-  "main": "dist/index.js",
+  "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
   "type": "commonjs",
-  "scripts": {
-    "dev": "nodemon --watch src --exec ts-node src/test.ts",
-    "migrate": "ts-node src/database/migrations/init.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "clean": "rimraf dist"
+  "main": "src/index.js",
+  "bin": {
+    "eloquent": "./dist/bin/eloquent.js"
   },
-  "keywords": [
-    "orm",
-    "eloquent",
-    "typescript",
-    "nodejs",
-    "mysql",
-    "query-builder",
-    "laravel-style"
-  ],
-  "author": "MEKHERBECHE Fares",
-  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "cli": "ts-node bin/eloquent.ts"
+  },
   "dependencies": {
     "chalk": "^5.6.2",
-    "commander": "^14.0.1",
+    "commander": "^12.1.0",
     "dotenv": "^17.2.3",
-    "mysql2": "^3.15.2"
+    "mysql2": "^3.15.2",
+    "pg": "^8.16.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/chalk": "^0.4.31",
-    "@types/node": "^24.7.2",
-    "nodemon": "^3.1.7",
-    "rimraf": "^6.0.1",
+    "@types/node": "^22.18.10",
+    "@types/pg": "^8.15.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

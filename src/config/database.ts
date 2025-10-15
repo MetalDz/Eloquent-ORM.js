@@ -1,10 +1,30 @@
+// src/database.ts
 import dotenv from "dotenv";
 dotenv.config();
 
 export const dbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "eloquentjs_db",
-  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || "10", 10),
+  default: process.env.DB_CONNECTION || "mysql",
+
+  connections: {
+    mysql: {
+      driver: "mysql",
+      host: process.env.DB_HOST || "localhost",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_NAME || "test_db",
+    },
+    pg: {
+      driver: "pg",
+      host: process.env.PG_HOST || "localhost",
+      user: process.env.PG_USER || "postgres",
+      password: process.env.PG_PASSWORD || "",
+      database: process.env.PG_NAME || "test_db",
+      port: Number(process.env.PG_PORT) || 5432,
+    },
+    sqlite: {
+      driver: "sqlite",
+      sqlitePath: process.env.SQLITE_PATH || "./data.sqlite",
+    },
+  },
 };
+
