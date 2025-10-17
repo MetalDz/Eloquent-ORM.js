@@ -1,9 +1,6 @@
-// src/models/Profile.ts
-import { BaseModel } from "../orm/Model";
+import { BaseModel } from "../core/connection/BaseModel";
 
 export class Profile extends BaseModel {
-  constructor() {
-    super();
-    this.tableName = "profiles";
-  }
+  static tableName = "profiles";
+  static connectionName = "mysql";
 }

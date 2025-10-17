@@ -1,5 +1,5 @@
-import { DatabaseConnection } from "./connection/DatabaseConnection";
 
+// src/core/connection/Relation.ts
 export abstract class Relation {
   protected relatedModel: any;
   protected foreignKey: string;
@@ -11,5 +11,8 @@ export abstract class Relation {
     this.localKey = localKey;
   }
 
+  /**
+   * Every relation must implement getResults()
+   */
   abstract getResults(parent: any): Promise<any>;
 }

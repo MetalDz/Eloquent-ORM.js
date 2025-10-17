@@ -1,16 +1,13 @@
-// src/models/User.ts
-import { BaseModel } from "../orm/Model";
+import { BaseModel } from "../core/connection/BaseModel";
+import { HasMany } from "../core/orm/relations/HasMany";
+import { Post } from "./Post";
 
 export class User extends BaseModel {
   constructor() {
-    super();
-    this.tableName = "users"; // important: actual DB table
+    super("users", "mysql");
   }
 
-  // helper method: returns relation object (not the related data yet)
-  profileRelation() {
-    // Profile will be loaded through hasOne
-    const { Profile } = require("./Profile");
-    return this.hasOne(Profile, "user_id", "id");
+  posts() {
+    return new HasMany(Post, "user_id", "id");
   }
 }
