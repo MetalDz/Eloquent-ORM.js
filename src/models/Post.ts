@@ -1,4 +1,4 @@
-import { BaseModel } from "../core/connection/BaseModel";
+import { BaseModel } from "../core/model/BaseModel";
 import { BelongsTo } from "../core/orm/relations/BelongsTo";
 import { User } from "./User";
 

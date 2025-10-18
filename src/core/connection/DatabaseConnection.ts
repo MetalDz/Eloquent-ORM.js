@@ -1,84 +1,114 @@
-import mysql from "mysql2/promise";
-import { Client } from "pg";
+import { Pool } from "mysql2/promise";
+import { Client as PgClient } from "pg";
+import { open, Database } from "sqlite";
 import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+import { MongoClient, Db } from "mongodb";
 import { dbConfig } from "../../config/database";
 
-// Define connection names
-export type ConnectionName = "mysql" | "pg" | "sqlite";
+/* ----------------------------------------------------------
+ * 🧱 1. Type Declarations for Configurations
+ * ---------------------------------------------------------- */
 
-// Define specific config types
+/** Supported driver names */
+export type DriverName = "mysql" | "pg" | "sqlite" | "mongo";
+
+/** MySQL connection configuration */
 export interface MySQLConfig {
   driver: "mysql";
   host: string;
   user: string;
   password: string;
   database: string;
-  port?: number;
   waitForConnections?: boolean;
   connectionLimit?: number;
   queueLimit?: number;
 }
 
-export interface PostgreSQLConfig {
+/** PostgreSQL connection configuration */
+export interface PostgresConfig {
   driver: "pg";
   host: string;
   user: string;
   password: string;
   database: string;
-  port?: number;
+  port: number;
 }
 
+/** SQLite connection configuration */
 export interface SQLiteConfig {
   driver: "sqlite";
   sqlitePath: string;
 }
 
-// Union of all supported configs
-export type DBConfig = MySQLConfig | PostgreSQLConfig | SQLiteConfig;
+/** MongoDB connection configuration */
+export interface MongoConfig {
+  driver: "mongo";
+  uri: string;
+  database: string;
+}
 
-/**
- * Connect to the selected database
- */
-export async function connectDB(name: ConnectionName) {
-  const config = dbConfig.connections[name] as DBConfig;
+/** Union type for all connection configs */
+export type ConnectionConfig = MySQLConfig | PostgresConfig | SQLiteConfig | MongoConfig;
+
+/** Database connection instance types */
+export type ConnectionInstance = Pool | PgClient | Database | Db;
+
+/** Supported connection names */
+export type ConnectionName = keyof typeof dbConfig.connections;
+
+/* ----------------------------------------------------------
+ * ⚙️ 2. Connect Function (Multi-Driver)
+ * ---------------------------------------------------------- */
+export async function connectDB(name: ConnectionName): Promise<ConnectionInstance> {
+  const config = dbConfig.connections[name] as ConnectionConfig;
 
   switch (config.driver) {
+    /* ---------- MySQL ---------- */
     case "mysql": {
-      const pool = mysql.createPool({
+      const mysql = require("mysql2/promise");
+      return mysql.createPool({
         host: config.host,
         user: config.user,
         password: config.password,
         database: config.database,
-        port: config.port ?? 3306,
         waitForConnections: config.waitForConnections ?? true,
         connectionLimit: config.connectionLimit ?? 10,
         queueLimit: config.queueLimit ?? 0,
       });
-      return pool;
     }
 
+    /* ---------- PostgreSQL ---------- */
     case "pg": {
-      const client = new Client({
+      const client = new PgClient({
         host: config.host,
         user: config.user,
         password: config.password,
         database: config.database,
-        port: config.port ?? 5432,
+        port: config.port,
       });
       await client.connect();
       return client;
     }
 
+    /* ---------- SQLite ---------- */
     case "sqlite": {
-      const db = await open({
-        filename: config.sqlitePath ?? "./database.sqlite",
+      return await open({
+        filename: config.sqlitePath,
         driver: sqlite3.Database,
       });
+    }
+
+    /* ---------- MongoDB ---------- */
+    case "mongo": {
+      const client = new MongoClient(config.uri);
+      await client.connect();
+      const db = client.db(config.database);
+      console.log(`🧩 Connected to MongoDB: ${config.database}`);
       return db;
     }
 
+    /* ---------- Unknown ---------- */
     default:
-      throw new Error(`Unsupported database driver: ${(config as any).driver}`);
+      throw new Error(`❌ Unsupported driver: ${(config as any).driver}`);
   }
 }

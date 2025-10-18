@@ -1,4 +1,4 @@
-import { BaseModel } from "../core/connection/BaseModel";
+import { BaseModel } from "../core/model/BaseModel";
 import { HasMany } from "../core/orm/relations/HasMany";
 import { Post } from "./Post";
 

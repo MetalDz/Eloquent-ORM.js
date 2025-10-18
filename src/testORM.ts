@@ -1,4 +1,4 @@
-import { BaseModel } from "./core/connection/BaseModel";
+import { BaseModel } from "./core/model/BaseModel";
 import { HasOne } from "./core/orm/relations/HasOne";
 import { Profile } from "./models/Profile";
 

@@ -1,4 +1,3 @@
-
 // src/core/connection/Relation.ts
 export abstract class Relation {
   protected relatedModel: any;
@@ -16,3 +15,4 @@ export abstract class Relation {
    */
   abstract getResults(parent: any): Promise<any>;
 }
+

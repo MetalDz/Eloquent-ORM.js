@@ -1,4 +1,4 @@
-// src/database.ts
+// src/config/database.ts
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -25,6 +25,10 @@ export const dbConfig = {
       driver: "sqlite",
       sqlitePath: process.env.SQLITE_PATH || "./data.sqlite",
     },
+    mongo: {
+      driver: "mongo",
+      uri: process.env.MONGO_URI || "mongodb://localhost:27017",
+      database: process.env.MONGO_DB || "eloquentjs_db",
+    },
   },
 };
-

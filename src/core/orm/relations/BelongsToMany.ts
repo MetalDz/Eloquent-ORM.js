@@ -1,4 +1,4 @@
-import { Relation } from "../../Relation";
+import { Relation } from "../Relation";
 
 export class BelongsToMany extends Relation {
   private pivotTable: string;

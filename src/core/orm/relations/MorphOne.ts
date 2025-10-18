@@ -1,4 +1,4 @@
-import { Relation } from "../../Relation";
+import { Relation } from "../Relation";
 import { getConnection } from "../../connection/ConnectionFactory";
 
 export class MorphOne extends Relation {

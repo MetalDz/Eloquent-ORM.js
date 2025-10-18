@@ -1,4 +1,4 @@
-import { Relation } from "../../Relation";
+import { Relation } from "../Relation";
 
 export class HasMany extends Relation {
   async getResults(parent: any): Promise<any[]> {
