@@ -1,4 +1,4 @@
-"use strict";
+/* "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -31,3 +31,4 @@ export class ${modelName} extends Model {
     fs_1.default.writeFileSync(filePath, content);
     console.log(chalk_1.default.green(`✅ Model ${modelName} created successfully at ${filePath}`));
 }
+*/

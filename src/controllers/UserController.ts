@@ -1,4 +1,4 @@
-export class UserController {
+/*export class UserController {
   async index(req, res) {
     return res.json({ message: "User index" });
   }
@@ -19,3 +19,4 @@ export class UserController {
     return res.json({ message: "User delete" });
   }
 }
+*/

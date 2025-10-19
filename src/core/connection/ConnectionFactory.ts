@@ -25,14 +25,14 @@ export async function closeAllConnections(): Promise<void> {
 
     try {
       switch (name) {
-        case "mysql":
-        case "pg":
-          if (conn.end) await conn.end();
-          break;
+      case "mysql":
+      case "pg":
+        if (conn.end) await conn.end();
+        break;
 
-        case "sqlite":
-          if (conn.close) await conn.close();
-          break;
+      case "sqlite":
+        if (conn.close) await conn.close();
+        break;
       }
       console.log(`🔒 Closed ${name} connection.`);
     } catch (err) {

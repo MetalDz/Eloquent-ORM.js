@@ -1,9 +1,12 @@
 // src/core/connection/BaseModel.ts
-import { getConnection } from "../connection/ConnectionFactory";
-import type { ConnectionName } from "../connection/DatabaseConnection";
+import { getConnection } from "@core/connection/ConnectionFactory";
+import type { ConnectionName, AnyConnection } from "db.types";
 
 /**
- * 🧱 BaseModel — handles driver-agnostic CRUD
+ * 🧱 BaseModel — Driver-Agnostic ORM Foundation
+ * ---------------------------------------------------
+ * Supports MySQL, PostgreSQL, SQLite, and MongoDB.
+ * Handles: CRUD, Connection Layer, and Safe Queries.
  */
 export abstract class BaseModel {
   protected tableName: string;
@@ -14,10 +17,8 @@ export abstract class BaseModel {
     this.connectionName = connectionName;
   }
 
-  /**
-   * 🔌 Get DB connection (lazy + cached)
-   */
-  protected async getDB() {
+  /** 🔌 Lazy + Cached Connection */
+  protected async getDB(): Promise<AnyConnection> {
     return await getConnection(this.connectionName);
   }
 
@@ -28,20 +29,23 @@ export abstract class BaseModel {
     const db = await this.getDB();
 
     switch (this.connectionName) {
-      case "sqlite":
-        return db.get(`SELECT * FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
+    case "sqlite":
+      return (db as any).get(`SELECT * FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
 
-      case "mysql":
-      case "pg": {
-        const [rows] = await db.query(`SELECT * FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
-        return Array.isArray(rows) ? rows[0] : rows;
-      }
+    case "mysql":
+    case "pg": {
+      const [rows] = await (db as any).query(
+        `SELECT * FROM ${this.tableName} WHERE ${pk} = ?`,
+        [id]
+      );
+      return Array.isArray(rows) ? rows[0] : rows;
+    }
 
-      case "mongo":
-        return await db.collection(this.tableName).findOne({ [pk]: id });
+    case "mongo":
+      return await (db as any).collection(this.tableName).findOne({ [pk]: id });
 
-      default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+    default:
+      throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
   }
 
@@ -52,20 +56,20 @@ export abstract class BaseModel {
     const db = await this.getDB();
 
     switch (this.connectionName) {
-      case "sqlite":
-        return db.all(`SELECT * FROM ${this.tableName}`);
+    case "sqlite":
+      return (db as any).all(`SELECT * FROM ${this.tableName}`);
 
-      case "mysql":
-      case "pg": {
-        const [rows] = await db.query(`SELECT * FROM ${this.tableName}`);
-        return rows;
-      }
+    case "mysql":
+    case "pg": {
+      const [rows] = await (db as any).query(`SELECT * FROM ${this.tableName}`);
+      return rows;
+    }
 
-      case "mongo":
-        return await db.collection(this.tableName).find({}).toArray();
+    case "mongo":
+      return await (db as any).collection(this.tableName).find({}).toArray();
 
-      default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+    default:
+      throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
   }
 
@@ -76,32 +80,32 @@ export abstract class BaseModel {
     const db = await this.getDB();
 
     switch (this.connectionName) {
-      case "sqlite": {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const placeholders = keys.map(() => "?").join(", ");
-        const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
-        const result = await db.run(sql, values);
-        return { id: result.lastID, ...data };
-      }
+    case "sqlite": {
+      const keys = Object.keys(data);
+      const values = Object.values(data);
+      const placeholders = keys.map(() => "?").join(", ");
+      const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
+      const result = await (db as any).run(sql, values);
+      return { id: result.lastID, ...data };
+    }
 
-      case "mysql":
-      case "pg": {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const placeholders = keys.map(() => "?").join(", ");
-        const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
-        const [res] = await db.query(sql, values);
-        return { id: res.insertId, ...data };
-      }
+    case "mysql":
+    case "pg": {
+      const keys = Object.keys(data);
+      const values = Object.values(data);
+      const placeholders = keys.map(() => "?").join(", ");
+      const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
+      const [res] = await (db as any).query(sql, values);
+      return { id: res.insertId, ...data };
+    }
 
-      case "mongo": {
-        const result = await db.collection(this.tableName).insertOne(data);
-        return { id: result.insertedId, ...data };
-      }
+    case "mongo": {
+      const result = await (db as any).collection(this.tableName).insertOne(data);
+      return { id: result.insertedId, ...data };
+    }
 
-      default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+    default:
+      throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
   }
 
@@ -112,32 +116,24 @@ export abstract class BaseModel {
     const db = await this.getDB();
 
     switch (this.connectionName) {
-      case "sqlite": {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const setClause = keys.map((key) => `${key} = ?`).join(", ");
-        const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${pk} = ?`;
-        await db.run(sql, [...values, id]);
-        break;
-      }
+    case "sqlite":
+    case "mysql":
+    case "pg": {
+      const keys = Object.keys(data);
+      const values = Object.values(data);
+      const setClause = keys.map((key) => `${key} = ?`).join(", ");
+      const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${pk} = ?`;
+      if (this.connectionName === "sqlite") await (db as any).run(sql, [...values, id]);
+      else await (db as any).query(sql, [...values, id]);
+      break;
+    }
 
-      case "mysql":
-      case "pg": {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const setClause = keys.map((key) => `${key} = ?`).join(", ");
-        const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${pk} = ?`;
-        await db.query(sql, [...values, id]);
-        break;
-      }
+    case "mongo":
+      await (db as any).collection(this.tableName).updateOne({ [pk]: id }, { $set: data });
+      break;
 
-      case "mongo": {
-        await db.collection(this.tableName).updateOne({ [pk]: id }, { $set: data });
-        break;
-      }
-
-      default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+    default:
+      throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
   }
 
@@ -148,21 +144,21 @@ export abstract class BaseModel {
     const db = await this.getDB();
 
     switch (this.connectionName) {
-      case "sqlite":
-        await db.run(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
-        break;
+    case "sqlite":
+      await (db as any).run(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
+      break;
 
-      case "mysql":
-      case "pg":
-        await db.query(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
-        break;
+    case "mysql":
+    case "pg":
+      await (db as any).query(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
+      break;
 
-      case "mongo":
-        await db.collection(this.tableName).deleteOne({ [pk]: id });
-        break;
+    case "mongo":
+      await (db as any).collection(this.tableName).deleteOne({ [pk]: id });
+      break;
 
-      default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+    default:
+      throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
   }
 }

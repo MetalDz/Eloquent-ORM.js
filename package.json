@@ -1,17 +1,36 @@
 {
   "name": "eloquentjs",
-  "version": "1.0.0",
+  "version": "1.1.0-beta",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
-  "type": "commonjs",
-  "main": "src/index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "eloquent": "./dist/bin/eloquent.js"
   },
   "scripts": {
-    "build": "tsc",
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc && npm run copy-types",
+    "copy-types": "node -e \"import('fs').then(fs => fs.cpSync('src/types', 'dist/types', { recursive: true }))\"",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts"
   },
+  "files": [
+    "dist"
+  ],
+  "typesVersions": {
+    "*": {
+      "db.types": ["types/db.types.d.ts"]
+    }
+  },
+  "keywords": [
+    "orm",
+    "typescript",
+    "database",
+    "eloquent"
+  ],
+  "author": "MEKHERBECHE FARES",
+  "license": "MIT",
   "dependencies": {
     "chalk": "^5.6.2",
     "commander": "^12.1.0",
@@ -23,9 +42,13 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.38.0",
     "@types/node": "^22.18.10",
     "@types/pg": "^8.15.5",
+    "eslint": "^9.38.0",
+    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1"
   }
 }

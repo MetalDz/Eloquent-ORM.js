@@ -1,4 +1,4 @@
-"use strict";
+/*"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Model = void 0;
 class Model {
@@ -13,3 +13,4 @@ class Model {
     }
 }
 exports.Model = Model;
+*/

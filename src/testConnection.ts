@@ -7,20 +7,20 @@ import { getConnection, closeAllConnections } from "./core/connection/Connection
 
       let result;
       switch (driver) {
-        case "mysql": {
-          const [rows] = await db.query("SELECT 1 + 1 AS result");
-          result = rows[0];
-          break;
-        }
-        case "pg": {
-          const res = await db.query("SELECT 1 + 1 AS result");
-          result = res.rows[0];
-          break;
-        }
-        case "sqlite": {
-          result = await db.get("SELECT 1 + 1 AS result");
-          break;
-        }
+      case "mysql": {
+        const [rows] = await db.query("SELECT 1 + 1 AS result");
+        result = rows[0];
+        break;
+      }
+      case "pg": {
+        const res = await db.query("SELECT 1 + 1 AS result");
+        result = res.rows[0];
+        break;
+      }
+      case "sqlite": {
+        result = await db.get("SELECT 1 + 1 AS result");
+        break;
+      }
       }
 
       console.log(`✅ ${driver.toUpperCase()} test result:`, result);

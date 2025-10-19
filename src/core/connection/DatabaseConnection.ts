@@ -63,52 +63,52 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
   const config = dbConfig.connections[name] as ConnectionConfig;
 
   switch (config.driver) {
-    /* ---------- MySQL ---------- */
-    case "mysql": {
-      const mysql = require("mysql2/promise");
-      return mysql.createPool({
-        host: config.host,
-        user: config.user,
-        password: config.password,
-        database: config.database,
-        waitForConnections: config.waitForConnections ?? true,
-        connectionLimit: config.connectionLimit ?? 10,
-        queueLimit: config.queueLimit ?? 0,
-      });
-    }
+  /* ---------- MySQL ---------- */
+  case "mysql": {
+    const mysql = require("mysql2/promise");
+    return mysql.createPool({
+      host: config.host,
+      user: config.user,
+      password: config.password,
+      database: config.database,
+      waitForConnections: config.waitForConnections ?? true,
+      connectionLimit: config.connectionLimit ?? 10,
+      queueLimit: config.queueLimit ?? 0,
+    });
+  }
 
-    /* ---------- PostgreSQL ---------- */
-    case "pg": {
-      const client = new PgClient({
-        host: config.host,
-        user: config.user,
-        password: config.password,
-        database: config.database,
-        port: config.port,
-      });
-      await client.connect();
-      return client;
-    }
+  /* ---------- PostgreSQL ---------- */
+  case "pg": {
+    const client = new PgClient({
+      host: config.host,
+      user: config.user,
+      password: config.password,
+      database: config.database,
+      port: config.port,
+    });
+    await client.connect();
+    return client;
+  }
 
-    /* ---------- SQLite ---------- */
-    case "sqlite": {
-      return await open({
-        filename: config.sqlitePath,
-        driver: sqlite3.Database,
-      });
-    }
+  /* ---------- SQLite ---------- */
+  case "sqlite": {
+    return await open({
+      filename: config.sqlitePath,
+      driver: sqlite3.Database,
+    });
+  }
 
-    /* ---------- MongoDB ---------- */
-    case "mongo": {
-      const client = new MongoClient(config.uri);
-      await client.connect();
-      const db = client.db(config.database);
-      console.log(`🧩 Connected to MongoDB: ${config.database}`);
-      return db;
-    }
+  /* ---------- MongoDB ---------- */
+  case "mongo": {
+    const client = new MongoClient(config.uri);
+    await client.connect();
+    const db = client.db(config.database);
+    console.log(`🧩 Connected to MongoDB: ${config.database}`);
+    return db;
+  }
 
-    /* ---------- Unknown ---------- */
-    default:
-      throw new Error(`❌ Unsupported driver: ${(config as any).driver}`);
+  /* ---------- Unknown ---------- */
+  default:
+    throw new Error(`❌ Unsupported driver: ${(config as any).driver}`);
   }
 }
