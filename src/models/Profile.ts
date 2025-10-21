@@ -1,4 +1,4 @@
-import { BaseModel } from "../core/model/BaseModel";
+import { BaseModel } from "../core/model/CoreModel";
 
 export class Profile extends BaseModel {
   static tableName = "profiles";

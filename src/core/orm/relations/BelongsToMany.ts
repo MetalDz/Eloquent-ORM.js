@@ -1,22 +1,20 @@
 import { Relation } from "../Relation";
 
 export class BelongsToMany extends Relation {
-  private pivotTable: string;
-  private pivotForeignKey: string;
-  private pivotRelatedKey: string;
+  protected pivotTable: string;
+  protected foreignPivotKey: string;
+  protected relatedPivotKey: string;
 
   constructor(
     relatedModel: any,
     pivotTable: string,
-    foreignKey: string, // key in pivot that references parent
-    pivotForeignKey: string, // key in pivot that references related
-    localKey: string,
-    pivotRelatedKey: string
+    foreignPivotKey: string,
+    relatedPivotKey: string
   ) {
-    super(relatedModel, foreignKey, localKey);
+    super(relatedModel, foreignPivotKey, relatedPivotKey);
     this.pivotTable = pivotTable;
-    this.pivotForeignKey = pivotForeignKey;
-    this.pivotRelatedKey = pivotRelatedKey;
+    this.foreignPivotKey = foreignPivotKey;
+    this.relatedPivotKey = relatedPivotKey;
   }
 
   async getResults(parent: any): Promise<any[]> {
@@ -24,38 +22,63 @@ export class BelongsToMany extends Relation {
     const db = await relatedInstance["getDB"]();
 
     const sql = `
-      SELECT r.* 
-      FROM ${relatedInstance["tableName"]} AS r
-      INNER JOIN ${this.pivotTable} AS p 
-        ON p.${this.pivotRelatedKey} = r.id
-      WHERE p.${this.pivotForeignKey} = ?
-    `;
-
+      SELECT r.* FROM ${relatedInstance["tableName"]} AS r
+      JOIN ${this.pivotTable} AS p
+        ON r.id = p.${this.relatedPivotKey}
+      WHERE p.${this.foreignPivotKey} = ?`;
     const [rows] = await db.query(sql, [parent[this.localKey]]);
     return rows;
   }
 
-  // Optionally attach a relation entry in the pivot table
-  async attach(parentId: any, relatedId: any): Promise<void> {
+  async match(parents: any[]): Promise<void> {
+    if (!parents.length) return;
+    const parentIds = parents.map((p) => p[this.localKey]);
     const relatedInstance = new this.relatedModel();
     const db = await relatedInstance["getDB"]();
 
     const sql = `
-      INSERT INTO ${this.pivotTable} (${this.pivotForeignKey}, ${this.pivotRelatedKey})
-      VALUES (?, ?)
-    `;
-    await db.query(sql, [parentId, relatedId]);
+      SELECT r.*, p.${this.foreignPivotKey} AS pivot_parent
+      FROM ${relatedInstance["tableName"]} AS r
+      JOIN ${this.pivotTable} AS p
+        ON r.id = p.${this.relatedPivotKey}
+      WHERE p.${this.foreignPivotKey} IN (?)`;
+    const [rows] = await db.query(sql, [parentIds]);
+
+    const grouped: Record<string, any[]> = {};
+    for (const row of rows) {
+      const pid = row["pivot_parent"];
+      if (!grouped[pid]) grouped[pid] = [];
+      grouped[pid].push(row);
+    }
+
+    const relName = this.name ?? "relation";
+    for (const parent of parents) {
+      (parent as any)[relName] = grouped[parent[this.localKey]] || [];
+    }
   }
 
-  // Optionally detach (remove link)
-  async detach(parentId: any, relatedId: any): Promise<void> {
-    const relatedInstance = new this.relatedModel();
-    const db = await relatedInstance["getDB"]();
+  async attach(parentId: any, relatedId: any): Promise<void> {
+    const db = await new this.relatedModel()["getDB"]();
+    await db.query(
+      `INSERT INTO ${this.pivotTable} (${this.foreignPivotKey}, ${this.relatedPivotKey}) VALUES (?, ?)`,
+      [parentId, relatedId]
+    );
+  }
 
-    const sql = `
-      DELETE FROM ${this.pivotTable}
-      WHERE ${this.pivotForeignKey} = ? AND ${this.pivotRelatedKey} = ?
-    `;
-    await db.query(sql, [parentId, relatedId]);
+  async detach(parentId: any, relatedId: any): Promise<void> {
+    const db = await new this.relatedModel()["getDB"]();
+    await db.query(
+      `DELETE FROM ${this.pivotTable} WHERE ${this.foreignPivotKey} = ? AND ${this.relatedPivotKey} = ?`,
+      [parentId, relatedId]
+    );
+  }
+
+  async sync(parentId: any, relatedIds: any[]): Promise<void> {
+    const db = await new this.relatedModel()["getDB"]();
+    await db.query(
+      `DELETE FROM ${this.pivotTable} WHERE ${this.foreignPivotKey} = ?`,
+      [parentId]
+    );
+    for (const id of relatedIds) await this.attach(parentId, id);
   }
 }
