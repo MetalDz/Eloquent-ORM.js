@@ -1,6 +1,7 @@
 // src/core/connection/CoreModel.ts
 import { getConnection } from "../connection/ConnectionFactory";
 import type { ConnectionName } from "../connection/DatabaseConnection";
+
 export type ModelBaseContract = new (...args: any[]) => {
   create(data: Record<string, any>): Promise<any>;
   update(id: number | string, data: Record<string, any>, pk?: string): Promise<void>;
