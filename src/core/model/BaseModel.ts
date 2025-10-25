@@ -1,3 +1,4 @@
+// src/core/model/BaseModel.ts
 import { CoreModel } from "./CoreModel";
 import { PivotHelperMixin } from "../orm/mixins/PivotHelperMixin";
 import { CastsMixin } from "../orm/mixins/CastsMixin";
@@ -5,6 +6,7 @@ import { SoftDeletesMixin } from "../orm/mixins/SoftDeletesMixin";
 import { ScopeMixin } from "../orm/mixins/ScopeMixin";
 import { HooksMixin } from "../orm/mixins/HooksMixin";
 import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin";
+import { QueryCacheMixin } from "../orm/mixins/QueryCacheMixin"; // 🧠 add this line
 
 type ModelBaseContract = new (...args: any[]) => {
   tableName: string;
@@ -18,11 +20,13 @@ type ModelBaseContract = new (...args: any[]) => {
 };
 
 export class BaseModel extends EagerLoadingMixin(
-  HooksMixin(
-    ScopeMixin(
-      SoftDeletesMixin(
-        CastsMixin(
-          PivotHelperMixin(CoreModel as unknown as ModelBaseContract)
+  QueryCacheMixin( // 🧠 insert caching layer here
+    HooksMixin(
+      ScopeMixin(
+        SoftDeletesMixin(
+          CastsMixin(
+            PivotHelperMixin(CoreModel as unknown as ModelBaseContract)
+          )
         )
       )
     )
