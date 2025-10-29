@@ -1,21 +1,50 @@
 // src/core/connection/CoreModel.ts
-import { getConnection } from "../connection/ConnectionFactory";
-import type { ConnectionName } from "../connection/DatabaseConnection";
+import { getConnection, ConnectionName } from "../connection/ConnectionFactory";
 
+import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator";
+import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
+
+/**
+ * Types for model contract (kept generic)
+ */
 export type ModelBaseContract = new (...args: any[]) => {
-  create(data: Record<string, any>): Promise<any>;
-  update(id: number | string, data: Record<string, any>, pk?: string): Promise<void>;
+  create(data: Record<string, unknown>): Promise<unknown | null>;
+  update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
   delete(id: number | string, pk?: string): Promise<void>;
-  find(id: number | string, pk?: string): Promise<any>;
-  all(): Promise<any[]>;
+  find(id: number | string, pk?: string): Promise<unknown>;
+  all(): Promise<unknown[]>;
 };
 
 /**
- * 🧱 CoreModel — handles driver-agnostic CRUD
+ * Model lifecycle event hook signatures
+ */
+export interface ModelEventHooks {
+  beforeCreate?: (data: Record<string, unknown>) => Promise<void | boolean> | void | boolean;
+  afterCreate?: (created: Record<string, unknown> | null) => Promise<void> | void;
+  beforeUpdate?: (data: Record<string, unknown>) => Promise<void | boolean> | void | boolean;
+  afterUpdate?: (data: Record<string, unknown>) => Promise<void> | void;
+  beforeDelete?: (id: number | string) => Promise<void | boolean> | void | boolean;
+  afterDelete?: (id: number | string) => Promise<void> | void;
+}
+
+/**
+ * 🧱 CoreModel — driver-agnostic CRUD + schema validation + hooks + events
  */
 export abstract class CoreModel {
   protected tableName: string;
   protected connectionName: ConnectionName;
+
+  /** Optional schema definition (set by subclass) */
+  static schema?: Record<string, SchemaField>;
+
+  /** Validation lifecycle hooks (beforeValidate / afterValidate) */
+  static validationHooks?: SchemaValidatorOptions["hooks"];
+
+  /** Custom validation rules (async supported) */
+  static customRules?: SchemaValidatorOptions["customRules"];
+
+  /** Model lifecycle events (beforeCreate/afterCreate etc.) */
+  static modelEvents?: ModelEventHooks;
 
   constructor(tableName: string, connectionName: ConnectionName = "mysql") {
     this.tableName = tableName;
@@ -23,16 +52,65 @@ export abstract class CoreModel {
   }
 
   /**
-   * 🔌 Get DB connection (lazy + cached)
+   * Get DB connection (lazy + cached)
    */
   protected async getDB() {
     return await getConnection(this.connectionName);
   }
 
+  /**
+   * Validate incoming data using schema + hooks + custom rules
+   */
+  private async validateData(data: Record<string, unknown>): Promise<void> {
+    const schema = (this.constructor as typeof CoreModel).schema;
+    const hooks = (this.constructor as typeof CoreModel).validationHooks;
+    const customRules = (this.constructor as typeof CoreModel).customRules;
+
+    if (!schema) return;
+
+    const validationRules: Record<string, ValidationRule> = {};
+
+    for (const [key, field] of Object.entries(schema)) {
+      if (field.kind === "column" && field.validate) {
+        validationRules[key] = field.validate;
+      }
+    }
+
+    const errors = await SchemaValidator.validateData(data, validationRules, {
+      hooks,
+      customRules,
+    });
+
+    if (errors.length > 0) {
+      const formatted = errors.map((e) => `• ${e.field} ${e.message}`).join("\n");
+      throw new Error(`Validation failed for ${this.tableName}:\n${formatted}`);
+    }
+  }
+
+  /**
+   * Fire a lifecycle event.
+   *
+   * We use `unknown` for payload to avoid the `Parameters<>` union issue.
+   * Returns `true` to proceed; returns `false` if the handler explicitly canceled (returned false).
+   */
+  
+  private async fireEvent(eventName: keyof ModelEventHooks, payload?: unknown): Promise<boolean> {
+    const handler = (this.constructor as typeof CoreModel).modelEvents?.[eventName];
+    if (!handler) return true;
+
+    // Cast handler to a generic async-capable function type that accepts unknown.
+    const fn = handler as (arg: unknown) => Promise<unknown> | unknown;
+    const result = await fn(payload);
+
+    // If handler returned boolean false, treat as cancellation.
+    if (result === false) return false;
+    return true;
+  }
+
   /* -----------------------------------------------------
    * 📦 FIND (by ID)
    * ----------------------------------------------------- */
-  async find(id: number | string, pk: string = "id"): Promise<any> {
+  async find(id: number | string, pk: string = "id"): Promise<unknown> {
     const db = await this.getDB();
 
     switch (this.connectionName) {
@@ -56,7 +134,7 @@ export abstract class CoreModel {
   /* -----------------------------------------------------
    * 📋 ALL (fetch all records)
    * ----------------------------------------------------- */
-  async all(): Promise<any[]> {
+  async all(): Promise<unknown[]> {
     const db = await this.getDB();
 
     switch (this.connectionName) {
@@ -80,8 +158,21 @@ export abstract class CoreModel {
   /* -----------------------------------------------------
    * ➕ CREATE (insert new record)
    * ----------------------------------------------------- */
-  async create(data: Record<string, any>): Promise<any> {
+  async create(data: Record<string, unknown>): Promise<unknown | null> {
+    // 1) Validate (runs validation hooks + custom rules)
+    await this.validateData(data);
+
+    // 2) Fire beforeCreate (can cancel by returning false)
+    const canCreate = await this.fireEvent("beforeCreate", data);
+    if (!canCreate) {
+      // canceled by hook
+      return null;
+    }
+
     const db = await this.getDB();
+
+    // 3) Execute INSERT per driver, return created record shape
+    let createdRecord: Record<string, unknown> | null = null;
 
     switch (this.connectionName) {
       case "sqlite": {
@@ -90,7 +181,8 @@ export abstract class CoreModel {
         const placeholders = keys.map(() => "?").join(", ");
         const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
         const result = await db.run(sql, values);
-        return { id: result.lastID, ...data };
+        createdRecord = { id: result.lastID, ...data };
+        break;
       }
 
       case "mysql":
@@ -100,25 +192,42 @@ export abstract class CoreModel {
         const placeholders = keys.map(() => "?").join(", ");
         const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
         const [res] = await db.query(sql, values);
-        return { id: res.insertId, ...data };
+        // many drivers return insertId, fallback to insertId || id
+        const insertId = (res && (res.insertId ?? (res.insertedId ?? undefined))) as unknown;
+        createdRecord = { id: insertId, ...data };
+        break;
       }
 
       case "mongo": {
         const result = await db.collection(this.tableName).insertOne(data);
-        return { id: result.insertedId, ...data };
+        createdRecord = { id: result.insertedId, ...data };
+        break;
       }
 
       default:
         throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
+
+    // 4) Fire afterCreate (no cancellation)
+    await this.fireEvent("afterCreate", createdRecord);
+
+    return createdRecord;
   }
 
   /* -----------------------------------------------------
    * ✏️ UPDATE (by ID)
    * ----------------------------------------------------- */
-  async update(id: number | string, data: Record<string, any>, pk: string = "id"): Promise<void> {
+  async update(id: number | string, data: Record<string, unknown>, pk: string = "id"): Promise<void> {
+    // 1) Validate
+    await this.validateData(data);
+
+    // 2) beforeUpdate (can cancel)
+    const canUpdate = await this.fireEvent("beforeUpdate", data);
+    if (!canUpdate) return;
+
     const db = await this.getDB();
 
+    // 3) Execute UPDATE
     switch (this.connectionName) {
       case "sqlite": {
         const keys = Object.keys(data);
@@ -147,14 +256,22 @@ export abstract class CoreModel {
       default:
         throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
+
+    // 4) afterUpdate
+    await this.fireEvent("afterUpdate", data);
   }
 
   /* -----------------------------------------------------
    * ❌ DELETE (by ID)
    * ----------------------------------------------------- */
   async delete(id: number | string, pk: string = "id"): Promise<void> {
+    // 1) beforeDelete (can cancel)
+    const canDelete = await this.fireEvent("beforeDelete", id);
+    if (!canDelete) return;
+
     const db = await this.getDB();
 
+    // 2) Execute delete
     switch (this.connectionName) {
       case "sqlite":
         await db.run(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
@@ -172,5 +289,8 @@ export abstract class CoreModel {
       default:
         throw new Error(`Unsupported driver: ${this.connectionName}`);
     }
+
+    // 3) afterDelete
+    await this.fireEvent("afterDelete", id);
   }
 }

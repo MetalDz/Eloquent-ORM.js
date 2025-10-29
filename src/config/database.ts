@@ -5,7 +5,7 @@ dotenv.config();
 export const dbConfig = {
   default: process.env.DB_CONNECTION || "mysql",
 
-  connections: {
+  connections:{
     mysql: {
       driver: "mysql",
       host: process.env.DB_HOST || "localhost",

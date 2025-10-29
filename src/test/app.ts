@@ -1,6 +1,6 @@
 // src/app.ts
-import { setupCache } from "./core/cache/setupCache";
-import { BaseModel } from "./core/model/BaseModel";
+import { setupCache } from "../core/cache/setupCache";
+import { BaseModel } from "../core/model/BaseModel";
 
 // Initialize cache layer
 setupCache();

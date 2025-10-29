@@ -1,4 +1,4 @@
-import { getConnection, closeAllConnections } from "./core/connection/ConnectionFactory";
+import { getConnection, closeAllConnections } from "../core/connection/ConnectionFactory";
 
 (async () => {
   for (const driver of ["mysql", "pg", "sqlite"] as const) {

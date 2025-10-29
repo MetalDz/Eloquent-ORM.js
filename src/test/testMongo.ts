@@ -1,4 +1,4 @@
-import { getConnection } from "./core/connection/ConnectionFactory";
+import { getConnection } from "../core/connection/ConnectionFactory";
 
 (async () => {
   const db = await getConnection("mongo");

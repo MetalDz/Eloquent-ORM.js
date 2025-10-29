@@ -1,11 +1,17 @@
 {
   "name": "eloquentjs",
-  "version": "1.0.0",
-  "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+  "version": "0.3.2",
+  "description":{
+    "main": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+    "latest achivements": "Rebuild with Validation Support"
+  },
   "type": "commonjs",
+  "author": {
+    "name": "MEKHERBECHE Fares",
+    "github": "https://github.com/MetalDz"},
   "main": "src/index.js",
   "bin": {
-    "eloquent": "./dist/bin/eloquent.js"
+    "eloquent": "./dist/cli/eloquent.js"
   },
   "scripts": {
     "build": "tsc",
@@ -16,6 +22,7 @@
     "chalk": "^5.6.2",
     "commander": "^12.1.0",
     "dotenv": "^17.2.3",
+    "figlet": "^1.9.3",
     "memcached": "^2.2.2",
     "mongodb": "^6.20.0",
     "mysql2": "^3.15.2",
@@ -25,8 +32,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
+    "@types/figlet": "^1.7.0",
     "@types/memcached": "^2.2.10",
-    "@types/node": "^22.18.10",
+    "@types/node": "^22.18.12",
     "@types/pg": "^8.15.5",
     "eslint": "^9.38.0",
     "ts-node": "^10.9.2",
