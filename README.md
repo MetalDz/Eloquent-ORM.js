@@ -101,6 +101,54 @@ Step	    Feature	Description
 🚧	        Eager Loading	with() for related models
 🚧	        Publish to npm	npm install eloquentjs
 
+✅ Phase 1 — Core Model Architecture
+
+Implemented BaseModel with:
+
+CRUD operations (create, update, delete, find, where)
+
+Connection support (PostgreSQL, MySQL, MongoDB)
+
+Query Builder structure
+
+Added Mixins for:
+
+SoftDeletesMixin
+
+TimestampMixin
+
+JSON casting & attribute hooks
+
+✅ Phase 2 — Relations & Eager Loading
+
+Added support for:
+
+hasOne, hasMany, belongsTo, belongsToMany
+
+EagerLoadingMixin for .with() method
+
+Lazy loading fallback
+
+Query builder optimized for relational joins.
+
+✅ Phase 3 — Migration & Schema Management
+
+Built migration CLI system:
+
+eloquent make:migration
+
+eloquent migrate / eloquent rollback
+
+Schema builder with chainable methods:
+
+table.increments('id').primary()
+table.string('name').notNullable()
+table.timestamps()
+
+
+Added compound primary key support
+
+Fixed type comparison issue with "increments"
  
 🧑‍💻 Authors
 Created with ❤️ by ALPHA Consultings who love Laravel, Node.js, and TypeScript.
