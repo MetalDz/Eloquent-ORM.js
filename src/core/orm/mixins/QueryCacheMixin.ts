@@ -1,5 +1,5 @@
 // src/core/cache/QueryCacheMixin.ts
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { CacheManager } from "../../cache/CacheManager";
 import { CacheRegistry } from "../../cache/CacheRegistry";
 import { CacheFallbackManager } from "../../cache/CacheFallbackManager";

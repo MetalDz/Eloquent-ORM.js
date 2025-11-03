@@ -1,9 +1,10 @@
 /**
  * 🧩 SchemaBlueprint
  * Defines model schema, validation, relations, and mixins.
- * Designed for functional and future decorator-based usage.
+ * Supports advanced relation metadata for automatic migration generation.
  */
 
+/* --------------------------------- Column Types --------------------------------- */
 export type ColumnType =
   | "increments"
   | "bigint"
@@ -20,7 +21,6 @@ export type ColumnType =
   | "softDeletes";
 
 /* --------------------------------- Options --------------------------------- */
-
 export interface ColumnOptions {
   length?: number;
   notNull?: boolean;
@@ -32,7 +32,7 @@ export interface ColumnOptions {
   comment?: string;
 }
 
-/** Validation rules applied at runtime or migration-time */
+/* --------------------------------- Validation --------------------------------- */
 export interface ValidationRule {
   required?: boolean;
   min?: number;
@@ -56,11 +56,18 @@ export type RelationType =
 export interface RelationOptions {
   localKey?: string;
   foreignKey?: string;
+
+  // Pivot configuration
   pivotTable?: string;
   pivotLocalKey?: string;
   pivotForeignKey?: string;
+
+  // Morph configuration
+  morphName?: string;
   typeColumn?: string;
   idColumn?: string;
+
+  // Cascade and constraints
   cascade?: boolean;
 }
 
@@ -81,7 +88,6 @@ export interface MixinDefinition {
 }
 
 /* --------------------------------- Definitions --------------------------------- */
-
 export interface ColumnDefinition {
   kind: "column";
   type: ColumnType;
@@ -102,22 +108,18 @@ export type SchemaField =
   | MixinDefinition;
 
 /* --------------------------------- Builders --------------------------------- */
-
-/**
- * Creates a column definition
- */
 export function column(
   type: ColumnType,
   length?: number,
   options?: Partial<ColumnOptions>
 ): ColumnDefinition {
-  const finalOptions: ColumnOptions = { ...(length ? { length } : {}), ...(options || {}) };
+  const finalOptions: ColumnOptions = {
+    ...(length ? { length } : {}),
+    ...(options || {}),
+  };
   return { kind: "column", type, options: finalOptions };
 }
 
-/**
- * Adds validation to a column
- */
 export function validate(
   columnDef: ColumnDefinition,
   rules: ValidationRule
@@ -126,9 +128,6 @@ export function validate(
   return columnDef;
 }
 
-/**
- * Creates a relation definition
- */
 export function relation(
   rel: RelationType,
   model: string,
@@ -137,18 +136,11 @@ export function relation(
   return { kind: "relation", relation: rel, model, options };
 }
 
-/**
- * Creates a mixin definition
- */
 export function mixin(name: MixinName): MixinDefinition {
   return { kind: "mixin", name };
 }
 
 /* --------------------------------- Validators --------------------------------- */
-
-/**
- * Validate schema integrity before build
- */
 export function validateSchema(
   schema: Record<string, SchemaField>
 ): string[] {
@@ -162,8 +154,24 @@ export function validateSchema(
       }
     }
 
-    if (field.kind === "relation" && !field.model) {
-      errors.push(`Relation '${key}' must reference a model name.`);
+    if (field.kind === "relation") {
+      if (!field.model) {
+        errors.push(`Relation '${key}' must reference a model name.`);
+      }
+
+      if (field.relation === "belongsTo" && !field.options.foreignKey) {
+        errors.push(`Relation '${key}' (belongsTo) requires a foreignKey.`);
+      }
+
+      if (
+        field.relation === "morphOne" ||
+        field.relation === "morphMany" ||
+        field.relation === "morphTo"
+      ) {
+        if (!field.options.morphName) {
+          errors.push(`Morph relation '${key}' should define a morphName.`);
+        }
+      }
     }
 
     if (field.kind === "mixin" && !field.name) {

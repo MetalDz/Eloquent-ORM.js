@@ -1,11 +1,19 @@
-import { BaseModel } from "@core/model/BaseModel";
-import { column, validate } from "@core/schema/SchemaBlueprint";
+/**
+ * 🧩 Auto-generated EloquentJS ORM Model
+ * Model: Tester
+ * Table: testers
+ * Mode: TEST
+ * Generated at: 2025-11-03T11:30:04.355Z
+ */
 
-export class {{ModelName}} extends BaseModel {
+import { BaseModel } from "../../../core/model/BaseModel";
+import { column, validate } from "../../../core/schema/SchemaBlueprint";
+
+export class Tester extends BaseModel {
   /**
    * 🧩 Table configuration
    */
-  static tableName = "{{tableName}}";
+  static tableName = "testers";
   static connectionName = process.env.DB_CONNECTION ?? "mysql";
 
   /**
@@ -26,10 +34,10 @@ export class {{ModelName}} extends BaseModel {
    */
   static validationHooks = {
     beforeValidate: async (data: Record<string, unknown>) => {
-      console.log("🧩 [beforeValidate] {{ModelName}}", data);
+      console.log("🧩 [beforeValidate] Tester", data);
     },
     afterValidate: async (data: Record<string, unknown>) => {
-      console.log("✅ [afterValidate] {{ModelName}}", data);
+      console.log("✅ [afterValidate] Tester", data);
     },
   };
 
@@ -50,27 +58,27 @@ export class {{ModelName}} extends BaseModel {
    */
   static modelEvents = {
     beforeCreate: async (data: Record<string, unknown>) => {
-      console.log("🚀 [beforeCreate] {{ModelName}}", data);
+      console.log("🚀 [beforeCreate] Tester", data);
       // You can modify the data before insertion
     },
     afterCreate: async (record: Record<string, unknown>) => {
-      console.log("✅ [afterCreate] {{ModelName}} created:", record);
+      console.log("✅ [afterCreate] Tester created:", record);
     },
     beforeUpdate: async (data: Record<string, unknown>) => {
-      console.log("🔄 [beforeUpdate] {{ModelName}}", data);
+      console.log("🔄 [beforeUpdate] Tester", data);
     },
     afterUpdate: async (data: Record<string, unknown>) => {
-      console.log("💾 [afterUpdate] {{ModelName}} updated:", data);
+      console.log("💾 [afterUpdate] Tester updated:", data);
     },
     beforeDelete: async (id: number | string) => {
-      console.log("🗑️ [beforeDelete] {{ModelName}}", id);
+      console.log("🗑️ [beforeDelete] Tester", id);
     },
     afterDelete: async (id: number | string) => {
-      console.log("✅ [afterDelete] {{ModelName}}", id);
+      console.log("✅ [afterDelete] Tester", id);
     },
   };
 
   constructor() {
-    super("{{tableName}}", process.env.DB_CONNECTION ?? "mysql");
+    super("testers", process.env.DB_CONNECTION ?? "mysql");
   }
 }

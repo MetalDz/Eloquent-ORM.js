@@ -1,7 +1,7 @@
 import { Pool } from "mysql2/promise";
 import { Client as PgClient } from "pg";
 import { open, Database } from "sqlite";
-import sqlite3 from "sqlite3";
+import * as sqlite3 from "sqlite3";
 import { MongoClient, Db } from "mongodb";
 import { dbConfig } from "../../config/database";
 

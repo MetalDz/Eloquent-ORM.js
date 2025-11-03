@@ -15,12 +15,15 @@ export class CacheRegistry {
   /**
    * Register a cache key for a given model and group.
    */
-  static addKey(modelName: string, group: string, key: string) {
+  static addKey(modelName: string, group: string, key: string): void {
     const registryKey = `${modelName}:${group}`;
+
     if (!this.registry.has(registryKey)) {
       this.registry.set(registryKey, new Set());
     }
-    this.registry.get(registryKey)!.add(key);
+
+    const set = this.registry.get(registryKey)!;
+    set.add(key);
   }
 
   /**
@@ -33,33 +36,39 @@ export class CacheRegistry {
     }
 
     const allKeys: string[] = [];
-    for (const [key, set] of this.registry.entries()) {
+
+    // ✅ Use Array.from() to make iteration safe for older targets
+    for (const [key, set] of Array.from(this.registry.entries())) {
       if (key.startsWith(modelName + ":")) {
-        allKeys.push(...Array.from(set));
+        allKeys.push(...Array.from(set as Set<string>));
       }
     }
+
     return allKeys;
   }
 
   /**
    * Remove a specific key from the registry.
    */
-  static removeKey(modelName: string, group: string, key: string) {
+  static removeKey(modelName: string, group: string, key: string): void {
     const registryKey = `${modelName}:${group}`;
     const set = this.registry.get(registryKey);
+
     if (set) {
       set.delete(key);
-      if (set.size === 0) this.registry.delete(registryKey);
+      if (set.size === 0) {
+        this.registry.delete(registryKey);
+      }
     }
   }
 
   /**
    * Clear all keys for a model (invalidate model cache).
    */
-  static async clearModel(modelName: string) {
-    for (const [key, set] of this.registry.entries()) {
+  static async clearModel(modelName: string): Promise<void> {
+    for (const [key, set] of Array.from(this.registry.entries())) {
       if (key.startsWith(modelName + ":")) {
-        for (const cacheKey of set) {
+        for (const cacheKey of Array.from(set as Set<string>)) {
           await CacheManager.delete(cacheKey);
         }
         this.registry.delete(key);
@@ -68,23 +77,24 @@ export class CacheRegistry {
   }
 
   /**
-   * Clear a specific group within a model (e.g., "findMany" or "where")
+   * Clear a specific group within a model (e.g., "findMany" or "where").
    */
-  static async clearGroup(modelName: string, group: string) {
+  static async clearGroup(modelName: string, group: string): Promise<void> {
     const registryKey = `${modelName}:${group}`;
     const set = this.registry.get(registryKey);
     if (!set) return;
 
-    for (const cacheKey of set) {
+    for (const cacheKey of Array.from(set as Set<string>)) {
       await CacheManager.delete(cacheKey);
     }
+
     this.registry.delete(registryKey);
   }
 
   /**
    * Clear the entire registry (dangerous: wipes all caches).
    */
-  static async clearAll() {
+  static async clearAll(): Promise<void> {
     await CacheManager.clear();
     this.registry.clear();
   }

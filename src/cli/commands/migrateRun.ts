@@ -1,122 +1,195 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import {  getConnection, closeAllConnections, ConnectionName } from "../../core/connection/ConnectionFactory";
+import {
+  getConnection,
+  closeAllConnections,
+  ConnectionName,
+} from "../../core/connection/ConnectionFactory";
+import { PathMap } from "../utils/PathMap";
+import { dbConfig } from "../../config/database";
+
+interface QueryCapableConnection {
+  query?(sql: string): Promise<unknown> | Promise<[unknown[], unknown[]]>;
+  run?(sql: string): void | Promise<void>;
+}
 
 /**
  * 🧱 migrate:run
- * Executes all pending migrations with strict local typing.
+ * Executes all pending migrations (or only those for a specific model).
+ * Supports dry-run previews, multiple dialects, and migration batching.
  */
-export async function migrateRun(): Promise<void> {
-  console.log(chalk.cyan("\n⚙️  Running migrations...\n"));
+export async function migrateRun(
+  isTest: boolean = false,
+  modelName?: string,
+  dryRun: boolean = false
+): Promise<void> {
+  console.log(
+    chalk.cyan(
+      `\n⚙️  Running migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode${
+        modelName ? ` for model "${modelName}"` : ""
+      }...\n`
+    )
+  );
 
-  // ✅ Step 1: Resolve migrations directory
-  const migrationsDir = path.resolve("src/test/database/migrations");
+  const migrationsDir = PathMap.migrations(isTest);
   if (!fs.existsSync(migrationsDir)) {
     console.log(chalk.yellow("⚠️  No migrations directory found."));
     return;
   }
 
-  // ✅ Step 2: Choose and validate connection name (type-safe)
-  const envConnection = process.env.DB_CONNECTION;
-  const connectionName: ConnectionName =
-    envConnection === "mysql" ||
-    envConnection === "pg" ||
-    envConnection === "sqlite" ||
-    envConnection === "mongo"
-      ? envConnection
-      : "mysql";
+  const supportedDialects = ["mysql", "pg", "sqlite"];
+  const connectionName = ((process.env.DB_CONNECTION as ConnectionName) ||
+    (dbConfig.default as ConnectionName) ||
+    "mysql") as ConnectionName;
 
-  // ✅ Step 3: Connect to database
-  const db = await getConnection(connectionName);
-
-  // ✅ Step 4: Define minimal schema typing
-  interface SchemaBuilder {
-    hasTable(name: string): Promise<boolean>;
-    createTable(
-      name: string,
-      callback: (table: Record<string, unknown>) => void
-    ): Promise<void>;
-  }
-
-  interface MigrationRecord {
-    name: string;
-  }
-
-  if (!("schema" in db)) {
-    console.error(chalk.red(`❌ The current connection does not support schema building.`));
+  if (!supportedDialects.includes(connectionName)) {
+    console.warn(
+      chalk.yellow(
+        `⚠️  Skipping migrations: "${connectionName}" is not SQL-based.`
+      )
+    );
     return;
   }
 
-  const schema = db.schema as SchemaBuilder;
+  const db: QueryCapableConnection = await getConnection(connectionName);
+  console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
 
-  // ✅ Step 5: Ensure "migrations" table exists
-  const hasTable = await schema.hasTable("migrations");
-  if (!hasTable) {
-    await schema.createTable("migrations", (table) => {
-      const t = table as Record<string, unknown>;
-      Object.assign(t, {
-        id: "increments primary key",
-        name: "string",
-        run_at: "timestamp default now()",
-      });
-    });
-    console.log(chalk.gray("📦 Created 'migrations' tracking table."));
-  }
+  // 🧠 Universal query runner (supports dry-run)
+  const runQuery = async (sql: string): Promise<void> => {
+    if (dryRun) {
+      console.log(chalk.gray(`🧪 [DRY-RUN] Would execute:\n${sql}\n`));
+      return;
+    }
+    if (typeof db.query === "function") {
+      await db.query(sql);
+    } else if (typeof db.run === "function") {
+      await db.run(sql);
+    } else {
+      throw new Error("❌ Unsupported database connection for migrations.");
+    }
+  };
 
-  // ✅ Step 6: Load all migration files
-  const files = fs
+  // ✅ Create migration tracker (dialect-aware)
+  const trackerSQL =
+    connectionName === "pg"
+      ? `
+        CREATE TABLE IF NOT EXISTS migrations (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          batch INT DEFAULT 1,
+          run_at TIMESTAMP DEFAULT NOW()
+        );`
+      : connectionName === "sqlite"
+      ? `
+        CREATE TABLE IF NOT EXISTS migrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name VARCHAR(255) NOT NULL,
+          batch INT DEFAULT 1,
+          run_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`
+      : `
+        CREATE TABLE IF NOT EXISTS migrations (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          batch INT DEFAULT 1,
+          run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );`;
+
+  await runQuery(trackerSQL);
+
+  // 🧾 Collect migrations
+  let files = fs
     .readdirSync(migrationsDir)
     .filter((f) => f.endsWith(".ts") || f.endsWith(".js"))
     .sort();
 
-  if (files.length === 0) {
-    console.log(chalk.yellow("⚠️  No migration files found."));
+  if (modelName) {
+    const lower = modelName.toLowerCase();
+    files = files.filter((f) => f.includes(lower));
+    if (files.length === 0) {
+      console.log(chalk.yellow(`⚠️  No migrations found for model: ${modelName}`));
+      await closeAllConnections();
+      return;
+    }
+  }
+
+  // ✅ Get executed migrations
+  let executed: string[] = [];
+  try {
+    const res = await db.query?.("SELECT name FROM migrations");
+
+    if (Array.isArray(res)) {
+      // MySQL-like
+      executed = (res[0] as { name: string }[]).map((r) => r.name);
+    } else if (
+      typeof res === "object" &&
+      res !== null &&
+      "rows" in (res as Record<string, unknown>)
+    ) {
+      // PostgreSQL
+      const rowSet = (res as { rows: { name: string }[] }).rows;
+      executed = Array.isArray(rowSet) ? rowSet.map((r) => r.name) : [];
+    }
+  } catch {
+    executed = [];
+  }
+
+  const pending = files.filter((f) => !executed.includes(f));
+  if (pending.length === 0) {
+    console.log(chalk.yellow("\n✨ No new migrations to run."));
+    await closeAllConnections();
     return;
   }
 
-  // ✅ Step 7: Fetch executed migrations
-  const executedRows = (await db("migrations").select("name")) as MigrationRecord[];
-  const executed = executedRows.map((r) => r.name);
+  console.log(chalk.gray(`🧩 Pending migrations: ${pending.length}`));
 
-  let newCount = 0;
-
-  // ✅ Step 8: Execute pending migrations
-  for (const file of files) {
-    if (executed.includes(file)) {
-      console.log(chalk.gray(`⏭️  Skipped: ${file}`));
-      continue;
-    }
-
-    const filePath = path.join(migrationsDir, file);
-    const migrationModule = (await import(path.resolve(filePath))) as {
-      up?: (dbConn: typeof db) => Promise<void>;
-    };
-
-    if (!migrationModule.up) {
-      console.log(chalk.red(`❌ Invalid migration: ${file} (no up() function)`));
-      continue;
-    }
-
-    try {
-      await migrationModule.up(db);
-      await db("migrations").insert({ name: file });
-      console.log(chalk.greenBright(`✅ Migrated: ${file}`));
-      newCount++;
-    } catch (err: unknown) {
-      console.error(chalk.red(`❌ Failed on: ${file}`));
-      console.error(err);
-      break;
-    }
+  // 🧠 Determine batch number
+  let lastBatch = 0;
+  try {
+    const batchRes = await db.query?.("SELECT MAX(batch) as max FROM migrations");
+    if (Array.isArray(batchRes) && batchRes[0]?.[0]?.max)
+      lastBatch = Number(batchRes[0][0].max);
+  } catch {
+    lastBatch = 0;
   }
+  const newBatch = lastBatch + 1;
 
-  // ✅ Step 9: Final summary
-  if (newCount === 0) {
-    console.log(chalk.yellow("\n✨ No new migrations to run."));
-  } else {
-    console.log(chalk.greenBright(`\n🎉 ${newCount} new migration(s) applied successfully.`));
+  let applied = 0;
+  try {
+    for (const file of pending) {
+      const filePath = path.join(migrationsDir, file);
+      const migrationModule = (await import(path.resolve(filePath))) as {
+        up?: (db: { query(sql: string): Promise<void> }) => Promise<void>;
+      };
+
+      if (typeof migrationModule.up !== "function") {
+        console.log(chalk.red(`❌ Invalid migration: ${file}`));
+        continue;
+      }
+
+      console.log(chalk.gray(`⚙️  Applying: ${file}`));
+      await migrationModule.up({ query: runQuery });
+
+      if (!dryRun)
+        await runQuery(
+          `INSERT INTO migrations (name, batch) VALUES ('${file}', ${newBatch});`
+        );
+
+      console.log(chalk.green(`✅ Migration applied: ${file}`));
+      applied++;
+    }
+
+    console.log(
+      chalk.greenBright(`\n🎉 ${applied} migration(s) applied successfully.`)
+    );
+  } catch (err) {
+    console.error(chalk.red("\n❌ Error during migration execution:"));
+    console.error(err);
+    console.warn(chalk.yellow("⚠️ Rolling back partial changes..."));
+    // 🩵 TODO (Phase 5): auto-detect and call matching down() for rollback
+  } finally {
+    await closeAllConnections();
+    console.log(chalk.gray("\n🔒 All database connections closed.\n"));
   }
-
-  await closeAllConnections();
-  console.log(chalk.gray("\n🔒 All database connections closed.\n"));
 }

@@ -18,8 +18,11 @@ import { makeService } from "./commands/makeService";
 import { makeSeed } from "./commands/makeSeed";
 import { makeMigration } from "./commands/makeMigration";
 import { migrateRun } from "./commands/migrateRun";
+import { migrateRollback } from "./commands/migrateRollback";
 import { cacheClear } from "./commands/cacheClear";
 import { cacheStats } from "./commands/cacheStats";
+
+
 
 // -----------------------------------------------------------------------------
 // 🧱 CLI Setup
@@ -46,8 +49,10 @@ program
 // -----------------------------------------------------------------------------
 program
   .command("make:model <name>")
-  .description("Generate a new model file with schema and migration")
-  .action(makeModel);
+  .option("--test", "Generate model inside test directory")
+  .action(async (name, options) => {
+    await makeModel(name, options);
+  });
   
 program
   .command("make:controller <name>")
@@ -63,16 +68,39 @@ program
   .command("make:seed <name>")
   .description("Create a new database seeder file")
   .action(makeSeed);
+// -----------------------------------------------------------------------------
+// 🧩 migration COMMANDS
+// -----------------------------------------------------------------------------
+program
+  .command("make:migration <model>")
+  .option("--test", "Generate migration in test mode")
+  .description("Generate migration from a model or all models")
+  .action((model, options) => {
+    makeMigration(model, options);
+  });
 
 program
-  .command("make:migration <name>")
-  .description("Create a new migration file with timestamp")
-  .action(makeMigration);
+  .command("migrate:run [model]")
+  .description("Run pending migrations (optionally for one model)")
+  .action((model?: string) => migrateRun(false, model));
 
 program
-  .command("migrate:run")
-  .description("Run all pending migrations")
-  .action(migrateRun);
+  .command("migrate:run:test [model]")
+  .description("Run pending test migrations (optionally for one model)")
+  .action((model?: string) => migrateRun(true, model));
+
+program
+  .command("migrate:rollback")
+  .option("--test", "rollback migration in test mode")
+  .option("--step <number>", "number of migrations to rollback", "1")
+  .description("Rollback the latest migration(s) from the database")
+  .action(async (options: { test?: boolean; step?: string }) => {
+    const stepNumber = Number(options.step ?? 1);
+    const isTest = !!options.test;
+
+    await migrateRollback("mysql", { test: isTest, step: stepNumber });
+  });
+
 // -----------------------------------------------------------------------------
 // 🧩 CACHE COMMANDS
 // -----------------------------------------------------------------------------
@@ -101,6 +129,7 @@ program
       { Command: "make:seed <name>", Description: "Generate a seeder" },
       { Command: "make:migration <name>", Description: "Generate a migration" },
       { Command: "migrate:run", Description: "Run all pending migrations" },
+      { Command: "migrate:rollback", Description: "rollback migration from db" },
       { Command: "cache:clear", Description: "Clear all cache layers" },
       { Command: "cache:stats", Description: "View cache analytics" },
     ]);

@@ -1,5 +1,5 @@
 // src/config/database.ts
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
 dotenv.config();
 
 export const dbConfig = {
@@ -11,7 +11,7 @@ export const dbConfig = {
       host: process.env.DB_HOST || "localhost",
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "",
-      database: process.env.DB_NAME || "test_db",
+      database: process.env.DB_NAME || "eloquentjs",
     },
     pg: {
       driver: "pg",
