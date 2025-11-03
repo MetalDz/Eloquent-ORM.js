@@ -1,8 +1,7 @@
 {
   "name": "eloquentjs",
-  "version": "0.3.2",
-  "description":
-    "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+  "version": "0.5.1",
+  "description":"A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
   "type": "commonjs",
   "author": {
     "name": "MEKHERBECHE Fares",

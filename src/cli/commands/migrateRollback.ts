@@ -1,129 +1,178 @@
 import fs from "fs";
-import * as path from "path";
+import path from "path";
 import chalk from "chalk";
-import { getConnection, closeAllConnections, ConnectionName } from "../../core/connection/ConnectionFactory";
+import {
+  getConnection,
+  closeAllConnections,
+  ConnectionName,
+} from "../../core/connection/ConnectionFactory";
+import { PathMap } from "../utils/PathMap";
+import { dbConfig } from "../../config/database";
+
+interface QueryCapableConnection {
+  query?(sql: string): Promise<unknown> | Promise<[unknown[], unknown[]]>;
+  run?(sql: string): void | Promise<void>;
+}
 
 /**
  * 🧱 migrate:rollback
- * Rolls back one or more recent migrations.
- * Supports:
- *  - `eloquent migrate:rollback`
- *  - `eloquent migrate:rollback --step=3`
- *  - `eloquent migrate:rollback --test`
+ * Reverts the latest migration batch(es).
+ *
+ * Usage:
+ *   eloquent migrate:rollback
+ *   eloquent migrate:rollback --step 2
+ *   eloquent migrate:rollback --test
  */
 export async function migrateRollback(
-  connectionName: ConnectionName = "mysql",
+  dialect: ConnectionName = "mysql",
   options: { test?: boolean; step?: number } = {}
 ): Promise<void> {
-  console.log(chalk.cyan("\n🔁 Rolling back migrations...\n"));
+  const isTest = !!options.test;
+  const step = Math.max(1, Number(options.step || 1));
 
-  const isTest = options.test === true;
-  const step = Math.max(options.step ?? 1, 1);
-  const migrationsDir = isTest
-    ? path.resolve("src/test/database/migrations")
-    : path.resolve("src/app/database/migrations");
+  console.log(
+    chalk.cyan(
+      `\n↩️  Rolling back migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode (step ${step})...\n`
+    )
+  );
 
+  const migrationsDir = PathMap.migrations(isTest);
   if (!fs.existsSync(migrationsDir)) {
     console.log(chalk.yellow("⚠️  No migrations directory found."));
     return;
   }
 
-  // 1️⃣ Establish connection
-  const db = await getConnection(connectionName);
-  console.log(chalk.gray(`🔌 Connected to ${connectionName} (${isTest ? "TEST" : "DEV"})`));
+  const supportedDialects = ["mysql", "pg", "sqlite"];
+  const connectionName = ((process.env.DB_CONNECTION as ConnectionName) ||
+    (dbConfig.default as ConnectionName) ||
+    dialect) as ConnectionName;
 
-  // 2️⃣ Determine dialect
-  const dialect = connectionName;
-  const wrap = (v: string) =>
-    dialect === "pg" ? `"${v}"` : dialect === "sqlite" ? `"${v}"` : `\`${v}\``;
+  if (!supportedDialects.includes(connectionName)) {
+    console.warn(
+      chalk.yellow(`⚠️  Rollback skipped: "${connectionName}" is not SQL-based.`)
+    );
+    return;
+  }
 
-  // 3️⃣ Query helper (safe for all dialects)
+  const db: QueryCapableConnection = await getConnection(connectionName);
+  console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
+
+  // ✅ Universal query runner
   const runQuery = async (sql: string): Promise<void> => {
-    if ("query" in db && typeof db.query === "function") {
+    if (typeof db.query === "function") {
       await db.query(sql);
-      return;
-    }
-    if ("run" in db && typeof db.run === "function") {
+    } else if (typeof db.run === "function") {
       await db.run(sql);
-      return;
+    } else {
+      throw new Error("❌ Unsupported database connection for rollback.");
     }
-    throw new Error("❌ Unsupported database connection for rollback.");
   };
 
-  // 4️⃣ Ensure migrations table exists
-  await runQuery(`
-    CREATE TABLE IF NOT EXISTS migrations (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  // ✅ Ensure migrations tracker exists
+  const trackerSQL =
+    connectionName === "pg"
+      ? `CREATE TABLE IF NOT EXISTS migrations (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            batch INT DEFAULT 1,
+            run_at TIMESTAMP DEFAULT NOW()
+         );`
+      : connectionName === "sqlite"
+      ? `CREATE TABLE IF NOT EXISTS migrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(255) NOT NULL,
+            batch INT DEFAULT 1,
+            run_at DATETIME DEFAULT CURRENT_TIMESTAMP
+         );`
+      : `CREATE TABLE IF NOT EXISTS migrations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            batch INT DEFAULT 1,
+            run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+         );`;
 
-  // 5️⃣ Get executed migrations (newest first)
-  let executed: string[] = [];
+  await runQuery(trackerSQL);
+
+  // 🧩 Fetch batches
+  let rows: { name: string; batch: number }[] = [];
   try {
-    const result = await db.query?.("SELECT name FROM migrations ORDER BY id DESC");
+    const res = await db.query?.("SELECT name, batch FROM migrations ORDER BY batch DESC, id DESC");
 
-    if (Array.isArray(result)) {
-      executed = (result as Array<{ name: string }>).map((r) => r.name);
-    } else if (
-      typeof result === "object" &&
-      result !== null &&
-      "rows" in result &&
-      Array.isArray((result as { rows: unknown[] }).rows)
-    ) {
-      executed = ((result as { rows: Array<{ name: string }> }).rows).map((r) => r.name);
+    if (Array.isArray(res)) {
+      rows = res[0] as { name: string; batch: number }[];
+    } else if (typeof res === "object" && res !== null && "rows" in res) {
+      rows = (res as { rows: { name: string; batch: number }[] }).rows;
     }
-  } catch {
-    console.log(chalk.yellow("⚠️  No executed migrations found."));
+  } catch (err) {
+    console.error(chalk.red("❌ Unable to read migrations table."));
+    console.error(err);
+    await closeAllConnections();
     return;
   }
 
-  if (executed.length === 0) {
-    console.log(chalk.yellow("✨ Nothing to rollback."));
+  if (rows.length === 0) {
+    console.log(chalk.yellow("✨ No migrations found to roll back."));
+    await closeAllConnections();
     return;
   }
 
-  // 6️⃣ Select migrations to rollback (step count)
-  const toRollback = executed.slice(0, step);
-  console.log(chalk.gray(`🧩 Preparing to rollback ${toRollback.length} migration(s):`));
-  toRollback.forEach((m) => console.log(chalk.gray(`   • ${m}`)));
+  // 🧠 Determine which batches to roll back
+  const latestBatch = rows[0].batch;
+  const targetBatches = Array.from(
+    new Set(rows.map((r) => r.batch))
+  ).slice(0, step); // rollback N latest batches
 
-  // 7️⃣ Execute rollback in order
-  for (const file of toRollback) {
-    const filePath = path.join(migrationsDir, file);
+  const toRollback = rows.filter((r) =>
+    targetBatches.includes(r.batch)
+  );
+
+  if (toRollback.length === 0) {
+    console.log(chalk.yellow("✨ Nothing to roll back."));
+    await closeAllConnections();
+    return;
+  }
+
+  console.log(chalk.gray(`🧩 Rolling back ${toRollback.length} migration(s)...`));
+
+  let rolledBack = 0;
+  for (const entry of toRollback) {
+    const migrationFile = entry.name;
+    const filePath = path.join(migrationsDir, migrationFile);
+
     if (!fs.existsSync(filePath)) {
-      console.log(chalk.red(`❌ Migration file missing: ${file}`));
+      console.warn(chalk.yellow(`⚠️  Missing file: ${migrationFile} (skipping)`));
       continue;
     }
 
-    console.log(chalk.gray(`↩️  Rolling back: ${file}`));
-
     try {
       const migrationModule = (await import(path.resolve(filePath))) as {
-        down?: (dbConn: { query: (sql: string) => Promise<void> }) => Promise<void>;
+        down?: (db: { query(sql: string): Promise<void> }) => Promise<void>;
       };
 
       if (typeof migrationModule.down !== "function") {
-        console.log(chalk.red(`❌ Invalid migration: ${file} (no down() function)`));
+        console.log(chalk.gray(`⏭️  No down() method: ${migrationFile}`));
         continue;
       }
 
+      console.log(chalk.gray(`↩️  Reverting: ${migrationFile}`));
       await migrationModule.down({ query: runQuery });
-      await runQuery(`DELETE FROM migrations WHERE name = '${file}'`);
-      console.log(chalk.greenBright(`✅ Rolled back: ${file}`));
+
+      await runQuery(`DELETE FROM migrations WHERE name = '${migrationFile}';`);
+      console.log(chalk.green(`✅ Rolled back: ${migrationFile}`));
+      rolledBack++;
     } catch (err) {
-      console.error(chalk.red(`❌ Failed to rollback: ${file}`));
+      console.error(chalk.red(`❌ Error rolling back ${migrationFile}:`));
       console.error(err);
-      break; // Stop on failure
+      break;
     }
   }
 
-  // 8️⃣ Final summary
   console.log(
-    chalk.greenBright(`\n🎉 Successfully rolled back ${toRollback.length} migration(s).`)
+    chalk.greenBright(
+      `\n🎉 ${rolledBack} migration(s) rolled back successfully.\n`
+    )
   );
 
   await closeAllConnections();
-  console.log(chalk.gray("\n🔒 All database connections closed.\n"));
+  console.log(chalk.gray("🔒 All database connections closed.\n"));
 }

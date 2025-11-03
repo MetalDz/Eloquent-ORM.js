@@ -21,6 +21,9 @@ import { migrateRun } from "./commands/migrateRun";
 import { migrateRollback } from "./commands/migrateRollback";
 import { cacheClear } from "./commands/cacheClear";
 import { cacheStats } from "./commands/cacheStats";
+import { migrateStatus } from "./commands/migrateStatus";
+import { migrateFresh } from "./commands/migrateFresh";
+import { migrateReset } from "./commands/migrateReset";
 
 
 
@@ -113,6 +116,27 @@ program
   .command("cache:stats")
   .description("Show current cache performance analytics")
   .action(cacheStats);
+
+
+// -----------------------------------------------------------------------------
+// 🧩   )
+// -----------------------------------------------------------------------------
+
+program
+  .command("migrate:status")
+  .description("Show status of all migrations (applied vs pending)")
+  .action(() => migrateStatus(false));
+
+program
+  .command("migrate:fresh")
+  .description("Drop all tables and re-run every migration from scratch")
+  .action(migrateFresh);
+
+program
+  .command("migrate:reset")
+  .description("Rollback *all* migrations completely")
+  .action(migrateReset);
+
 
 // -----------------------------------------------------------------------------
 // 🧠 HELP / DEFAULT BEHAVIOR
