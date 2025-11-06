@@ -1,59 +1,128 @@
 /**
  * ⚙️ HooksMixin
  * Adds event-driven lifecycle hooks (creating, created, updating, updated, deleting, deleted)
+ * ✅ Fully TS-safe, mixin-compliant, and compatible with all ORM layers
  */
-export function HooksMixin<
-  TBase extends new (...args: any[]) => {
-    create(data: Record<string, any>): Promise<any>;
-    update(id: number | string, data: Record<string, any>, pk?: string): Promise<void>;
-    delete(id: number | string, pk?: string): Promise<void>;
-  }
->(Base: TBase) {
-  return class extends Base {
-    static hooks: Record<string, Function[]> = {};
 
+export type LifecycleEvent =
+  | "creating"
+  | "created"
+  | "updating"
+  | "updated"
+  | "deleting"
+  | "deleted";
+
+export type HookHandler<TPayload> = (payload: TPayload) => Promise<void> | void;
+
+/**
+ * Base interface for hookable models
+ */
+export interface HookableModel {
+  create(data: Record<string, unknown>): Promise<unknown>;
+  update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+  delete(id: number | string, pk?: string): Promise<void>;
+}
+
+/** Generic mixin constructor helper */
+type Constructor<T = object> = abstract new (...args: any[]) => T;
+
+export function HooksMixin<TBase extends Constructor>(Base: TBase) {
+  abstract class Hookable extends Base implements HookableModel {
     /**
-     * Register a lifecycle hook
+     * Global registry of lifecycle hooks per subclass
      */
-    static on(event: string, callback: Function) {
-      if (!this.hooks[event]) this.hooks[event] = [];
-      this.hooks[event].push(callback);
+    static hooks: Record<LifecycleEvent, HookHandler<unknown>[]> = {
+      creating: [],
+      created: [],
+      updating: [],
+      updated: [],
+      deleting: [],
+      deleted: [],
+    };
+
+    constructor(...args: any[]) {
+      super(...args);
     }
 
     /**
-     * Trigger hooks
+     * 📌 Register a hook for a specific event
+     * Example:
+     *   User.on("creating", async (data) => { ... })
      */
-    protected async fire(event: string, payload: any) {
-      const listeners = (this.constructor as any).hooks[event] || [];
-      for (const cb of listeners) await cb(payload);
+    static on<TPayload>(event: LifecycleEvent, callback: HookHandler<TPayload>): void {
+      const hooks = (this as typeof Hookable).hooks[event] as HookHandler<TPayload>[];
+      hooks.push(callback);
     }
 
     /**
-     * Override create() to trigger hooks
+     * 🧩 Internal helper to trigger all hooks for an event
      */
-    async create(data: Record<string, any>): Promise<any> {
+    protected async fire<TPayload>(event: LifecycleEvent, payload: TPayload): Promise<void> {
+      const cls = this.constructor as typeof Hookable;
+      const listeners = cls.hooks[event] as HookHandler<TPayload>[];
+
+      for (const cb of listeners) {
+        await cb(payload);
+      }
+    }
+
+    /**
+     * 🧠 Override create() to trigger hooks
+     */
+    async create(data: Record<string, unknown>): Promise<unknown> {
+      const baseCreate = (Object.getPrototypeOf(this) as any).create?.bind(this);
+      if (typeof baseCreate !== "function") {
+        throw new Error("Base 'create' method not found for HooksMixin.");
+      }
+
       await this.fire("creating", data);
-      const record = await super.create(data);
+      const record = await baseCreate(data);
       await this.fire("created", record);
       return record;
     }
 
     /**
-     * Override update() to trigger hooks
+     * 🧱 Override update() to trigger hooks
      */
-    async update(id: number | string, data: Record<string, any>, pk: string = "id"): Promise<void> {
+    async update(
+      id: number | string,
+      data: Record<string, unknown>,
+      pk: string = "id"
+    ): Promise<void> {
+      const baseUpdate = (Object.getPrototypeOf(this) as any).update?.bind(this);
+      if (typeof baseUpdate !== "function") {
+        throw new Error("Base 'update' method not found for HooksMixin.");
+      }
+
       await this.fire("updating", { id, data });
-      await super.update(id, data, pk);
+      await baseUpdate(id, data, pk);
       await this.fire("updated", { id, data });
     }
 
     /**
-     * Override delete() to trigger hooks
+     * 🗑️ Override delete() to trigger hooks
      */
     async delete(id: number | string, pk: string = "id"): Promise<void> {
+      const baseDelete = (Object.getPrototypeOf(this) as any).delete?.bind(this);
+      if (typeof baseDelete !== "function") {
+        throw new Error("Base 'delete' method not found for HooksMixin.");
+      }
+
       await this.fire("deleting", { id });
-      await super.delete(id, pk);
+      await baseDelete(id, pk);
       await this.fire("deleted", { id });
     }
-  };
+
+    /**
+     * ✅ Instance method to register hooks dynamically at runtime
+     * Example: user.registerHook("created", fn)
+     */
+    registerHook<TPayload>(event: LifecycleEvent, callback: HookHandler<TPayload>): void {
+      const cls = this.constructor as typeof Hookable;
+      (cls.hooks[event] as HookHandler<TPayload>[]).push(callback);
+    }
+  }
+
+  // ✅ Return type cast ensures TS knows Base + Hookable merged
+  return Hookable as unknown as TBase & (abstract new (...args: any[]) => HookableModel);
 }

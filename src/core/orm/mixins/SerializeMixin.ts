@@ -1,45 +1,64 @@
 /**
  * 🧩 SerializeMixin
- * Adds toJSON() and toObject() serialization logic
+ * Adds toJSON() and toObject() serialization logic.
+ * ✅ Type-safe, mixin-compliant, and compatible with nested models and arrays.
  */
-export function SerializeMixin<
-  TBase extends new (...args: any[]) => {
-    all(): Promise<any[]>;
-    find(id: number | string, pk?: string): Promise<any>;
-  }
->(Base: TBase) {
-  return class extends Base {
+
+export interface SerializableModel {
+  all(): Promise<unknown[]>;
+  find(id: number | string, pk?: string): Promise<unknown | null>;
+  toObject?(): Record<string, unknown>;
+  toJSON?(): string;
+}
+
+/** Generic abstract constructor used by all mixins */
+type Constructor<T = object> = abstract new (...args: any[]) => T;
+
+
+export function SerializeMixin<TBase extends Constructor<SerializableModel>>(Base: TBase) {
+  abstract class Serializable extends Base implements SerializableModel {
+    /** Allow indexing into this (for key-based iteration) */
+    [key: string]: unknown;
+
     /**
      * 🕵️‍♂️ Attributes to hide during serialization
+     * Example: ['password', 'api_token']
      */
     protected hidden: string[] = [];
 
     /**
-     * 🌟 Attributes to append dynamically (computed)
+     * 🌟 Computed attributes to append to output
+     * Example: ['full_name', 'profile_url']
      */
     protected appends: string[] = [];
 
-    /**
-     * 🚀 Convert model to plain JS object
-     */
-    toObject(): Record<string, any> {
-      const raw = { ...this } as any;
-      const obj: Record<string, any> = {};
+    constructor(...args: any[]) {
+      super(...args);
+    }
 
-      for (const key of Object.keys(raw)) {
-        // Skip private, hidden, or internal fields
-        if (key.startsWith("_")) continue;
+    /**
+     * 🚀 Convert model instance into a plain JS object
+     * - Removes hidden/private fields
+     * - Appends computed attributes
+     * - Recursively serializes nested models/arrays
+     */
+    toObject(): Record<string, unknown> {
+      // ✅ Safe shallow clone that TS accepts
+      const raw = Object.assign({}, this) as Record<string, unknown>;
+      const obj: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(raw)) {
+        if (key.startsWith("_")) continue; // skip internals
         if (this.hidden.includes(key)) continue;
 
-        const value = (raw as any)[key];
         obj[key] = this.serializeValue(value);
       }
 
-      // Append computed attributes
+      // 🌟 Append computed attributes
       for (const attr of this.appends) {
-        const getter = (this as any)[attr];
+        const getter = (this as Record<string, unknown>)[attr];
         if (typeof getter === "function") {
-          obj[attr] = getter.call(this);
+          obj[attr] = (getter as () => unknown).call(this);
         }
       }
 
@@ -47,32 +66,36 @@ export function SerializeMixin<
     }
 
     /**
-     * 🧠 Convert to JSON (stringified)
+     * 🧠 Convert model to JSON string
      */
     toJSON(): string {
       return JSON.stringify(this.toObject());
     }
 
     /**
-     * ♻️ Handle nested relation objects or arrays
+     * ♻️ Recursively serialize nested models, arrays, or plain objects
      */
-    protected serializeValue(value: any): any {
+    protected serializeValue(value: unknown): unknown {
       if (value === null || value === undefined) return value;
 
+      // 🧩 Handle arrays
       if (Array.isArray(value)) {
-        return value.map((v) =>
-          typeof v.toObject === "function" ? v.toObject() : v
-        );
+        return value.map((v) => this.serializeValue(v));
       }
 
+      // 🧩 Handle nested model or plain object
       if (typeof value === "object") {
-        if (typeof (value as any).toObject === "function") {
-          return (value as any).toObject();
+        const objVal = value as { toObject?: () => Record<string, unknown> };
+        if (typeof objVal.toObject === "function") {
+          return objVal.toObject();
         }
-        return value;
+        return { ...(value as Record<string, unknown>) };
       }
 
+      // ⚙️ Primitive values (string, number, boolean)
       return value;
     }
-  };
+  }
+
+  return Serializable;
 }

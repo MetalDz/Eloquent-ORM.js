@@ -2,19 +2,18 @@
 import { MorphRegistry } from "./MorphRegistry";
 
 /**
- * ✅ Base interface for all ORM models
+ * ✅ Base interface for all morphable ORM models
  */
 export interface MorphableBaseModel {
-  id: number | string;
+  id?: string | number;
   [key: string]: unknown;
 
-  // ORM-like methods (to satisfy TypeScript)
   find?(id: number | string): Promise<MorphableBaseModel | null>;
   query?(): ORMQuery<this>;
 }
 
 /**
- * ✅ Type for query builders used in ORM
+ * ✅ Type for ORM-like query builders
  */
 export interface ORMQuery<T> {
   where(field: string, value: unknown): ORMQuery<T>;
@@ -22,11 +21,8 @@ export interface ORMQuery<T> {
   get(): Promise<T[]>;
 }
 
-/**
- * ✅ Generic constructor type for ORM mixins
- * (Must use `any[]` — required by TypeScript for mixins)
- */
-export type Constructor<T = object> = new (...args: any[]) => T;
+/** Generic constructor helper for mixins */
+type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 /**
  * 🧬 MorphableMixin
@@ -34,12 +30,23 @@ export type Constructor<T = object> = new (...args: any[]) => T;
  * - morphTo()
  * - morphOne()
  * - morphMany()
+ *
+ * 🪄 Auto-registers every extended model into MorphRegistry.
  */
-export function MorphableMixin<TBase extends Constructor<MorphableBaseModel>>(Base: TBase) {
-  return class Morphable extends Base {
-    // ✅ TS requires this constructor signature
+export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
+  abstract class Morphable extends Base implements MorphableBaseModel {
+    id?: string | number;
+    [key: string]: unknown;
+
     constructor(...args: any[]) {
       super(...args);
+
+      // 🪄 Auto-register this class in MorphRegistry (once per subclass)
+      const ctor = this.constructor as typeof Morphable & { morphAlias?: string; name: string };
+      const alias = ctor.morphAlias || ctor.name;
+      if (!MorphRegistry.has(alias)) {
+        MorphRegistry.register(alias, ctor as any);
+      }
     }
 
     /** 🌀 morphTo('commentable') */
@@ -51,11 +58,11 @@ export function MorphableMixin<TBase extends Constructor<MorphableBaseModel>>(Ba
 
       const ModelClass = MorphRegistry.resolve<MorphableBaseModel>(type);
       if (typeof ModelClass.prototype.find !== "function") {
-        throw new Error(`Model '${type}' does not implement find().`);
+        throw new Error(`❌ Model '${type}' does not implement find().`);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      return await ModelClass.prototype.find.call(ModelClass, id);
+      return await (ModelClass.prototype.find as any).call(new ModelClass(), id);
     }
 
     /** 💫 morphOne(RelatedModel, 'commentable') */
@@ -87,5 +94,7 @@ export function MorphableMixin<TBase extends Constructor<MorphableBaseModel>>(Ba
         .where(`${relationName}_id`, modelId)
         .get();
     }
-  };
+  }
+
+  return Morphable as unknown as Constructor<MorphableBaseModel> & TBase;
 }

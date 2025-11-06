@@ -1,9 +1,10 @@
-// src/cli/commands/makeModel.ts
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import { SchemaBuilder } from "../../core/schema/SchemaBuilder";
 import { PathMap } from "../utils/PathMap";
+import { TemplateEngine } from "../utils/TemplateEngine";
+import { ImportResolver } from "../utils/ImportResolver";
 
 interface ModelOptions {
   test?: boolean;
@@ -19,23 +20,22 @@ function pluralize(name: string): string {
 
 /**
  * 🧱 make:model
- * Generates a new model file and optionally its migration.
+ * Generates a new model file (with dynamic import paths) and optional migration.
  *
  * Usage:
- *  eloquent make:model User
- *  eloquent make:model User --test
+ *   eloquent make:model User
+ *   eloquent make:model User --test
  */
 export async function makeModel(name: string, options: ModelOptions = {}): Promise<void> {
   const isTest = options.test === true;
   const modelName = pascalCase(name);
   const tableName = pluralize(name);
+  const mode = isTest ? "TEST" : "DEVELOPMENT";
 
-  // 1️⃣ Setup correct directories
+  // 🧩 Prepare directories
   PathMap.ensureDirs();
   const modelsDir = PathMap.models(isTest);
   const migrationsDir = PathMap.migrations(isTest);
-
-  const mode = isTest ? "TEST" : "DEVELOPMENT";
 
   if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
   if (!fs.existsSync(migrationsDir)) fs.mkdirSync(migrationsDir, { recursive: true });
@@ -43,22 +43,22 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
   console.log(chalk.gray(`📁 Models Path: ${modelsDir}`));
   console.log(chalk.gray(`📁 Migrations Path: ${migrationsDir}`));
 
-  // 2️⃣ Load model template
-  const tplPath = path.resolve(process.cwd(), "src/cli/templates/model.tpl");
-  if (!fs.existsSync(tplPath)) {
-    console.error(chalk.red(`❌ Missing template: ${tplPath}`));
-    return;
-  }
+  // 🧩 Resolve import paths dynamically
+  const coreImportPath = ImportResolver.coreImportPath(isTest);
+  const schemaImportPath = ImportResolver.schemaImportPath(isTest);
 
-  const tpl = fs.readFileSync(tplPath, "utf8");
+  // 🧠 Render model template
+  try {
+    const tpl = TemplateEngine.load("model");
 
-  // 3️⃣ Replace placeholders
-  const modelContent = tpl
-    .replace(/{{ModelName}}/g, modelName)
-    .replace(/{{tableName}}/g, tableName);
+    const modelContent = TemplateEngine.render(tpl, {
+      ModelName: modelName,
+      tableName,
+      coreImportPath,
+      schemaImportPath,
+    });
 
-  // 4️⃣ Add metadata header
-  const headerComment = `/**
+    const headerComment = `/**
  * 🧩 Auto-generated EloquentJS ORM Model
  * Model: ${modelName}
  * Table: ${tableName}
@@ -66,26 +66,30 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
  * Generated at: ${new Date().toISOString()}
  */\n\n`;
 
-  const finalContent = headerComment + modelContent;
+    const finalContent = headerComment + modelContent;
+    const modelFilePath = path.join(modelsDir, `${modelName}.ts`);
 
-  // 5️⃣ Write model file
-  const modelFilePath = path.join(modelsDir, `${modelName}.ts`);
+    if (fs.existsSync(modelFilePath)) {
+      console.log(chalk.yellow(`⚠️  Model already exists: ${modelFilePath}`));
+      return;
+    }
 
-  if (fs.existsSync(modelFilePath)) {
-    console.log(chalk.yellow(`⚠️  Model already exists: ${modelFilePath}`));
+    TemplateEngine.save(modelFilePath, finalContent);
+    console.log(chalk.green(`✅ Model created: ${modelFilePath}`));
+  } catch (err) {
+    console.error(chalk.red("❌ Error rendering model template:"));
+    console.error(err);
     return;
   }
 
-  fs.writeFileSync(modelFilePath, finalContent, "utf8");
-  console.log(chalk.green(`✅ Model created: ${modelFilePath}`));
-
-  // 6️⃣ Generate migration (optional)
+  // 🧱 Generate migration (optional)
   try {
-    // Compile syntax check before import
-    const { execSync } = await import("child_process");modelFilePath
+    const modelFilePath = path.join(modelsDir, `${modelName}.ts`);
+
+    // Syntax validation before import
+    const { execSync } = await import("child_process");
     execSync(`npx tsc "${modelFilePath}" --noEmit --skipLibCheck`, { stdio: "inherit" });
 
-    // Import directly (ts-node / tsx handles .ts imports)
     const modelModule = await import(path.resolve(modelFilePath));
     const ModelClass = modelModule[modelName];
 
@@ -96,7 +100,7 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       const migrationPath = path.join(migrationsDir, migrationFile);
 
       const migrationContent = `/**
- * Auto-generated migration for ${modelName}
+ * 🧩 Auto-generated migration for ${modelName}
  * Mode: ${mode}
  * Generated at ${new Date().toISOString()}
  */
@@ -105,7 +109,7 @@ export async function up(db: { query(sql: string): Promise<void> }) {
 }
 
 export async function down(db: { query(sql: string): Promise<void> }) {
-  await db.query('DROP TABLE IF EXISTS \`${ModelClass.tableName}\`;');
+  await db.query(\`DROP TABLE IF EXISTS \\\`${ModelClass.tableName}\\\`;\`);
 }
 `;
 

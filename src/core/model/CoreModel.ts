@@ -7,6 +7,7 @@ import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
 /**
  * Types for model contract (kept generic)
  */
+
 export type ModelBaseContract = new (...args: any[]) => {
   create(data: Record<string, unknown>): Promise<unknown | null>;
   update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;

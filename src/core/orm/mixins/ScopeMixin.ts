@@ -1,44 +1,70 @@
 /**
  * 🌍 ScopeMixin
  * Adds support for global model scopes (auto-filters)
+ * ✅ Type-safe, chain-compatible, and compliant with all previous mixins
  */
+
+export interface ScopableModel<TRecord extends Record<string, unknown> = Record<string, unknown>> {
+  all(): Promise<TRecord[]>;
+  find(id: number | string, pk?: string): Promise<TRecord | null>;
+}
+
+/**
+ * 🧩 A single global scope callback
+ */
+export type ScopeCallback<TRecord> = (records: TRecord[]) => TRecord[] | void;
+
+/**
+ * 🧠 Constructor helper for mixins
+ */
+type Constructor<T = object> = abstract new (...args: any[]) => T;
+
 export function ScopeMixin<
-  TBase extends new (...args: any[]) => {
-    all(): Promise<any[]>;
-    find(id: number | string, pk?: string): Promise<any>;
-  }
+  TBase extends Constructor,
+  TRecord extends Record<string, unknown> = Record<string, unknown>
 >(Base: TBase) {
-  return class extends Base {
-    // Each scope is a function that accepts records and returns filtered records (or void)
-    static globalScopes: Record<string, (records: any[]) => any[] | void> = {};
+  abstract class ScopedModel extends Base implements ScopableModel<TRecord> {
+    /** 🧱 Static global scope registry */
+    static globalScopes: Record<string, ScopeCallback<any>> = {};
+
+    constructor(...args: any[]) {
+      super(...args);
+    }
 
     /**
-     * ➕ Add a global scope
+     * ➕ Add a global scope to the model.
+     * Example:
+     *   User.addGlobalScope("active", records => records.filter(r => r.active))
      */
-    static addGlobalScope(name: string, callback: (records: any[]) => any[] | void) {
+    static addGlobalScope<TRec extends Record<string, unknown>>(
+      this: { globalScopes: Record<string, ScopeCallback<TRec>> },
+      name: string,
+      callback: ScopeCallback<TRec>
+    ): void {
       this.globalScopes[name] = callback;
     }
 
     /**
-     * 🚫 Remove a global scope
+     * 🚫 Remove a global scope by name.
      */
-    static removeGlobalScope(name: string) {
+    static removeGlobalScope<TRec extends Record<string, unknown>>(
+      this: { globalScopes: Record<string, ScopeCallback<TRec>> },
+      name: string
+    ): void {
       delete this.globalScopes[name];
     }
 
     /**
-     * 🧠 Apply all global scopes to a result set
+     * 🧠 Apply all global scopes to a result set.
      */
-    protected applyScopes(records: any[]): any[] {
-      // Narrow the static field to the correct type
-      const scopes = (this.constructor as any).globalScopes as Record<string, (records: any[]) => any[] | void>;
+    protected applyScopes(records: TRecord[]): TRecord[] {
+      const cls = this.constructor as typeof ScopedModel;
+      const scopes = cls.globalScopes as Record<string, ScopeCallback<TRecord>>;
       let filtered = records;
 
-      // Iterate and call each scope with a known callable signature
       for (const scopeFn of Object.values(scopes)) {
         if (typeof scopeFn === "function") {
           const res = scopeFn(filtered);
-          // If a scope returns something, use it; otherwise keep previous filtered value
           if (Array.isArray(res)) filtered = res;
         }
       }
@@ -47,22 +73,35 @@ export function ScopeMixin<
     }
 
     /**
-     * 🧩 Override all()
+     * 📋 Override all() to apply global scopes automatically.
      */
-    async all(): Promise<any[]> {
-      const records = await super.all();
-      return this.applyScopes(records);
+    async all(): Promise<TRecord[]> {
+      const baseAll = (Object.getPrototypeOf(this) as any).all?.bind(this);
+      if (typeof baseAll !== "function") {
+        throw new Error("Base 'all' method not found in ScopeMixin chain.");
+      }
+
+      const records = await baseAll();
+      return this.applyScopes(records as TRecord[]);
     }
 
     /**
-     * 🧩 Override find()
+     * 🔍 Override find() to apply scopes to single record results.
      */
-    async find(id: number | string, pk: string = "id"): Promise<any> {
-      const record = await super.find(id, pk);
+    async find(id: number | string, pk: string = "id"): Promise<TRecord | null> {
+      const baseFind = (Object.getPrototypeOf(this) as any).find?.bind(this);
+      if (typeof baseFind !== "function") {
+        throw new Error("Base 'find' method not found in ScopeMixin chain.");
+      }
+
+      const record = await baseFind(id, pk);
       if (!record) return null;
 
-      const filtered = this.applyScopes([record]);
-      return filtered.length ? filtered[0] : null;
+      const filtered = this.applyScopes([record as TRecord]);
+      return filtered.length > 0 ? filtered[0] : null;
     }
-  };
+  }
+
+  // ✅ Return merged type for correct inference
+  return ScopedModel as unknown as TBase & (abstract new (...args: any[]) => ScopableModel<TRecord>);
 }
