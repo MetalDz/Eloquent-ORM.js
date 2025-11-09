@@ -1,3 +1,7 @@
+/* ============================================================
+ * 🧱 SchemaBuilder v4.0
+ * Auto-detects CREATE / ALTER / DROP COLUMN schema differences
+ * ============================================================ */
 import {
   SchemaField,
   ColumnDefinition,
@@ -8,39 +12,25 @@ import {
 import { SQLDialect, Dialect } from "./SQLDialect";
 import { dbConfig } from "../../config/database";
 
-/**
- * 🧱 SchemaBuilder (Enhanced v2)
- * Converts model blueprints to dialect-specific SQL and validates them.
- *
- * ✅ Supports:
- * - Full Relation Awareness (hasOne, belongsTo, belongsToMany, morph*)
- * - Pivot Tables (BelongsToMany) + Auto-Composite Keys
- * - Morph Columns (MorphOne, MorphMany, MorphTo)
- * - Multi-Dialect Awareness (MySQL, PostgreSQL, SQLite)
- * - Compound Primary Keys (auto-detect via { primary: true })
- * - Auto `DROP TABLE` generator for migrations
- */
-
 export interface SchemaBuildResult {
   mainSQL: string;
-  extraTables: string[]; // pivot/morph tables
+  extraTables: string[];
 }
 
 export class SchemaBuilder {
-  static toCreateSQL(
+  static async toCreateSQL(
     tableName: string,
     schema: Record<string, SchemaField>,
-    explicitDialect?: Dialect | string
-  ): SchemaBuildResult {
+    explicitDialect?: Dialect | string,
+    smartUpdate: boolean = false
+  ): Promise<SchemaBuildResult> {
     const supportedDialects: Dialect[] = ["mysql", "pg", "sqlite"];
     const dialectName = supportedDialects.includes(explicitDialect as Dialect)
       ? (explicitDialect as Dialect)
       : ((dbConfig.default as Dialect) || "mysql");
 
     if (!supportedDialects.includes(dialectName)) {
-      throw new Error(
-        `❌ Unsupported dialect "${explicitDialect}". This model may use a non-SQL driver (e.g., MongoDB).`
-      );
+      throw new Error(`❌ Unsupported dialect: ${explicitDialect}`);
     }
 
     const dialect = new SQLDialect(dialectName);
@@ -78,45 +68,136 @@ export class SchemaBuilder {
     }
 
     if (primaryColumns.length > 1) {
-      const pkCols = primaryColumns.map((col) => dialect.wrap(col)).join(", ");
+      const pkCols = primaryColumns.map((c) => dialect.wrap(c)).join(", ");
       columns.push(`PRIMARY KEY (${pkCols})`);
     }
 
-    const mainTableSQL = dialect.formatCreateSQL(tableName, columns);
+    /* ============================================================
+     * 🧠 Smart Diff Logic (Add + Drop)
+     * ============================================================ */
+    let tableExists = false;
+    let existingColumns: string[] = [];
 
-    return {
-      mainSQL: mainTableSQL,
-      extraTables, // now holds actual CREATE TABLE SQLs
-    };
-  }
+    try {
+      const { getConnection } = await import("../connection/ConnectionFactory");
+      const db = await getConnection(dialectName);
 
-  /* ---------------- Auto Drop SQL Generator ---------------- */
-  static toDropSQL(
-    tableName: string,
-    schema: Record<string, SchemaField>
-  ): string[] {
-    const dropSQL: string[] = [];
-    const pivotTables: string[] = [];
+      if (dialectName === "mysql") {
+        const [rows] = (await db.query?.(`SHOW TABLES LIKE '${tableName}'`)) as [
+          Record<string, unknown>[],
+          unknown[]
+        ];
+        tableExists = Array.isArray(rows) && rows.length > 0;
 
-    for (const [name, field] of Object.entries(schema)) {
-      if (field.kind === "relation" && field.relation === "belongsToMany" && field.model) {
-        const modelA = tableName.toLowerCase();
-        const modelB = field.model.toLowerCase();
-        const pivotTable = [modelA, modelB].sort().join("_") + "_pivot";
-        pivotTables.push(pivotTable);
+        if (tableExists) {
+          const [cols] = (await db.query?.(
+            `SHOW COLUMNS FROM \`${tableName}\`;`
+          )) as [Array<{ Field: string }>, unknown[]];
+          existingColumns = cols.map((c) => c.Field);
+        }
+      } else if (dialectName === "pg") {
+        const [rows] = (await db.query?.(
+          `SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}';`
+        )) as [Array<{ column_name: string }>, unknown[]];
+        tableExists = rows.length > 0;
+        existingColumns = rows.map((r) => r.column_name);
+      } else if (dialectName === "sqlite") {
+        const [rows] = (await db.query?.(
+          `PRAGMA table_info(${tableName});`
+        )) as [Array<{ name: string }>, unknown[]];
+        tableExists = rows.length > 0;
+        existingColumns = rows.map((r) => r.name);
+      }
+    } catch {
+      console.warn(`⚠️ Could not verify structure for '${tableName}'.`);
+    }
+
+    let mainSQL = "";
+
+    if (!tableExists) {
+      mainSQL = dialect.formatCreateSQL(tableName, columns);
+    } else if (smartUpdate) {
+      const newColumns = Object.keys(schema);
+      const missingColumns: string[] = [];
+      const dropColumns: string[] = [];
+
+      // 🧩 Detect new columns
+      for (const col of columns) {
+        const match = col.match(/`(\w+)`/);
+        if (match && !existingColumns.includes(match[1])) {
+          missingColumns.push(col);
+        }
+      }
+
+      // 🧩 Detect removed columns
+      for (const existing of existingColumns) {
+        if (
+          !newColumns.includes(existing) &&
+          !["id", "created_at", "updated_at", "deleted_at"].includes(existing)
+        ) {
+          dropColumns.push(existing);
+        }
+      }
+
+      // 🧩 Nothing to change
+      if (missingColumns.length === 0 && dropColumns.length === 0) {
+        console.log(`🧬 No schema differences for '${tableName}'.`);
+      } else {
+        // Order timestamps last
+        const lastCols = missingColumns.filter(
+          (c) => /`created_at`/.test(c) || /`updated_at`/.test(c)
+        );
+        const normalCols = missingColumns.filter(
+          (c) => !/`created_at`/.test(c) && !/`updated_at`/.test(c)
+        );
+
+        const addSQL = [...normalCols, ...lastCols]
+          .map((c) => `ADD COLUMN ${c}`)
+          .join(",\n  ");
+        const dropSQL = dropColumns
+          .map((name) => `DROP COLUMN \`${name}\``)
+          .join(",\n  ");
+
+        const combined = [addSQL, dropSQL].filter(Boolean).join(",\n  ");
+        mainSQL = `ALTER TABLE \`${tableName}\`\n  ${combined};`;
+
+        console.log(
+          `🧠 Schema diff → +[${missingColumns
+            .map((c) => c.match(/`(\w+)`/)?.[1])
+            .join(", ") || "-"}], -[${dropColumns.join(", ") || "-"}]`
+        );
       }
     }
 
-    // Morph tables are inline (same as model)
-    dropSQL.push(`DROP TABLE IF EXISTS \`${tableName}\`;`);
-    for (const pivot of pivotTables) {
-      dropSQL.push(`DROP TABLE IF EXISTS \`${pivot}\`;`);
+    return { mainSQL, extraTables };
+  }
+
+  /* ============================================================
+   * 🗑️ DROP TABLE
+   * ============================================================ */
+  static toDropSQL(tableName: string, schema: Record<string, SchemaField>): string[] {
+    const dropSQL: string[] = [];
+    const pivotTables: string[] = [];
+
+    for (const [, field] of Object.entries(schema)) {
+      if (field.kind === "relation" && field.relation === "belongsToMany" && field.model) {
+        const modelA = tableName.toLowerCase();
+        const modelB = field.model.toLowerCase();
+        const pivot = [modelA, modelB].sort().join("_") + "_pivot";
+        pivotTables.push(pivot);
+      }
     }
+
+    dropSQL.push(`DROP TABLE IF EXISTS \`${tableName}\`;`);
+    for (const pivot of pivotTables)
+      dropSQL.push(`DROP TABLE IF EXISTS \`${pivot}\`;`);
 
     return dropSQL;
   }
 
-  /* ---------------- COLUMN BUILDER ---------------- */
+  /* ============================================================
+   * 🧱 COLUMN BUILDER
+   * ============================================================ */
   private static columnSQL(
     name: string,
     c: ColumnDefinition,
@@ -165,19 +246,20 @@ export class SchemaBuilder {
 
     if (options.notNull) parts.push("NOT NULL");
     if (options.unique) parts.push("UNIQUE");
-    if (options.primary && (type as string) !== "increments") parts.push("PRIMARY KEY");
+    if (options.primary && (type as string ) !== "increments") parts.push("PRIMARY KEY");
 
     if (options.default !== undefined)
       parts.push(
-        `DEFAULT ${
-          typeof options.default === "string" ? `'${options.default}'` : options.default
-        }`
+        `DEFAULT ${typeof options.default === "string" ? `'${options.default}'` : options.default}`
       );
 
     return parts.join(" ");
   }
 
-  /* ---------------- RELATIONS ---------------- */
+  /* ============================================================
+   * 🔗 RELATIONS
+   * ============================================================ */
+  
   private static relationSQL(
     currentTable: string,
     _name: string,
@@ -226,12 +308,10 @@ export class SchemaBuilder {
     return null;
   }
 
-  /* ---------------- MIXINS ---------------- */
-  private static mixinSQL(
-    m: MixinDefinition,
-    dialectName: Dialect,
-    dialect: SQLDialect
-  ): string[] {
+  /* ============================================================
+   * 🧩 MIXINS
+   * ============================================================ */
+  private static mixinSQL(m: MixinDefinition, dialectName: Dialect, dialect: SQLDialect): string[] {
     switch (m.name) {
       case "SoftDeletes":
         return [

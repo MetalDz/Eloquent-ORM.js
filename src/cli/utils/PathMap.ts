@@ -9,6 +9,9 @@ import fs from "fs";
 export class PathMap {
   // Root project directory
   private static readonly ROOT = process.cwd();
+  static get root(): string {
+    return this.ROOT;
+  }
 
   // --- Default folders ---
   static readonly MODELS = path.resolve(this.ROOT, "src/app/models");

@@ -1,14 +1,38 @@
-#!/usr/bin/env node
 /**
  * 🧠 EloquentJS Artisan v2.0 CLI
  * Author: MEKHERBECHE Fares
  * Description:
- *   This is the official command-line interface for the EloquentJS ORM ecosystem.
- *   It provides developer tools for generating models, controllers, services, and managing cache systems.
+ *   Official CLI for EloquentJS ORM — generates models, controllers,
+ *   services, migrations, and manages cache systems.
  */
 
-import { Command } from "commander";
 import chalk from "chalk";
+import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler";  // ✅ add this import first
+import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";  // ✅ NEW import
+
+// -----------------------------------------------------------------------------
+// ⚙️ Lazy Global TypeScript Runtime Initialization
+// -----------------------------------------------------------------------------
+
+try {
+  if (RuntimeDetector.needsTypeScriptRuntime(process.argv)) {
+    TypeScriptCompiler.ensureRuntime();
+    if (process.env.DEBUG === "true") {
+      console.log(chalk.gray("🧠 TypeScript runtime initialized (for TS-based command)\n"));
+    }
+  } else if (process.env.DEBUG === "true") {
+    console.log(chalk.gray("⚡ Skipping TypeScript runtime — not needed for this command.\n"));
+  }
+} catch (err) {
+  console.error(chalk.red("❌ Failed to initialize TypeScript runtime at CLI startup."));
+  console.error(err);
+  process.exit(1);
+}
+
+// -----------------------------------------------------------------------------
+// Now load CLI dependencies (Commander, Figlet, and commands)
+// -----------------------------------------------------------------------------
+import { Command } from "commander";
 import figlet from "figlet";
 
 // 🧩 Import command handlers
@@ -24,6 +48,7 @@ import { cacheStats } from "./commands/cacheStats";
 import { migrateStatus } from "./commands/migrateStatus";
 import { migrateFresh } from "./commands/migrateFresh";
 import { migrateReset } from "./commands/migrateReset";
+
 
 
 
@@ -53,9 +78,12 @@ program
 program
   .command("make:model <name>")
   .option("--test", "Generate model inside test directory")
+  .option("--with-migration", "Automatically generate a migration for this model")
+  .option("--force", "Overwrite existing migration if it exists") // 👈 NEW
   .action(async (name, options) => {
     await makeModel(name, options);
   });
+
   
 program
   .command("make:controller <name>")
@@ -77,6 +105,7 @@ program
 program
   .command("make:migration <model>")
   .option("--test", "Generate migration in test mode")
+  .option("--update", "Generate an update (ALTER TABLE) migration")
   .description("Generate migration from a model or all models")
   .action((model, options) => {
     makeMigration(model, options);

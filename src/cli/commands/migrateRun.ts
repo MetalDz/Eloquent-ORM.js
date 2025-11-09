@@ -1,3 +1,4 @@
+// src/cli/commands/migrateRun.ts
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
@@ -16,8 +17,8 @@ interface QueryCapableConnection {
 
 /**
  * 🧱 migrate:run
- * Executes all pending migrations (or only those for a specific model).
- * Supports dry-run previews, multiple dialects, and migration batching.
+ * Executes all pending migrations, auto-detects CREATE/UPDATE,
+ * skips empty or already applied migrations, and logs results clearly.
  */
 export async function migrateRun(
   isTest: boolean = false,
@@ -55,8 +56,9 @@ export async function migrateRun(
   const db: QueryCapableConnection = await getConnection(connectionName);
   console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
 
-  // 🧠 Universal query runner (supports dry-run)
+  // 🧠 Universal query runner (dry-run safe)
   const runQuery = async (sql: string): Promise<void> => {
+    if (!sql || sql.trim() === "") return;
     if (dryRun) {
       console.log(chalk.gray(`🧪 [DRY-RUN] Would execute:\n${sql}\n`));
       return;
@@ -70,7 +72,7 @@ export async function migrateRun(
     }
   };
 
-  // ✅ Create migration tracker (dialect-aware)
+  // ✅ Migration tracker table
   const trackerSQL =
     connectionName === "pg"
       ? `
@@ -95,7 +97,6 @@ export async function migrateRun(
           batch INT DEFAULT 1,
           run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );`;
-
   await runQuery(trackerSQL);
 
   // 🧾 Collect migrations
@@ -118,19 +119,9 @@ export async function migrateRun(
   let executed: string[] = [];
   try {
     const res = await db.query?.("SELECT name FROM migrations");
-
-    if (Array.isArray(res)) {
-      // MySQL-like
-      executed = (res[0] as { name: string }[]).map((r) => r.name);
-    } else if (
-      typeof res === "object" &&
-      res !== null &&
-      "rows" in (res as Record<string, unknown>)
-    ) {
-      // PostgreSQL
-      const rowSet = (res as { rows: { name: string }[] }).rows;
-      executed = Array.isArray(rowSet) ? rowSet.map((r) => r.name) : [];
-    }
+    if (Array.isArray(res)) executed = (res[0] as { name: string }[]).map((r) => r.name);
+    else if (res && typeof res === "object" && "rows" in res)
+      executed = (res as { rows: { name: string }[] }).rows.map((r) => r.name);
   } catch {
     executed = [];
   }
@@ -156,6 +147,7 @@ export async function migrateRun(
   const newBatch = lastBatch + 1;
 
   let applied = 0;
+
   try {
     for (const file of pending) {
       const filePath = path.join(migrationsDir, file);
@@ -165,6 +157,17 @@ export async function migrateRun(
 
       if (typeof migrationModule.up !== "function") {
         console.log(chalk.red(`❌ Invalid migration: ${file}`));
+        continue;
+      }
+
+      // 🧠 Load migration content
+      const fileContent = fs.readFileSync(filePath, "utf8");
+      const isEmpty =
+        !fileContent.includes("await db.query(") ||
+        fileContent.match(/await db\.query\(`[^`]*`\);/g)?.length === 0;
+
+      if (isEmpty) {
+        console.log(chalk.gray(`⏩ Skipping empty migration: ${file}`));
         continue;
       }
 
@@ -180,14 +183,11 @@ export async function migrateRun(
       applied++;
     }
 
-    console.log(
-      chalk.greenBright(`\n🎉 ${applied} migration(s) applied successfully.`)
-    );
+    console.log(chalk.greenBright(`\n🎉 ${applied} migration(s) applied successfully.`));
   } catch (err) {
     console.error(chalk.red("\n❌ Error during migration execution:"));
     console.error(err);
     console.warn(chalk.yellow("⚠️ Rolling back partial changes..."));
-    // 🩵 TODO (Phase 5): auto-detect and call matching down() for rollback
   } finally {
     await closeAllConnections();
     console.log(chalk.gray("\n🔒 All database connections closed.\n"));
