@@ -11,6 +11,8 @@
     "strict": true,                     // Enable all strict type-checking
     "noImplicitAny": true,
     "noUnusedLocals": false,            // You can toggle these for dev mode
+    "strictNullChecks": true,
+    "noImplicitThis": true,
     "noUnusedParameters": false,
 
     /* ---------- Compatibility ---------- */
@@ -32,10 +34,9 @@
 
   /* ---------- Paths ---------- */
   "include": [
-    "src/**/*.ts"
-    // "src/test/testConnection.ts" // can be uncommented for integration testing
+    "src/**/*.ts" , "src/tps.ts"    // "src/test/testConnection.ts" // can be uncommented for integration testing
   ],
   "exclude": [
-    "src/test"
+    "src/test", "src/tps.ts"
   ]
 }

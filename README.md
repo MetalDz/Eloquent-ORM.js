@@ -149,6 +149,30 @@ table.timestamps()
 Added compound primary key support
 
 Fixed type comparison issue with "increments"
+
+-------------
+🧠 Migration Management Rules
+
+Only 1 migration file per model (either create_... or update_...).
+
+Each new update:
+
+Deletes the old migration file.
+
+Generates a new update_ file with a fresh timestamp.
+
+down() does not auto-reverse — because migrations are regenerated from the model itself.
+
+Includes clear philosophical comment explaining this in every generated file.
+
+🧩 Smart Features
+
+✅ Auto column order (e.g., created_at, updated_at always at the end).
+✅ Detects and drops missing columns.
+✅ Detects and adds new columns.
+✅ Cleans outdated migrations automatically.
+✅ Supports MySQL / PostgreSQL / SQLite.
+✅ Closes DB connections automatically after execution.
  
 🧑‍💻 Authors
 Created with ❤️ by ALPHA Consultings who love Laravel, Node.js, and TypeScript.

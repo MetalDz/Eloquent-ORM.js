@@ -3,7 +3,7 @@ import fs from "fs";
 
 /**
  * 🧭 PathMap
- * Canonical, deterministic directory map for models, migrations, and seeds.
+ * Canonical, deterministic directory map for models, migrations, factories, and seeds.
  * Environment-aware (development / test / production).
  */
 export class PathMap {
@@ -13,14 +13,19 @@ export class PathMap {
     return this.ROOT;
   }
 
-  // --- Default folders ---
+  // --- Default app folders ---
   static readonly MODELS = path.resolve(this.ROOT, "src/app/models");
   static readonly MIGRATIONS = path.resolve(this.ROOT, "src/app/database/migrations");
+  static readonly FACTORIES = path.resolve(this.ROOT, "src/app/database/factories");
   static readonly SEEDS = path.resolve(this.ROOT, "src/app/database/seeds");
+
+  // --- CLI template directory ---
+  static readonly CLI_TEMPLATES = path.resolve(this.ROOT, "src/cli/templates");
 
   // --- Test folders ---
   static readonly TEST_MODELS = path.resolve(this.ROOT, "src/test/database/models");
   static readonly TEST_MIGRATIONS = path.resolve(this.ROOT, "src/test/database/migrations");
+  static readonly TEST_FACTORIES = path.resolve(this.ROOT, "src/test/database/factories");
   static readonly TEST_SEEDS = path.resolve(this.ROOT, "src/test/database/seeds");
 
   /**
@@ -30,9 +35,11 @@ export class PathMap {
     [
       this.MODELS,
       this.MIGRATIONS,
+      this.FACTORIES,
       this.SEEDS,
       this.TEST_MODELS,
       this.TEST_MIGRATIONS,
+      this.TEST_FACTORIES,
       this.TEST_SEEDS,
     ].forEach((dir) => {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -40,38 +47,57 @@ export class PathMap {
   }
 
   /**
-   * 🔹 Auto-detects environment (test vs dev/prod).
+   * 🔹 Auto-detect test environment.
    */
   private static isTestEnv(isTest?: boolean): boolean {
     return isTest || process.env.NODE_ENV === "test";
   }
 
   /**
-   * 🔹 Get models directory path.
+   * 🔹 Get models directory.
    */
   static models(isTest = false): string {
     return this.isTestEnv(isTest) ? this.TEST_MODELS : this.MODELS;
   }
 
   /**
-   * 🔹 Get migrations directory path.
+   * 🔹 Get migrations directory.
    */
   static migrations(isTest = false): string {
     return this.isTestEnv(isTest) ? this.TEST_MIGRATIONS : this.MIGRATIONS;
   }
 
   /**
-   * 🔹 Get seeds directory path.
+   * 🔹 Get factories directory.
+   */
+  static factories(isTest = false): string {
+    return this.isTestEnv(isTest) ? this.TEST_FACTORIES : this.FACTORIES;
+  }
+
+  /**
+   * 🔹 Get seeds directory.
    */
   static seeds(isTest = false): string {
     return this.isTestEnv(isTest) ? this.TEST_SEEDS : this.SEEDS;
   }
 
   /**
-   * 🧹 Utility: clear all generated test folders (optional cleanup helper)
+   * 🔹 Get CLI template path by name.
+   */
+  static template(name: string): string {
+    return path.resolve(this.CLI_TEMPLATES, name);
+  }
+
+  /**
+   * 🧹 Utility: clear all generated test folders.
    */
   static clearTestDirs(): void {
-    [this.TEST_MODELS, this.TEST_MIGRATIONS, this.TEST_SEEDS].forEach((dir) => {
+    [
+      this.TEST_MODELS,
+      this.TEST_MIGRATIONS,
+      this.TEST_FACTORIES,
+      this.TEST_SEEDS,
+    ].forEach((dir) => {
       if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
     });
   }

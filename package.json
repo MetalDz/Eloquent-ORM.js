@@ -1,7 +1,8 @@
 {
   "name": "eloquentjs",
-  "version": "0.6.9",
+  "version": "0.7.7",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+  "readme": "Factories seeds integration in 0.7.7v",
   "type": "commonjs",
   "author": {
     "name": "MEKHERBECHE Fares",
@@ -15,10 +16,10 @@
     "build": "tsc",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
     "dev": "ts-node src/index.ts",
-    "cli:dev": "ts-node --transpile-only src/cli/index.ts",
     "cli": "ts-node bin/eloquent.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "chalk": "^5.6.2",
     "commander": "^12.1.0",
     "dotenv": "^17.2.3",
@@ -37,6 +38,7 @@
     "@types/node": "^22.18.12",
     "@types/pg": "^8.15.5",
     "eslint": "^9.38.0",
+    "express": "^5.1.0",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",

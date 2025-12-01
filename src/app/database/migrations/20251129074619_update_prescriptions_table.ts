@@ -1,8 +1,8 @@
 /**
- * 🧩 Auto-generated UPDATE migration for Test
+ * 🧩 Auto-generated UPDATE migration for Prescription
  * Connection: mysql
  * Mode: DEVELOPMENT
- * Generated at 2025-11-09T16:25:52.753Z
+ * Generated at 2025-11-29T07:46:19.713Z
  *
  * ⚙️  Philosophy:
  * This migration is model-driven — the Model schema is the single source of truth.
@@ -11,8 +11,8 @@
  * model-driven migrations always regenerate from the latest model definition.
  */
 export async function up(db: { query(sql: string): Promise<void> }) {
-  await db.query(`ALTER TABLE \`tests\`
-  ADD COLUMN \`url\` VARCHAR(255);`);
+  await db.query(`ALTER TABLE \`prescriptions\`
+  ADD COLUMN \`deleted_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
   
 }
 
