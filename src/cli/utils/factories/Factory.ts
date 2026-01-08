@@ -2,19 +2,33 @@
 import { faker } from "@faker-js/faker";
 import { BaseModel } from "../../../core/model/BaseModel";
 
-/**
- * Generic constructor helper
- */
-type ModelCtor<T> = new (...args: unknown[]) => T;
+/** Plain object for attributes */
+export type PlainObject = Record<string, unknown>;
+
+/** Constructor helper */
+export type ModelCtor<T> = new (...args: unknown[]) => T;
+
+/** Factory constructor type */
+export type FactoryCtor<K extends BaseModel> = new () => Factory<K>;
+
+/** Shape of models supporting instance create() */
+export interface InstanceCreatable {
+  create(data: PlainObject): Promise<void>;
+}
+
+/** Shape of models supporting instance save() */
+export interface InstanceSavable {
+  save(): Promise<void>;
+}
+
+/** Shape of static creatable constructors */
+export interface StaticCreatableCtor<T> {
+  create(data: PlainObject): Promise<T>;
+}
 
 /**
- * Utility type for plain object data
- */
-type PlainObject = Record<string, unknown>;
-
-/**
- * 🧩 Base Factory class
- * Shared by all generated model factories.
+ * 🧩 Base Factory
+ * Fully strict, no `any` used anywhere.
  */
 export abstract class Factory<T extends BaseModel> {
   /** Model constructor reference */
@@ -24,98 +38,175 @@ export abstract class Factory<T extends BaseModel> {
   protected faker = faker;
 
   /**
-   * Define fake data structure
+   * Must return fake attributes.
+   * Index helps create sequences (createMany)
    */
-  abstract definition(): PlainObject;
+  abstract definition(index?: number): PlainObject;
 
   /**
-   * Optional lifecycle hooks
+   * Optional hooks
    */
-  async beforeCreate?(attrs: Partial<T>): Promise<Partial<T>>;
+  async beforeCreate?(attrs: Partial<T>, index: number): Promise<Partial<T> | void>;
   async afterCreate?(instance: T): Promise<void>;
 
   /**
-   * Create a single record
+   * Create one record
    */
-  async create(attrs: Partial<T> = {}): Promise<T> {
-    const merged: PlainObject = { ...this.definition(), ...attrs };
-    const model = new this.model() as T;
+  async create(attrs: Partial<T> = {}, index = 0): Promise<T> {
+    const base = this.definition(index);
+    const merged: PlainObject = { ...base, ...attrs };
 
     if (this.beforeCreate) {
-      const preprocessed = await this.beforeCreate(merged as Partial<T>);
-      Object.assign(merged, preprocessed);
+      const modified = await this.beforeCreate(merged as Partial<T>, index);
+      if (modified && typeof modified === "object") {
+        Object.assign(merged, modified);
+      }
     }
 
-    await model.create(merged);
-    if (this.afterCreate) await this.afterCreate(model);
-    return model;
+    // Always instantiate the model
+    const instance: T = new this.model();
+
+    // Case 1: Instance has create()
+    if (this.hasInstanceCreate(instance)) {
+      await instance.create(merged);
+    }
+    // Case 2: Static create()
+    else if (this.hasStaticCreate(this.model)) {
+      const created = await this.model.create(merged);
+      // if static create returns an instance, override
+      return created;
+    }
+    // Case 3: Instance has save()
+    else if (this.hasInstanceSave(instance)) {
+      Object.assign(instance, merged);
+      await instance.save();
+    }
+    else {
+      throw new Error(
+        `Model '${this.model.name}' has no valid create/save method.`
+      );
+    }
+
+    if (this.afterCreate) {
+      await this.afterCreate(instance);
+    }
+
+    return instance;
   }
 
   /**
-   * Create multiple records
+   * 🔁 Create many with optional concurrency
    */
   async createMany(
     count: number,
-    callback?: (model: T, index: number) => Promise<void> | void
+    callback?: (model: T, index: number) => void | Promise<void>,
+    concurrency = 1
   ): Promise<T[]> {
     const results: T[] = [];
-    for (let i = 0; i < count; i++) {
-      const instance = await this.create();
-      if (callback) await callback(instance, i);
-      results.push(instance);
+
+    const executeCreate = async (i: number) => {
+      const model = await this.create({}, i);
+      if (callback) await callback(model, i);
+      results[i] = model;
+    };
+
+    if (concurrency <= 1) {
+      for (let i = 0; i < count; i++) {
+        await executeCreate(i);
+      }
+      return results;
     }
-    return results;
+
+    const queue: Promise<void>[] = [];
+    let active = 0;
+    let index = 0;
+
+    return new Promise((resolve) => {
+      const next = () => {
+        if (index >= count) {
+          if (active === 0) resolve(results);
+          return;
+        }
+
+        while (active < concurrency && index < count) {
+          const i = index++;
+          active++;
+
+          const task = executeCreate(i).finally(() => {
+            active--;
+            next();
+          });
+
+          queue.push(task);
+        }
+      };
+
+      next();
+    });
   }
 
   /**
-   * Simple password hashing helper
+   * Helper: create related records
    */
-  protected hash(value: string): string {
-    return `hashed_${value}`;
+  protected async related<K extends BaseModel>(
+    factoryOrCtor: Factory<K> | FactoryCtor<K>,
+    count = 1
+  ): Promise<K | K[]> {
+    const factory =
+      typeof factoryOrCtor === "function"
+        ? new factoryOrCtor()
+        : factoryOrCtor;
+
+    if (count === 1) return factory.create();
+
+    return factory.createMany(count);
   }
 
   /**
-   * Helper for related factories (e.g. hasOne, belongsTo, etc.)
-   */
-  protected async related<K extends BaseModel>(factory: Factory<K>): Promise<K> {
-    return await factory.create();
-  }
-
-  /**
-   * 🔗 Helper for many-to-many pivot factories
-   *
-   * Automates creation of pivot records.
-   *
-   * @param factory - The pivot factory instance (e.g. UserRolePivotFactory)
-   * @param pivotTable - The pivot table name
-   * @param foreignKey - Foreign key column (e.g. "user_id")
-   * @param relatedKey - Related key column (e.g. "role_id")
-   * @param foreignId - ID of the source model
-   * @param relatedIds - Array of related model IDs
+   * Helper: create pivot relations
    */
   protected async relatedPivot<K extends BaseModel>(
-    factory: Factory<K> & {
-      createPivot(
+    factory: {
+      createPivot: (
         foreignId: string | number,
-        relatedIds: Array<string | number>
-      ): Promise<void>;
+        relatedIds: (string | number)[],
+        extra?: Record<string, unknown>
+      ) => Promise<void>;
     },
     pivotTable: string,
     foreignKey: string,
     relatedKey: string,
     foreignId: string | number,
-    relatedIds: Array<string | number>
+    relatedIds: (string | number)[],
+    extraPivotAttrs?: Record<string, unknown>
   ): Promise<void> {
-    if (typeof factory.createPivot !== "function") {
-      throw new Error(
-        `❌ Factory ${factory.constructor.name} does not support pivot operations.`
-      );
-    }
+    await factory.createPivot(foreignId, relatedIds, extraPivotAttrs);
 
-    await factory.createPivot(foreignId, relatedIds);
-
+    // eslint-disable-next-line no-console
     console.log(
-      `🔗 [Pivot Attached] Table: ${pivotTable} (${foreignKey} → ${relatedKey})`
+      `🔗 [Pivot Attached] Table "${pivotTable}" (${foreignKey} → ${relatedKey})`
     );
+  }
+
+  //
+  // 👇 Type Guards — STRICT, no any
+  //
+
+  private hasInstanceCreate(
+    obj: unknown
+  ): obj is InstanceCreatable {
+    return typeof (obj as InstanceCreatable).create === "function";
+  }
+
+  private hasStaticCreate(
+    ctor: unknown
+  ): ctor is StaticCreatableCtor<T> {
+    return typeof (ctor as StaticCreatableCtor<T>).create === "function";
+  }
+
+  private hasInstanceSave(
+    obj: unknown
+  ): obj is InstanceSavable {
+    return typeof (obj as InstanceSavable).save === "function";
   }
 }

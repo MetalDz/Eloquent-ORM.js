@@ -59,6 +59,7 @@ import { cacheStats } from "./commands/cacheStats";
 import { migrateStatus } from "./commands/migrateStatus";
 import { migrateFresh } from "./commands/migrateFresh";
 import { migrateReset } from "./commands/migrateReset";
+import { makeFactory } from "./commands/makeFactory";
 import { factoryStatus } from "./commands/factoryStatus";
 import { dbSeed } from "./commands/dbSeed";
 import { dbSeedFresh } from "./commands/dbSeedFresh";
@@ -120,11 +121,20 @@ program
 program
   .command("make:factory <name>")
   .option("--model <model>", "Specify the model this factory belongs to")
-  .option("--details", "Show detailed factory metadata")
-  .description("Generate or inspect a model factory")
-  .action(async (name: string, options: { model?: string; details?: boolean }) => {
-    await factoryStatus({ details: !!options.details });
+  .option("--pivot", "Generate a pivot factory instead of a model factory")
+  .option("--test", "Generate in test environment")
+  .option("--force", "Overwrite existing file")
+  .description("Generate a factory for a model")
+  .action(async (name: string, options: { model?: string; pivot?: boolean; test?: boolean; force?: boolean }) => {
+    const modelName = options.model ?? name;
+
+    await makeFactory(modelName, {
+      test: !!options.test,
+      force: !!options.force,
+      pivot: !!options.pivot
+    });
   });
+
 
 // -----------------------------------------------------------------------------
 // 🧩 SEED COMMANDS
