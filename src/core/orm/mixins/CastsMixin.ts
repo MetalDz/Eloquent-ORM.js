@@ -5,6 +5,8 @@
  * ✅ Clean ESLint/TS-compatible super calls
  */
 
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+
 export interface Castable {
   id?: string | number;
   [key: string]: unknown;
@@ -19,6 +21,8 @@ export interface Castable {
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 export function CastsMixin<TBase extends Constructor>(Base: TBase) {
+  const resolveBaseMethod = createBaseMethodResolver(Base);
+
   abstract class CastableModel extends Base implements Castable {
     id?: string | number;
     [key: string]: unknown;
@@ -77,29 +81,34 @@ export function CastsMixin<TBase extends Constructor>(Base: TBase) {
      * 🔍 Cast single record after find().
      */
     async find(id: number | string, pk: string = "id"): Promise<this | null> {
-      const baseFind = (Object.getPrototypeOf(this) as any).find?.bind(this);
+      const baseFind = resolveBaseMethod(this, "find");
       if (typeof baseFind !== "function") {
         throw new Error("Base 'find' method not found in CastsMixin chain.");
       }
 
-      const record = await baseFind(id, pk);
+      const record = (await baseFind(id, pk)) as this | null;
       if (!record) return null;
 
       const casted = this.castRecord(record as Record<string, unknown>);
-      return Object.assign(this, casted) as this;
+      Object.assign(record, casted);
+      return record;
     }
 
     /**
      * 📋 Cast all records returned by all().
      */
     async all(): Promise<this[]> {
-      const baseAll = (Object.getPrototypeOf(this) as any).all?.bind(this);
+      const baseAll = resolveBaseMethod(this, "all");
       if (typeof baseAll !== "function") {
         throw new Error("Base 'all' method not found in CastsMixin chain.");
       }
 
-      const records = await baseAll();
-      return (records as Record<string, unknown>[]).map((r) => this.castRecord(r)) as this[];
+      const records = (await baseAll()) as this[];
+      return records.map((r) => {
+        const casted = this.castRecord(r as Record<string, unknown>);
+        Object.assign(r, casted);
+        return r;
+      });
     }
 
     /**
@@ -113,16 +122,23 @@ export function CastsMixin<TBase extends Constructor>(Base: TBase) {
      * ✏️ Dummy methods for interface satisfaction (not abstract to avoid overload conflict)
      */
     async create(data: Record<string, unknown>): Promise<this> {
-      const baseCreate = (Object.getPrototypeOf(this) as any).create?.bind(this);
-      const record = await baseCreate(data);
-      return Object.assign(this, record) as this;
+      const baseCreate = resolveBaseMethod(this, "create");
+      if (typeof baseCreate !== "function") {
+        throw new Error("Base 'create' method not found in CastsMixin chain.");
+      }
+      const record = (await baseCreate(data)) as this;
+      if (!record) return record;
+      const casted = this.castRecord(record as Record<string, unknown>);
+      Object.assign(record, casted);
+      return record;
     }
 
     async update(id: number | string, data: Record<string, unknown>, pk: string = "id"): Promise<void> {
-      const baseUpdate = (Object.getPrototypeOf(this) as any).update?.bind(this);
-      if (typeof baseUpdate === "function") {
-        await baseUpdate(id, data, pk);
+      const baseUpdate = resolveBaseMethod(this, "update");
+      if (typeof baseUpdate !== "function") {
+        throw new Error("Base 'update' method not found in CastsMixin chain.");
       }
+      await baseUpdate(id, data, pk);
     }
   }
 

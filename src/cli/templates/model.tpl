@@ -1,5 +1,4 @@
 import { BaseModel } from "{{coreImportPath}}";
-import { MorphableMixin, MorphableBaseModel } from "{{coreImportPath}}";
 import { column, validate } from "{{schemaImportPath}}";
 
 /**
@@ -15,9 +14,7 @@ import { column, validate } from "{{schemaImportPath}}";
  * - Supports schema validation, soft deletes, timestamps
  */
 
-const MorphableBase = MorphableMixin(BaseModel);
-
-export class {{ModelName}} extends MorphableBase implements MorphableBaseModel {
+export class {{ModelName}} extends BaseModel {
   /**
    * ⚙️ Table configuration
    */

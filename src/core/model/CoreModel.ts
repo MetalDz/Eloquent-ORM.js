@@ -1,5 +1,6 @@
 // src/core/connection/CoreModel.ts
-import { getConnection, ConnectionName } from "../connection/ConnectionFactory";
+import { getConnection, getAdapter, ConnectionName } from "../connection/ConnectionFactory";
+import type { DriverAdapter } from "../connection/DriverAdapter";
 
 import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator";
 import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
@@ -53,10 +54,45 @@ export abstract class CoreModel {
   }
 
   /**
+   * Create a new model instance for hydration.
+   * Subclasses may override by defining a no-arg constructor.
+   */
+  protected static newInstance<T extends typeof CoreModel>(this: T): InstanceType<T> {
+    const Ctor = this as unknown as { new (): InstanceType<T> };
+    return new Ctor();
+  }
+
+  /**
+   * Hydrate a single row into a model instance.
+   */
+  static hydrateRow<T extends typeof CoreModel>(
+    this: T,
+    row: Record<string, unknown> | null
+  ): InstanceType<T> | null {
+    if (!row) return null;
+    const instance = this.newInstance();
+    Object.assign(instance, row);
+    return instance;
+  }
+
+  /**
+   * Hydrate a list of rows into model instances.
+   */
+  static hydrateMany<T extends typeof CoreModel>(
+    this: T,
+    rows: Record<string, unknown>[]
+  ): InstanceType<T>[] {
+    return rows.map((row) => this.hydrateRow(row) as InstanceType<T>);
+  }
+
+  /**
    * Get DB connection (lazy + cached)
    */
   protected async getDB() {
-    return await getConnection(this.connectionName);
+    if (this.connectionName === "mongo") {
+      return await getConnection(this.connectionName);
+    }
+    return await getAdapter(this.connectionName);
   }
 
   /**
@@ -116,16 +152,23 @@ export abstract class CoreModel {
 
     switch (this.connectionName) {
       case "sqlite":
-        return db.get(`SELECT * FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
-
       case "mysql":
       case "pg": {
-        const [rows] = await db.query(`SELECT * FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
-        return Array.isArray(rows) ? rows[0] : rows;
+        const adapter = db as DriverAdapter;
+        const table = adapter.wrapId(this.tableName);
+        const col = adapter.wrapId(pk);
+        const sql = `SELECT * FROM ${table} WHERE ${col} = ${adapter.placeholder(1)}`;
+        const row = await adapter.queryOne<Record<string, unknown>>(sql, [id]);
+        const Model = this.constructor as typeof CoreModel;
+        return Model.hydrateRow(row);
       }
 
       case "mongo":
-        return await db.collection(this.tableName).findOne({ [pk]: id });
+        {
+          const row = await (db as any).collection(this.tableName).findOne({ [pk]: id });
+          const Model = this.constructor as typeof CoreModel;
+          return Model.hydrateRow(row as Record<string, unknown> | null);
+        }
 
       default:
         throw new Error(`Unsupported driver: ${this.connectionName}`);
@@ -140,16 +183,22 @@ export abstract class CoreModel {
 
     switch (this.connectionName) {
       case "sqlite":
-        return db.all(`SELECT * FROM ${this.tableName}`);
-
       case "mysql":
       case "pg": {
-        const [rows] = await db.query(`SELECT * FROM ${this.tableName}`);
-        return rows;
+        const adapter = db as DriverAdapter;
+        const table = adapter.wrapId(this.tableName);
+        const sql = `SELECT * FROM ${table}`;
+        const rows = await adapter.query<Record<string, unknown>>(sql);
+        const Model = this.constructor as typeof CoreModel;
+        return Model.hydrateMany(rows);
       }
 
       case "mongo":
-        return await db.collection(this.tableName).find({}).toArray();
+        {
+          const rows = await (db as any).collection(this.tableName).find({}).toArray();
+          const Model = this.constructor as typeof CoreModel;
+          return Model.hydrateMany(rows as Record<string, unknown>[]);
+        }
 
       default:
         throw new Error(`Unsupported driver: ${this.connectionName}`);
@@ -176,31 +225,30 @@ export abstract class CoreModel {
     let createdRecord: Record<string, unknown> | null = null;
 
     switch (this.connectionName) {
-      case "sqlite": {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const placeholders = keys.map(() => "?").join(", ");
-        const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
-        const result = await db.run(sql, values);
-        createdRecord = { id: result.lastID, ...data };
-        break;
-      }
-
+      case "sqlite":
       case "mysql":
       case "pg": {
+        const adapter = db as DriverAdapter;
         const keys = Object.keys(data);
-        const values = Object.values(data);
-        const placeholders = keys.map(() => "?").join(", ");
-        const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
-        const [res] = await db.query(sql, values);
-        // many drivers return insertId, fallback to insertId || id
-        const insertId = (res && (res.insertId ?? (res.insertedId ?? undefined))) as unknown;
-        createdRecord = { id: insertId, ...data };
+        if (keys.length === 0) throw new Error("Cannot create a record with empty data.");
+
+        const values = keys.map((key) => data[key]);
+        const table = adapter.wrapId(this.tableName);
+        const columns = keys.map((key) => adapter.wrapId(key)).join(", ");
+        const sql = `INSERT INTO ${table} (${columns}) VALUES (${adapter.placeholders(
+          keys.length
+        )})`;
+        const result = await adapter.insert(sql, values);
+        const base = result.row ? { ...result.row } : { ...data };
+        if (result.id !== undefined && (base as any).id === undefined) {
+          (base as Record<string, unknown>).id = result.id;
+        }
+        createdRecord = base;
         break;
       }
 
       case "mongo": {
-        const result = await db.collection(this.tableName).insertOne(data);
+        const result = await (db as any).collection(this.tableName).insertOne(data);
         createdRecord = { id: result.insertedId, ...data };
         break;
       }
@@ -210,9 +258,12 @@ export abstract class CoreModel {
     }
 
     // 4) Fire afterCreate (no cancellation)
-    await this.fireEvent("afterCreate", createdRecord);
+    const Model = this.constructor as typeof CoreModel;
+    const hydrated = Model.hydrateRow(createdRecord);
 
-    return createdRecord;
+    await this.fireEvent("afterCreate", hydrated as Record<string, unknown> | null);
+
+    return hydrated;
   }
 
   /* -----------------------------------------------------
@@ -230,27 +281,28 @@ export abstract class CoreModel {
 
     // 3) Execute UPDATE
     switch (this.connectionName) {
-      case "sqlite": {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const setClause = keys.map((key) => `${key} = ?`).join(", ");
-        const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${pk} = ?`;
-        await db.run(sql, [...values, id]);
-        break;
-      }
-
+      case "sqlite":
       case "mysql":
       case "pg": {
+        const adapter = db as DriverAdapter;
         const keys = Object.keys(data);
-        const values = Object.values(data);
-        const setClause = keys.map((key) => `${key} = ?`).join(", ");
-        const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${pk} = ?`;
-        await db.query(sql, [...values, id]);
+        if (keys.length === 0) return;
+
+        const setClause = keys
+          .map((key, idx) => `${adapter.wrapId(key)} = ${adapter.placeholder(idx + 1)}`)
+          .join(", ");
+        const table = adapter.wrapId(this.tableName);
+        const pkCol = adapter.wrapId(pk);
+        const sql = `UPDATE ${table} SET ${setClause} WHERE ${pkCol} = ${adapter.placeholder(
+          keys.length + 1
+        )}`;
+        const values = keys.map((key) => data[key]);
+        await adapter.execute(sql, [...values, id]);
         break;
       }
 
       case "mongo": {
-        await db.collection(this.tableName).updateOne({ [pk]: id }, { $set: data });
+        await (db as any).collection(this.tableName).updateOne({ [pk]: id }, { $set: data });
         break;
       }
 
@@ -275,16 +327,18 @@ export abstract class CoreModel {
     // 2) Execute delete
     switch (this.connectionName) {
       case "sqlite":
-        await db.run(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
-        break;
-
       case "mysql":
-      case "pg":
-        await db.query(`DELETE FROM ${this.tableName} WHERE ${pk} = ?`, [id]);
+      case "pg": {
+        const adapter = db as DriverAdapter;
+        const table = adapter.wrapId(this.tableName);
+        const pkCol = adapter.wrapId(pk);
+        const sql = `DELETE FROM ${table} WHERE ${pkCol} = ${adapter.placeholder(1)}`;
+        await adapter.execute(sql, [id]);
         break;
+      }
 
       case "mongo":
-        await db.collection(this.tableName).deleteOne({ [pk]: id });
+        await (db as any).collection(this.tableName).deleteOne({ [pk]: id });
         break;
 
       default:

@@ -1,4 +1,7 @@
 import { Relation } from "../Relation";
+import type { DriverAdapter } from "../../connection/DriverAdapter";
+import { MorphRegistry } from "../mixins/MorphRegistry";
+import type { CoreModel } from "../../model/CoreModel";
 
 export class MorphTo extends Relation {
   protected morphType: string;
@@ -13,13 +16,18 @@ export class MorphTo extends Relation {
 
   async getResults(parent: any): Promise<any> {
     const modelClassName = parent[this.morphType];
-    const Model = await import(`../../models/${modelClassName}.js`).then((m) => m[modelClassName]);
+    if (!modelClassName) return null;
+    const Model = MorphRegistry.resolve<any>(modelClassName);
     const relatedInstance = new Model();
     const db = await relatedInstance["getDB"]();
+    const adapter = db as DriverAdapter;
 
-    const sql = `SELECT * FROM ${relatedInstance["tableName"]} WHERE ${this.localKey} = ? LIMIT 1`;
-    const [rows] = await db.query(sql, [parent[this.morphId]]);
-    return Array.isArray(rows) ? rows[0] : rows;
+    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const localKey = adapter.wrapId(this.localKey);
+    const sql = `SELECT * FROM ${table} WHERE ${localKey} = ${adapter.placeholder(1)} LIMIT 1`;
+    const row = await adapter.queryOne<Record<string, unknown>>(sql, [parent[this.morphId]]);
+    const ModelClass = Model as unknown as typeof CoreModel;
+    return ModelClass.hydrateRow(row);
   }
 
   async match(parents: any[]): Promise<void> {
@@ -34,16 +42,25 @@ export class MorphTo extends Relation {
     }
 
     for (const [type, models] of Object.entries(groups)) {
-      const Model = await import(`../../models/${type}.js`).then((m) => m[type]);
+      const Model = MorphRegistry.resolve<any>(type);
       const relatedInstance = new Model();
       const db = await relatedInstance["getDB"]();
+      const adapter = db as DriverAdapter;
 
+      const table = adapter.wrapId(relatedInstance["tableName"]);
+      const localKey = adapter.wrapId(this.localKey);
       const ids = models.map((m) => m[this.morphId]);
-      const sql = `SELECT * FROM ${relatedInstance["tableName"]} WHERE ${this.localKey} IN (?)`;
-      const [rows] = await db.query(sql, [ids]);
+      const inResult = adapter.inClause(localKey, ids, 1);
+      const sql = `SELECT * FROM ${table} WHERE ${inResult.sql}`;
+      const rows = await adapter.query<Record<string, unknown>>(sql, inResult.params);
 
       const relatedMap: Record<string, any> = {};
-      for (const row of rows) relatedMap[row[this.localKey]] = row;
+      const ModelClass = Model as unknown as typeof CoreModel;
+      for (const row of rows) {
+        const instance = ModelClass.hydrateRow(row);
+        if (!instance) continue;
+        relatedMap[(instance as any)[this.localKey] as string] = instance;
+      }
 
       const relName = this.name ?? "relation";
       for (const parent of models) {

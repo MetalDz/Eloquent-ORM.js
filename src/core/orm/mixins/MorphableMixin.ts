@@ -71,7 +71,10 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       RelatedModel: { query(): ORMQuery<T> },
       relationName: string
     ): Promise<T | null> {
-      const modelName = this.constructor.name;
+      const modelName =
+        typeof (this as any).getMorphClass === "function"
+          ? (this as any).getMorphClass()
+          : this.constructor.name;
       const modelId = this.id;
 
       return await RelatedModel.query()
@@ -86,7 +89,10 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       RelatedModel: { query(): ORMQuery<T> },
       relationName: string
     ): Promise<T[]> {
-      const modelName = this.constructor.name;
+      const modelName =
+        typeof (this as any).getMorphClass === "function"
+          ? (this as any).getMorphClass()
+          : this.constructor.name;
       const modelId = this.id;
 
       return await RelatedModel.query()

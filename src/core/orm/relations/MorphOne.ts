@@ -1,4 +1,6 @@
 import { Relation } from "../Relation";
+import type { DriverAdapter } from "../../connection/DriverAdapter";
+import type { CoreModel } from "../../model/CoreModel";
 
 export class MorphOne extends Relation {
   protected morphType: string;
@@ -13,13 +15,27 @@ export class MorphOne extends Relation {
   async getResults(parent: any): Promise<any> {
     const relatedInstance = new this.relatedModel();
     const db = await relatedInstance["getDB"]();
+    const adapter = db as DriverAdapter;
 
+    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const morphId = adapter.wrapId(this.morphId);
+    const morphTypeColumn = adapter.wrapId(this.morphType);
     const sql = `
-      SELECT * FROM ${relatedInstance["tableName"]}
-      WHERE ${this.morphId} = ? AND ${this.morphType} = ? LIMIT 1
+      SELECT * FROM ${table}
+      WHERE ${morphId} = ${adapter.placeholder(1)} AND ${morphTypeColumn} = ${adapter.placeholder(
+        2
+      )} LIMIT 1
     `;
-    const [rows] = await db.query(sql, [parent[this.localKey], parent.constructor.name]);
-    return Array.isArray(rows) ? rows[0] : rows;
+    const morphTypeValue =
+      typeof parent.getMorphClass === "function"
+        ? parent.getMorphClass()
+        : parent.constructor.name;
+    const row = await adapter.queryOne<Record<string, unknown>>(sql, [
+      parent[this.localKey],
+      morphTypeValue,
+    ]);
+    const Model = this.relatedModel as typeof CoreModel;
+    return Model.hydrateRow(row);
   }
 
   async match(parents: any[]): Promise<void> {
@@ -27,15 +43,33 @@ export class MorphOne extends Relation {
     const parentIds = parents.map((p) => p[this.localKey]);
     const relatedInstance = new this.relatedModel();
     const db = await relatedInstance["getDB"]();
+    const adapter = db as DriverAdapter;
 
+    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const morphId = adapter.wrapId(this.morphId);
+    const morphTypeColumn = adapter.wrapId(this.morphType);
+    const inResult = adapter.inClause(morphId, parentIds, 1);
+    const typePlaceholder = adapter.placeholder(inResult.nextIndex);
     const sql = `
-      SELECT * FROM ${relatedInstance["tableName"]}
-      WHERE ${this.morphId} IN (?) AND ${this.morphType} = ?
+      SELECT * FROM ${table}
+      WHERE ${inResult.sql} AND ${morphTypeColumn} = ${typePlaceholder}
     `;
-    const [rows] = await db.query(sql, [parentIds, parents[0].constructor.name]);
+    const morphTypeValue =
+      typeof parents[0]?.getMorphClass === "function"
+        ? parents[0].getMorphClass()
+        : parents[0].constructor.name;
+    const rows = await adapter.query<Record<string, unknown>>(sql, [
+      ...inResult.params,
+      morphTypeValue,
+    ]);
 
     const grouped: Record<string, any> = {};
-    for (const row of rows) grouped[row[this.morphId]] = row;
+    const Model = this.relatedModel as typeof CoreModel;
+    for (const row of rows) {
+      const instance = Model.hydrateRow(row);
+      if (!instance) continue;
+      grouped[(instance as any)[this.morphId] as string] = instance;
+    }
 
     const relName = this.name ?? "relation";
     for (const parent of parents) {

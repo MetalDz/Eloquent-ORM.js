@@ -42,19 +42,21 @@ export interface ORMCoreContract {
 
 /**
  * Compose mixins in dependency-safe order:
- * CoreModel -> PivotHelper -> Casts -> SoftDeletes -> Scope -> Hooks -> QueryCache -> EagerLoading
+ * CoreModel -> Morphable -> PivotHelper -> Casts -> SoftDeletes -> Scope -> Hooks -> QueryCache -> EagerLoading
  *
  * We cast CoreModel to AbstractConstructor<ORMCoreContract> as the composition seed so
  * TypeScript understands the initial shape we're building on top of.
  */
+const MorphableSeed = MorphableMixin(
+  CoreModel as unknown as AbstractConstructor<ORMCoreContract>
+);
+
 const ComposedModel = EagerLoadingMixin(
   QueryCacheMixin(
     HooksMixin(
       ScopeMixin(
         SoftDeletesMixin(
-          CastsMixin(
-            PivotHelperMixin(CoreModel as unknown as AbstractConstructor<ORMCoreContract>)
-          )
+          CastsMixin(PivotHelperMixin(MorphableSeed))
         )
       )
     )

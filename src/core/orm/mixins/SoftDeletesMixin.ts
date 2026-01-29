@@ -5,6 +5,8 @@
  * ✅ Compatible with CoreModel and previous mixins
  */
 
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+
 export interface SoftDeletable {
   id?: string | number;
   deleted_at?: string | null;
@@ -20,6 +22,8 @@ export interface SoftDeletable {
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
+  const resolveBaseMethod = createBaseMethodResolver(Base);
+
   abstract class SoftDeletableModel extends Base implements SoftDeletable {
     id?: string | number;
     deleted_at?: string | null;
@@ -35,7 +39,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * 🚫 Override delete() to perform soft delete instead of hard remove
      */
     async delete(id: number | string, pk: string = "id"): Promise<void> {
-      const baseUpdate = (Object.getPrototypeOf(this) as any).update?.bind(this);
+      const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
       }
@@ -48,7 +52,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * ♻️ Restore a soft-deleted record
      */
     async restore(id: number | string, pk: string = "id"): Promise<void> {
-      const baseUpdate = (Object.getPrototypeOf(this) as any).update?.bind(this);
+      const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
       }
@@ -60,7 +64,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * 🔎 Get all non-deleted records
      */
     async all(): Promise<this[]> {
-      const baseAll = (Object.getPrototypeOf(this) as any).all?.bind(this);
+      const baseAll = resolveBaseMethod(this, "all");
       if (typeof baseAll !== "function") {
         throw new Error("Base 'all' method not found for SoftDeletesMixin.");
       }
@@ -75,7 +79,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * 🔍 Find a record if not soft-deleted
      */
     async find(id: number | string, pk: string = "id"): Promise<this | null> {
-      const baseFind = (Object.getPrototypeOf(this) as any).find?.bind(this);
+      const baseFind = resolveBaseMethod(this, "find");
       if (typeof baseFind !== "function") {
         throw new Error("Base 'find' method not found for SoftDeletesMixin.");
       }
@@ -94,7 +98,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * 🧠 Get all including deleted
      */
     async withTrashed(): Promise<this[]> {
-      const baseAll = (Object.getPrototypeOf(this) as any).all?.bind(this);
+      const baseAll = resolveBaseMethod(this, "all");
       if (typeof baseAll !== "function") {
         throw new Error("Base 'all' method not found for SoftDeletesMixin.");
       }
@@ -106,7 +110,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * 🧠 Get only deleted records
      */
     async onlyTrashed(): Promise<this[]> {
-      const baseAll = (Object.getPrototypeOf(this) as any).all?.bind(this);
+      const baseAll = resolveBaseMethod(this, "all");
       if (typeof baseAll !== "function") {
         throw new Error("Base 'all' method not found for SoftDeletesMixin.");
       }
@@ -123,7 +127,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * ⚙️ Force delete (permanent removal from DB)
      */
     async forceDelete(id: number | string, pk: string = "id"): Promise<void> {
-      const baseDelete = (Object.getPrototypeOf(this) as any).delete?.bind(this);
+      const baseDelete = resolveBaseMethod(this, "delete");
       if (typeof baseDelete !== "function") {
         throw new Error("Base 'delete' method not found for SoftDeletesMixin.");
       }
@@ -135,7 +139,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
      * 🧩 TypeScript satisfaction: ensure update() exists
      */
     async update(id: number | string, data: Record<string, unknown>, pk: string = "id"): Promise<void> {
-      const baseUpdate = (Object.getPrototypeOf(this) as any).update?.bind(this);
+      const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
       }

@@ -1,7 +1,9 @@
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+
 /**
- * 🌍 ScopeMixin
+ * ًںŒچ ScopeMixin
  * Adds support for global model scopes (auto-filters)
- * ✅ Type-safe, chain-compatible, and compliant with all previous mixins
+ * âœ… Type-safe, chain-compatible, and compliant with all previous mixins
  */
 
 export interface ScopableModel<TRecord extends Record<string, unknown> = Record<string, unknown>> {
@@ -10,12 +12,12 @@ export interface ScopableModel<TRecord extends Record<string, unknown> = Record<
 }
 
 /**
- * 🧩 A single global scope callback
+ * ًں§© A single global scope callback
  */
 export type ScopeCallback<TRecord> = (records: TRecord[]) => TRecord[] | void;
 
 /**
- * 🧠 Constructor helper for mixins
+ * ًں§  Constructor helper for mixins
  */
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
@@ -23,8 +25,10 @@ export function ScopeMixin<
   TBase extends Constructor,
   TRecord extends Record<string, unknown> = Record<string, unknown>
 >(Base: TBase) {
+  const resolveBaseMethod = createBaseMethodResolver(Base);
+
   abstract class ScopedModel extends Base implements ScopableModel<TRecord> {
-    /** 🧱 Static global scope registry */
+    /** ًں§± Static global scope registry */
     static globalScopes: Record<string, ScopeCallback<any>> = {};
 
     constructor(...args: any[]) {
@@ -32,7 +36,7 @@ export function ScopeMixin<
     }
 
     /**
-     * ➕ Add a global scope to the model.
+     * â‍• Add a global scope to the model.
      * Example:
      *   User.addGlobalScope("active", records => records.filter(r => r.active))
      */
@@ -45,7 +49,7 @@ export function ScopeMixin<
     }
 
     /**
-     * 🚫 Remove a global scope by name.
+     * ًںڑ« Remove a global scope by name.
      */
     static removeGlobalScope<TRec extends Record<string, unknown>>(
       this: { globalScopes: Record<string, ScopeCallback<TRec>> },
@@ -55,7 +59,7 @@ export function ScopeMixin<
     }
 
     /**
-     * 🧠 Apply all global scopes to a result set.
+     * ًں§  Apply all global scopes to a result set.
      */
     protected applyScopes(records: TRecord[]): TRecord[] {
       const cls = this.constructor as typeof ScopedModel;
@@ -73,10 +77,10 @@ export function ScopeMixin<
     }
 
     /**
-     * 📋 Override all() to apply global scopes automatically.
+     * ًں“‹ Override all() to apply global scopes automatically.
      */
     async all(): Promise<TRecord[]> {
-      const baseAll = (Object.getPrototypeOf(this) as any).all?.bind(this);
+      const baseAll = resolveBaseMethod(this, "all");
       if (typeof baseAll !== "function") {
         throw new Error("Base 'all' method not found in ScopeMixin chain.");
       }
@@ -86,10 +90,10 @@ export function ScopeMixin<
     }
 
     /**
-     * 🔍 Override find() to apply scopes to single record results.
+     * ًں”چ Override find() to apply scopes to single record results.
      */
     async find(id: number | string, pk: string = "id"): Promise<TRecord | null> {
-      const baseFind = (Object.getPrototypeOf(this) as any).find?.bind(this);
+      const baseFind = resolveBaseMethod(this, "find");
       if (typeof baseFind !== "function") {
         throw new Error("Base 'find' method not found in ScopeMixin chain.");
       }
@@ -102,6 +106,6 @@ export function ScopeMixin<
     }
   }
 
-  // ✅ Return merged type for correct inference
+  // âœ… Return merged type for correct inference
   return ScopedModel as unknown as TBase & (abstract new (...args: any[]) => ScopableModel<TRecord>);
 }

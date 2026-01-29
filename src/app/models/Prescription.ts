@@ -8,7 +8,6 @@
 
 import { de } from "@faker-js/faker/.";
 import { BaseModel } from "../../core/model/BaseModel";
-import { MorphableMixin, MorphableBaseModel } from "../../core/model/BaseModel";
 import { column, validate } from "../../core/schema/SchemaBlueprint";
 
 /**
@@ -24,9 +23,7 @@ import { column, validate } from "../../core/schema/SchemaBlueprint";
  * - Supports schema validation, soft deletes, timestamps
  */
 
-const MorphableBase = MorphableMixin(BaseModel);
-
-export class Prescription extends MorphableBase implements MorphableBaseModel {
+export class Prescription extends BaseModel {
   /**
    * ⚙️ Table configuration
    */

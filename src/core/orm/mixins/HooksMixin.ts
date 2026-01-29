@@ -4,6 +4,8 @@
  * ✅ Fully TS-safe, mixin-compliant, and compatible with all ORM layers
  */
 
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+
 export type LifecycleEvent =
   | "creating"
   | "created"
@@ -27,6 +29,8 @@ export interface HookableModel {
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 export function HooksMixin<TBase extends Constructor>(Base: TBase) {
+  const resolveBaseMethod = createBaseMethodResolver(Base);
+
   abstract class Hookable extends Base implements HookableModel {
     /**
      * Global registry of lifecycle hooks per subclass
@@ -70,7 +74,7 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
      * 🧠 Override create() to trigger hooks
      */
     async create(data: Record<string, unknown>): Promise<unknown> {
-      const baseCreate = (Object.getPrototypeOf(this) as any).create?.bind(this);
+      const baseCreate = resolveBaseMethod(this, "create");
       if (typeof baseCreate !== "function") {
         throw new Error("Base 'create' method not found for HooksMixin.");
       }
@@ -89,7 +93,7 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
       data: Record<string, unknown>,
       pk: string = "id"
     ): Promise<void> {
-      const baseUpdate = (Object.getPrototypeOf(this) as any).update?.bind(this);
+      const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for HooksMixin.");
       }
@@ -103,7 +107,7 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
      * 🗑️ Override delete() to trigger hooks
      */
     async delete(id: number | string, pk: string = "id"): Promise<void> {
-      const baseDelete = (Object.getPrototypeOf(this) as any).delete?.bind(this);
+      const baseDelete = resolveBaseMethod(this, "delete");
       if (typeof baseDelete !== "function") {
         throw new Error("Base 'delete' method not found for HooksMixin.");
       }

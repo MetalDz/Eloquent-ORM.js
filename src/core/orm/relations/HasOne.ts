@@ -1,13 +1,20 @@
 import { Relation } from "../Relation";
+import type { DriverAdapter } from "../../connection/DriverAdapter";
+import type { CoreModel } from "../../model/CoreModel";
 
 export class HasOne extends Relation {
   async getResults(parent: any): Promise<any> {
     const relatedInstance = new this.relatedModel();
     const db = await relatedInstance["getDB"]();
+    const adapter = db as DriverAdapter;
 
-    const sql = `SELECT * FROM ${relatedInstance["tableName"]} WHERE ${this.foreignKey} = ? LIMIT 1`;
-    const [rows] = await db.query(sql, [parent[this.localKey]]);
-    return Array.isArray(rows) ? rows[0] : rows;
+    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const foreignKey = adapter.wrapId(this.foreignKey);
+    const sql = `SELECT * FROM ${table} WHERE ${foreignKey} = ${adapter.placeholder(1)} LIMIT 1`;
+
+    const row = await adapter.queryOne<Record<string, unknown>>(sql, [parent[this.localKey]]);
+    const Model = this.relatedModel as typeof CoreModel;
+    return Model.hydrateRow(row);
   }
 
   async match(parents: any[]): Promise<void> {
@@ -15,13 +22,20 @@ export class HasOne extends Relation {
     const parentIds = parents.map((p) => p[this.localKey]);
     const relatedInstance = new this.relatedModel();
     const db = await relatedInstance["getDB"]();
+    const adapter = db as DriverAdapter;
 
-    const sql = `SELECT * FROM ${relatedInstance["tableName"]} WHERE ${this.foreignKey} IN (?)`;
-    const [rows] = await db.query(sql, [parentIds]);
+    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const field = adapter.wrapId(this.foreignKey);
+    const inResult = adapter.inClause(field, parentIds, 1);
+    const sql = `SELECT * FROM ${table} WHERE ${inResult.sql}`;
+    const rows = await adapter.query<Record<string, unknown>>(sql, inResult.params);
 
     const grouped: Record<string, any> = {};
+    const Model = this.relatedModel as typeof CoreModel;
     for (const row of rows) {
-      grouped[row[this.foreignKey]] = row;
+      const instance = Model.hydrateRow(row);
+      if (!instance) continue;
+      grouped[(instance as any)[this.foreignKey] as string] = instance;
     }
 
     const relName = this.name ?? "relation";

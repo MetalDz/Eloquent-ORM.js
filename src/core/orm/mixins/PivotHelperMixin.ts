@@ -1,12 +1,12 @@
 /**
- * 🔗 PivotHelperMixin
+ * ًں”— PivotHelperMixin
  * Adds helpers for managing many-to-many pivot tables (attach, detach, sync)
- * ✅ Type-safe, constructor-compliant, and works with SQL & Mongo drivers
+ * âœ… Type-safe, constructor-compliant, and works with SQL & Mongo drivers
  */
 
+import type { DriverAdapter } from "../../connection/DriverAdapter";
+
 export interface DatabaseConnection {
-  run?(sql: string, params?: unknown[]): Promise<unknown>;
-  query?(sql: string, params?: unknown[]): Promise<unknown>;
   collection?(name: string): {
     insertMany(docs: Record<string, unknown>[]): Promise<void>;
     deleteMany(filter: Record<string, unknown>): Promise<void>;
@@ -23,7 +23,7 @@ export interface PivotCapableModel {
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 /**
- * ✅ Updated PivotHelperMixin
+ * âœ… Updated PivotHelperMixin
  * - Adds a type stub for getDB() so TS is satisfied
  * - Properly casts dynamic `this` when accessing DB
  */
@@ -32,7 +32,7 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
     tableName!: string;
     connectionName!: string;
 
-    // ✅ TypeScript fix: declare getDB() stub (implemented upstream in CoreModel)
+    // âœ… TypeScript fix: declare getDB() stub (implemented upstream in CoreModel)
     abstract getDB(): Promise<unknown>;
 
     constructor(...args: any[]) {
@@ -40,7 +40,7 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
     }
 
     /**
-     * ➕ Attach related records to a pivot table
+     * â‍• Attach related records to a pivot table
      */
     async attach(
       pivotTable: string,
@@ -58,19 +58,18 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
         case "sqlite":
         case "mysql":
         case "pg": {
-          for (const row of rows) {
-            const keys = Object.keys(row);
-            const placeholders = keys.map(() => "?").join(", ");
-            const sql = `INSERT INTO ${pivotTable} (${keys.join(", ")}) VALUES (${placeholders})`;
+          if (rows.length === 0) return;
+          const adapter = db as DriverAdapter;
+          const keys = Object.keys(rows[0]);
+          const table = adapter.wrapId(pivotTable);
+          const columns = keys.map((key) => adapter.wrapId(key)).join(", ");
+          const sql = `INSERT INTO ${table} (${columns}) VALUES (${adapter.placeholders(
+            keys.length
+          )})`;
 
-            const dbc = db as DatabaseConnection;
-            if (typeof dbc.run === "function") {
-              await dbc.run(sql, Object.values(row));
-            } else if (typeof dbc.query === "function") {
-              await dbc.query(sql, Object.values(row));
-            } else {
-              throw new Error("❌ Database driver does not support run/query.");
-            }
+          for (const row of rows) {
+            const values = keys.map((key) => (row as Record<string, unknown>)[key]);
+            await adapter.execute(sql, values);
           }
           break;
         }
@@ -78,19 +77,19 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
         case "mongo": {
           const mongo = db as DatabaseConnection;
           if (typeof mongo.collection !== "function") {
-            throw new Error("❌ MongoDB driver not available for pivot operations.");
+            throw new Error("â‌Œ MongoDB driver not available for pivot operations.");
           }
           await mongo.collection(pivotTable).insertMany(rows);
           break;
         }
 
         default:
-          throw new Error(`❌ Unsupported connection type: ${conn}`);
+          throw new Error(`â‌Œ Unsupported connection type: ${conn}`);
       }
     }
 
     /**
-     * ➖ Detach related records from a pivot table
+     * â‍– Detach related records from a pivot table
      */
     async detach(
       pivotTable: string,
@@ -101,43 +100,33 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
       const conn = (this as unknown as PivotCapableModel).connectionName;
 
       switch (conn) {
-        case "sqlite": {
-          const dbc = db as DatabaseConnection;
-          if (typeof dbc.run === "function") {
-            await dbc.run(`DELETE FROM ${pivotTable} WHERE ${foreignKey} = ?`, [id]);
-          } else {
-            throw new Error("❌ SQLite driver missing 'run()' method.");
-          }
-          break;
-        }
-
+        case "sqlite":
         case "mysql":
         case "pg": {
-          const dbc = db as DatabaseConnection;
-          if (typeof dbc.query === "function") {
-            await dbc.query(`DELETE FROM ${pivotTable} WHERE ${foreignKey} = ?`, [id]);
-          } else {
-            throw new Error("❌ SQL driver missing 'query()' method.");
-          }
+          const adapter = db as DriverAdapter;
+          const table = adapter.wrapId(pivotTable);
+          const fk = adapter.wrapId(foreignKey);
+          const sql = `DELETE FROM ${table} WHERE ${fk} = ${adapter.placeholder(1)}`;
+          await adapter.execute(sql, [id]);
           break;
         }
 
         case "mongo": {
           const mongo = db as DatabaseConnection;
           if (typeof mongo.collection !== "function") {
-            throw new Error("❌ MongoDB driver not available for pivot operations.");
+            throw new Error("â‌Œ MongoDB driver not available for pivot operations.");
           }
           await mongo.collection(pivotTable).deleteMany({ [foreignKey]: id });
           break;
         }
 
         default:
-          throw new Error(`❌ Unsupported connection type: ${conn}`);
+          throw new Error(`â‌Œ Unsupported connection type: ${conn}`);
       }
     }
 
     /**
-     * 🔄 Sync related records — clears old ones and attaches the new set
+     * ًں”„ Sync related records â€” clears old ones and attaches the new set
      */
     async sync(
       pivotTable: string,
@@ -153,6 +142,6 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
     }
   }
 
-  // 👇 Important: cast ensures TS knows result = Base + PivotCapableModel
+  // ًں‘‡ Important: cast ensures TS knows result = Base + PivotCapableModel
   return PivotHelper as unknown as TBase & (abstract new (...args: any[]) => PivotCapableModel);
 }
