@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { migrateFresh } from "./migrateFresh";
 import { dbSeed } from "./dbSeed";
+import { closeAllConnections } from "../../core/connection/ConnectionFactory";
 
 /**
  * 🧩 db:seed:fresh
@@ -36,5 +37,11 @@ export async function dbSeedFresh(
   } catch (err) {
     console.error(chalk.red("❌ db:seed:fresh failed."));
     if (err instanceof Error) console.error(chalk.red(err.message));
+  } finally {
+    await closeAllConnections();
+    console.log(chalk.gray("🔒 All database connections closed.\n"));
+    if (process.env.ELOQUENT_CLI === "true") {
+      setImmediate(() => process.exit(0));
+    }
   }
 }

@@ -1,13 +1,10 @@
 // src/orm/mixins/MorphableMixin.ts
-import { MorphRegistry } from "./MorphRegistry";
+import { MorphRegistry, type MorphableConstructor } from "./MorphRegistry";
 
 /**
  * ✅ Base interface for all morphable ORM models
  */
 export interface MorphableBaseModel {
-  id?: string | number;
-  [key: string]: unknown;
-
   find?(id: number | string): Promise<MorphableBaseModel | null>;
   query?(): ORMQuery<this>;
 }
@@ -34,10 +31,7 @@ type Constructor<T = object> = abstract new (...args: any[]) => T;
  * 🪄 Auto-registers every extended model into MorphRegistry.
  */
 export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
-  abstract class Morphable extends Base implements MorphableBaseModel {
-    id?: string | number;
-    [key: string]: unknown;
-
+  abstract class Morphable extends Base {
     constructor(...args: any[]) {
       super(...args);
 
@@ -45,14 +39,15 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       const ctor = this.constructor as typeof Morphable & { morphAlias?: string; name: string };
       const alias = ctor.morphAlias || ctor.name;
       if (!MorphRegistry.has(alias)) {
-        MorphRegistry.register(alias, ctor as any);
+        MorphRegistry.register(alias, ctor as unknown as MorphableConstructor<MorphableBaseModel>);
       }
     }
 
     /** 🌀 morphTo('commentable') */
     async morphTo(this: MorphableBaseModel, relationName: string): Promise<MorphableBaseModel | null> {
-      const type = this[`${relationName}_type`] as string | undefined;
-      const id = this[`${relationName}_id`] as number | string | undefined;
+      const record = this as Record<string, unknown>;
+      const type = record[`${relationName}_type`] as string | undefined;
+      const id = record[`${relationName}_id`] as number | string | undefined;
 
       if (!type || id === undefined) return null;
 
@@ -62,7 +57,8 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      return await (ModelClass.prototype.find as any).call(new ModelClass(), id);
+      const findFn = ModelClass.prototype.find as unknown as (id: number | string) => Promise<MorphableBaseModel | null>;
+      return await findFn.call(new ModelClass(), id);
     }
 
     /** 💫 morphOne(RelatedModel, 'commentable') */
@@ -71,11 +67,12 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       RelatedModel: { query(): ORMQuery<T> },
       relationName: string
     ): Promise<T | null> {
+      const self = this as { getMorphClass?: () => string; constructor: { name: string } };
       const modelName =
-        typeof (this as any).getMorphClass === "function"
-          ? (this as any).getMorphClass()
+        typeof self.getMorphClass === "function"
+          ? self.getMorphClass()
           : this.constructor.name;
-      const modelId = this.id;
+      const modelId = (this as Record<string, unknown>).id as string | number | undefined;
 
       return await RelatedModel.query()
         .where(`${relationName}_type`, modelName)
@@ -89,11 +86,12 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       RelatedModel: { query(): ORMQuery<T> },
       relationName: string
     ): Promise<T[]> {
+      const self = this as { getMorphClass?: () => string; constructor: { name: string } };
       const modelName =
-        typeof (this as any).getMorphClass === "function"
-          ? (this as any).getMorphClass()
+        typeof self.getMorphClass === "function"
+          ? self.getMorphClass()
           : this.constructor.name;
-      const modelId = this.id;
+      const modelId = (this as Record<string, unknown>).id as string | number | undefined;
 
       return await RelatedModel.query()
         .where(`${relationName}_type`, modelName)

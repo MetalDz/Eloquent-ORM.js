@@ -10,7 +10,12 @@ export interface ValidationError {
   message: string;
 }
 
-export type CustomRuleFunction = (value: unknown, field: string, data: Record<string, unknown>) => string | null | Promise<string | null>;
+export type CustomRuleResult = string | null | boolean;
+export type CustomRuleFunction = (
+  value: unknown,
+  field: string,
+  data: Record<string, unknown>
+) => CustomRuleResult | Promise<CustomRuleResult>;
 
 export interface ValidationHooks {
   beforeValidate?: (data: Record<string, unknown>) => Promise<void> | void;
@@ -84,8 +89,13 @@ export class SchemaValidator {
       // Custom rule functions (from model)
       if (options.customRules) {
         for (const [ruleName, fn] of Object.entries(options.customRules)) {
-          const maybeError = await fn(value, field, data);
-          if (maybeError) errors.push({ field, message: maybeError });
+          const result = await fn(value, field, data);
+          if (result === null || result === undefined || result === true) continue;
+          if (result === false) {
+            errors.push({ field, message: `${ruleName} failed` });
+            continue;
+          }
+          errors.push({ field, message: String(result) });
         }
       }
     }

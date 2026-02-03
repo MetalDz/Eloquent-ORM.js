@@ -281,16 +281,22 @@ export class SchemaBuilder {
     }
 
     if (r.relation === "belongsToMany" && r.model) {
-      const modelA = currentTable.toLowerCase();
-      const modelB = r.model.toLowerCase();
-      const pivotTable = [modelA, modelB].sort().join("_") + "_pivot";
+      const tableA = currentTable.toLowerCase();
+      const tableB = r.model.toLowerCase().endsWith("s")
+        ? r.model.toLowerCase()
+        : `${r.model.toLowerCase()}s`;
+
+      const keyA = tableA.endsWith("s") ? tableA.slice(0, -1) : tableA;
+      const keyB = tableB.endsWith("s") ? tableB.slice(0, -1) : tableB;
+
+      const pivotTable = [keyA, keyB].sort().join("_") + "_pivot";
 
       const pivotSQL = dialect.formatCreateSQL(pivotTable, [
-        `${wrap(modelA + "_id")} INT NOT NULL`,
-        `${wrap(modelB + "_id")} INT NOT NULL`,
-        `PRIMARY KEY (${wrap(modelA + "_id")}, ${wrap(modelB + "_id")})`,
-        `FOREIGN KEY (${wrap(modelA + "_id")}) REFERENCES ${wrap(modelA + "s")}(${wrap("id")})`,
-        `FOREIGN KEY (${wrap(modelB + "_id")}) REFERENCES ${wrap(modelB + "s")}(${wrap("id")})`,
+        `${wrap(keyA + "_id")} INT NOT NULL`,
+        `${wrap(keyB + "_id")} INT NOT NULL`,
+        `PRIMARY KEY (${wrap(keyA + "_id")}, ${wrap(keyB + "_id")})`,
+        `FOREIGN KEY (${wrap(keyA + "_id")}) REFERENCES ${wrap(tableA)}(${wrap("id")})`,
+        `FOREIGN KEY (${wrap(keyB + "_id")}) REFERENCES ${wrap(tableB)}(${wrap("id")})`,
       ]);
 
       return { type: "pivot", sql: pivotSQL };

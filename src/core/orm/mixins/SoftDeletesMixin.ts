@@ -8,9 +8,7 @@
 import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
 
 export interface SoftDeletable {
-  id?: string | number;
   deleted_at?: string | null;
-  [key: string]: unknown;
 
   find(id: number | string, pk?: string): Promise<this | null>;
   all(): Promise<this[]>;
@@ -25,9 +23,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
   const resolveBaseMethod = createBaseMethodResolver(Base);
 
   abstract class SoftDeletableModel extends Base implements SoftDeletable {
-    id?: string | number;
     deleted_at?: string | null;
-    [key: string]: unknown;
 
     protected readonly deletedAtColumn = "deleted_at";
 

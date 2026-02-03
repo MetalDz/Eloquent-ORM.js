@@ -17,9 +17,6 @@ type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 export function SerializeMixin<TBase extends Constructor<SerializableModel>>(Base: TBase) {
   abstract class Serializable extends Base implements SerializableModel {
-    /** Allow indexing into this (for key-based iteration) */
-    [key: string]: unknown;
-
     /**
      * 🕵️‍♂️ Attributes to hide during serialization
      * Example: ['password', 'api_token']

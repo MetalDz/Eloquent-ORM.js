@@ -1,8 +1,8 @@
 /**
- * 🧩 Auto-generated UPDATE migration for Prescription
+ * 🧩 Auto-generated UPDATE migration for Comment
  * Connection: mysql
  * Mode: DEVELOPMENT
- * Generated at 2025-11-29T07:46:19.713Z
+ * Generated at 2026-02-03T10:49:55.743Z
  *
  * ⚙️  Philosophy:
  * This migration is model-driven — the Model schema is the single source of truth.
@@ -11,8 +11,12 @@
  * model-driven migrations always regenerate from the latest model definition.
  */
 export async function up(db: { query(sql: string): Promise<void> }) {
-  await db.query(`ALTER TABLE \`prescriptions\`
-  ADD COLUMN \`deleted_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+  await db.query(`CREATE TABLE IF NOT EXISTS \`comments\` (
+  \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+  \`name\` VARCHAR(255),
+  \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`);
   
 }
 

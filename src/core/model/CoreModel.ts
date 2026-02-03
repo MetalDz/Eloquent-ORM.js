@@ -1,6 +1,7 @@
 // src/core/connection/CoreModel.ts
 import { getConnection, getAdapter, ConnectionName } from "../connection/ConnectionFactory";
 import type { DriverAdapter } from "../connection/DriverAdapter";
+import type { Db } from "mongodb";
 
 import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator";
 import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
@@ -32,9 +33,11 @@ export interface ModelEventHooks {
 /**
  * 🧱 CoreModel — driver-agnostic CRUD + schema validation + hooks + events
  */
-export abstract class CoreModel {
-  protected tableName: string;
-  protected connectionName: ConnectionName;
+export abstract class CoreModel<
+  TAttrs extends Record<string, unknown> = Record<string, unknown>
+> {
+  public tableName: string;
+  public connectionName: ConnectionName;
 
   /** Optional schema definition (set by subclass) */
   static schema?: Record<string, SchemaField>;
@@ -88,7 +91,7 @@ export abstract class CoreModel {
   /**
    * Get DB connection (lazy + cached)
    */
-  protected async getDB() {
+  public async getDB() {
     if (this.connectionName === "mongo") {
       return await getConnection(this.connectionName);
     }
@@ -147,7 +150,7 @@ export abstract class CoreModel {
   /* -----------------------------------------------------
    * 📦 FIND (by ID)
    * ----------------------------------------------------- */
-  async find(id: number | string, pk: string = "id"): Promise<unknown> {
+  async find(id: number | string, pk: string = "id"): Promise<this | null> {
     const db = await this.getDB();
 
     switch (this.connectionName) {
@@ -160,14 +163,14 @@ export abstract class CoreModel {
         const sql = `SELECT * FROM ${table} WHERE ${col} = ${adapter.placeholder(1)}`;
         const row = await adapter.queryOne<Record<string, unknown>>(sql, [id]);
         const Model = this.constructor as typeof CoreModel;
-        return Model.hydrateRow(row);
+        return Model.hydrateRow(row) as this | null;
       }
 
       case "mongo":
         {
           const row = await (db as any).collection(this.tableName).findOne({ [pk]: id });
           const Model = this.constructor as typeof CoreModel;
-          return Model.hydrateRow(row as Record<string, unknown> | null);
+          return Model.hydrateRow(row as Record<string, unknown> | null) as this | null;
         }
 
       default:
@@ -178,7 +181,7 @@ export abstract class CoreModel {
   /* -----------------------------------------------------
    * 📋 ALL (fetch all records)
    * ----------------------------------------------------- */
-  async all(): Promise<unknown[]> {
+  async all(): Promise<this[]> {
     const db = await this.getDB();
 
     switch (this.connectionName) {
@@ -190,14 +193,14 @@ export abstract class CoreModel {
         const sql = `SELECT * FROM ${table}`;
         const rows = await adapter.query<Record<string, unknown>>(sql);
         const Model = this.constructor as typeof CoreModel;
-        return Model.hydrateMany(rows);
+        return Model.hydrateMany(rows) as this[];
       }
 
       case "mongo":
         {
           const rows = await (db as any).collection(this.tableName).find({}).toArray();
           const Model = this.constructor as typeof CoreModel;
-          return Model.hydrateMany(rows as Record<string, unknown>[]);
+          return Model.hydrateMany(rows as Record<string, unknown>[]) as this[];
         }
 
       default:
@@ -208,7 +211,7 @@ export abstract class CoreModel {
   /* -----------------------------------------------------
    * ➕ CREATE (insert new record)
    * ----------------------------------------------------- */
-  async create(data: Record<string, unknown>): Promise<unknown | null> {
+  async create(data: Record<string, unknown>): Promise<this | null> {
     // 1) Validate (runs validation hooks + custom rules)
     await this.validateData(data);
 
@@ -259,7 +262,7 @@ export abstract class CoreModel {
 
     // 4) Fire afterCreate (no cancellation)
     const Model = this.constructor as typeof CoreModel;
-    const hydrated = Model.hydrateRow(createdRecord);
+    const hydrated = Model.hydrateRow(createdRecord) as this | null;
 
     await this.fireEvent("afterCreate", hydrated as Record<string, unknown> | null);
 
@@ -269,7 +272,11 @@ export abstract class CoreModel {
   /* -----------------------------------------------------
    * ✏️ UPDATE (by ID)
    * ----------------------------------------------------- */
-  async update(id: number | string, data: Record<string, unknown>, pk: string = "id"): Promise<void> {
+  async update(
+    id: number | string,
+    data: Record<string, unknown>,
+    pk: string = "id"
+  ): Promise<void> {
     // 1) Validate
     await this.validateData(data);
 
@@ -347,5 +354,21 @@ export abstract class CoreModel {
 
     // 3) afterDelete
     await this.fireEvent("afterDelete", id);
+  }
+}
+
+/**
+ * MongoModel
+ * Narrowed base class for Mongo-backed models with typed getDB().
+ */
+export abstract class MongoModel<
+  TAttrs extends Record<string, unknown> = Record<string, unknown>
+> extends CoreModel<TAttrs> {
+  constructor(tableName: string) {
+    super(tableName, "mongo");
+  }
+
+  public override async getDB(): Promise<Db> {
+    return (await getConnection("mongo")) as Db;
   }
 }

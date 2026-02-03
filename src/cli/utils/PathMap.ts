@@ -85,7 +85,8 @@ export class PathMap {
    * 🔹 Get CLI template path by name.
    */
   static template(name: string): string {
-    return path.resolve(this.CLI_TEMPLATES, name);
+    const fileName = name.endsWith(".tpl") ? name : `${name}.tpl`;
+    return path.resolve(this.CLI_TEMPLATES, fileName);
   }
 
   /**

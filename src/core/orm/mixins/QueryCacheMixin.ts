@@ -24,7 +24,6 @@ export interface CacheInterface {
  * 🎯 Contract for models that can use cache
  */
 export interface CacheableModel {
-  name: string;
   invalidateModelCache(): Promise<void>;
   invalidateCacheGroup(group: string): Promise<void>;
 }
@@ -55,8 +54,6 @@ export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
     static defaultCacheTTL?: number;
     static cacheTTL?: Record<string, number>;
     static cacheStrategy?: (payload: unknown, group?: string) => number;
-
-    name!: string;
 
     constructor(...args: any[]) {
       super(...args);

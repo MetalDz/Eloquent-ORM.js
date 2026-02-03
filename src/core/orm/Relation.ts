@@ -1,15 +1,26 @@
+export interface RelationModel {
+  tableName: string;
+  getDB(): Promise<unknown>;
+}
+
+export type CoreModelClass<TRelated extends RelationModel = RelationModel> = {
+  new (): TRelated;
+  hydrateRow(row: Record<string, unknown> | null): TRelated | null;
+  hydrateMany(rows: Record<string, unknown>[]): TRelated[];
+};
+
 /**
- * 🧩 Base Relation
+ * ًں§© Base Relation
  * Handles relation definition + auto-detected name from caller method.
  */
-export abstract class Relation {
-  protected relatedModel: any;
+export abstract class Relation<TRelated extends RelationModel = RelationModel> {
+  protected relatedModel: CoreModelClass<TRelated> | null;
   protected foreignKey: string;
   protected localKey: string;
   protected name?: string;
 
   constructor(
-    relatedModel: any,
+    relatedModel: CoreModelClass<TRelated> | null,
     foreignKey: string,
     localKey: string,
     name?: string
@@ -21,7 +32,7 @@ export abstract class Relation {
   }
 
   /**
-   * 🧠 Auto-detect relation name (e.g., "posts" from user.posts())
+   * ًں§  Auto-detect relation name (e.g., "posts" from user.posts())
    */
   private detectRelationName(): string | undefined {
     try {
@@ -39,10 +50,10 @@ export abstract class Relation {
   /**
    * Each relation must fetch related data for a parent
    */
-  abstract getResults(parent: any): Promise<any>;
+  abstract getResults(parent: Record<string, unknown>): Promise<unknown>;
 
   /**
    * Each relation must match related rows for eager loading
    */
-  abstract match(parents: any[]): Promise<void>;
+  abstract match(parents: Record<string, unknown>[]): Promise<void>;
 }

@@ -7,6 +7,16 @@ import { ScopeMixin } from "../orm/mixins/ScopeMixin";
 import { HooksMixin } from "../orm/mixins/HooksMixin";
 import { QueryCacheMixin } from "../orm/mixins/QueryCacheMixin";
 import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin";
+import { getAdapter, ConnectionName } from "../connection/ConnectionFactory";
+import type { DriverAdapter } from "../connection/DriverAdapter";
+import { BelongsTo } from "../orm/relations/BelongsTo";
+import { HasOne } from "../orm/relations/HasOne";
+import { HasMany } from "../orm/relations/HasMany";
+import { BelongsToMany } from "../orm/relations/BelongsToMany";
+import { MorphOne } from "../orm/relations/MorphOne";
+import { MorphMany } from "../orm/relations/MorphMany";
+import { MorphTo } from "../orm/relations/MorphTo";
+import type { CoreModelClass } from "../orm/Relation";
 
 // Morph system (re-export convenience)
 import { MorphableMixin, MorphableBaseModel } from "../orm/mixins/MorphableMixin";
@@ -67,9 +77,9 @@ const ComposedModel = EagerLoadingMixin(
  * BaseModel
  * The central abstract model class your application models should extend.
  */
-export abstract class BaseModel extends ComposedModel {
-  [key: string]: unknown; // allow dynamic fields for serialization, casts, etc.
-
+export abstract class BaseModel<
+  TAttrs extends Record<string, unknown> = Record<string, unknown>
+> extends ComposedModel {
   constructor(...args: any[]) {
     super(...args);
   }
@@ -95,9 +105,130 @@ export abstract class BaseModel extends ComposedModel {
     const entry = entries.find(([, name]) => name === this.name);
     return entry ? entry[0] : this.name;
   }
+
+  // -----------------------------
+  // Typed relation helpers
+  // -----------------------------
+  protected belongsTo<TRelated extends BaseModel>(
+    RelatedModel: CoreModelClass<TRelated>,
+    foreignKey: string,
+    ownerKey: string = "id",
+    name?: string
+  ): TypedRelation<this, TRelated | null> {
+    return new BelongsTo(RelatedModel, foreignKey, ownerKey, name) as unknown as TypedRelation<
+      this,
+      TRelated | null
+    >;
+  }
+
+  protected hasOne<TRelated extends BaseModel>(
+    RelatedModel: CoreModelClass<TRelated>,
+    foreignKey: string,
+    localKey: string = "id",
+    name?: string
+  ): TypedRelation<this, TRelated | null> {
+    return new HasOne(RelatedModel, foreignKey, localKey, name) as unknown as TypedRelation<
+      this,
+      TRelated | null
+    >;
+  }
+
+  protected hasMany<TRelated extends BaseModel>(
+    RelatedModel: CoreModelClass<TRelated>,
+    foreignKey: string,
+    localKey: string = "id",
+    name?: string
+  ): TypedRelation<this, TRelated[]> {
+    return new HasMany(RelatedModel, foreignKey, localKey, name) as unknown as TypedRelation<
+      this,
+      TRelated[]
+    >;
+  }
+
+  protected belongsToMany<TRelated extends BaseModel>(
+    RelatedModel: CoreModelClass<TRelated>,
+    pivotTable: string,
+    foreignPivotKey: string,
+    relatedPivotKey: string
+  ): TypedRelation<this, TRelated[]> & PivotRelation {
+    return new BelongsToMany(
+      RelatedModel,
+      pivotTable,
+      foreignPivotKey,
+      relatedPivotKey
+    ) as unknown as TypedRelation<this, TRelated[]> & PivotRelation;
+  }
+
+  protected morphOne<TRelated extends BaseModel>(
+    RelatedModel: CoreModelClass<TRelated>,
+    morphName: string
+  ): TypedRelation<this, TRelated | null> {
+    return new MorphOne(RelatedModel, `${morphName}_type`, `${morphName}_id`) as unknown as TypedRelation<
+      this,
+      TRelated | null
+    >;
+  }
+
+  protected morphMany<TRelated extends BaseModel>(
+    RelatedModel: CoreModelClass<TRelated>,
+    morphName: string
+  ): TypedRelation<this, TRelated[]> {
+    return new MorphMany(RelatedModel, `${morphName}_type`, `${morphName}_id`) as unknown as TypedRelation<
+      this,
+      TRelated[]
+    >;
+  }
+
+  protected morphTo(morphName: string): TypedRelation<this, BaseModel | null> {
+    return new MorphTo(`${morphName}_type`, `${morphName}_id`) as unknown as TypedRelation<
+      this,
+      BaseModel | null
+    >;
+  }
+}
+
+/**
+ * SqlModel
+ * Narrowed base class for SQL-backed models with typed getDB().
+ */
+export abstract class SqlModel<
+  TAttrs extends Record<string, unknown> = Record<string, unknown>
+> extends BaseModel<TAttrs> {
+  public override connectionName!: Exclude<ConnectionName, "mongo">;
+
+  constructor(...args: any[]) {
+    super(...args);
+    if ((this.connectionName as ConnectionName) === "mongo") {
+      throw new Error("SqlModel cannot use the mongo connection.");
+    }
+  }
+
+  public override async getDB(): Promise<DriverAdapter> {
+    return await getAdapter(this.connectionName as Exclude<ConnectionName, "mongo">);
+  }
 }
 
 /**
  * Re-export morph helpers for convenience
  */
+
 export { MorphableMixin, MorphableBaseModel, MorphRegistry };
+
+// Attribute typing for models (ModelInstance adds only typed attrs to avoid merge conflicts).
+export type ModelAttrs<TAttrs extends Record<string, unknown>> = {
+  [K in keyof TAttrs]: TAttrs[K];
+};
+
+export type ModelInstance<TAttrs extends Record<string, unknown>> = ModelAttrs<TAttrs>;
+
+export interface TypedRelation<TParent, TResult> {
+  name?: string;
+  getResults(parent: TParent): Promise<TResult>;
+  match(records: TParent[]): Promise<void>;
+}
+
+export interface PivotRelation {
+  attach(parentId: unknown, relatedId: unknown): Promise<void>;
+  detach(parentId: unknown, relatedId: unknown): Promise<void>;
+  sync(parentId: unknown, relatedIds: unknown[]): Promise<void>;
+}

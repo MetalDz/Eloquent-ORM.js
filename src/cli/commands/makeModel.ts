@@ -7,11 +7,17 @@ import { PathMap } from "../utils/PathMap";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { ImportResolver } from "../utils/ImportResolver";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
+import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import type {
+  SchemaField,
+  ColumnDefinition,
+} from "../../core/schema/SchemaBlueprint";
 
 interface ModelOptions {
   test?: boolean;
   withMigration?: boolean;
   force?: boolean;
+  attrsFromSchema?: boolean;
 }
 
 function pascalCase(name: string): string {
@@ -22,6 +28,94 @@ function pluralize(name: string): string {
   return name.toLowerCase().endsWith("s") ? name.toLowerCase() : name.toLowerCase() + "s";
 }
 
+function defaultAttrsTypeBody(): string {
+  return [
+    "  id?: number;",
+    "  name?: string;",
+    "  created_at?: string | Date | null;",
+    "  updated_at?: string | Date | null;",
+  ].join("\n");
+}
+
+function columnBaseType(column: ColumnDefinition): string {
+  switch (column.type) {
+    case "increments":
+    case "int":
+    case "bigint":
+    case "decimal":
+    case "float":
+      return "number";
+    case "uuid":
+    case "string":
+    case "text":
+      return "string";
+    case "boolean":
+      return "boolean";
+    case "json":
+      return "Record<string, unknown>";
+    case "timestamp":
+      return "string | Date";
+    default:
+      return "unknown";
+  }
+}
+
+function addNullable(type: string): string {
+  if (type.includes("null")) return type;
+  return `${type} | null`;
+}
+
+function isOptional(column: ColumnDefinition): boolean {
+  if (column.type === "increments" || column.options?.primary) return true;
+  if (column.options?.default !== undefined) return true;
+  return column.options?.notNull !== true;
+}
+
+function buildAttrsTypeBody(
+  schema: Record<string, SchemaField>,
+  options?: { includeTimestamps?: boolean; includeSoftDeletes?: boolean }
+): string {
+  const lines: string[] = [];
+  const added = new Set<string>();
+
+  const pushField = (name: string, type: string, optional: boolean): void => {
+    if (added.has(name)) return;
+    added.add(name);
+    lines.push(`  ${name}${optional ? "?" : ""}: ${type};`);
+  };
+
+  for (const [key, field] of Object.entries(schema)) {
+    if (field.kind !== "column") continue;
+    const column = field as ColumnDefinition;
+
+    if (column.type === "timestamps") {
+      pushField("created_at", "string | Date | null", true);
+      pushField("updated_at", "string | Date | null", true);
+      continue;
+    }
+
+    if (column.type === "softDeletes") {
+      pushField("deleted_at", "string | Date | null", true);
+      continue;
+    }
+
+    const baseType = columnBaseType(column);
+    const nullableType = column.options?.notNull === true ? baseType : addNullable(baseType);
+    pushField(key, nullableType, isOptional(column));
+  }
+
+  if (options?.includeTimestamps) {
+    pushField("created_at", "string | Date | null", true);
+    pushField("updated_at", "string | Date | null", true);
+  }
+
+  if (options?.includeSoftDeletes) {
+    pushField("deleted_at", "string | Date | null", true);
+  }
+
+  return lines.length ? lines.join("\n") : "  // No columns found in schema";
+}
+
 /**
  * 🧱 make:model
  * Generates a new model file (and optionally a migration).
@@ -29,15 +123,18 @@ function pluralize(name: string): string {
  * Usage:
  *   eloquent make:model User
  *   eloquent make:model User --with-migration
+ *   eloquent make:model User --attrs-from-schema
  *   eloquent make:model User --with-migration --force
  */
 export async function makeModel(name: string, options: ModelOptions = {}): Promise<void> {
   const isTest = options.test === true;
   const withMigration = options.withMigration === true;
   const force = options.force === true;
+  const attrsFromSchema = options.attrsFromSchema === true;
   const modelName = pascalCase(name);
   const tableName = pluralize(name);
   const mode = isTest ? "TEST" : "DEVELOPMENT";
+  let wroteModel = false;
 
   PathMap.ensureDirs();
   const modelsDir = PathMap.models(isTest);
@@ -48,17 +145,19 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
 
   const coreImportPath = ImportResolver.coreImportPath(isTest);
   const schemaImportPath = ImportResolver.schemaImportPath(isTest);
+  let tpl = "";
 
   // 🧠 1️⃣ Generate Model
   const modelFilePath = path.join(modelsDir, `${modelName}.ts`);
   try {
-    const tpl = TemplateEngine.load("model");
+    tpl = TemplateEngine.load("model");
 
     const modelContent = TemplateEngine.render(tpl, {
       ModelName: modelName,
       tableName,
       coreImportPath,
       schemaImportPath,
+      attrsTypeBody: defaultAttrsTypeBody(),
     });
 
     const header = `/**
@@ -75,11 +174,55 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       console.log(chalk.yellow(`⚠️  Model already exists: ${modelFilePath}`));
     } else {
       TemplateEngine.save(modelFilePath, finalContent);
+      wroteModel = true;
       console.log(chalk.green(`✅ Model created: ${modelFilePath}`));
     }
   } catch (err) {
     console.error(chalk.red("❌ Error rendering model template:"), err);
     return;
+  }
+
+  if (attrsFromSchema && wroteModel) {
+    try {
+      if (!TypeScriptCompiler.compile([modelFilePath])) {
+        console.warn(chalk.yellow(`⚠️  Skipping attrs inference — ${modelName}.ts has TS errors.`));
+      } else {
+        const absModelPath = path.resolve(modelFilePath);
+        delete require.cache[require.resolve(absModelPath)];
+        const modelModule = await import(absModelPath);
+        const ModelClass = modelModule[modelName];
+
+        if (!ModelClass?.schema) {
+          console.log(chalk.yellow(`⚠️  Schema not found in ${modelName}.ts — keeping defaults.`));
+        } else {
+          const attrsTypeBody = buildAttrsTypeBody(ModelClass.schema, {
+            includeTimestamps: Boolean(ModelClass.timestamps),
+            includeSoftDeletes: Boolean(ModelClass.softDeletes),
+          });
+
+          const modelContent = TemplateEngine.render(tpl, {
+            ModelName: modelName,
+            tableName,
+            coreImportPath,
+            schemaImportPath,
+            attrsTypeBody,
+          });
+
+          const header = `/**
+ * 🧩 Auto-generated EloquentJS ORM Model
+ * Model: ${modelName}
+ * Table: ${tableName}
+ * Mode: ${mode}
+ * Generated at: ${new Date().toISOString()}
+ */\n\n`;
+
+          TemplateEngine.save(modelFilePath, header + modelContent);
+          console.log(chalk.green(`✅ Inferred attrs type from schema for ${modelName}.ts`));
+        }
+      }
+    } catch (err) {
+      console.error(chalk.red("❌ Error inferring attrs from schema:"), err);
+    }
   }
 
   // 🧭 2️⃣ Stop here if no migration requested
@@ -161,5 +304,12 @@ export async function down(db: { query(sql: string): Promise<void> }) {
     console.log(chalk.green(`🧱 Migration (${prefix.toUpperCase()}) created: ${migrationPath}`));
   } catch (err) {
     console.error(chalk.red("❌ Error generating migration:"), err);
+  } finally {
+    try {
+      await closeAllConnections();
+      console.log(chalk.gray("All database connections closed."));
+    } catch {
+      console.warn(chalk.yellow("Could not close DB connections cleanly."));
+    }
   }
 }

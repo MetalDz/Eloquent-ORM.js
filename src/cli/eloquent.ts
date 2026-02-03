@@ -13,6 +13,9 @@ import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler";
 import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";
 import { loadFactories } from "./utils/factories/FactoryLoader";
 
+// Mark CLI runtime so commands can exit cleanly when done.
+process.env.ELOQUENT_CLI = "true";
+
 // -----------------------------------------------------------------------------
 // ⚙️ Lazy TypeScript Runtime Initialization
 // -----------------------------------------------------------------------------
@@ -63,6 +66,7 @@ import { makeFactory } from "./commands/makeFactory";
 import { factoryStatus } from "./commands/factoryStatus";
 import { dbSeed } from "./commands/dbSeed";
 import { dbSeedFresh } from "./commands/dbSeedFresh";
+import { demoScenario } from "./commands/demoScenario";
 
 // -----------------------------------------------------------------------------
 // 🧱 CLI Setup
@@ -88,6 +92,7 @@ program
   .command("make:model <name>")
   .option("--test", "Generate model inside test directory")
   .option("--with-migration", "Automatically generate a migration for this model")
+  .option("--attrs-from-schema", "Infer model attrs type from schema fields")
   .option("--force", "Overwrite existing migration if it exists")
   .description("Generate a new model (with optional migration)")
   .action(async (name: string, options: Record<string, unknown>) => {
@@ -155,6 +160,19 @@ program
   .description("Drop all tables, rerun migrations, and seed the database")
   .action(async (options: { test?: boolean; class?: string }) => {
     await dbSeedFresh({ test: !!options.test, class: options.class });
+  });
+
+program
+  .command("demo:scenario")
+  .description("Run a quick verification scenario for seeded data (morph + pivot)")
+  .option("--user <id>", "Run the scenario for a specific user id")
+  .option("--random", "Pick a random user id")
+  .action(async (options: { user?: string; random?: boolean }) => {
+    const userId = options.user ? Number(options.user) : undefined;
+    await demoScenario({
+      user: Number.isFinite(userId) ? userId : undefined,
+      random: !!options.random,
+    });
   });
 
 // -----------------------------------------------------------------------------

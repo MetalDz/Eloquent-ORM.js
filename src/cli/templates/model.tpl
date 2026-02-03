@@ -1,4 +1,4 @@
-import { BaseModel } from "{{coreImportPath}}";
+import { SqlModel, ModelInstance } from "{{coreImportPath}}";
 import { column, validate } from "{{schemaImportPath}}";
 
 /**
@@ -14,7 +14,11 @@ import { column, validate } from "{{schemaImportPath}}";
  * - Supports schema validation, soft deletes, timestamps
  */
 
-export class {{ModelName}} extends BaseModel {
+type {{ModelName}}Attrs = {
+{{attrsTypeBody}}
+};
+
+export class {{ModelName}} extends SqlModel<{{ModelName}}Attrs> {
   /**
    * ⚙️ Table configuration
    */
@@ -110,3 +114,6 @@ export class {{ModelName}} extends BaseModel {
     super("{{tableName}}", process.env.DB_CONNECTION ?? "mysql");
   }
 }
+
+// Laravel-style typed attributes (user.email, user.name, etc.)
+export interface {{ModelName}} extends ModelInstance<{{ModelName}}Attrs> {}

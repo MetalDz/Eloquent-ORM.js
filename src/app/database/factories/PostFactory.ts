@@ -1,0 +1,15 @@
+import { Factory } from "../../../cli/utils/factories/Factory";
+import { Post } from "../../models/Post";
+
+export class PostFactory extends Factory<Post> {
+  model = Post;
+
+  definition(index = 0): Partial<Post> {
+    return {
+
+      name: this.faker.person.fullName(),
+
+      user_id: this.faker.number.int(),
+    };
+  }
+}

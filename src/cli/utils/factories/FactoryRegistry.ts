@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import { PathMap } from "../PathMap";
+import { loadModule } from "../typescript/tsRuntime";
 import type { Factory } from "./Factory";
 import type { BaseModel } from "../../../core/model/BaseModel";
 
@@ -70,7 +71,7 @@ export class FactoryRegistry {
     for (const file of files) {
       const fullPath = path.join(dir, file);
       try {
-        const importedModule: Record<string, unknown> = await import(fullPath);
+        const importedModule: Record<string, unknown> = loadModule(fullPath);
 
         for (const [name, exported] of Object.entries(importedModule)) {
           if (

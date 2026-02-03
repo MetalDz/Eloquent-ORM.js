@@ -8,9 +8,6 @@
 import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
 
 export interface Castable {
-  id?: string | number;
-  [key: string]: unknown;
-
   find(id: number | string, pk?: string): Promise<this | null>;
   all(): Promise<this[]>;
   create(data: Record<string, unknown>): Promise<this>;
@@ -24,9 +21,6 @@ export function CastsMixin<TBase extends Constructor>(Base: TBase) {
   const resolveBaseMethod = createBaseMethodResolver(Base);
 
   abstract class CastableModel extends Base implements Castable {
-    id?: string | number;
-    [key: string]: unknown;
-
     // ⚙️ Define attribute casting configuration
     protected casts: Record<
       string,

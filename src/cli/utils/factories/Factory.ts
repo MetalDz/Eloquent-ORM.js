@@ -64,11 +64,14 @@ export abstract class Factory<T extends BaseModel> {
     }
 
     // Always instantiate the model
-    const instance: T = new this.model();
+    let instance: T = new this.model();
 
     // Case 1: Instance has create()
     if (this.hasInstanceCreate(instance)) {
-      await instance.create(merged);
+      const created = await instance.create(merged);
+      if (created) {
+        instance = created as T;
+      }
     }
     // Case 2: Static create()
     else if (this.hasStaticCreate(this.model)) {

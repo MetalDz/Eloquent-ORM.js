@@ -5,9 +5,6 @@
  */
 
 export interface EagerLoadable {
-  id?: string | number;
-  [key: string]: unknown;
-
   find(id: number | string, pk?: string): Promise<this | null>;
   all(): Promise<this[]>;
   getRelation?(name: string): RelationDefinition<this>;
@@ -26,9 +23,6 @@ export function EagerLoadingMixin<TBase extends Constructor>(Base: TBase) {
   const basePrototype = Base.prototype;
 
   abstract class EagerLoadableModel extends Base implements EagerLoadable {
-    id?: string | number;
-    [key: string]: unknown;
-
     protected eagerRelations: string[] = [];
 
     constructor(...args: any[]) {

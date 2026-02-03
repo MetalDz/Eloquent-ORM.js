@@ -1,6 +1,5 @@
-import { Relation } from "../Relation";
+import { Relation, type CoreModelClass } from "../Relation";
 import type { DriverAdapter } from "../../connection/DriverAdapter";
-import type { CoreModel } from "../../model/CoreModel";
 
 export class BelongsToMany extends Relation {
   protected pivotTable: string;
@@ -8,7 +7,7 @@ export class BelongsToMany extends Relation {
   protected relatedPivotKey: string;
 
   constructor(
-    relatedModel: any,
+    relatedModel: CoreModelClass,
     pivotTable: string,
     foreignPivotKey: string,
     relatedPivotKey: string
@@ -19,12 +18,14 @@ export class BelongsToMany extends Relation {
     this.relatedPivotKey = relatedPivotKey;
   }
 
-  async getResults(parent: any): Promise<any[]> {
-    const relatedInstance = new this.relatedModel();
-    const db = await relatedInstance["getDB"]();
+  async getResults(parent: Record<string, unknown>): Promise<unknown[]> {
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const relatedInstance = new RelatedModel();
+    const db = await relatedInstance.getDB();
     const adapter = db as DriverAdapter;
 
-    const relatedTable = adapter.wrapId(relatedInstance["tableName"]);
+    const relatedTable = adapter.wrapId(relatedInstance.tableName);
     const pivotTable = adapter.wrapId(this.pivotTable);
     const rAll = adapter.wrapId("r.*");
     const rId = adapter.wrapId("r.id");
@@ -37,18 +38,19 @@ export class BelongsToMany extends Relation {
         ON ${rId} = ${pRelated}
       WHERE ${pForeign} = ${adapter.placeholder(1)}`;
     const rows = await adapter.query<Record<string, unknown>>(sql, [parent[this.localKey]]);
-    const Model = this.relatedModel as typeof CoreModel;
-    return Model.hydrateMany(rows);
+    return RelatedModel.hydrateMany(rows);
   }
 
-  async match(parents: any[]): Promise<void> {
+  async match(parents: Record<string, unknown>[]): Promise<void> {
     if (!parents.length) return;
     const parentIds = parents.map((p) => p[this.localKey]);
-    const relatedInstance = new this.relatedModel();
-    const db = await relatedInstance["getDB"]();
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const relatedInstance = new RelatedModel();
+    const db = await relatedInstance.getDB();
     const adapter = db as DriverAdapter;
 
-    const relatedTable = adapter.wrapId(relatedInstance["tableName"]);
+    const relatedTable = adapter.wrapId(relatedInstance.tableName);
     const pivotTable = adapter.wrapId(this.pivotTable);
     const rAll = adapter.wrapId("r.*");
     const rId = adapter.wrapId("r.id");
@@ -64,27 +66,29 @@ export class BelongsToMany extends Relation {
       WHERE ${inResult.sql}`;
     const rows = await adapter.query<Record<string, unknown>>(sql, inResult.params);
 
-    const grouped: Record<string, any[]> = {};
-    const Model = this.relatedModel as typeof CoreModel;
+    const grouped: Record<string, Record<string, unknown>[]> = {};
     for (const row of rows) {
-      const instance = Model.hydrateRow(row);
+      const instance = RelatedModel.hydrateRow(row);
       if (!instance) continue;
-      const pid = ((instance as any)["pivot_parent"] as string) ?? "";
-      if ("pivot_parent" in (instance as any)) {
-        delete (instance as any)["pivot_parent"];
+      const record = instance as unknown as Record<string, unknown>;
+      const pid = (record["pivot_parent"] as string) ?? "";
+      if ("pivot_parent" in record) {
+        delete record["pivot_parent"];
       }
       if (!grouped[pid]) grouped[pid] = [];
-      grouped[pid].push(instance);
+      grouped[pid].push(record);
     }
 
     const relName = this.name ?? "relation";
     for (const parent of parents) {
-      (parent as any)[relName] = grouped[parent[this.localKey]] || [];
+      (parent as Record<string, unknown>)[relName] = grouped[parent[this.localKey] as string] || [];
     }
   }
 
-  async attach(parentId: any, relatedId: any): Promise<void> {
-    const db = await new this.relatedModel()["getDB"]();
+  async attach(parentId: unknown, relatedId: unknown): Promise<void> {
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const db = await new RelatedModel().getDB();
     const adapter = db as DriverAdapter;
     const table = adapter.wrapId(this.pivotTable);
     const fk = adapter.wrapId(this.foreignPivotKey);
@@ -94,8 +98,10 @@ export class BelongsToMany extends Relation {
     await adapter.execute(sql, [parentId, relatedId]);
   }
 
-  async detach(parentId: any, relatedId: any): Promise<void> {
-    const db = await new this.relatedModel()["getDB"]();
+  async detach(parentId: unknown, relatedId: unknown): Promise<void> {
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const db = await new RelatedModel().getDB();
     const adapter = db as DriverAdapter;
     const table = adapter.wrapId(this.pivotTable);
     const fk = adapter.wrapId(this.foreignPivotKey);
@@ -107,8 +113,10 @@ export class BelongsToMany extends Relation {
     await adapter.execute(sql, [parentId, relatedId]);
   }
 
-  async sync(parentId: any, relatedIds: any[]): Promise<void> {
-    const db = await new this.relatedModel()["getDB"]();
+  async sync(parentId: unknown, relatedIds: unknown[]): Promise<void> {
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const db = await new RelatedModel().getDB();
     const adapter = db as DriverAdapter;
     const table = adapter.wrapId(this.pivotTable);
     const fk = adapter.wrapId(this.foreignPivotKey);

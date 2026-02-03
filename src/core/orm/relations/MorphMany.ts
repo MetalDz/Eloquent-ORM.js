@@ -1,23 +1,24 @@
-import { Relation } from "../Relation";
+import { Relation, type CoreModelClass } from "../Relation";
 import type { DriverAdapter } from "../../connection/DriverAdapter";
-import type { CoreModel } from "../../model/CoreModel";
 
 export class MorphMany extends Relation {
   protected morphType: string;
   protected morphId: string;
 
-  constructor(relatedModel: any, morphType: string, morphId: string) {
+  constructor(relatedModel: CoreModelClass, morphType: string, morphId: string) {
     super(relatedModel, morphId, "id");
     this.morphType = morphType;
     this.morphId = morphId;
   }
 
-  async getResults(parent: any): Promise<any[]> {
-    const relatedInstance = new this.relatedModel();
-    const db = await relatedInstance["getDB"]();
+  async getResults(parent: Record<string, unknown>): Promise<unknown[]> {
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const relatedInstance = new RelatedModel();
+    const db = await relatedInstance.getDB();
     const adapter = db as DriverAdapter;
 
-    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const table = adapter.wrapId(relatedInstance.tableName);
     const morphId = adapter.wrapId(this.morphId);
     const morphTypeColumn = adapter.wrapId(this.morphType);
     const sql = `
@@ -32,18 +33,19 @@ export class MorphMany extends Relation {
       parent[this.localKey],
       morphTypeValue,
     ]);
-    const Model = this.relatedModel as typeof CoreModel;
-    return Model.hydrateMany(rows);
+    return RelatedModel.hydrateMany(rows);
   }
 
-  async match(parents: any[]): Promise<void> {
+  async match(parents: Record<string, unknown>[]): Promise<void> {
     if (!parents.length) return;
     const parentIds = parents.map((p) => p[this.localKey]);
-    const relatedInstance = new this.relatedModel();
-    const db = await relatedInstance["getDB"]();
+    const RelatedModel = this.relatedModel;
+    if (!RelatedModel) throw new Error("Related model is not defined.");
+    const relatedInstance = new RelatedModel();
+    const db = await relatedInstance.getDB();
     const adapter = db as DriverAdapter;
 
-    const table = adapter.wrapId(relatedInstance["tableName"]);
+    const table = adapter.wrapId(relatedInstance.tableName);
     const morphId = adapter.wrapId(this.morphId);
     const morphTypeColumn = adapter.wrapId(this.morphType);
     const inResult = adapter.inClause(morphId, parentIds, 1);
@@ -61,19 +63,20 @@ export class MorphMany extends Relation {
       morphTypeValue,
     ]);
 
-    const grouped: Record<string, any[]> = {};
-    const Model = this.relatedModel as typeof CoreModel;
+    const grouped: Record<string, Record<string, unknown>[]> = {};
     for (const row of rows) {
-      const instance = Model.hydrateRow(row);
+      const instance = RelatedModel.hydrateRow(row);
       if (!instance) continue;
-      const id = (instance as any)[this.morphId] as string;
+      const record = instance as unknown as Record<string, unknown>;
+      const id = record[this.morphId] as string;
       if (!grouped[id]) grouped[id] = [];
-      grouped[id].push(instance);
+      grouped[id].push(record);
     }
 
     const relName = this.name ?? "relation";
     for (const parent of parents) {
-      (parent as any)[relName] = grouped[parent[this.localKey]] || [];
+      (parent as Record<string, unknown>)[relName] =
+        grouped[parent[this.localKey] as string] || [];
     }
   }
 }
