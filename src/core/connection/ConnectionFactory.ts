@@ -48,13 +48,15 @@ export async function closeAllConnections(): Promise<void> {
           if (conn.close) await conn.close();
           break;
       }
-      console.log(`🔒 Closed ${name} connection.`);
     } catch (err) {
-      console.error(`❌ Error closing ${name}:`, err);
+      const message = err instanceof Error ? err.message : String(err);
+      if (!message.includes("closed state")) {
+        console.error(`❌ Error closing ${name}:`, err);
+      }
     }
 
-    if (adapterCache[name as ConnectionName]) {
-      delete adapterCache[name as ConnectionName];
-    }
+    delete connectionCache[name as ConnectionName];
+    delete adapterCache[name as ConnectionName];
+    console.log(`🔒 Closed ${name} connection.`);
   }
 }

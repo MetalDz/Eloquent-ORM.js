@@ -31,6 +31,8 @@ export async function dbSeedFresh(
     await dbSeed({
       test: !!options?.test,
       ...(options?.class ? { class: options.class } : {}),
+      close: false,
+      exit: false,
     });
 
     console.log(chalk.greenBright("\n✅ Database fully refreshed and seeded!\n"));

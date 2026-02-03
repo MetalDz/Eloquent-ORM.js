@@ -12,6 +12,8 @@ import { closeAllConnections } from "../../core/connection/ConnectionFactory";
 export async function dbSeed(options: {
   test?: boolean;
   class?: string;
+  close?: boolean;
+  exit?: boolean;
 }): Promise<void> {
   try {
     const isTest = !!options?.test;
@@ -58,9 +60,11 @@ export async function dbSeed(options: {
     console.error(chalk.red("Seeder execution failed."));
     if (err instanceof Error) console.error(chalk.red(err.message));
   } finally {
-    await closeAllConnections();
-    console.log(chalk.gray("All database connections closed.\n"));
-    if (process.env.ELOQUENT_CLI === "true") {
+    if (options?.close !== false) {
+      await closeAllConnections();
+      console.log(chalk.gray("All database connections closed.\n"));
+    }
+    if (options?.exit !== false && process.env.ELOQUENT_CLI === "true") {
       setImmediate(() => process.exit(0));
     }
   }

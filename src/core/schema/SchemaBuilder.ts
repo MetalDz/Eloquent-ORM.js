@@ -43,27 +43,53 @@ export class SchemaBuilder {
     const columns: string[] = [];
     const primaryColumns: string[] = [];
     const extraTables: string[] = [];
+    const columnSqlByName = new Map<string, string>();
 
     for (const [name, field] of Object.entries(schema)) {
       switch (field.kind) {
-        case "column":
+        case "column": {
           if (field.options?.primary) primaryColumns.push(name);
-          columns.push(this.columnSQL(name, field, dialectName, dialect));
+          const sql = this.columnSQL(name, field, dialectName, dialect);
+          columns.push(sql);
+          columnSqlByName.set(name, sql);
           break;
+        }
 
         case "relation": {
           const rel = this.relationSQL(tableName, name, field, dialect, dialectName);
           if (rel) {
-            if (rel.type === "inline") columns.push(rel.sql);
+            if (rel.type === "inline") {
+              for (const col of rel.columns) {
+                if (!columnSqlByName.has(col.name)) {
+                  columns.push(col.sql);
+                  columnSqlByName.set(col.name, col.sql);
+                }
+              }
+              columns.push(...rel.constraints);
+            }
             if (rel.type === "pivot") extraTables.push(rel.sql);
-            if (rel.type === "morph") columns.push(...rel.sqls);
+            if (rel.type === "morph") {
+              for (const col of rel.columns) {
+                if (!columnSqlByName.has(col.name)) {
+                  columns.push(col.sql);
+                  columnSqlByName.set(col.name, col.sql);
+                }
+              }
+            }
           }
           break;
         }
 
-        case "mixin":
-          columns.push(...this.mixinSQL(field, dialectName, dialect));
+        case "mixin": {
+          const mixinCols = this.mixinSQL(field, dialectName, dialect);
+          columns.push(...mixinCols);
+          if (field.name === "SoftDeletes") {
+            const name = "deleted_at";
+            const sql = mixinCols.find((c) => c.includes(dialect.wrap(name)));
+            if (sql) columnSqlByName.set(name, sql);
+          }
           break;
+        }
       }
     }
 
@@ -117,22 +143,22 @@ export class SchemaBuilder {
     if (!tableExists) {
       mainSQL = dialect.formatCreateSQL(tableName, columns);
     } else if (smartUpdate) {
-      const newColumns = Object.keys(schema);
+      const schemaColumns = Array.from(columnSqlByName.keys());
       const missingColumns: string[] = [];
       const dropColumns: string[] = [];
 
       // 🧩 Detect new columns
-      for (const col of columns) {
-        const match = col.match(/`(\w+)`/);
-        if (match && !existingColumns.includes(match[1])) {
-          missingColumns.push(col);
+      for (const colName of schemaColumns) {
+        if (!existingColumns.includes(colName)) {
+          const sql = columnSqlByName.get(colName);
+          if (sql) missingColumns.push(sql);
         }
       }
 
       // 🧩 Detect removed columns
       for (const existing of existingColumns) {
         if (
-          !newColumns.includes(existing) &&
+          !schemaColumns.includes(existing) &&
           !["id", "created_at", "updated_at", "deleted_at"].includes(existing)
         ) {
           dropColumns.push(existing);
@@ -267,17 +293,23 @@ export class SchemaBuilder {
     dialect: SQLDialect,
     dialectName: Dialect
   ):
-    | { type: "inline"; sql: string }
+    | { type: "inline"; columns: Array<{ name: string; sql: string }>; constraints: string[] }
     | { type: "pivot"; sql: string }
-    | { type: "morph"; sqls: string[] }
+    | { type: "morph"; sqls: string[]; columns: Array<{ name: string; sql: string }> }
     | null {
     const wrap = (v: string) => dialect.wrap(v);
 
     if (r.relation === "belongsTo" && r.options.foreignKey && r.model) {
-      const sql = `FOREIGN KEY (${wrap(r.options.foreignKey)}) REFERENCES ${wrap(
+      const fk = r.options.foreignKey;
+      const colSql = `${wrap(fk)} ${dialectName === "pg" ? "INTEGER" : "INT"}`;
+      const fkSql = `FOREIGN KEY (${wrap(fk)}) REFERENCES ${wrap(
         r.model.toLowerCase() + "s"
       )}(${wrap(r.options.localKey ?? "id")})`;
-      return { type: "inline", sql };
+      return {
+        type: "inline",
+        columns: [{ name: fk, sql: colSql }],
+        constraints: [fkSql],
+      };
     }
 
     if (r.relation === "belongsToMany" && r.model) {
@@ -302,13 +334,20 @@ export class SchemaBuilder {
       return { type: "pivot", sql: pivotSQL };
     }
 
-    if (["morphOne", "morphMany", "morphTo"].includes(r.relation)) {
+    if (r.relation === "morphTo") {
       const morphName = r.options.morphName ?? "morphable";
-      const sqls = [
-        `${wrap(morphName + "_id")} INT`,
-        `${wrap(morphName + "_type")} VARCHAR(255)`,
-      ];
-      return { type: "morph", sqls };
+      const idName = morphName + "_id";
+      const typeName = morphName + "_type";
+      const idSql = `${wrap(idName)} INT`;
+      const typeSql = `${wrap(typeName)} VARCHAR(255)`;
+      return {
+        type: "morph",
+        sqls: [idSql, typeSql],
+        columns: [
+          { name: idName, sql: idSql },
+          { name: typeName, sql: typeSql },
+        ],
+      };
     }
 
     return null;

@@ -1,8 +1,6 @@
 import chalk from "chalk";
 import { getAdapter } from "../../core/connection/ConnectionFactory";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
-import { User } from "../../app/models/User";
-import { Post } from "../../app/models/Post";
 
 type Row = Record<string, unknown>;
 
@@ -89,8 +87,19 @@ export async function demoScenario(options?: {
     );
     console.log(chalk.gray("posts for user:"), posts.length);
 
-    const userMorph = User.getMorphClass();
-    const postMorph = Post.getMorphClass();
+    // Lazy-load models to avoid CLI compile errors when app folder is missing.
+    let userMorph = "users";
+    let postMorph = "posts";
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { User } = require("../../app/models/User");
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { Post } = require("../../app/models/Post");
+      if (User?.getMorphClass) userMorph = User.getMorphClass();
+      if (Post?.getMorphClass) postMorph = Post.getMorphClass();
+    } catch {
+      // keep defaults
+    }
 
     const userComments = await adapter.query<Row>(
       `SELECT * FROM ${commentsTable} WHERE ${adapter.wrapId("commentable_id")} = ${adapter.placeholder(1)} AND ${adapter.wrapId("commentable_type")} = ${adapter.placeholder(2)} LIMIT 3`,

@@ -8,6 +8,10 @@ export class CommentFactory extends Factory<Comment> {
     return {
 
       name: this.faker.person.fullName(),
+
+      commentable_id: this.faker.number.int(),
+
+      commentable_type: this.faker.person.fullName(),
     };
   }
 }
