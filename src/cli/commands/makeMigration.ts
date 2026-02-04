@@ -7,9 +7,11 @@ import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import { dbConfig } from "../../config/database";
 
 interface MigrationOptions {
   test?: boolean;
+  exit?: boolean;
 }
 
 function pascalCase(name: string): string {
@@ -81,15 +83,19 @@ export async function makeMigration(
         continue;
       }
 
-      const connectionName = resolveConnectionName(ModelClass);
+      const connectionName = resolveConnectionName(ModelClass, { test: isTest });
       console.log(chalk.gray(`🔌 Using connection: ${connectionName}`));
 
       // 🧠 Generate SQL
+      const driver =
+        (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
+        connectionName;
       const { mainSQL, extraTables } = await SchemaBuilder.toCreateSQL(
         ModelClass.tableName,
         ModelClass.schema,
-        connectionName,
-        true
+        driver,
+        true,
+        connectionName
       );
 
       if (!mainSQL || mainSQL.trim() === "") {
@@ -187,5 +193,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
     )
   );
 
-  process.exit(0);
+  if (options.exit !== false) {
+    process.exit(0);
+  }
 }

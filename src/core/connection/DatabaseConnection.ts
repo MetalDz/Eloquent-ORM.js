@@ -19,6 +19,7 @@ export interface MySQLConfig {
   user: string;
   password: string;
   database: string;
+  port?: number;
   waitForConnections?: boolean;
   connectionLimit?: number;
   queueLimit?: number;
@@ -71,6 +72,7 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
         user: config.user,
         password: config.password,
         database: config.database,
+        port: config.port,
         waitForConnections: config.waitForConnections ?? true,
         connectionLimit: config.connectionLimit ?? 10,
         queueLimit: config.queueLimit ?? 0,

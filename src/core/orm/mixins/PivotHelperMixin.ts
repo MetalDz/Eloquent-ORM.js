@@ -5,6 +5,7 @@
  */
 
 import type { DriverAdapter } from "../../connection/DriverAdapter";
+import { dbConfig } from "../../../config/database";
 
 export interface DatabaseConnection {
   collection?(name: string): {
@@ -53,8 +54,10 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
       const rows = relatedIds.map((rid) => ({ [foreignKey]: id, [relatedKey]: rid }));
 
       const conn = (this as unknown as PivotCapableModel).connectionName;
+      const key = conn as keyof typeof dbConfig.connections;
+      const driver = dbConfig.connections[key]?.driver ?? conn;
 
-      switch (conn) {
+      switch (driver) {
         case "sqlite":
         case "mysql":
         case "pg": {
@@ -84,7 +87,7 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
         }
 
         default:
-          throw new Error(`â‌Œ Unsupported connection type: ${conn}`);
+          throw new Error(`â‌Œ Unsupported connection type: ${driver}`);
       }
     }
 
@@ -98,8 +101,10 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
     ): Promise<void> {
       const db = await (this as unknown as PivotCapableModel).getDB();
       const conn = (this as unknown as PivotCapableModel).connectionName;
+      const key = conn as keyof typeof dbConfig.connections;
+      const driver = dbConfig.connections[key]?.driver ?? conn;
 
-      switch (conn) {
+      switch (driver) {
         case "sqlite":
         case "mysql":
         case "pg": {
@@ -121,7 +126,7 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
         }
 
         default:
-          throw new Error(`â‌Œ Unsupported connection type: ${conn}`);
+          throw new Error(`â‌Œ Unsupported connection type: ${driver}`);
       }
     }
 

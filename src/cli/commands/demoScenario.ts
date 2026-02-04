@@ -1,6 +1,8 @@
 import chalk from "chalk";
 import { getAdapter } from "../../core/connection/ConnectionFactory";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import { dbConfig } from "../../config/database";
 
 type Row = Record<string, unknown>;
 
@@ -13,8 +15,12 @@ function toNumber(value: unknown): number {
 export async function demoScenario(options?: {
   user?: number;
   random?: boolean;
+  test?: boolean;
 }): Promise<void> {
-  const connectionName = (process.env.DB_CONNECTION ?? "mysql") as "mysql" | "pg" | "sqlite";
+  const connectionName = resolveConnectionName(undefined, { test: !!options?.test });
+  const driver =
+    dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
+    connectionName;
 
   try {
     const adapter = await getAdapter(connectionName);
@@ -58,7 +64,7 @@ export async function demoScenario(options?: {
     if (options?.user && Number.isFinite(options.user)) {
       userId = options.user;
     } else if (options?.random) {
-      const randomFn = connectionName === "pg" ? "RANDOM()" : "RAND()";
+      const randomFn = driver === "pg" ? "RANDOM()" : "RAND()";
       const row = await adapter.queryOne<Row>(
         `SELECT ${adapter.wrapId("id")} as id FROM ${usersTable} ORDER BY ${randomFn} LIMIT 1`
       );
@@ -91,12 +97,21 @@ export async function demoScenario(options?: {
     let userMorph = "users";
     let postMorph = "posts";
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { User } = require("../../app/models/User");
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { Post } = require("../../app/models/Post");
-      if (User?.getMorphClass) userMorph = User.getMorphClass();
-      if (Post?.getMorphClass) postMorph = Post.getMorphClass();
+      if (options?.test) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { User } = require("../../test/database/models/User");
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { Post } = require("../../test/database/models/Post");
+        if (User?.getMorphClass) userMorph = User.getMorphClass();
+        if (Post?.getMorphClass) postMorph = Post.getMorphClass();
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { User } = require("../../app/models/User");
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { Post } = require("../../app/models/Post");
+        if (User?.getMorphClass) userMorph = User.getMorphClass();
+        if (Post?.getMorphClass) postMorph = Post.getMorphClass();
+      }
     } catch {
       // keep defaults
     }

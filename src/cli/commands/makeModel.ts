@@ -6,8 +6,10 @@ import { SchemaBuilder } from "../../core/schema/SchemaBuilder";
 import { PathMap } from "../utils/PathMap";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { ImportResolver } from "../utils/ImportResolver";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import { dbConfig } from "../../config/database";
 import type {
   SchemaField,
   ColumnDefinition,
@@ -250,11 +252,16 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       return;
     }
 
+    const connectionName = resolveConnectionName(ModelClass, { test: isTest });
+    const driver =
+      (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
+      connectionName;
     const { mainSQL } = await SchemaBuilder.toCreateSQL(
       ModelClass.tableName,
       ModelClass.schema,
-      undefined,
-      true // smart update detection
+      driver,
+      true, // smart update detection
+      connectionName
     );
 
     const isCreate = mainSQL.trim().toUpperCase().startsWith("CREATE TABLE");

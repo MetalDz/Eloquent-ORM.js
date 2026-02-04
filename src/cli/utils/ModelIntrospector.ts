@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { PathMap } from "./PathMap";
 import type {
   SchemaField,
   ColumnDefinition,
@@ -47,12 +48,16 @@ export class ModelIntrospector {
   /**
    * Analyze a model and extract schema information.
    */
-  static async analyze(modelName: string): Promise<{
+  static async analyze(
+    modelName: string,
+    options: { test?: boolean } = {}
+  ): Promise<{
     fields: IntrospectedField[];
     relations: IntrospectedRelation[];
     features: ModelFeatures;
   }> {
-    const modelPath = path.resolve(process.cwd(), `src/app/models/${modelName}.ts`);
+    const modelsDir = PathMap.models(!!options.test);
+    const modelPath = path.resolve(modelsDir, `${modelName}.ts`);
 
     if (!fs.existsSync(modelPath)) {
       throw new Error(`❌ Model file not found: ${modelPath}`);

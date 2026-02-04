@@ -5,16 +5,15 @@ import {
   getConnection,
   ConnectionName,
 } from "../../core/connection/ConnectionFactory";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
 
 /**
  * 🧩 migrate:fresh
  * Drops all tables and re-runs every migration from scratch — with confirmation.
  */
-export async function migrateFresh(): Promise<void> {
-  const connectionName = ((process.env.DB_CONNECTION as ConnectionName) ||
-    (dbConfig.default as ConnectionName) ||
-    "mysql") as ConnectionName;
+export async function migrateFresh(options?: { test?: boolean }): Promise<void> {
+  const connectionName = resolveConnectionName(undefined, { test: !!options?.test });
 
   // ⚠️ Safety confirmation
   const confirmed = await confirmDangerousAction();
@@ -27,7 +26,8 @@ export async function migrateFresh(): Promise<void> {
   console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
 
   try {
-    if (connectionName === "pg") {
+    const driver = dbConfig.connections[connectionName]?.driver;
+    if (driver === "pg") {
       await db.query?.(`
         DO $$ DECLARE r RECORD;
         BEGIN
@@ -36,7 +36,7 @@ export async function migrateFresh(): Promise<void> {
           END LOOP;
         END $$;
       `);
-    } else if (connectionName === "sqlite") {
+    } else if (driver === "sqlite") {
       const tables = (await db.query?.(
         "SELECT name FROM sqlite_master WHERE type='table';"
       )) as [Array<{ name: string }>, unknown[]];
@@ -44,7 +44,7 @@ export async function migrateFresh(): Promise<void> {
       for (const table of tables?.[0] ?? []) {
         await db.query?.(`DROP TABLE IF EXISTS ${table.name};`);
       }
-    } else if (connectionName === "mysql") {
+    } else if (driver === "mysql") {
       await db.query?.("SET FOREIGN_KEY_CHECKS = 0;");
       const tables = (await db.query?.("SHOW TABLES;")) as [Record<string, string>[], unknown[]];
       const tableList = tables?.[0] ?? [];

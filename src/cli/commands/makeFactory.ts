@@ -64,7 +64,7 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
     const ModelName = options.model ?? factoryName.replace(/Factory$/i, "");
 
     // 🧠 Reflect schema using ModelIntrospector
-    const analysisRaw = (await ModelIntrospector.analyze(ModelName)) as unknown;
+    const analysisRaw = (await ModelIntrospector.analyze(ModelName, { test: !!options.test })) as unknown;
 
     if (!analysisRaw) {
       console.warn(chalk.yellow(`⚠️  No metadata found for model "${ModelName}". Aborting.`));
@@ -157,10 +157,13 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
       features,
     } as const;
 
-    const rendered = TemplateEngine.render(templateContent, renderData);
+    let rendered = TemplateEngine.render(templateContent, renderData);
+    if (options.test) {
+      rendered = rendered.replace(/from \"\.\.\/\.\.\/models\//g, 'from "../models/');
+    }
 
     // ensure output directory exists
-    const factoriesDir = PathMap.factories();
+    const factoriesDir = PathMap.factories(!!options.test);
     ensureDirSync(factoriesDir);
 
     // 🧾 Write main factory file using writeFileSafe / overwriteFile

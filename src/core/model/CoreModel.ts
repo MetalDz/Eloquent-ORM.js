@@ -1,5 +1,6 @@
 // src/core/connection/CoreModel.ts
 import { getConnection, getAdapter, ConnectionName } from "../connection/ConnectionFactory";
+import { dbConfig } from "../../config/database";
 import type { DriverAdapter } from "../connection/DriverAdapter";
 import type { Db } from "mongodb";
 
@@ -98,6 +99,10 @@ export abstract class CoreModel<
     return await getAdapter(this.connectionName);
   }
 
+  private getDriverName(): string {
+    return dbConfig.connections[this.connectionName]?.driver ?? this.connectionName;
+  }
+
   /**
    * Validate incoming data using schema + hooks + custom rules
    */
@@ -152,8 +157,9 @@ export abstract class CoreModel<
    * ----------------------------------------------------- */
   async find(id: number | string, pk: string = "id"): Promise<this | null> {
     const db = await this.getDB();
+    const driver = this.getDriverName();
 
-    switch (this.connectionName) {
+    switch (driver) {
       case "sqlite":
       case "mysql":
       case "pg": {
@@ -174,7 +180,7 @@ export abstract class CoreModel<
         }
 
       default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+        throw new Error(`Unsupported driver: ${driver}`);
     }
   }
 
@@ -183,8 +189,9 @@ export abstract class CoreModel<
    * ----------------------------------------------------- */
   async all(): Promise<this[]> {
     const db = await this.getDB();
+    const driver = this.getDriverName();
 
-    switch (this.connectionName) {
+    switch (driver) {
       case "sqlite":
       case "mysql":
       case "pg": {
@@ -204,7 +211,7 @@ export abstract class CoreModel<
         }
 
       default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+        throw new Error(`Unsupported driver: ${driver}`);
     }
   }
 
@@ -223,11 +230,12 @@ export abstract class CoreModel<
     }
 
     const db = await this.getDB();
+    const driver = this.getDriverName();
 
     // 3) Execute INSERT per driver, return created record shape
     let createdRecord: Record<string, unknown> | null = null;
 
-    switch (this.connectionName) {
+    switch (driver) {
       case "sqlite":
       case "mysql":
       case "pg": {
@@ -257,7 +265,7 @@ export abstract class CoreModel<
       }
 
       default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+        throw new Error(`Unsupported driver: ${driver}`);
     }
 
     // 4) Fire afterCreate (no cancellation)
@@ -285,9 +293,10 @@ export abstract class CoreModel<
     if (!canUpdate) return;
 
     const db = await this.getDB();
+    const driver = this.getDriverName();
 
     // 3) Execute UPDATE
-    switch (this.connectionName) {
+    switch (driver) {
       case "sqlite":
       case "mysql":
       case "pg": {
@@ -314,7 +323,7 @@ export abstract class CoreModel<
       }
 
       default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+        throw new Error(`Unsupported driver: ${driver}`);
     }
 
     // 4) afterUpdate
@@ -330,9 +339,10 @@ export abstract class CoreModel<
     if (!canDelete) return;
 
     const db = await this.getDB();
+    const driver = this.getDriverName();
 
     // 2) Execute delete
-    switch (this.connectionName) {
+    switch (driver) {
       case "sqlite":
       case "mysql":
       case "pg": {
@@ -349,7 +359,7 @@ export abstract class CoreModel<
         break;
 
       default:
-        throw new Error(`Unsupported driver: ${this.connectionName}`);
+        throw new Error(`Unsupported driver: ${driver}`);
     }
 
     // 3) afterDelete

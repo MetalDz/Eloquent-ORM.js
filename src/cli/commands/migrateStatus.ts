@@ -8,6 +8,7 @@ import {
 } from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 /**
  * 🧩 Universal query result type for SQL engines
@@ -23,9 +24,7 @@ type SQLResult<T> =
  */
 export async function migrateStatus(isTest = false): Promise<void> {
   const migrationsDir = PathMap.migrations(isTest);
-  const connectionName = ((process.env.DB_CONNECTION as ConnectionName) ||
-    (dbConfig.default as ConnectionName) ||
-    "mysql") as ConnectionName;
+  const connectionName = resolveConnectionName(undefined, { test: isTest });
 
   const db = await getConnection(connectionName);
   console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));

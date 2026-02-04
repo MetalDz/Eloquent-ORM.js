@@ -22,12 +22,21 @@ export class SchemaBuilder {
     tableName: string,
     schema: Record<string, SchemaField>,
     explicitDialect?: Dialect | string,
-    smartUpdate: boolean = false
+    smartUpdate: boolean = false,
+    connectionNameOverride?: string
   ): Promise<SchemaBuildResult> {
     const supportedDialects: Dialect[] = ["mysql", "pg", "sqlite"];
-    const dialectName = supportedDialects.includes(explicitDialect as Dialect)
+    let dialectName = supportedDialects.includes(explicitDialect as Dialect)
       ? (explicitDialect as Dialect)
       : ((dbConfig.default as Dialect) || "mysql");
+
+    if (!supportedDialects.includes(dialectName)) {
+      const maybe = explicitDialect ? dbConfig.connections[explicitDialect as keyof typeof dbConfig.connections] : undefined;
+      const driver = maybe?.driver as Dialect | undefined;
+      if (driver && supportedDialects.includes(driver)) {
+        dialectName = driver;
+      }
+    }
 
     if (!supportedDialects.includes(dialectName)) {
       throw new Error(`❌ Unsupported dialect: ${explicitDialect}`);
@@ -106,7 +115,7 @@ export class SchemaBuilder {
 
     try {
       const { getConnection } = await import("../connection/ConnectionFactory");
-      const db = await getConnection(dialectName);
+      const db = await getConnection(((connectionNameOverride as unknown) || dialectName) as any);
 
       if (dialectName === "mysql") {
         const [rows] = (await db.query?.(`SHOW TABLES LIKE '${tableName}'`)) as [

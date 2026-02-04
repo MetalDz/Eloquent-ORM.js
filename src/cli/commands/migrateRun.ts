@@ -9,6 +9,7 @@ import {
 } from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 interface QueryCapableConnection {
   query?(sql: string): Promise<unknown> | Promise<[unknown[], unknown[]]>;
@@ -25,6 +26,15 @@ export async function migrateRun(
   modelName?: string,
   dryRun: boolean = false
 ): Promise<void> {
+  const exitCli = (): void => {
+    if (process.env.ELOQUENT_CLI === "true") {
+      setImmediate(() => process.exit(0));
+    }
+  };
+
+  if (process.env.ELOQUENT_DEBUG === "true") {
+    console.log("[migrate:run] start", { isTest, modelName, dryRun });
+  }
   console.log(
     chalk.cyan(
       `\n⚙️  Running migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode${
@@ -36,24 +46,34 @@ export async function migrateRun(
   const migrationsDir = PathMap.migrations(isTest);
   if (!fs.existsSync(migrationsDir)) {
     console.log(chalk.yellow("⚠️  No migrations directory found."));
+    exitCli();
     return;
   }
 
-  const supportedDialects = ["mysql", "pg", "sqlite"];
-  const connectionName = ((process.env.DB_CONNECTION as ConnectionName) ||
-    (dbConfig.default as ConnectionName) ||
-    "mysql") as ConnectionName;
+  const connectionName = resolveConnectionName(undefined, { test: isTest });
+  if (process.env.ELOQUENT_DEBUG === "true") {
+    console.log("[migrate:run] connectionName", connectionName);
+  }
+  const driver = dbConfig.connections[connectionName]?.driver;
+  const supportedDrivers = ["mysql", "pg", "sqlite"];
 
-  if (!supportedDialects.includes(connectionName)) {
+  if (!driver || !supportedDrivers.includes(driver)) {
     console.warn(
       chalk.yellow(
         `⚠️  Skipping migrations: "${connectionName}" is not SQL-based.`
       )
     );
+    exitCli();
     return;
   }
 
+  if (process.env.ELOQUENT_DEBUG === "true") {
+    console.log("[migrate:run] before getConnection");
+  }
   const db: QueryCapableConnection = await getConnection(connectionName);
+  if (process.env.ELOQUENT_DEBUG === "true") {
+    console.log("[migrate:run] after getConnection");
+  }
   console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
 
   // 🧠 Universal query runner (dry-run safe)
@@ -74,7 +94,7 @@ export async function migrateRun(
 
   // ✅ Migration tracker table
   const trackerSQL =
-    connectionName === "pg"
+    driver === "pg"
       ? `
         CREATE TABLE IF NOT EXISTS migrations (
           id SERIAL PRIMARY KEY,
@@ -82,7 +102,7 @@ export async function migrateRun(
           batch INT DEFAULT 1,
           run_at TIMESTAMP DEFAULT NOW()
         );`
-      : connectionName === "sqlite"
+      : driver === "sqlite"
       ? `
         CREATE TABLE IF NOT EXISTS migrations (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,6 +131,7 @@ export async function migrateRun(
     if (files.length === 0) {
       console.log(chalk.yellow(`⚠️  No migrations found for model: ${modelName}`));
       await closeAllConnections();
+      exitCli();
       return;
     }
   }
@@ -130,6 +151,7 @@ export async function migrateRun(
   if (pending.length === 0) {
     console.log(chalk.yellow("\n✨ No new migrations to run."));
     await closeAllConnections();
+    exitCli();
     return;
   }
 
@@ -191,5 +213,6 @@ export async function migrateRun(
   } finally {
     await closeAllConnections();
     console.log(chalk.gray("\n🔒 All database connections closed.\n"));
+    exitCli();
   }
 }

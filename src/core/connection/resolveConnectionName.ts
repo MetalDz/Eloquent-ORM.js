@@ -11,8 +11,12 @@ import type { ConnectionName } from "./ConnectionFactory";
  * 4. "mysql"
  */
 export function resolveConnectionName(
-  modelClass?: { connectionName?: string }
+  modelClass?: { connectionName?: string },
+  options?: { test?: boolean }
 ): ConnectionName {
+  if (options?.test && Object.prototype.hasOwnProperty.call(dbConfig.connections, "mysql_test")) {
+    return "mysql_test" as ConnectionName;
+  }
   const name =
     modelClass?.connectionName ||
     process.env.DB_CONNECTION ||

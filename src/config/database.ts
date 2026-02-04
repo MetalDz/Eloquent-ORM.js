@@ -13,6 +13,14 @@ export const dbConfig = {
       password: process.env.DB_PASSWORD || "",
       database: process.env.DB_NAME || "eloquentjs",
     },
+    mysql_test: {
+      driver: "mysql",
+      host: process.env.DB_TEST_HOST || process.env.DB_HOST || "localhost",
+      user: process.env.DB_TEST_USER || process.env.DB_USER || "root",
+      password: process.env.DB_TEST_PASSWORD || process.env.DB_PASSWORD || "",
+      database: process.env.DB_TEST_NAME || "db_test",
+      port: Number(process.env.DB_TEST_PORT) || 3306,
+    },
     pg: {
       driver: "pg",
       host: process.env.PG_HOST || "localhost",
