@@ -22,8 +22,9 @@ if (process.env.ELOQUENT_DEBUG === "true") {
 // Mark CLI runtime so commands can exit cleanly when done.
 process.env.ELOQUENT_CLI = "true";
 
-// Normalize ":test" alias to "--test" for all commands.
-process.argv = process.argv.map((arg) => (arg === ":test" ? "--test" : arg));
+function isCliTest(): boolean {
+  return process.argv.includes("--test");
+}
 
 // -------------------------------------------------------------------------
 // Test logs (plain text) - one file per command under src/test/logs
@@ -85,7 +86,7 @@ try {
 }
 
 // Test-mode connection override (CLI only)
-if (process.argv.includes("--test")) {
+if (isCliTest()) {
   process.env.DB_CONNECTION = "mysql_test";
 }
 
@@ -189,7 +190,7 @@ program
   .option("--force", "Overwrite existing migration if it exists")
   .description("Generate a new model (with optional migration)")
   .action(async (name: string, options: Record<string, unknown>) => {
-    await makeModel(name, options);
+    await makeModel(name, { ...options, test: !!(options as { test?: boolean }).test });
   });
 
 program
@@ -310,18 +311,33 @@ program
 program
   .command("make:migration <model>")
   .option("--test", "Generate migration in test mode")
+  .option("--all", "Generate migrations for all models")
+  .option("--pivot-separate", "Emit pivot tables as separate migration files")
   .option("--update", "Generate an update (ALTER TABLE) migration")
   .description("Generate migration from a model or all models")
-  .action((model: string, options: Record<string, unknown>) => makeMigration(model, options));
+  .action((model: string, options: Record<string, unknown>) => {
+    const useAll = !!(options as { all?: boolean }).all;
+    const target = useAll ? "all" : model;
+    return makeMigration(target, {
+      ...options,
+      test: !!(options as { test?: boolean }).test,
+      pivotSeparate: !!(options as { pivotSeparate?: boolean }).pivotSeparate,
+    });
+  });
 
 program
   .command("migrate:run [model]")
   .description("Run pending migrations (optionally for one model)")
   .option("--test", "Run migrations in test database")
   .option("--all", "Auto-generate migrations for all models before running")
-  .action(async (model?: string, options?: { test?: boolean; all?: boolean }) => {
+  .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all)")
+  .action(async (model?: string, options?: { test?: boolean; all?: boolean; pivotSeparate?: boolean }) => {
     if (options?.all) {
-      await makeMigration("all", { test: !!options.test, exit: false });
+      await makeMigration("all", {
+        test: !!options.test,
+        exit: false,
+        pivotSeparate: !!options.pivotSeparate,
+      });
     }
     return migrateRun(!!options?.test, model);
   });
@@ -390,7 +406,7 @@ program
   .description("Show all available EloquentJS commands")
   .action(() => {
     console.log(chalk.green("\n📜 Available Commands:\n"));
-    console.log(chalk.gray("Tip: use ':test' as an alias for '--test' where supported.\n"));
+    console.log(chalk.gray("Tip: use --test to run supported commands in test mode.\n"));
     console.table([
       { Command: "make:model <name>", Description: "--test --with-migration --attrs-from-schema --force" },
       { Command: "make:controller <name>", Description: "--soft --test" },
@@ -398,12 +414,12 @@ program
       { Command: "make:seed <model>", Description: "--count <number> --pivot --test" },
       { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force" },
       { Command: "make:factory <name>", Description: "--model <model> --pivot --test --force" },
-      { Command: "make:migration <model>", Description: "--test --update" },
+      { Command: "make:migration <model>", Description: "--test --update --all --pivot-separate" },
       { Command: "factory:status", Description: "--details --graph" },
       { Command: "db:seed", Description: "--test --class <name>" },
       { Command: "db:seed:fresh", Description: "--test --class <name>" },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
-      { Command: "migrate:run [model]", Description: "--test --all" },
+      { Command: "migrate:run [model]", Description: "--test --all --pivot-separate" },
       { Command: "migrate:run:test [model]", Description: "--all" },
       { Command: "migrate:rollback", Description: "--test --step <number>" },
       { Command: "migrate:status", Description: "--test" },

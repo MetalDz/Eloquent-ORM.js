@@ -1,4 +1,4 @@
-// src/cli/commands/makeMigration.ts
+﻿// src/cli/commands/makeMigration.ts
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
@@ -12,6 +12,7 @@ import { dbConfig } from "../../config/database";
 interface MigrationOptions {
   test?: boolean;
   exit?: boolean;
+  pivotSeparate?: boolean;
 }
 
 function pascalCase(name: string): string {
@@ -19,26 +20,27 @@ function pascalCase(name: string): string {
 }
 
 /**
- * 🧱 make:migration (v4.0)
+ * ًں§± make:migration (v4.0)
  *
- * ✅ CREATE → only once initially
- * ✅ UPDATE → overwrites old CREATE with first UPDATE
- * ✅ Subsequent updates → replace last UPDATE file
- * ✅ Keeps only ONE active migration file per model
- * ✅ No duplicates, no confusion
+ * âœ… CREATE â†’ only once initially
+ * âœ… UPDATE â†’ overwrites old CREATE with first UPDATE
+ * âœ… Subsequent updates â†’ replace last UPDATE file
+ * âœ… Keeps only ONE active migration file per model
+ * âœ… No duplicates, no confusion
  */
 export async function makeMigration(
   modelName: string,
   options: MigrationOptions = {}
 ): Promise<void> {
   const isTest = options.test === true;
+  const pivotSeparate = options.pivotSeparate === true;
 
   const modelsDir = PathMap.models(isTest);
   const migrationsDir = PathMap.migrations(isTest);
   PathMap.ensureDirs();
 
   if (!fs.existsSync(modelsDir)) {
-    console.error(chalk.red(`❌ Models folder not found: ${modelsDir}`));
+    console.error(chalk.red(`â‌Œ Models folder not found: ${modelsDir}`));
     return;
   }
 
@@ -46,8 +48,8 @@ export async function makeMigration(
     fs.mkdirSync(migrationsDir, { recursive: true });
   }
 
-  console.log(chalk.gray(`📁 Models Path: ${modelsDir}`));
-  console.log(chalk.gray(`📁 Migrations Path: ${migrationsDir}`));
+  console.log(chalk.gray(`ًں“پ Models Path: ${modelsDir}`));
+  console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
 
   const modelFiles =
     modelName.toLowerCase() === "all"
@@ -55,20 +57,20 @@ export async function makeMigration(
       : [`${pascalCase(modelName)}.ts`];
 
   if (modelFiles.length === 0) {
-    console.warn(chalk.yellow("⚠️  No model files found."));
+    console.warn(chalk.yellow("âڑ ï¸ڈ  No model files found."));
     return;
   }
 
   for (const [index, file] of modelFiles.entries()) {
     const modelPath = path.join(modelsDir, file);
     if (!fs.existsSync(modelPath)) {
-      console.log(chalk.yellow(`⚠️  Model not found: ${modelPath}`));
+      console.log(chalk.yellow(`âڑ ï¸ڈ  Model not found: ${modelPath}`));
       continue;
     }
 
     try {
       if (!TypeScriptCompiler.compile([modelPath])) {
-        console.warn(chalk.yellow(`⚠️  Skipping migration due to TS error in ${file}`));
+        console.warn(chalk.yellow(`âڑ ï¸ڈ  Skipping migration due to TS error in ${file}`));
         continue;
       }
 
@@ -79,14 +81,14 @@ export async function makeMigration(
       const modelClassName = path.basename(file, ".ts");
       const ModelClass = modelModule[modelClassName];
       if (!ModelClass?.schema || !ModelClass?.tableName) {
-        console.log(chalk.yellow(`⚠️  No schema found in ${modelClassName} — skipping.`));
+        console.log(chalk.yellow(`âڑ ï¸ڈ  No schema found in ${modelClassName} â€” skipping.`));
         continue;
       }
 
       const connectionName = resolveConnectionName(ModelClass, { test: isTest });
-      console.log(chalk.gray(`🔌 Using connection: ${connectionName}`));
+      console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
 
-      // 🧠 Generate SQL
+      // ًں§  Generate SQL
       const driver =
         (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
         connectionName;
@@ -98,8 +100,8 @@ export async function makeMigration(
         connectionName
       );
 
-      if (!mainSQL || mainSQL.trim() === "") {
-        console.log(chalk.gray(`🧬 No new columns or schema changes — skipping.`));
+      if ((!mainSQL || mainSQL.trim() === "") && extraTables.length === 0) {
+        console.log(chalk.gray(`ℹ️ No new columns or schema changes — skipping.`));
         continue;
       }
 
@@ -111,17 +113,7 @@ export async function makeMigration(
         f.includes(`update_${ModelClass.tableName}_table.ts`)
       );
 
-      // 🧹 Clean logic: only keep 1 file per model
-      if (createFile) {
-        fs.unlinkSync(path.join(migrationsDir, createFile));
-        console.log(chalk.gray(`🧹 Removed outdated CREATE migration: ${createFile}`));
-      }
-      if (updateFile) {
-        fs.unlinkSync(path.join(migrationsDir, updateFile));
-        console.log(chalk.gray(`🧹 Removed old UPDATE migration: ${updateFile}`));
-      }
-
-      // 📅 Generate timestamp (always fresh)
+      // 📆 Generate timestamp (always fresh)
       const timestampBase = new Date()
         .toISOString()
         .replace(/[-:.TZ]/g, "")
@@ -132,17 +124,18 @@ export async function makeMigration(
       const migrationFile = `${timestampBase}_${prefix}_${ModelClass.tableName}_table.ts`;
       const migrationPath = path.join(migrationsDir, migrationFile);
 
-// 🧾 Generate file content
+// ًں§¾ Generate file content
 const safeSQL = mainSQL.replace(/`/g, "\\`");
 const safeExtraTables = extraTables.map((t) => t.replace(/`/g, "\\`"));
+const hasMainSQL = safeSQL.trim().length > 0;
 const header = `/**
- * 🧩 Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
+ * ًں§© Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
  * Connection: ${connectionName}
  * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
  * Generated at ${new Date().toISOString()}
  *
- * ⚙️  Philosophy:
- * This migration is model-driven — the Model schema is the single source of truth.
+ * âڑ™ï¸ڈ  Philosophy:
+ * This migration is model-driven â€” the Model schema is the single source of truth.
  * The "up" method applies the current state of your model.
  * The "down" method does not attempt to reverse deleted columns, because
  * model-driven migrations always regenerate from the latest model definition.
@@ -155,12 +148,12 @@ export async function up(db: { query(sql: string): Promise<void> }) {
       ? `await db.query(\`${safeSQL}\`);`
       : "// (no SQL changes detected)"
   }
-  ${safeExtraTables.map((sql) => `await db.query(\`${sql}\`);`).join("\n  ")}
+  ${pivotSeparate ? "" : safeExtraTables.map((sql) => `await db.query(\`${sql}\`);`).join("\n  ")}
 }
 
 export async function down(db: { query(sql: string): Promise<void> }) {
   /**
-   * ⚠️  Rollbacks are not auto-generated.
+   * âڑ ï¸ڈ  Rollbacks are not auto-generated.
    * If needed, manually reverse the migration here.
    * Example: re-add columns or drop new ones.
    * 
@@ -169,27 +162,67 @@ export async function down(db: { query(sql: string): Promise<void> }) {
    */
 }`;
 
+      if (hasMainSQL || !pivotSeparate) {
+        // ✅ Clean logic: only keep 1 file per model
+        if (createFile) {
+          fs.unlinkSync(path.join(migrationsDir, createFile));
+          console.log(chalk.gray(`🧹 Removed outdated CREATE migration: ${createFile}`));
+        }
+        if (updateFile) {
+          fs.unlinkSync(path.join(migrationsDir, updateFile));
+          console.log(chalk.gray(`🧹 Removed old UPDATE migration: ${updateFile}`));
+        }
 
-      fs.writeFileSync(migrationPath, migrationContent, "utf8");
+        fs.writeFileSync(migrationPath, migrationContent, "utf8");
 
-      const label = prefix === "create" ? "CREATE" : "UPDATE";
-      console.log(chalk.green(`🧱 Migration (${label}) saved: ${migrationPath}`));
+        const label = prefix === "create" ? "CREATE" : "UPDATE";
+        console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
+      }
+
+      if (pivotSeparate && safeExtraTables.length > 0) {
+        for (const rawSql of safeExtraTables) {
+          const match = rawSql.match(/CREATE TABLE IF NOT EXISTS [`"]?([A-Za-z0-9_]+)/i);
+          const pivotTable = match?.[1] ?? "pivot";
+          const pivotFile = `${timestampBase}_create_${pivotTable}_table.ts`;
+          const pivotPath = path.join(migrationsDir, pivotFile);
+          if (fs.existsSync(pivotPath)) {
+            console.log(chalk.gray(`ℹ️ Pivot migration exists, skipped: ${pivotFile}`));
+            continue;
+          }
+          const pivotHeader = `/**
+ * ✅ Auto-generated CREATE migration for ${pivotTable}
+ * Connection: ${connectionName}
+ * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
+ * Generated at ${new Date().toISOString()}
+ */`;
+          const pivotContent = `${pivotHeader}
+export async function up(db: { query(sql: string): Promise<void> }) {
+  await db.query(\`${rawSql}\`);
+}
+
+export async function down(db: { query(sql: string): Promise<void> }) {
+  // (no rollback generated)
+}`;
+          fs.writeFileSync(pivotPath, pivotContent, "utf8");
+          console.log(chalk.green(`📄 Pivot migration saved: ${pivotPath}`));
+        }
+      }
     } catch (err) {
-      console.error(chalk.red(`❌ Error processing ${file}:`));
+      console.error(chalk.red(`â‌Œ Error processing ${file}:`));
       console.error(err instanceof Error ? err.message : err);
     }
   }
 
   try {
     await closeAllConnections();
-    console.log(chalk.gray("🔒 All database connections closed.\n"));
+    console.log(chalk.gray("ًں”’ All database connections closed.\n"));
   } catch {
-    console.warn(chalk.yellow("⚠️ Could not close DB connections cleanly."));
+    console.warn(chalk.yellow("âڑ ï¸ڈ Could not close DB connections cleanly."));
   }
 
   console.log(
     chalk.cyanBright(
-      `✅ Migration generation complete in ${isTest ? "TEST" : "DEVELOPMENT"} mode.\n`
+      `âœ… Migration generation complete in ${isTest ? "TEST" : "DEVELOPMENT"} mode.\n`
     )
   );
 
@@ -197,3 +230,5 @@ export async function down(db: { query(sql: string): Promise<void> }) {
     process.exit(0);
   }
 }
+
+

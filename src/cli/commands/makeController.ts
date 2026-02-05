@@ -26,11 +26,40 @@ export async function makeController(
     );
     const outputPath = path.join(controllersDir, fileName);
 
+    const serviceImportPath = isTest
+      ? `../services/${capitalize(modelName)}Service`
+      : `../services/${capitalize(modelName)}Service`;
+    const modelImportPath = isTest
+      ? `../database/models/${capitalize(modelName)}`
+      : `../models/${capitalize(modelName)}`;
+
+    const softDeleteBlock = softDelete
+      ? `
+  // PATCH /${camelCase(modelName)}/:id/restore
+  async restore(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params?.id as unknown as string | number | undefined;
+      if (id === undefined) {
+        res.status(400).json({ error: "Missing id" });
+        return;
+      }
+      await this.service.restore(id);
+      res.json({ message: "${capitalize(modelName)} restored successfully" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(400).json({ error: message });
+    }
+  }
+`
+      : "";
+
     const template = TemplateEngine.load("controller");
     const rendered = TemplateEngine.render(template, {
       PascalCase: capitalize(modelName),
       camelCase: camelCase(modelName),
-      softDelete: softDelete ? "true" : "",
+      serviceImportPath,
+      modelImportPath,
+      softDeleteBlock,
     });
 
     const created = writeFileSafe(outputPath, rendered);
