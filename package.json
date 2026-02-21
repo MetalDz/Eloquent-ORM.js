@@ -8,13 +8,14 @@
     "name": "MEKHERBECHE Fares",
     "github": "https://github.com/MetalDz"
   },
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "bin": {
     "eloquent": "./dist/cli/eloquent.js"
   },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
+    "test": "jest --runInBand",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
     "release": "semantic-release"

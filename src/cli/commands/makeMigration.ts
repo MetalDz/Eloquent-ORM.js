@@ -33,7 +33,7 @@ export async function makeMigration(
   options: MigrationOptions = {}
 ): Promise<void> {
   const isTest = options.test === true;
-  const pivotSeparate = options.pivotSeparate === true;
+  const pivotSeparate = options.pivotSeparate === true || modelName.toLowerCase() === "all";
 
   const modelsDir = PathMap.models(isTest);
   const migrationsDir = PathMap.migrations(isTest);
@@ -92,7 +92,7 @@ export async function makeMigration(
       const driver =
         (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
         connectionName;
-      const { mainSQL, extraTables } = await SchemaBuilder.toCreateSQL(
+      const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
         ModelClass.tableName,
         ModelClass.schema,
         driver,
@@ -124,42 +124,58 @@ export async function makeMigration(
       const migrationFile = `${timestampBase}_${prefix}_${ModelClass.tableName}_table.ts`;
       const migrationPath = path.join(migrationsDir, migrationFile);
 
-// ًں§¾ Generate file content
-const safeSQL = mainSQL.replace(/`/g, "\\`");
-const safeExtraTables = extraTables.map((t) => t.replace(/`/g, "\\`"));
-const hasMainSQL = safeSQL.trim().length > 0;
-const header = `/**
+      // ًں§¾ Generate file content
+      const escapeForTemplateLiteral = (sql: string): string =>
+        sql.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+
+      const safeSQL = escapeForTemplateLiteral(mainSQL);
+      const safeExtraTables = extraTables.map((t) => escapeForTemplateLiteral(t));
+      const safeRollbackSQL = escapeForTemplateLiteral(rollbackMainSQL);
+      const safeRollbackExtraTables = rollbackExtraTables.map((t) =>
+        escapeForTemplateLiteral(t)
+      );
+
+      const hasMainSQL = safeSQL.trim().length > 0;
+      const upStatements: string[] = [];
+      if (safeSQL.trim()) {
+        upStatements.push(`await db.query(\`${safeSQL}\`);`);
+      }
+      if (!pivotSeparate) {
+        upStatements.push(...safeExtraTables.map((sql) => `await db.query(\`${sql}\`);`));
+      }
+
+      const downStatements: string[] = [];
+      if (!pivotSeparate) {
+        downStatements.push(
+          ...safeRollbackExtraTables.map((sql) => `await db.query(\`${sql}\`);`)
+        );
+      }
+      if (safeRollbackSQL.trim()) {
+        downStatements.push(`await db.query(\`${safeRollbackSQL}\`);`);
+      }
+
+      const header = `/**
  * ًں§© Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
  * Connection: ${connectionName}
  * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
  * Generated at ${new Date().toISOString()}
- *
- * âڑ™ï¸ڈ  Philosophy:
- * This migration is model-driven â€” the Model schema is the single source of truth.
- * The "up" method applies the current state of your model.
- * The "down" method does not attempt to reverse deleted columns, because
- * model-driven migrations always regenerate from the latest model definition.
  */`;
 
-const migrationContent = `${header}
+      const migrationContent = `${header}
 export async function up(db: { query(sql: string): Promise<void> }) {
   ${
-    safeSQL.trim()
-      ? `await db.query(\`${safeSQL}\`);`
+    upStatements.length > 0
+      ? upStatements.join("\n  ")
       : "// (no SQL changes detected)"
   }
-  ${pivotSeparate ? "" : safeExtraTables.map((sql) => `await db.query(\`${sql}\`);`).join("\n  ")}
 }
 
 export async function down(db: { query(sql: string): Promise<void> }) {
-  /**
-   * âڑ ï¸ڈ  Rollbacks are not auto-generated.
-   * If needed, manually reverse the migration here.
-   * Example: re-add columns or drop new ones.
-   * 
-   * Why? Because in model-driven architecture,
-   * your model class already represents the latest schema state.
-   */
+  ${
+    downStatements.length > 0
+      ? downStatements.join("\n  ")
+      : "// (no rollback SQL generated)"
+  }
 }`;
 
       if (hasMainSQL || !pivotSeparate) {
@@ -179,16 +195,33 @@ export async function down(db: { query(sql: string): Promise<void> }) {
         console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
       }
 
-      if (pivotSeparate && safeExtraTables.length > 0) {
-        for (const rawSql of safeExtraTables) {
-          const match = rawSql.match(/CREATE TABLE IF NOT EXISTS [`"]?([A-Za-z0-9_]+)/i);
+      if (pivotSeparate && extraTables.length > 0) {
+        for (const [pivotIndex, originalSql] of extraTables.entries()) {
+          const match = originalSql.match(
+            /CREATE TABLE(?: IF NOT EXISTS)?\s+[`"]?([A-Za-z0-9_]+)/i
+          );
           const pivotTable = match?.[1] ?? "pivot";
+          const safePivotSql = originalSql.replace(/`/g, "\\`");
+          const safeRollbackPivotSql = (
+            rollbackExtraTables[pivotIndex] ?? `DROP TABLE IF EXISTS ${pivotTable};`
+          ).replace(/`/g, "\\`");
+          const existingPivotFiles = fs
+            .readdirSync(migrationsDir)
+            .filter((f) => /_create_[A-Za-z0-9_]+_table\.ts$/.test(f))
+            .filter((f) => f.includes(`_create_${pivotTable}_table.ts`));
+          if (pivotTable !== "pivot") {
+            const genericPivotFiles = fs
+              .readdirSync(migrationsDir)
+              .filter((f) => f.includes("_create_pivot_table.ts"));
+            existingPivotFiles.push(...genericPivotFiles);
+          }
+          for (const oldPivot of existingPivotFiles) {
+            fs.unlinkSync(path.join(migrationsDir, oldPivot));
+            console.log(chalk.gray(`🧹 Removed old PIVOT migration: ${oldPivot}`));
+          }
+
           const pivotFile = `${timestampBase}_create_${pivotTable}_table.ts`;
           const pivotPath = path.join(migrationsDir, pivotFile);
-          if (fs.existsSync(pivotPath)) {
-            console.log(chalk.gray(`ℹ️ Pivot migration exists, skipped: ${pivotFile}`));
-            continue;
-          }
           const pivotHeader = `/**
  * ✅ Auto-generated CREATE migration for ${pivotTable}
  * Connection: ${connectionName}
@@ -197,11 +230,11 @@ export async function down(db: { query(sql: string): Promise<void> }) {
  */`;
           const pivotContent = `${pivotHeader}
 export async function up(db: { query(sql: string): Promise<void> }) {
-  await db.query(\`${rawSql}\`);
+  await db.query(\`${safePivotSql}\`);
 }
 
 export async function down(db: { query(sql: string): Promise<void> }) {
-  // (no rollback generated)
+  await db.query(\`${safeRollbackPivotSql}\`);
 }`;
           fs.writeFileSync(pivotPath, pivotContent, "utf8");
           console.log(chalk.green(`📄 Pivot migration saved: ${pivotPath}`));

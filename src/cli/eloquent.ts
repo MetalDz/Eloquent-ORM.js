@@ -309,15 +309,19 @@ program
 // 🧩 MIGRATION COMMANDS
 // -----------------------------------------------------------------------------
 program
-  .command("make:migration <model>")
+  .command("make:migration [model]")
   .option("--test", "Generate migration in test mode")
   .option("--all", "Generate migrations for all models")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
   .option("--update", "Generate an update (ALTER TABLE) migration")
   .description("Generate migration from a model or all models")
-  .action((model: string, options: Record<string, unknown>) => {
+  .action((model: string | undefined, options: Record<string, unknown>) => {
     const useAll = !!(options as { all?: boolean }).all;
     const target = useAll ? "all" : model;
+    if (!target) {
+      console.error(chalk.red("❌ Please provide a model name or use --all"));
+      return;
+    }
     return makeMigration(target, {
       ...options,
       test: !!(options as { test?: boolean }).test,
@@ -414,7 +418,7 @@ program
       { Command: "make:seed <model>", Description: "--count <number> --pivot --test" },
       { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force" },
       { Command: "make:factory <name>", Description: "--model <model> --pivot --test --force" },
-      { Command: "make:migration <model>", Description: "--test --update --all --pivot-separate" },
+      { Command: "make:migration [model]", Description: "--test --update --all --pivot-separate" },
       { Command: "factory:status", Description: "--details --graph" },
       { Command: "db:seed", Description: "--test --class <name>" },
       { Command: "db:seed:fresh", Description: "--test --class <name>" },

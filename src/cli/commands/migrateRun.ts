@@ -12,8 +12,8 @@ import { dbConfig } from "../../config/database";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 interface QueryCapableConnection {
-  query?(sql: string): Promise<unknown> | Promise<[unknown[], unknown[]]>;
-  run?(sql: string): void | Promise<void>;
+  query?(sql: string, params?: unknown[]): Promise<unknown> | Promise<[unknown[], unknown[]]>;
+  run?(sql: string, params?: unknown[]): void | Promise<void>;
 }
 
 /**
@@ -77,16 +77,16 @@ export async function migrateRun(
   console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
 
   // 🧠 Universal query runner (dry-run safe)
-  const runQuery = async (sql: string): Promise<void> => {
+  const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
     if (!sql || sql.trim() === "") return;
     if (dryRun) {
       console.log(chalk.gray(`🧪 [DRY-RUN] Would execute:\n${sql}\n`));
       return;
     }
     if (typeof db.query === "function") {
-      await db.query(sql);
+      await db.query(sql, params);
     } else if (typeof db.run === "function") {
-      await db.run(sql);
+      await db.run(sql, params);
     } else {
       throw new Error("❌ Unsupported database connection for migrations.");
     }
@@ -196,10 +196,13 @@ export async function migrateRun(
       console.log(chalk.gray(`⚙️  Applying: ${file}`));
       await migrationModule.up({ query: runQuery });
 
-      if (!dryRun)
-        await runQuery(
-          `INSERT INTO migrations (name, batch) VALUES ('${file}', ${newBatch});`
-        );
+      if (!dryRun) {
+        const insertSql =
+          driver === "pg"
+            ? "INSERT INTO migrations (name, batch) VALUES ($1, $2);"
+            : "INSERT INTO migrations (name, batch) VALUES (?, ?);";
+        await runQuery(insertSql, [file, newBatch]);
+      }
 
       console.log(chalk.green(`✅ Migration applied: ${file}`));
       applied++;

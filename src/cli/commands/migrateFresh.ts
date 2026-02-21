@@ -62,7 +62,7 @@ export async function migrateFresh(options?: { test?: boolean }): Promise<void> 
     console.error(err);
   }
 
-  await migrateRun(false);
+  await migrateRun(!!options?.test);
 }
 
 /**

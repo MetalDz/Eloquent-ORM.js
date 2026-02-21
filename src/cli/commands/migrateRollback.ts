@@ -8,10 +8,11 @@ import {
 } from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 interface QueryCapableConnection {
-  query?(sql: string): Promise<unknown> | Promise<[unknown[], unknown[]]>;
-  run?(sql: string): void | Promise<void>;
+  query?(sql: string, params?: unknown[]): Promise<unknown> | Promise<[unknown[], unknown[]]>;
+  run?(sql: string, params?: unknown[]): void | Promise<void>;
 }
 
 /**
@@ -42,12 +43,13 @@ export async function migrateRollback(
     return;
   }
 
+  const connectionName = resolveConnectionName(undefined, { test: isTest });
+  const driver =
+    dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
+    connectionName;
   const supportedDialects = ["mysql", "pg", "sqlite"];
-  const connectionName = ((process.env.DB_CONNECTION as ConnectionName) ||
-    (dbConfig.default as ConnectionName) ||
-    dialect) as ConnectionName;
 
-  if (!supportedDialects.includes(connectionName)) {
+  if (!driver || !supportedDialects.includes(driver)) {
     console.warn(
       chalk.yellow(`⚠️  Rollback skipped: "${connectionName}" is not SQL-based.`)
     );
@@ -58,11 +60,11 @@ export async function migrateRollback(
   console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
 
   // ✅ Universal query runner
-  const runQuery = async (sql: string): Promise<void> => {
+  const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
     if (typeof db.query === "function") {
-      await db.query(sql);
+      await db.query(sql, params);
     } else if (typeof db.run === "function") {
-      await db.run(sql);
+      await db.run(sql, params);
     } else {
       throw new Error("❌ Unsupported database connection for rollback.");
     }
@@ -70,14 +72,14 @@ export async function migrateRollback(
 
   // ✅ Ensure migrations tracker exists
   const trackerSQL =
-    connectionName === "pg"
+    driver === "pg"
       ? `CREATE TABLE IF NOT EXISTS migrations (
             id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             batch INT DEFAULT 1,
             run_at TIMESTAMP DEFAULT NOW()
          );`
-      : connectionName === "sqlite"
+      : driver === "sqlite"
       ? `CREATE TABLE IF NOT EXISTS migrations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(255) NOT NULL,
@@ -157,7 +159,11 @@ export async function migrateRollback(
       console.log(chalk.gray(`↩️  Reverting: ${migrationFile}`));
       await migrationModule.down({ query: runQuery });
 
-      await runQuery(`DELETE FROM migrations WHERE name = '${migrationFile}';`);
+      const deleteSql =
+        driver === "pg"
+          ? "DELETE FROM migrations WHERE name = $1;"
+          : "DELETE FROM migrations WHERE name = ?;";
+      await runQuery(deleteSql, [migrationFile]);
       console.log(chalk.green(`✅ Rolled back: ${migrationFile}`));
       rolledBack++;
     } catch (err) {

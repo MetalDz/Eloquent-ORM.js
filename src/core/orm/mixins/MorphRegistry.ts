@@ -44,19 +44,7 @@ export class MorphRegistry {
     const model = this.registry.get(type);
     if (model) return model as MorphableConstructor<T>;
 
-    // 🧠 Laravel-style fallback: dynamic import for ESM
-    try {
-      const dynamicImport = (globalThis as any).require || undefined;
-      if (typeof dynamicImport === "function") {
-        const required = dynamicImport(type);
-        const firstExport = Object.values(required)[0] as MorphableConstructor<T>;
-        if (firstExport) return firstExport;
-      }
-    } catch {
-      // Silent fallback
-    }
-
-    throw new Error(`❌ Morph type '${type}' not found in MorphRegistry or as a class name.`);
+    throw new Error(`❌ Morph type '${type}' not found in MorphRegistry.`);
   }
 
   /**
