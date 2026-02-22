@@ -1,6 +1,6 @@
-import { Factory } from "../utils/Factory";
-import { BaseModel } from "../../core/model/BaseModel";
-import { PivotHelperMixin } from "../../orm/mixins/PivotHelperMixin";
+import { Factory } from "../../../cli/utils/factories/Factory";
+import { BaseModel } from "../../../core/model/BaseModel";
+import { PivotHelperMixin } from "../../../core/orm/mixins/PivotHelperMixin";
 
 /**
  * 🧩 Auto-generated Pivot Factory
