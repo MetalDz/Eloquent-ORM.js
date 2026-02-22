@@ -13,6 +13,39 @@ export class CacheRegistry {
   private static registry: Map<string, Set<string>> = new Map();
 
   /**
+   * Return aggregated registry stats for CLI/monitoring.
+   */
+  static getStats(): {
+    models: number;
+    groups: number;
+    keys: number;
+    groupsByModel: Array<{ model: string; groups: number; keys: number }>;
+  } {
+    const perModel = new Map<string, { groups: number; keys: number }>();
+    let keys = 0;
+
+    for (const [registryKey, set] of Array.from(this.registry.entries())) {
+      const [model] = registryKey.split(":");
+      const entry = perModel.get(model) ?? { groups: 0, keys: 0 };
+      entry.groups += 1;
+      entry.keys += set.size;
+      perModel.set(model, entry);
+      keys += set.size;
+    }
+
+    return {
+      models: perModel.size,
+      groups: this.registry.size,
+      keys,
+      groupsByModel: Array.from(perModel.entries()).map(([model, info]) => ({
+        model,
+        groups: info.groups,
+        keys: info.keys,
+      })),
+    };
+  }
+
+  /**
    * Register a cache key for a given model and group.
    */
   static addKey(modelName: string, group: string, key: string): void {

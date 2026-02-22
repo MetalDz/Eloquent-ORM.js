@@ -1,5 +1,5 @@
 // src/core/cache/drivers/MemcachedCacheDriver.ts
-import { CacheDriver } from "../CacheDriver.js";
+import { CacheDriver } from "../CacheDriver";
 import Memcached from "memcached";
 
 export class MemcachedCacheDriver extends CacheDriver {
@@ -50,5 +50,9 @@ export class MemcachedCacheDriver extends CacheDriver {
     return new Promise((resolve, reject) => {
       this.client.flush((err) => (err ? reject(err) : resolve()));
     });
+  }
+
+  async close(): Promise<void> {
+    this.client.end();
   }
 }

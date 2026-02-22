@@ -119,4 +119,12 @@ export class CacheAnalytics {
       lastAdjust: new Date(s.lastAdjust).toISOString(),
     }));
   }
+
+  /**
+   * Reset all collected cache analytics counters.
+   */
+  static reset(): void {
+    this.stats.clear();
+    this.counter = 0;
+  }
 }
