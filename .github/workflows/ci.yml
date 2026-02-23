@@ -3,7 +3,8 @@ name: PR Quality Gate
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-
+  push:
+    branches: [master]
 concurrency:
   group: pr-quality-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
