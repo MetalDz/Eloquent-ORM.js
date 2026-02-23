@@ -1,5 +1,5 @@
-import { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";
-import type { DriverAdapter } from "./core/connection/DriverAdapter";
+﻿import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin";
+import type { DriverAdapter } from "../core/connection/DriverAdapter";
 
 type ExecuteCall = { sql: string; params: unknown[] };
 
@@ -86,3 +86,4 @@ describe("PivotHelperMixin", () => {
     expect(calls[2].params).toEqual([9, 200]);
   });
 });
+

@@ -56,6 +56,7 @@ export type ConnectionInstance = Pool | PgClient | Database | Db;
 
 /** Supported connection names */
 export type ConnectionName = keyof typeof dbConfig.connections;
+const mongoClientByDb = new WeakMap<Db, MongoClient>();
 
 /* ----------------------------------------------------------
  * ⚙️ 2. Connect Function (Multi-Driver)
@@ -105,6 +106,7 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
       const client = new MongoClient(config.uri);
       await client.connect();
       const db = client.db(config.database);
+      mongoClientByDb.set(db, client);
       console.log(`🧩 Connected to MongoDB: ${config.database}`);
       return db;
     }
@@ -113,4 +115,13 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
     default:
       throw new Error(`❌ Unsupported driver: ${(config as any).driver}`);
   }
+}
+
+export async function closeMongoClient(connection: ConnectionInstance): Promise<boolean> {
+  const db = connection as Db;
+  const client = mongoClientByDb.get(db);
+  if (!client) return false;
+  await client.close();
+  mongoClientByDb.delete(db);
+  return true;
 }
