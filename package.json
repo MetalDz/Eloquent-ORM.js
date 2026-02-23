@@ -16,6 +16,7 @@
     "build": "tsc",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
     "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
     "release": "semantic-release"
