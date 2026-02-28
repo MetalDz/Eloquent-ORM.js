@@ -12,10 +12,10 @@ import { dbConfig } from "../../config/database";
  * migrate:fresh
  * Drops all tables and re-runs every migration from scratch, with confirmation.
  */
-export async function migrateFresh(options?: { test?: boolean }): Promise<void> {
+export async function migrateFresh(options?: { test?: boolean; force?: boolean }): Promise<void> {
   const connectionName = resolveConnectionName(undefined, { test: !!options?.test });
 
-  const confirmed = await confirmDangerousAction();
+  const confirmed = options?.force === true ? true : await confirmDangerousAction();
   if (!confirmed) {
     console.log(chalk.yellow("\nOperation cancelled by user.\n"));
     return;

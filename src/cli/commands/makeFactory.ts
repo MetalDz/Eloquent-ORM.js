@@ -75,6 +75,7 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
     const fields = analysis.fields ?? [];
     const relations = analysis.relations ?? [];
     const features = analysis.features ?? {};
+    const shouldOverwrite = options.overwrite === true || options.force === true;
 
     // 🔹 Map field types → Faker paths (tweak to your faker API)
     const fakerMap: Record<string, string> = {
@@ -169,7 +170,7 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
     // 🧾 Write main factory file using writeFileSafe / overwriteFile
     const outputPath = path.join(factoriesDir, `${FactoryName}.ts`);
     if (fs.existsSync(outputPath)) {
-      if (options.overwrite) {
+      if (shouldOverwrite) {
         overwriteFile(outputPath, rendered);
       } else {
         console.log(chalk.yellow(`ℹ️  Factory file already exists: ${outputPath}. Use overwrite option to replace.`));
@@ -205,7 +206,7 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
 
         const pivotOutputPath = path.join(factoriesDir, `${pivotFactoryName}.ts`);
         if (fs.existsSync(pivotOutputPath)) {
-          if (options.overwrite) {
+          if (shouldOverwrite) {
             overwriteFile(pivotOutputPath, pivotRendered);
           } else {
             console.log(chalk.yellow(`ℹ️  Pivot factory already exists: ${pivotOutputPath}`));

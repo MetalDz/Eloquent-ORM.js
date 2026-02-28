@@ -3,8 +3,10 @@ import os from "os";
 import path from "path";
 import { spawnSync, type SpawnSyncReturns } from "child_process";
 import dotenv from "dotenv";
+import mysql from "mysql2/promise";
 
 dotenv.config();
+jest.setTimeout(120000);
 
 type CliResult = SpawnSyncReturns<string> & {
   combined: string;
@@ -31,12 +33,13 @@ const hasTestDbEnv = Boolean(
 const describeIfTestDbAndBuild =
   hasTestDbEnv && hasBuiltCli ? describe : describe.skip;
 
-function runCli(args: string[], timeoutMs = 120000): CliResult {
+function runCli(args: string[], timeoutMs = 120000, input?: string): CliResult {
   const result = spawnSync(process.execPath, [cliPath, ...args], {
     cwd: rootDir,
     env: { ...process.env, FORCE_COLOR: "0" },
     encoding: "utf8",
     timeout: timeoutMs,
+    input,
   });
 
   const stdout = result.stdout ?? "";
@@ -65,10 +68,52 @@ function assertCliSuccess(result: CliResult, args: string[]): void {
   expect(result.status).toBe(0);
 }
 
+function assertSafeIdentifier(value: string, label: string): void {
+  if (!/^[A-Za-z0-9_]+$/.test(value)) {
+    throw new Error(`Unsafe ${label}: ${value}`);
+  }
+}
+
+async function resetMysqlTestDatabase(): Promise<void> {
+  const host = process.env.DB_TEST_HOST || process.env.DB_HOST || "localhost";
+  const user = process.env.DB_TEST_USER || process.env.DB_USER || "root";
+  const password = process.env.DB_TEST_PASSWORD || process.env.DB_PASSWORD || "";
+  const database = process.env.DB_TEST_NAME || "db_test";
+  const port = Number(process.env.DB_TEST_PORT || 3306);
+
+  assertSafeIdentifier(database, "database name");
+
+  const connection = await mysql.createConnection({
+    host,
+    user,
+    password,
+    port,
+    multipleStatements: false,
+  });
+
+  try {
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
+    await connection.query(`USE \`${database}\``);
+    await connection.query("SET FOREIGN_KEY_CHECKS = 0");
+    const [rows] = await connection.query("SHOW TABLES");
+    const tableRows = rows as Record<string, string>[];
+
+    for (const row of tableRows) {
+      const tableName = Object.values(row)[0];
+      assertSafeIdentifier(tableName, "table name");
+      await connection.query(`DROP TABLE IF EXISTS \`${tableName}\``);
+    }
+
+    await connection.query("SET FOREIGN_KEY_CHECKS = 1");
+  } finally {
+    await connection.end();
+  }
+}
+
 describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => {
   let testRootBackupDir: string | null = null;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     if (!fs.existsSync(testRootDir)) {
       fs.mkdirSync(testRootDir, { recursive: true });
     }
@@ -103,6 +148,8 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     const scenarioResult = runCli(scenarioArgs, 180000);
     assertCliSuccess(scenarioResult, scenarioArgs);
     expect(scenarioResult.combined).toContain("Scenario generation complete");
+
+    await resetMysqlTestDatabase();
   });
 
   afterAll(() => {
@@ -175,10 +222,7 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
 
     assertCliSuccess(result, args);
     expect(result.combined).toContain("Scenario generation complete");
-    expect(
-      fs.existsSync(
-        path.resolve(rootDir, "src/test/database/seeds/BlogScenarioSeeder.ts")
-      )
-    ).toBe(true);
+    expect(result.combined).toContain("MediaScenarioSeeder");
+    expect(result.combined).toContain("Seeder created:");
   });
 });

@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import { PathMap } from "./PathMap";
+import { loadModule } from "./typescript/tsRuntime";
 import type {
   SchemaField,
   ColumnDefinition,
@@ -9,9 +10,6 @@ import type {
   RelationType,
 } from "../../core/schema/SchemaBlueprint";
 
-/**
- * 🧩 Introspected model metadata
- */
 export interface IntrospectedField {
   name: string;
   type: string;
@@ -34,20 +32,9 @@ export interface ModelFeatures {
   mixins?: string[];
 }
 
-/**
- * Generic constructor type
- */
 export type AbstractConstructor<T = object> = abstract new (...args: unknown[]) => T;
 
-/**
- * 🧠 ModelIntrospector
- * Reads model schema, relations, and feature flags directly from EloquentJS models.
- * Fully typed — no `any` usage.
- */
 export class ModelIntrospector {
-  /**
-   * Analyze a model and extract schema information.
-   */
   static async analyze(
     modelName: string,
     options: { test?: boolean } = {}
@@ -60,10 +47,11 @@ export class ModelIntrospector {
     const modelPath = path.resolve(modelsDir, `${modelName}.ts`);
 
     if (!fs.existsSync(modelPath)) {
-      throw new Error(`❌ Model file not found: ${modelPath}`);
+      throw new Error(`Model file not found: ${modelPath}`);
     }
 
-    const importedModule = (await import(modelPath)) as Record<string, unknown>;
+    delete require.cache[require.resolve(modelPath)];
+    const importedModule = loadModule(modelPath);
     const ModelClass = importedModule[modelName] as AbstractConstructor & {
       schema?: Record<string, SchemaField>;
       timestamps?: boolean;
@@ -72,7 +60,7 @@ export class ModelIntrospector {
     };
 
     if (!ModelClass) {
-      throw new Error(`❌ Could not load model class: ${modelName}`);
+      throw new Error(`Could not load model class: ${modelName}`);
     }
 
     const schema: Record<string, SchemaField> = ModelClass.schema ?? {};
@@ -81,27 +69,30 @@ export class ModelIntrospector {
 
     for (const [key, field] of Object.entries(schema)) {
       if (field.kind === "column") {
-        const col = field as ColumnDefinition;
+        const column = field as ColumnDefinition;
         if (
-          !col.options?.primary &&
+          !column.options?.primary &&
           !["id", "created_at", "updated_at", "deleted_at"].includes(key)
         ) {
-          fields.push({ name: key, type: col.type });
+          fields.push({ name: key, type: column.type });
         }
-      } else if (field.kind === "relation") {
-        const rel = field as RelationDefinition;
-        const isPivot = rel.relation === "belongsToMany";
+        continue;
+      }
+
+      if (field.kind === "relation") {
+        const relation = field as RelationDefinition;
+        const isPivot = relation.relation === "belongsToMany";
         const isMorph =
-          rel.relation === "morphOne" ||
-          rel.relation === "morphMany" ||
-          rel.relation === "morphTo";
+          relation.relation === "morphOne" ||
+          relation.relation === "morphMany" ||
+          relation.relation === "morphTo";
 
         relations.push({
           name: key,
-          type: rel.relation,
-          target: rel.model,
-          pivotTable: rel.options?.pivotTable,
-          morphName: rel.options?.morphName,
+          type: relation.relation,
+          target: relation.model,
+          pivotTable: relation.options?.pivotTable,
+          morphName: relation.options?.morphName,
           isPivot,
           isMorph,
         });
@@ -118,12 +109,9 @@ export class ModelIntrospector {
     return { fields, relations, features };
   }
 
-  /**
-   * Extract mixin names from schema if defined.
-   */
   private static extractMixins(schema: Record<string, SchemaField>): string[] {
     return Object.values(schema)
-      .filter((f): f is MixinDefinition => f.kind === "mixin")
-      .map((m) => m.name);
+      .filter((field): field is MixinDefinition => field.kind === "mixin")
+      .map((mixin) => mixin.name);
   }
 }

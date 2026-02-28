@@ -377,7 +377,10 @@ program
   .command("migrate:fresh")
   .description("Drop all tables and re-run every migration from scratch")
   .option("--test", "Run in test database")
-  .action((options: { test?: boolean }) => migrateFresh({ test: !!options.test }));
+  .option("--force", "Skip confirmation prompt")
+  .action((options: { test?: boolean; force?: boolean }) =>
+    migrateFresh({ test: !!options.test, force: !!options.force })
+  );
 
 program
   .command("migrate:reset")
@@ -427,7 +430,7 @@ program
       { Command: "migrate:run:test [model]", Description: "--all" },
       { Command: "migrate:rollback", Description: "--test --step <number>" },
       { Command: "migrate:status", Description: "--test" },
-      { Command: "migrate:fresh", Description: "--test" },
+      { Command: "migrate:fresh", Description: "--test --force" },
       { Command: "migrate:reset", Description: "(no options)" },
       { Command: "cache:clear", Description: "(no options)" },
       { Command: "cache:stats", Description: "(no options)" },
