@@ -16,6 +16,7 @@ const testRootDir = path.resolve(rootDir, "src/test");
 const testMigrationsDir = path.resolve(rootDir, "src/test/database/migrations");
 const testSeedsDir = path.resolve(rootDir, "src/test/database/seeds");
 const integrationSeederClass = "CliIntegrationSeeder";
+const blogScenarioSeederClass = "BlogScenarioSeeder";
 const integrationSeederFile = path.resolve(
   testSeedsDir,
   `${integrationSeederClass}.ts`
@@ -87,6 +88,18 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
 `,
       "utf8"
     );
+
+    const scenarioArgs = [
+      "make:scenario",
+      "blog",
+      "--test",
+      "--controllers",
+      "--services",
+      "--force",
+    ];
+    const scenarioResult = runCli(scenarioArgs, 180000);
+    assertCliSuccess(scenarioResult, scenarioArgs);
+    expect(scenarioResult.combined).toContain("Scenario generation complete");
   });
 
   afterAll(() => {
@@ -132,6 +145,13 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
   });
 
   test("demo:scenario --test --random exits cleanly", () => {
+    const seedArgs = ["db:seed", "--test", "--class", blogScenarioSeederClass];
+    const seedResult = runCli(seedArgs, 180000);
+
+    assertCliSuccess(seedResult, seedArgs);
+    expect(seedResult.combined).toContain(`Running: ${blogScenarioSeederClass}`);
+    expect(seedResult.combined).toContain(`Completed: ${blogScenarioSeederClass}`);
+
     const args = ["demo:scenario", "--test", "--random"];
     const result = runCli(args);
 
@@ -139,13 +159,14 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     expect(result.combined).toContain("Scenario check: counts");
   });
 
-  test("make:scenario blog --test exits cleanly", () => {
+  test("make:scenario media --test exits cleanly", () => {
     const args = [
       "make:scenario",
-      "blog",
+      "media",
       "--test",
       "--controllers",
       "--services",
+      "--force",
     ];
     const result = runCli(args, 180000);
 
