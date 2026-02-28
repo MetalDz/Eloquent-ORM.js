@@ -87,7 +87,7 @@ try {
 
 // Test-mode connection override (CLI only)
 if (isCliTest()) {
-  process.env.DB_CONNECTION = "mysql_test";
+  process.env.DB_CONNECTION = process.env.DB_TEST_CONNECTION || "mysql_test";
 }
 
 // -----------------------------------------------------------------------------

@@ -14,8 +14,20 @@ export function resolveConnectionName(
   modelClass?: { connectionName?: string },
   options?: { test?: boolean }
 ): ConnectionName {
-  if (options?.test && Object.prototype.hasOwnProperty.call(dbConfig.connections, "mysql_test")) {
-    return "mysql_test" as ConnectionName;
+  if (options?.test) {
+    const explicitTest = process.env.DB_TEST_CONNECTION;
+    if (
+      explicitTest &&
+      Object.prototype.hasOwnProperty.call(dbConfig.connections, explicitTest)
+    ) {
+      return explicitTest as ConnectionName;
+    }
+
+    for (const fallback of ["mysql_test", "pg_test", "sqlite_test"]) {
+      if (Object.prototype.hasOwnProperty.call(dbConfig.connections, fallback)) {
+        return fallback as ConnectionName;
+      }
+    }
   }
   const name =
     modelClass?.connectionName ||

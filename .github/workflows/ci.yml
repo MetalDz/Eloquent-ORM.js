@@ -6,14 +6,38 @@ on:
   workflow_dispatch:
   push:
     branches: [master]
+
 concurrency:
   group: pr-quality-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   quality-gate:
-    name: Typecheck, Build, Test
+    name: Typecheck, Build, Test (MySQL)
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: eloquentjs
+      DB_TEST_CONNECTION: mysql_test
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_USER: root
+      DB_TEST_PASSWORD: root
+      DB_TEST_NAME: db_test
+      DB_TEST_PORT: 3306
 
     steps:
       - name: Checkout
@@ -28,6 +52,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Initialize MySQL databases
+        run: |
+          node <<'NODE'
+          const mysql = require("mysql2/promise");
+          (async () => {
+            const conn = await mysql.createConnection({
+              host: "127.0.0.1",
+              user: "root",
+              password: "root",
+              port: 3306,
+            });
+            await conn.query("CREATE DATABASE IF NOT EXISTS `eloquentjs`");
+            await conn.query("CREATE DATABASE IF NOT EXISTS `db_test`");
+            await conn.end();
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -36,3 +80,145 @@ jobs:
 
       - name: Test
         run: npm run test:coverage
+
+  scenario-matrix:
+    name: Scenario Matrix (${{ matrix.driver }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - driver: mysql
+            test_connection: mysql_test
+            sqlite_test_path: ""
+          - driver: pg
+            test_connection: pg_test
+            sqlite_test_path: ""
+          - driver: sqlite
+            test_connection: sqlite_test
+            sqlite_test_path: /tmp/eloquent.test.sqlite
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_TEST_CONNECTION: ${{ matrix.test_connection }}
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_USER: root
+      DB_TEST_PASSWORD: root
+      DB_TEST_NAME: db_test
+      DB_TEST_PORT: 3306
+      PG_TEST_HOST: 127.0.0.1
+      PG_TEST_USER: postgres
+      PG_TEST_PASSWORD: postgres
+      PG_TEST_NAME: db_test_pg
+      PG_TEST_PORT: 5432
+      SQLITE_TEST_PATH: ${{ matrix.sqlite_test_path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Prepare database state
+        env:
+          DRIVER: ${{ matrix.driver }}
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const mysql = require("mysql2/promise");
+          const { Client } = require("pg");
+          (async () => {
+            const driver = process.env.DRIVER;
+            if (driver === "mysql") {
+              const conn = await mysql.createConnection({
+                host: "127.0.0.1",
+                user: "root",
+                password: "root",
+                port: 3306,
+              });
+              await conn.query("DROP DATABASE IF EXISTS `db_test`");
+              await conn.query("CREATE DATABASE `db_test`");
+              await conn.end();
+              return;
+            }
+
+            if (driver === "pg") {
+              const client = new Client({
+                host: "127.0.0.1",
+                user: "postgres",
+                password: "postgres",
+                port: 5432,
+                database: "postgres",
+              });
+              await client.connect();
+              const dbName = process.env.PG_TEST_NAME || "db_test_pg";
+              await client.query(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1",
+                [dbName]
+              );
+              const safeDb = dbName.replace(/"/g, "\"\"");
+              await client.query(`DROP DATABASE IF EXISTS "${safeDb}"`);
+              await client.query(`CREATE DATABASE "${safeDb}"`);
+              await client.end();
+              return;
+            }
+
+            if (driver === "sqlite") {
+              const p = process.env.SQLITE_TEST_PATH || "/tmp/eloquent.test.sqlite";
+              if (fs.existsSync(p)) fs.rmSync(p, { force: true });
+              return;
+            }
+
+            throw new Error("Unsupported driver in matrix: " + driver);
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Generate scenario artifacts (test)
+        run: node dist/cli/eloquent.js make:scenario blog --test --controllers --services --force
+
+      - name: Generate migrations (test)
+        run: node dist/cli/eloquent.js make:migration --all --test
+
+      - name: Run migrations (test)
+        run: node dist/cli/eloquent.js migrate:run --test
+
+      - name: Seed scenario (test)
+        run: node dist/cli/eloquent.js db:seed --test --class BlogScenarioSeeder
+
+      - name: Verify scenario relations (test)
+        run: node dist/cli/eloquent.js demo:scenario --test --random
