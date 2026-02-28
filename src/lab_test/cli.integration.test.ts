@@ -79,6 +79,9 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     testRootBackupDir = path.join(backupRoot, "test");
     fs.cpSync(testRootDir, testRootBackupDir, { recursive: true });
 
+    fs.rmSync(testRootDir, { recursive: true, force: true });
+    fs.mkdirSync(testRootDir, { recursive: true });
+
     fs.mkdirSync(testSeedsDir, { recursive: true });
     fs.writeFileSync(
       integrationSeederFile,

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import { SchemaBuilder } from "../../core/schema/SchemaBuilder";
+import { SchemaField } from "../../core/schema/SchemaBlueprint";
 import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
@@ -15,8 +16,77 @@ interface MigrationOptions {
   pivotSeparate?: boolean;
 }
 
+type SchemaRelation = {
+  kind?: string;
+  relation?: string;
+  model?: string;
+};
+
+type LoadedModel = {
+  file: string;
+  modelClassName: string;
+  ModelClass: {
+    schema: Record<string, SchemaField>;
+    tableName: string;
+    connectionName?: string;
+  };
+};
+
 function pascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function getBelongsToDependencies(
+  schema: Record<string, unknown> | undefined,
+  knownModels: Set<string>
+): string[] {
+  if (!schema) return [];
+
+  const deps = new Set<string>();
+  for (const value of Object.values(schema)) {
+    if (!value || typeof value !== "object") continue;
+
+    const relation = value as SchemaRelation;
+    if (relation.kind !== "relation" || relation.relation !== "belongsTo") continue;
+    if (!relation.model || !knownModels.has(relation.model)) continue;
+    deps.add(relation.model);
+  }
+
+  return [...deps];
+}
+
+function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
+  const modelNames = new Set(models.map((item) => item.modelClassName));
+  const byName = new Map(models.map((item) => [item.modelClassName, item]));
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+  const ordered: LoadedModel[] = [];
+
+  const visit = (modelName: string): void => {
+    if (visited.has(modelName)) return;
+    if (visiting.has(modelName)) return;
+
+    visiting.add(modelName);
+    const model = byName.get(modelName);
+    if (model) {
+      const dependencies = getBelongsToDependencies(
+        model.ModelClass.schema,
+        modelNames
+      );
+      for (const dependency of dependencies) {
+        visit(dependency);
+      }
+      ordered.push(model);
+    }
+    visiting.delete(modelName);
+    visited.add(modelName);
+  };
+
+  for (const model of models) {
+    visit(model.modelClassName);
+  }
+
+  return ordered;
 }
 
 /**
@@ -51,17 +121,28 @@ export async function makeMigration(
   console.log(chalk.gray(`ًں“پ Models Path: ${modelsDir}`));
   console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
 
-  const modelFiles =
+  const requestedModelFiles =
     modelName.toLowerCase() === "all"
       ? fs.readdirSync(modelsDir).filter((f) => f.endsWith(".ts"))
       : [`${pascalCase(modelName)}.ts`];
 
-  if (modelFiles.length === 0) {
+  if (requestedModelFiles.length === 0) {
     console.warn(chalk.yellow("âڑ ï¸ڈ  No model files found."));
     return;
   }
 
-  for (const [index, file] of modelFiles.entries()) {
+  const loadedModels: LoadedModel[] = [];
+  const timestampSeed = new Date()
+    .toISOString()
+    .replace(/[-:.TZ]/g, "")
+    .slice(0, 14);
+  let migrationSequence = 0;
+  const nextTimestamp = (): string => {
+    migrationSequence += 1;
+    return `${timestampSeed}${String(migrationSequence).padStart(3, "0")}`;
+  };
+
+  for (const file of requestedModelFiles) {
     const modelPath = path.join(modelsDir, file);
     if (!fs.existsSync(modelPath)) {
       console.log(chalk.yellow(`âڑ ï¸ڈ  Model not found: ${modelPath}`));
@@ -79,11 +160,40 @@ export async function makeMigration(
       const modelModule = await import(absModelPath);
 
       const modelClassName = path.basename(file, ".ts");
-      const ModelClass = modelModule[modelClassName];
+      const ModelClass = modelModule[modelClassName] as
+        | {
+            schema?: Record<string, SchemaField>;
+            tableName?: string;
+            connectionName?: string;
+          }
+        | undefined;
       if (!ModelClass?.schema || !ModelClass?.tableName) {
         console.log(chalk.yellow(`âڑ ï¸ڈ  No schema found in ${modelClassName} â€” skipping.`));
         continue;
       }
+
+      loadedModels.push({
+        file,
+        modelClassName,
+        ModelClass: {
+          schema: ModelClass.schema,
+          tableName: ModelClass.tableName,
+          connectionName: ModelClass.connectionName,
+        },
+      });
+    } catch (err) {
+      console.error(chalk.red(`â‌Œ Error processing ${file}:`));
+      console.error(err instanceof Error ? err.message : err);
+    }
+  }
+
+  const orderedModels =
+    modelName.toLowerCase() === "all"
+      ? sortModelsByDependencies(loadedModels)
+      : loadedModels;
+
+  for (const { file, modelClassName, ModelClass } of orderedModels) {
+    try {
 
       const connectionName = resolveConnectionName(ModelClass, { test: isTest });
       console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
@@ -114,10 +224,7 @@ export async function makeMigration(
       );
 
       // 📆 Generate timestamp (always fresh)
-      const timestampBase = new Date()
-        .toISOString()
-        .replace(/[-:.TZ]/g, "")
-        .slice(0, 14);
+      const timestampBase = nextTimestamp();
 
       const isFirstRun = !createFile && !updateFile;
       const prefix = isFirstRun ? "create" : "update";
@@ -220,7 +327,8 @@ export async function down(db: { query(sql: string): Promise<void> }) {
             console.log(chalk.gray(`🧹 Removed old PIVOT migration: ${oldPivot}`));
           }
 
-          const pivotFile = `${timestampBase}_create_${pivotTable}_table.ts`;
+          const pivotTimestamp = nextTimestamp();
+          const pivotFile = `${pivotTimestamp}_create_${pivotTable}_table.ts`;
           const pivotPath = path.join(migrationsDir, pivotFile);
           const pivotHeader = `/**
  * ✅ Auto-generated CREATE migration for ${pivotTable}
