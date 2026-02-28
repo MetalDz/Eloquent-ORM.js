@@ -226,8 +226,9 @@ export async function makeMigration(
       // 📆 Generate timestamp (always fresh)
       const timestampBase = nextTimestamp();
 
-      const isFirstRun = !createFile && !updateFile;
-      const prefix = isFirstRun ? "create" : "update";
+      const normalizedMainSQL = mainSQL.trim().toUpperCase();
+      const isCreateMigration = normalizedMainSQL.startsWith("CREATE TABLE");
+      const prefix = isCreateMigration ? "create" : "update";
       const migrationFile = `${timestampBase}_${prefix}_${ModelClass.tableName}_table.ts`;
       const migrationPath = path.join(migrationsDir, migrationFile);
 

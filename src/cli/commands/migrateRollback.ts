@@ -1,31 +1,13 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import {
-  getConnection,
-  closeAllConnections,
-  ConnectionName,
-} from "../../core/connection/ConnectionFactory";
+import { getAdapter, closeAllConnections, ConnectionName } from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
-interface QueryCapableConnection {
-  query?(sql: string, params?: unknown[]): Promise<unknown> | Promise<[unknown[], unknown[]]>;
-  run?(sql: string, params?: unknown[]): void | Promise<void>;
-}
-
-/**
- * 🧱 migrate:rollback
- * Reverts the latest migration batch(es).
- *
- * Usage:
- *   eloquent migrate:rollback
- *   eloquent migrate:rollback --step 2
- *   eloquent migrate:rollback --test
- */
 export async function migrateRollback(
-  dialect: ConnectionName = "mysql",
+  _dialect: ConnectionName = "mysql",
   options: { test?: boolean; step?: number } = {}
 ): Promise<void> {
   const isTest = !!options.test;
@@ -33,44 +15,30 @@ export async function migrateRollback(
 
   console.log(
     chalk.cyan(
-      `\n↩️  Rolling back migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode (step ${step})...\n`
+      `\nRolling back migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode (step ${step})...\n`
     )
   );
 
   const migrationsDir = PathMap.migrations(isTest);
   if (!fs.existsSync(migrationsDir)) {
-    console.log(chalk.yellow("⚠️  No migrations directory found."));
+    console.log(chalk.yellow("No migrations directory found."));
     return;
   }
 
   const connectionName = resolveConnectionName(undefined, { test: isTest });
-  const driver =
-    dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
-    connectionName;
-  const supportedDialects = ["mysql", "pg", "sqlite"];
-
-  if (!driver || !supportedDialects.includes(driver)) {
-    console.warn(
-      chalk.yellow(`⚠️  Rollback skipped: "${connectionName}" is not SQL-based.`)
-    );
+  const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
+  if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
+    console.warn(chalk.yellow(`Rollback skipped: "${connectionName}" is not SQL-based.`));
     return;
   }
 
-  const db: QueryCapableConnection = await getConnection(connectionName);
-  console.log(chalk.gray(`🔌 Connected to ${connectionName}.`));
+  const db = await getAdapter(connectionName);
+  console.log(chalk.gray(`Connected to ${connectionName}.`));
 
-  // ✅ Universal query runner
   const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
-    if (typeof db.query === "function") {
-      await db.query(sql, params);
-    } else if (typeof db.run === "function") {
-      await db.run(sql, params);
-    } else {
-      throw new Error("❌ Unsupported database connection for rollback.");
-    }
+    await db.execute(sql, params);
   };
 
-  // ✅ Ensure migrations tracker exists
   const trackerSQL =
     driver === "pg"
       ? `CREATE TABLE IF NOT EXISTS migrations (
@@ -95,46 +63,34 @@ export async function migrateRollback(
 
   await runQuery(trackerSQL);
 
-  // 🧩 Fetch batches
   let rows: { name: string; batch: number }[] = [];
   try {
-    const res = await db.query?.("SELECT name, batch FROM migrations ORDER BY batch DESC, id DESC");
-
-    if (Array.isArray(res)) {
-      rows = res[0] as { name: string; batch: number }[];
-    } else if (typeof res === "object" && res !== null && "rows" in res) {
-      rows = (res as { rows: { name: string; batch: number }[] }).rows;
-    }
+    rows = await db.query<{ name: string; batch: number }>(
+      "SELECT name, batch FROM migrations ORDER BY batch DESC, id DESC"
+    );
   } catch (err) {
-    console.error(chalk.red("❌ Unable to read migrations table."));
+    console.error(chalk.red("Unable to read migrations table."));
     console.error(err);
     await closeAllConnections();
     return;
   }
 
   if (rows.length === 0) {
-    console.log(chalk.yellow("✨ No migrations found to roll back."));
+    console.log(chalk.yellow("No migrations found to roll back."));
     await closeAllConnections();
     return;
   }
 
-  // 🧠 Determine which batches to roll back
-  const latestBatch = rows[0].batch;
-  const targetBatches = Array.from(
-    new Set(rows.map((r) => r.batch))
-  ).slice(0, step); // rollback N latest batches
-
-  const toRollback = rows.filter((r) =>
-    targetBatches.includes(r.batch)
-  );
+  const targetBatches = Array.from(new Set(rows.map((r) => r.batch))).slice(0, step);
+  const toRollback = rows.filter((r) => targetBatches.includes(r.batch));
 
   if (toRollback.length === 0) {
-    console.log(chalk.yellow("✨ Nothing to roll back."));
+    console.log(chalk.yellow("Nothing to roll back."));
     await closeAllConnections();
     return;
   }
 
-  console.log(chalk.gray(`🧩 Rolling back ${toRollback.length} migration(s)...`));
+  console.log(chalk.gray(`Rolling back ${toRollback.length} migration(s)...`));
 
   let rolledBack = 0;
   for (const entry of toRollback) {
@@ -142,43 +98,36 @@ export async function migrateRollback(
     const filePath = path.join(migrationsDir, migrationFile);
 
     if (!fs.existsSync(filePath)) {
-      console.warn(chalk.yellow(`⚠️  Missing file: ${migrationFile} (skipping)`));
+      console.warn(chalk.yellow(`Missing file: ${migrationFile} (skipping)`));
       continue;
     }
 
     try {
       const migrationModule = (await import(path.resolve(filePath))) as {
-        down?: (db: { query(sql: string): Promise<void> }) => Promise<void>;
+        down?: (db: { query(sql: string, params?: unknown[]): Promise<void> }) => Promise<void>;
       };
 
       if (typeof migrationModule.down !== "function") {
-        console.log(chalk.gray(`⏭️  No down() method: ${migrationFile}`));
+        console.log(chalk.gray(`No down() method: ${migrationFile}`));
         continue;
       }
 
-      console.log(chalk.gray(`↩️  Reverting: ${migrationFile}`));
+      console.log(chalk.gray(`Reverting: ${migrationFile}`));
       await migrationModule.down({ query: runQuery });
 
-      const deleteSql =
-        driver === "pg"
-          ? "DELETE FROM migrations WHERE name = $1;"
-          : "DELETE FROM migrations WHERE name = ?;";
+      const deleteSql = `DELETE FROM migrations WHERE name = ${db.placeholder(1)};`;
       await runQuery(deleteSql, [migrationFile]);
-      console.log(chalk.green(`✅ Rolled back: ${migrationFile}`));
+      console.log(chalk.green(`Rolled back: ${migrationFile}`));
       rolledBack++;
     } catch (err) {
-      console.error(chalk.red(`❌ Error rolling back ${migrationFile}:`));
+      console.error(chalk.red(`Error rolling back ${migrationFile}:`));
       console.error(err);
       break;
     }
   }
 
-  console.log(
-    chalk.greenBright(
-      `\n🎉 ${rolledBack} migration(s) rolled back successfully.\n`
-    )
-  );
+  console.log(chalk.greenBright(`\n${rolledBack} migration(s) rolled back successfully.\n`));
 
   await closeAllConnections();
-  console.log(chalk.gray("🔒 All database connections closed.\n"));
+  console.log(chalk.gray("All database connections closed.\n"));
 }

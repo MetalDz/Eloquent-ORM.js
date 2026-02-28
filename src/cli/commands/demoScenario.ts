@@ -64,7 +64,7 @@ export async function demoScenario(options?: {
     if (options?.user && Number.isFinite(options.user)) {
       userId = options.user;
     } else if (options?.random) {
-      const randomFn = driver === "pg" ? "RANDOM()" : "RAND()";
+      const randomFn = driver === "mysql" ? "RAND()" : "RANDOM()";
       const row = await adapter.queryOne<Row>(
         `SELECT ${adapter.wrapId("id")} as id FROM ${usersTable} ORDER BY ${randomFn} LIMIT 1`
       );

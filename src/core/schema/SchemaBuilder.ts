@@ -121,34 +121,43 @@ export class SchemaBuilder {
     const existingColumnSqlByName = new Map<string, string>();
 
     try {
-      const { getConnection } = await import("../connection/ConnectionFactory");
-      const db = await getConnection(((connectionNameOverride as unknown) || dialectName) as any);
+      const { getAdapter } = await import("../connection/ConnectionFactory");
+      const adapter = await getAdapter(
+        ((connectionNameOverride as unknown) || dialectName) as any
+      );
 
       if (dialectName === "mysql") {
-        const [rows] = (await db.query?.(`SHOW TABLES LIKE '${tableName}'`)) as [
-          Record<string, unknown>[],
-          unknown[]
-        ];
-        tableExists = Array.isArray(rows) && rows.length > 0;
+        const rows = await adapter.query<Record<string, unknown>>(
+          `SHOW TABLES LIKE ${adapter.placeholder(1)}`,
+          [tableName]
+        );
+        tableExists = rows.length > 0;
 
         if (tableExists) {
-          const [cols] = (await db.query?.(
-            `SHOW COLUMNS FROM \`${tableName}\`;`
-          )) as [Array<{
+          const cols = await adapter.query<{
             Field: string;
             Type: string;
             Null: string;
             Key: string;
             Default: unknown;
             Extra: string;
-          }>, unknown[]];
+          }>(`SHOW COLUMNS FROM ${dialect.wrap(tableName)};`);
           existingColumns = cols.map((c) => c.Field);
           for (const c of cols) {
             existingColumnSqlByName.set(c.Field, this.mysqlColumnSQL(c, dialect));
           }
         }
       } else if (dialectName === "pg") {
-        const [rows] = (await db.query?.(
+        const rows = await adapter.query<{
+          column_name: string;
+          data_type: string;
+          udt_name: string;
+          is_nullable: "YES" | "NO";
+          column_default: string | null;
+          character_maximum_length: number | null;
+          numeric_precision: number | null;
+          numeric_scale: number | null;
+        }>(
           `SELECT
              column_name,
              data_type,
@@ -159,33 +168,23 @@ export class SchemaBuilder {
              numeric_precision,
              numeric_scale
            FROM information_schema.columns
-           WHERE table_name = '${tableName}'
-             AND table_schema = current_schema();`
-        )) as [Array<{
-          column_name: string;
-          data_type: string;
-          udt_name: string;
-          is_nullable: "YES" | "NO";
-          column_default: string | null;
-          character_maximum_length: number | null;
-          numeric_precision: number | null;
-          numeric_scale: number | null;
-        }>, unknown[]];
+           WHERE table_name = ${adapter.placeholder(1)}
+             AND table_schema = current_schema();`,
+          [tableName]
+        );
         tableExists = rows.length > 0;
         existingColumns = rows.map((r) => r.column_name);
         for (const r of rows) {
           existingColumnSqlByName.set(r.column_name, this.pgColumnSQL(r, dialect));
         }
       } else if (dialectName === "sqlite") {
-        const [rows] = (await db.query?.(
-          `PRAGMA table_info(${tableName});`
-        )) as [Array<{
+        const rows = await adapter.query<{
           name: string;
           type: string;
           notnull: number;
           dflt_value: string | null;
           pk: number;
-        }>, unknown[]];
+        }>(`PRAGMA table_info(${dialect.wrap(tableName)});`);
         tableExists = rows.length > 0;
         existingColumns = rows.map((r) => r.name);
         for (const r of rows) {
@@ -281,9 +280,14 @@ export class SchemaBuilder {
   /* ============================================================
    * ًں—‘ï¸ڈ DROP TABLE
    * ============================================================ */
-  static toDropSQL(tableName: string, schema: Record<string, SchemaField>): string[] {
+  static toDropSQL(
+    tableName: string,
+    schema: Record<string, SchemaField>,
+    dialectName: Dialect = "mysql"
+  ): string[] {
     const dropSQL: string[] = [];
     const pivotTables: string[] = [];
+    const dialect = new SQLDialect(dialectName);
 
     for (const [, field] of Object.entries(schema)) {
       if (field.kind === "relation" && field.relation === "belongsToMany" && field.model) {
@@ -294,9 +298,9 @@ export class SchemaBuilder {
       }
     }
 
-    dropSQL.push(`DROP TABLE IF EXISTS \`${tableName}\`;`);
+    dropSQL.push(dialect.formatDropSQL(tableName));
     for (const pivot of pivotTables)
-      dropSQL.push(`DROP TABLE IF EXISTS \`${pivot}\`;`);
+      dropSQL.push(dialect.formatDropSQL(pivot));
 
     return dropSQL;
   }
@@ -372,16 +376,18 @@ export class SchemaBuilder {
     r: RelationDefinition,
     dialect: SQLDialect,
     dialectName: Dialect
-  ):
+  ): 
     | { type: "inline"; columns: Array<{ name: string; sql: string }>; constraints: string[] }
     | { type: "pivot"; sql: string; tableName: string }
     | { type: "morph"; sqls: string[]; columns: Array<{ name: string; sql: string }> }
     | null {
     const wrap = (v: string) => dialect.wrap(v);
+    const integerType = dialectName === "mysql" ? "INT" : "INTEGER";
+    const stringType = dialectName === "sqlite" ? "TEXT" : "VARCHAR(255)";
 
     if (r.relation === "belongsTo" && r.options.foreignKey && r.model) {
       const fk = r.options.foreignKey;
-      const colSql = `${wrap(fk)} ${dialectName === "pg" ? "INTEGER" : "INT"}`;
+      const colSql = `${wrap(fk)} ${integerType}`;
       const fkSql = `FOREIGN KEY (${wrap(fk)}) REFERENCES ${wrap(
         r.model.toLowerCase() + "s"
       )}(${wrap(r.options.localKey ?? "id")})`;
@@ -404,8 +410,8 @@ export class SchemaBuilder {
       const pivotTable = [keyA, keyB].sort().join("_") + "_pivot";
 
       const pivotSQL = dialect.formatCreateSQL(pivotTable, [
-        `${wrap(keyA + "_id")} INT NOT NULL`,
-        `${wrap(keyB + "_id")} INT NOT NULL`,
+        `${wrap(keyA + "_id")} ${integerType} NOT NULL`,
+        `${wrap(keyB + "_id")} ${integerType} NOT NULL`,
         `PRIMARY KEY (${wrap(keyA + "_id")}, ${wrap(keyB + "_id")})`,
         `FOREIGN KEY (${wrap(keyA + "_id")}) REFERENCES ${wrap(tableA)}(${wrap("id")})`,
         `FOREIGN KEY (${wrap(keyB + "_id")}) REFERENCES ${wrap(tableB)}(${wrap("id")})`,
@@ -418,8 +424,8 @@ export class SchemaBuilder {
       const morphName = r.options.morphName ?? "morphable";
       const idName = morphName + "_id";
       const typeName = morphName + "_type";
-      const idSql = `${wrap(idName)} INT`;
-      const typeSql = `${wrap(typeName)} VARCHAR(255)`;
+      const idSql = `${wrap(idName)} ${integerType}`;
+      const typeSql = `${wrap(typeName)} ${stringType}`;
       return {
         type: "morph",
         sqls: [idSql, typeSql],
@@ -560,7 +566,7 @@ export class SchemaBuilder {
       case "SoftDeletes":
         return [
           `${dialect.wrap("deleted_at")} ${
-            dialectName === "pg" ? "TIMESTAMP" : "DATETIME"
+            dialectName === "sqlite" ? "DATETIME" : "TIMESTAMP"
           } NULL DEFAULT NULL`,
         ];
       default:

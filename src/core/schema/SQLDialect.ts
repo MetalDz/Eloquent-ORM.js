@@ -17,7 +17,7 @@ export class SQLDialect {
       case "pg":
         return `"${identifier.replace(/"/g, '""')}"`; // double quotes escaped
       case "sqlite":
-        return identifier; // SQLite tolerates plain identifiers
+        return `"${identifier.replace(/"/g, '""')}"`;
       default:
         return `\`${identifier.replace(/`/g, "``")}\``; // MySQL default
     }
