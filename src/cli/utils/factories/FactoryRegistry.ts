@@ -59,10 +59,10 @@ export class FactoryRegistry {
   /**
    * 🧭 Auto-discover all factories in the factories directory.
    */
-  static async autoDiscover(): Promise<void> {
-    const dir = PathMap.factories();
+  static async autoDiscover(isTest = false): Promise<void> {
+    const dir = PathMap.factories(isTest);
     if (!fs.existsSync(dir)) {
-      console.warn(chalk.yellow(`⚠️ No factories folder found at: ${dir}`));
+      console.log(chalk.gray(`No factories folder found at: ${dir}`));
       return;
     }
 

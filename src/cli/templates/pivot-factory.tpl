@@ -1,6 +1,4 @@
-import { Factory } from "../../../cli/utils/factories/Factory";
-import { BaseModel } from "../../../core/model/BaseModel";
-import { PivotHelperMixin } from "../../../core/orm/mixins/PivotHelperMixin";
+import { BaseModel, Factory, PivotHelperMixin } from "eloquentjs";
 
 /**
  * 🧩 Auto-generated Pivot Factory

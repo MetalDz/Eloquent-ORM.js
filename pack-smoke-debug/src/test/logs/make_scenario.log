@@ -1,0 +1,152 @@
+
+----- RUN 2026-03-01T13:35:16.143Z -----
+[2026-03-01T13:35:16.200Z] [LOG] Initializing FactoryRegistry...
+[2026-03-01T13:35:16.201Z] [WARN] ⚠️ No factories folder found at: L:\npm dev Packages\pack-smoke-debug\src\app\database\factories
+[2026-03-01T13:35:16.210Z] [LOG] [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[2026-03-01T13:35:16.531Z] [LOG]   _____  _                                    _       _  ____  
+ | ____|| |  ___    __ _  _   _   ___  _ __  | |_    | |/ ___| 
+ |  _|  | | / _ \  / _` || | | | / _ \| '_ \ | __|_  | |\___ \ 
+ | |___ | || (_) || (_| || |_| ||  __/| | | || |_| |_| | ___) |
+ |_____||_| \___/  \__, | \__,_| \___||_| |_| \__|\___/ |____/ 
+                      |_|                                      
+[2026-03-01T13:35:16.534Z] [LOG] ⚡ Developer CLI for EloquentJS ORM (v2.0)
+
+[2026-03-01T13:35:16.535Z] [LOG] 🚀 Ready to manage your EloquentJS models and database!
+
+[2026-03-01T13:35:16.538Z] [LOG] 
+Scenario preset: blog
+[2026-03-01T13:35:16.539Z] [LOG] Users, Posts, Comments (morph), Favorites pivot
+[2026-03-01T13:35:16.543Z] [LOG] Model created: L:\npm dev Packages\pack-smoke-debug\src\test\database\models\User.ts
+[2026-03-01T13:35:16.543Z] [LOG] Model created: L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Post.ts
+[2026-03-01T13:35:16.544Z] [LOG] Model created: L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Comment.ts
+[2026-03-01T13:35:16.545Z] [LOG] 
+🧬 Generating Factory: User...
+[2026-03-01T13:35:16.621Z] [LOG] Loaded 0 factories.
+[2026-03-01T13:35:16.621Z] [ERROR] ❌ Factory generation failed
+[2026-03-01T13:35:16.621Z] [ERROR] Cannot find module '../../../core/model/BaseModel'
+Require stack:
+- L:\npm dev Packages\pack-smoke-debug\src\test\database\models\User.ts
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\typescript\tsRuntime.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryRegistry.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryLoader.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\eloquent.js
+[2026-03-01T13:35:16.625Z] [ERROR] Error: Cannot find module '../../../core/model/BaseModel'
+Require stack:
+- L:\npm dev Packages\pack-smoke-debug\src\test\database\models\User.ts
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\typescript\tsRuntime.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryRegistry.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryLoader.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\eloquent.js
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1421:15)
+    at Module._resolveFilename.sharedData.moduleResolveFilenameHook.installedValue [as _resolveFilename] (L:\npm dev Packages\node_modules\@cspotcode\source-map-support\source-map-support.js:811:30)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (L:\npm dev Packages\pack-smoke-debug\src\test\database\models\User.ts:9:21)
+[2026-03-01T13:35:16.626Z] [LOG] 
+🧬 Generating Factory: Post...
+[2026-03-01T13:35:16.645Z] [ERROR] ❌ Factory generation failed
+[2026-03-01T13:35:16.646Z] [ERROR] Cannot find module '../../../core/model/BaseModel'
+Require stack:
+- L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Post.ts
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\typescript\tsRuntime.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryRegistry.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryLoader.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\eloquent.js
+[2026-03-01T13:35:16.647Z] [ERROR] Error: Cannot find module '../../../core/model/BaseModel'
+Require stack:
+- L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Post.ts
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\typescript\tsRuntime.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryRegistry.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryLoader.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\eloquent.js
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1421:15)
+    at Module._resolveFilename.sharedData.moduleResolveFilenameHook.installedValue [as _resolveFilename] (L:\npm dev Packages\node_modules\@cspotcode\source-map-support\source-map-support.js:811:30)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Post.ts:9:21)
+[2026-03-01T13:35:16.647Z] [LOG] 
+🧬 Generating Factory: Comment...
+[2026-03-01T13:35:16.660Z] [ERROR] ❌ Factory generation failed
+[2026-03-01T13:35:16.660Z] [ERROR] Cannot find module '../../../core/model/BaseModel'
+Require stack:
+- L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Comment.ts
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\typescript\tsRuntime.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryRegistry.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryLoader.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\eloquent.js
+[2026-03-01T13:35:16.661Z] [ERROR] Error: Cannot find module '../../../core/model/BaseModel'
+Require stack:
+- L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Comment.ts
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\typescript\tsRuntime.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryRegistry.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\utils\factories\FactoryLoader.js
+- L:\npm dev Packages\pack-smoke-debug\node_modules\eloquentjs\dist\cli\eloquent.js
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1421:15)
+    at Module._resolveFilename.sharedData.moduleResolveFilenameHook.installedValue [as _resolveFilename] (L:\npm dev Packages\node_modules\@cspotcode\source-map-support\source-map-support.js:811:30)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (L:\npm dev Packages\pack-smoke-debug\src\test\database\models\Comment.ts:9:21)
+[2026-03-01T13:35:16.662Z] [LOG] Seeder created: L:\npm dev Packages\pack-smoke-debug\src\test\database\seeds\BlogScenarioSeeder.ts
+[2026-03-01T13:35:16.663Z] [LOG] ًں“پ Models Path: L:\npm dev Packages\pack-smoke-debug\src\test\database\models
+[2026-03-01T13:35:16.663Z] [LOG] ًں“پ Migrations Path: L:\npm dev Packages\pack-smoke-debug\src\test\database\migrations
+[2026-03-01T13:35:17.839Z] [ERROR] ❌ [TS Error] Unknown File (1,1): File 'L:/npm dev Packages/pack-smoke-debug/src/test/database/models/User.ts' is not under 'rootDir' 'L:/npm dev Packages/src'. 'rootDir' is expected to contain all source files.
+  The file is in the program because:
+    Root file specified for compilation
+[2026-03-01T13:35:17.841Z] [ERROR] ❌ [TS Error] src\test\database\models\User.ts (7,41): Cannot find module '../../../core/model/BaseModel' or its corresponding type declarations.
+[2026-03-01T13:35:17.842Z] [ERROR] ❌ [TS Error] src\test\database\models\User.ts (8,34): Cannot find module '../../../core/schema/SchemaBlueprint' or its corresponding type declarations.
+[2026-03-01T13:35:17.842Z] [LOG] 
+❌ Compilation failed with 3 error(s).
+
+[2026-03-01T13:35:17.843Z] [WARN] âڑ ï¸ڈ  Skipping migration due to TS error in User.ts
+[2026-03-01T13:35:17.844Z] [LOG] ًں”’ All database connections closed.
+
+[2026-03-01T13:35:17.845Z] [LOG] âœ… Migration generation complete in TEST mode.
+
+[2026-03-01T13:35:17.846Z] [LOG] ًں“پ Models Path: L:\npm dev Packages\pack-smoke-debug\src\test\database\models
+[2026-03-01T13:35:17.846Z] [LOG] ًں“پ Migrations Path: L:\npm dev Packages\pack-smoke-debug\src\test\database\migrations
+[2026-03-01T13:35:18.941Z] [ERROR] ❌ [TS Error] Unknown File (1,1): File 'L:/npm dev Packages/pack-smoke-debug/src/test/database/models/Post.ts' is not under 'rootDir' 'L:/npm dev Packages/src'. 'rootDir' is expected to contain all source files.
+  The file is in the program because:
+    Root file specified for compilation
+[2026-03-01T13:35:18.941Z] [ERROR] ❌ [TS Error] src\test\database\models\Post.ts (7,41): Cannot find module '../../../core/model/BaseModel' or its corresponding type declarations.
+[2026-03-01T13:35:18.942Z] [ERROR] ❌ [TS Error] src\test\database\models\Post.ts (8,34): Cannot find module '../../../core/schema/SchemaBlueprint' or its corresponding type declarations.
+[2026-03-01T13:35:18.942Z] [LOG] 
+❌ Compilation failed with 3 error(s).
+
+[2026-03-01T13:35:18.942Z] [WARN] âڑ ï¸ڈ  Skipping migration due to TS error in Post.ts
+[2026-03-01T13:35:18.943Z] [LOG] ًں”’ All database connections closed.
+
+[2026-03-01T13:35:18.943Z] [LOG] âœ… Migration generation complete in TEST mode.
+
+[2026-03-01T13:35:18.945Z] [LOG] ًں“پ Models Path: L:\npm dev Packages\pack-smoke-debug\src\test\database\models
+[2026-03-01T13:35:18.945Z] [LOG] ًں“پ Migrations Path: L:\npm dev Packages\pack-smoke-debug\src\test\database\migrations
+[2026-03-01T13:35:19.810Z] [ERROR] ❌ [TS Error] Unknown File (1,1): File 'L:/npm dev Packages/pack-smoke-debug/src/test/database/models/Comment.ts' is not under 'rootDir' 'L:/npm dev Packages/src'. 'rootDir' is expected to contain all source files.
+  The file is in the program because:
+    Root file specified for compilation
+[2026-03-01T13:35:19.811Z] [ERROR] ❌ [TS Error] src\test\database\models\Comment.ts (7,41): Cannot find module '../../../core/model/BaseModel' or its corresponding type declarations.
+[2026-03-01T13:35:19.811Z] [ERROR] ❌ [TS Error] src\test\database\models\Comment.ts (8,34): Cannot find module '../../../core/schema/SchemaBlueprint' or its corresponding type declarations.
+[2026-03-01T13:35:19.812Z] [LOG] 
+❌ Compilation failed with 3 error(s).
+
+[2026-03-01T13:35:19.812Z] [WARN] âڑ ï¸ڈ  Skipping migration due to TS error in Comment.ts
+[2026-03-01T13:35:19.813Z] [LOG] ًں”’ All database connections closed.
+
+[2026-03-01T13:35:19.813Z] [LOG] âœ… Migration generation complete in TEST mode.
+
+[2026-03-01T13:35:19.813Z] [LOG] 
+Scenario generation complete.
+

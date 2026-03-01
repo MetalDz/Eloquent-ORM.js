@@ -161,13 +161,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     const template = fs.readFileSync(templatePath, "utf8");
 
     expect(template).toContain(
-      'import { Factory } from "../../../cli/utils/factories/Factory";'
-    );
-    expect(template).toContain(
-      'import { BaseModel } from "../../../core/model/BaseModel";'
-    );
-    expect(template).toContain(
-      'import { PivotHelperMixin } from "../../../core/orm/mixins/PivotHelperMixin";'
+      'import { BaseModel, Factory, PivotHelperMixin } from "eloquentjs";'
     );
   });
 });

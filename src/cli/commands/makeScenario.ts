@@ -8,6 +8,7 @@ import { makeService } from "./makeService";
 import { makeMigration } from "./makeMigration";
 import { migrateRun } from "./migrateRun";
 import { dbSeed } from "./dbSeed";
+import { ImportResolver } from "../utils/ImportResolver";
 
 type ScenarioOptions = {
   test?: boolean;
@@ -36,6 +37,8 @@ type ScenarioPreset = {
 function renderModel(spec: ModelSpec): string {
   const attrs = spec.attrs.map((line) => `  ${line}`).join("\n");
   const schema = spec.schemaLines.map((line) => `    ${line}`).join("\n");
+  const coreImportPath = ImportResolver.coreImportPath(true);
+  const schemaImportPath = ImportResolver.schemaImportPath(true);
 
   return `/**
  * Auto-generated Test Model
@@ -43,8 +46,8 @@ function renderModel(spec: ModelSpec): string {
  * Table: ${spec.table}
  */
 
-import { SqlModel, ModelInstance } from "../../../core/model/BaseModel";
-import { column, validate } from "../../../core/schema/SchemaBlueprint";
+import { SqlModel, ModelInstance } from "${coreImportPath}";
+import { column, validate } from "${schemaImportPath}";
 
 type ${spec.name}Attrs = {
 ${attrs}

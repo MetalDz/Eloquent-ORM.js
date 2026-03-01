@@ -1,0 +1,42 @@
+
+----- RUN 2026-03-01T13:31:56.497Z -----
+[2026-03-01T13:31:56.516Z] [LOG] [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[2026-03-01T13:31:56.953Z] [LOG]   _____  _                                    _       _  ____  
+ | ____|| |  ___    __ _  _   _   ___  _ __  | |_    | |/ ___| 
+ |  _|  | | / _ \  / _` || | | | / _ \| '_ \ | __|_  | |\___ \ 
+ | |___ | || (_) || (_| || |_| ||  __/| | | || |_| |_| | ___) |
+ |_____||_| \___/  \__, | \__,_| \___||_| |_| \__|\___/ |____/ 
+                      |_|                                      
+[2026-03-01T13:31:56.953Z] [LOG] ⚡ Developer CLI for EloquentJS ORM (v2.0)
+
+[2026-03-01T13:31:56.954Z] [LOG] 🚀 Ready to manage your EloquentJS models and database!
+
+[2026-03-01T13:31:56.957Z] [LOG] 
+📜 Available Commands:
+
+[2026-03-01T13:31:56.958Z] [LOG] Tip: use --test to run supported commands in test mode.
+
+[2026-03-01T13:31:56.959Z] [LOG] ┌─────────┬────────────────────────────┬───────────────────────────────────────────────────────────────────────┐
+│ (index) │ Command                    │ Description                                                           │
+├─────────┼────────────────────────────┼───────────────────────────────────────────────────────────────────────┤
+│ 0       │ 'make:model <name>'        │ '--test --with-migration --attrs-from-schema --force'                 │
+│ 1       │ 'make:controller <name>'   │ '--soft --test'                                                       │
+│ 2       │ 'make:service <name>'      │ '--test'                                                              │
+│ 3       │ 'make:seed <model>'        │ '--count <number> --pivot --test'                                     │
+│ 4       │ 'make:scenario <name>'     │ '--test --preset <blog|media> --controllers --services --run --force' │
+│ 5       │ 'make:factory <name>'      │ '--model <model> --pivot --test --force'                              │
+│ 6       │ 'make:migration [model]'   │ '--test --update --all --pivot-separate'                              │
+│ 7       │ 'factory:status'           │ '--details --graph'                                                   │
+│ 8       │ 'db:seed'                  │ '--test --class <name>'                                               │
+│ 9       │ 'db:seed:fresh'            │ '--test --class <name>'                                               │
+│ 10      │ 'demo:scenario'            │ '--user <id> --random --test'                                         │
+│ 11      │ 'migrate:run [model]'      │ '--test --all --pivot-separate'                                       │
+│ 12      │ 'migrate:run:test [model]' │ '--all'                                                               │
+│ 13      │ 'migrate:rollback'         │ '--test --step <number>'                                              │
+│ 14      │ 'migrate:status'           │ '--test'                                                              │
+│ 15      │ 'migrate:fresh'            │ '--test --force'                                                      │
+│ 16      │ 'migrate:reset'            │ '(no options)'                                                        │
+│ 17      │ 'cache:clear'              │ '(no options)'                                                        │
+│ 18      │ 'cache:stats'              │ '(no options)'                                                        │
+│ 19      │ 'list'                     │ '(no options)'                                                        │
+└─────────┴────────────────────────────┴───────────────────────────────────────────────────────────────────────┘

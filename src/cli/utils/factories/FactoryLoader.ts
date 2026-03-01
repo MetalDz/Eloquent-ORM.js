@@ -13,11 +13,11 @@ import { FactoryRegistry } from "./FactoryRegistry";
  *   const user = await userFactory.create();
  */
 
-export async function loadFactories(): Promise<void> {
+export async function loadFactories(isTest = false): Promise<void> {
   console.log(chalk.cyanBright("Initializing FactoryRegistry..."));
 
   try {
-    await FactoryRegistry.autoDiscover();
+    await FactoryRegistry.autoDiscover(isTest);
 
     const count = FactoryRegistry.list().length;
     console.log(chalk.greenBright(`Loaded ${count} factories.`));

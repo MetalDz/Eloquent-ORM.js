@@ -33,6 +33,7 @@
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
     "test:critical": "jest --runInBand src/lab_test/cli.integration.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
+    "test:pack-smoke": "node scripts/pack-smoke.js",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
     "release": "semantic-release"
@@ -48,7 +49,9 @@
     "mysql2": "^3.15.2",
     "pg": "^8.16.3",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
@@ -69,9 +72,7 @@
     "jest": "^30.2.0",
     "semantic-release": "^25.0.3",
     "ts-jest": "^29.4.5",
-    "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.1",
     "vitest": "^4.0.7"
   }

@@ -11,7 +11,16 @@ export function ensureTsRuntime(): boolean {
   if (registered) return true;
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("ts-node/register/transpile-only");
+    require("ts-node").register({
+      transpileOnly: true,
+      compilerOptions: {
+        module: "commonjs",
+        target: "es2020",
+        downlevelIteration: true,
+        moduleResolution: "node",
+        skipLibCheck: true,
+      },
+    });
     registered = true;
     return true;
   } catch {

@@ -103,8 +103,9 @@ export class TypeScriptCompiler {
     const program = ts.createProgram(files, {
       noEmit,
       target: ts.ScriptTarget.ES2020,
-      lib: ["ES2020"],
       module: ts.ModuleKind.CommonJS,
+      moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      esModuleInterop: true,
       skipLibCheck: true,
     });
 

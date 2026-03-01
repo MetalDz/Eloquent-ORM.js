@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * 🧠 EloquentJS Artisan v2.0 CLI
  * Author: MEKHERBECHE Fares
@@ -132,7 +133,7 @@ function shouldLoadFactories(argv: string[]): boolean {
   }
   if (!shouldLoadFactories(process.argv)) return;
   try {
-    await loadFactories();
+    await loadFactories(process.argv.includes("--test"));
     if (process.env.DEBUG === "true") console.log(chalk.gray("🏭 Factories loaded successfully."));
   } catch (error) {
     console.error(chalk.red("❌ Failed to auto-load factories during CLI startup."));
