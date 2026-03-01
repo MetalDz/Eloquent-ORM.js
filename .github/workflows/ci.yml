@@ -222,3 +222,9 @@ jobs:
 
       - name: Verify scenario relations (test)
         run: node dist/cli/eloquent.js demo:scenario --test --random
+
+      - name: Roll back latest migration (test)
+        run: node dist/cli/eloquent.js migrate:rollback --test --step 1
+
+      - name: Re-run migrations after rollback (test)
+        run: node dist/cli/eloquent.js migrate:run --test

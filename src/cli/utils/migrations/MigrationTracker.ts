@@ -1,0 +1,299 @@
+import fs from "fs";
+import crypto from "crypto";
+import path from "path";
+import { dbConfig } from "../../../config/database";
+import type { DriverAdapter } from "../../../core/connection/DriverAdapter";
+
+export type SqlMigrationDriver = "mysql" | "pg" | "sqlite";
+
+export type MigrationRow = {
+  id?: number;
+  name: string;
+  batch: number;
+  checksum: string | null;
+  run_at?: string;
+};
+
+const MIGRATION_LOCK_ID = 1;
+
+function resolveDriver(db: DriverAdapter): SqlMigrationDriver {
+  const driver = dbConfig.connections[db.name]?.driver ?? db.name;
+  if (driver === "mysql" || driver === "pg" || driver === "sqlite") {
+    return driver;
+  }
+  throw new Error(`Unsupported SQL driver for migrations: ${String(driver)}`);
+}
+
+function trackerTableSQL(driver: SqlMigrationDriver): string {
+  if (driver === "pg") {
+    return `
+      CREATE TABLE IF NOT EXISTS migrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        batch INT DEFAULT 1,
+        checksum VARCHAR(64),
+        run_at TIMESTAMP DEFAULT NOW()
+      );`;
+  }
+
+  if (driver === "sqlite") {
+    return `
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        batch INT DEFAULT 1,
+        checksum TEXT,
+        run_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`;
+  }
+
+  return `
+    CREATE TABLE IF NOT EXISTS migrations (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(191) NOT NULL UNIQUE,
+      batch INT DEFAULT 1,
+      checksum VARCHAR(64),
+      run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`;
+}
+
+function lockTableSQL(driver: SqlMigrationDriver): string {
+  if (driver === "pg") {
+    return `
+      CREATE TABLE IF NOT EXISTS migration_locks (
+        id INT PRIMARY KEY,
+        owner VARCHAR(255) NOT NULL,
+        acquired_at TIMESTAMP DEFAULT NOW()
+      );`;
+  }
+
+  if (driver === "sqlite") {
+    return `
+      CREATE TABLE IF NOT EXISTS migration_locks (
+        id INTEGER PRIMARY KEY,
+        owner VARCHAR(255) NOT NULL,
+        acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`;
+  }
+
+  return `
+    CREATE TABLE IF NOT EXISTS migration_locks (
+      id INT PRIMARY KEY,
+      owner VARCHAR(255) NOT NULL,
+      acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`;
+}
+
+async function hasChecksumColumn(
+  db: DriverAdapter,
+  driver: SqlMigrationDriver
+): Promise<boolean> {
+  if (driver === "mysql") {
+    const rows = await db.query<Record<string, unknown>>(
+      `SHOW COLUMNS FROM ${db.wrapId("migrations")} LIKE ${db.placeholder(1)}`,
+      ["checksum"]
+    );
+    return rows.length > 0;
+  }
+
+  if (driver === "pg") {
+    const rows = await db.query<{ column_name: string }>(
+      `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = ${db.placeholder(1)}
+          AND column_name = ${db.placeholder(2)}
+      `,
+      ["migrations", "checksum"]
+    );
+    return rows.length > 0;
+  }
+
+  const rows = await db.query<{ name: string }>(
+    `PRAGMA table_info(${db.wrapId("migrations")})`
+  );
+  return rows.some((row) => row.name === "checksum");
+}
+
+async function ensureChecksumColumn(
+  db: DriverAdapter,
+  driver: SqlMigrationDriver
+): Promise<void> {
+  if (await hasChecksumColumn(db, driver)) {
+    return;
+  }
+
+  if (driver === "mysql") {
+    await db.execute(
+      `ALTER TABLE ${db.wrapId("migrations")} ADD COLUMN ${db.wrapId("checksum")} VARCHAR(64) NULL`
+    );
+    return;
+  }
+
+  if (driver === "pg") {
+    await db.execute(
+      `ALTER TABLE ${db.wrapId("migrations")} ADD COLUMN ${db.wrapId("checksum")} VARCHAR(64)`
+    );
+    return;
+  }
+
+  await db.execute(
+    `ALTER TABLE ${db.wrapId("migrations")} ADD COLUMN ${db.wrapId("checksum")} TEXT`
+  );
+}
+
+function isLockConflict(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: string }).code;
+  return (
+    code === "ER_DUP_ENTRY" ||
+    code === "23505" ||
+    code === "SQLITE_CONSTRAINT" ||
+    /duplicate|unique constraint|constraint failed/i.test(error.message)
+  );
+}
+
+export async function ensureMigrationTables(db: DriverAdapter): Promise<SqlMigrationDriver> {
+  const driver = resolveDriver(db);
+  await db.execute(trackerTableSQL(driver));
+  await ensureChecksumColumn(db, driver);
+  await db.execute(lockTableSQL(driver));
+  return driver;
+}
+
+export function computeMigrationChecksum(filePath: string): string {
+  const content = fs.readFileSync(filePath, "utf8");
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+export async function acquireMigrationLock(
+  db: DriverAdapter,
+  owner: string
+): Promise<void> {
+  try {
+    await db.execute(
+      `INSERT INTO ${db.wrapId("migration_locks")} (${db.wrapId("id")}, ${db.wrapId(
+        "owner"
+      )}) VALUES (${db.placeholder(1)}, ${db.placeholder(2)})`,
+      [MIGRATION_LOCK_ID, owner]
+    );
+  } catch (error) {
+    if (isLockConflict(error)) {
+      throw new Error("Another migration process is already running.");
+    }
+    throw error;
+  }
+}
+
+export async function releaseMigrationLock(
+  db: DriverAdapter,
+  owner: string
+): Promise<void> {
+  try {
+    await db.execute(
+      `DELETE FROM ${db.wrapId("migration_locks")} WHERE ${db.wrapId("id")} = ${db.placeholder(
+        1
+      )} AND ${db.wrapId("owner")} = ${db.placeholder(2)}`,
+      [MIGRATION_LOCK_ID, owner]
+    );
+  } catch {
+    // Do not mask the real migration error with lock cleanup noise.
+  }
+}
+
+export async function readAppliedMigrations(db: DriverAdapter): Promise<MigrationRow[]> {
+  return await db.query<MigrationRow>(
+    `SELECT ${db.wrapId("id")} AS id, ${db.wrapId("name")} AS name, ${db.wrapId(
+      "batch"
+    )} AS batch, ${db.wrapId("checksum")} AS checksum, ${db.wrapId(
+      "run_at"
+    )} AS run_at FROM ${db.wrapId("migrations")} ORDER BY ${db.wrapId("id")}`
+  );
+}
+
+export async function readLastBatch(db: DriverAdapter): Promise<number> {
+  const rows = await db.query<{ max: number | string | null }>(
+    `SELECT MAX(${db.wrapId("batch")}) as max FROM ${db.wrapId("migrations")}`
+  );
+  const max = rows[0]?.max;
+  return max === null || max === undefined ? 0 : Number(max);
+}
+
+export async function recordAppliedMigration(
+  db: DriverAdapter,
+  fileName: string,
+  batch: number,
+  checksum: string
+): Promise<void> {
+  const sql = `INSERT INTO ${db.wrapId("migrations")} (${db.wrapId("name")}, ${db.wrapId(
+    "batch"
+  )}, ${db.wrapId("checksum")}) VALUES (${db.placeholder(1)}, ${db.placeholder(
+    2
+  )}, ${db.placeholder(3)})`;
+  await db.execute(sql, [fileName, batch, checksum]);
+}
+
+export async function deleteAppliedMigration(
+  db: DriverAdapter,
+  fileName: string
+): Promise<void> {
+  const sql = `DELETE FROM ${db.wrapId("migrations")} WHERE ${db.wrapId(
+    "name"
+  )} = ${db.placeholder(1)}`;
+  await db.execute(sql, [fileName]);
+}
+
+export async function backfillMissingChecksums(
+  db: DriverAdapter,
+  rows: MigrationRow[],
+  migrationsDir: string
+): Promise<MigrationRow[]> {
+  const updatedRows: MigrationRow[] = [];
+
+  for (const row of rows) {
+    if (row.checksum) {
+      updatedRows.push(row);
+      continue;
+    }
+
+    const filePath = path.join(migrationsDir, row.name);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(
+        `Applied migration "${row.name}" is missing from disk and cannot be checksum-validated.`
+      );
+    }
+
+    const checksum = computeMigrationChecksum(filePath);
+    const sql = `UPDATE ${db.wrapId("migrations")} SET ${db.wrapId("checksum")} = ${db.placeholder(
+      1
+    )} WHERE ${db.wrapId("name")} = ${db.placeholder(2)}`;
+    await db.execute(sql, [checksum, row.name]);
+    updatedRows.push({ ...row, checksum });
+  }
+
+  return updatedRows;
+}
+
+export async function validateMigrationHistory(
+  db: DriverAdapter,
+  migrationsDir: string
+): Promise<MigrationRow[]> {
+  const rows = await readAppliedMigrations(db);
+  const hydratedRows = await backfillMissingChecksums(db, rows, migrationsDir);
+
+  for (const row of hydratedRows) {
+    const filePath = path.join(migrationsDir, row.name);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Applied migration "${row.name}" is missing from disk.`);
+    }
+
+    const currentChecksum = computeMigrationChecksum(filePath);
+    if (row.checksum !== currentChecksum) {
+      throw new Error(
+        `Migration checksum mismatch for "${row.name}". The applied migration file was modified after execution.`
+      );
+    }
+  }
+
+  return hydratedRows;
+}

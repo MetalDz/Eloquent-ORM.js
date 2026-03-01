@@ -5,6 +5,15 @@ import { getAdapter, closeAllConnections } from "../../core/connection/Connectio
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import {
+  acquireMigrationLock,
+  ensureMigrationTables,
+  readLastBatch,
+  recordAppliedMigration,
+  releaseMigrationLock,
+  validateMigrationHistory,
+  computeMigrationChecksum,
+} from "../utils/migrations/MigrationTracker";
 
 export async function migrateRun(
   isTest: boolean = false,
@@ -56,6 +65,7 @@ export async function migrateRun(
     console.log("[migrate:run] after getAdapter");
   }
   console.log(chalk.gray(`Connected to ${connectionName}.`));
+  const lockOwner = `migrate:run:${process.pid}:${Date.now()}`;
 
   const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
     if (!sql || sql.trim() === "") return;
@@ -65,84 +75,41 @@ export async function migrateRun(
     }
     await db.execute(sql, params);
   };
+  await ensureMigrationTables(db);
+  if (!dryRun) {
+    await acquireMigrationLock(db, lockOwner);
+  }
 
-  const trackerSQL =
-    driver === "pg"
-      ? `
-        CREATE TABLE IF NOT EXISTS migrations (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          batch INT DEFAULT 1,
-          run_at TIMESTAMP DEFAULT NOW()
-        );`
-      : driver === "sqlite"
-      ? `
-        CREATE TABLE IF NOT EXISTS migrations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name VARCHAR(255) NOT NULL,
-          batch INT DEFAULT 1,
-          run_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );`
-      : `
-        CREATE TABLE IF NOT EXISTS migrations (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          batch INT DEFAULT 1,
-          run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );`;
-  await runQuery(trackerSQL);
+  try {
+    let files = fs
+      .readdirSync(migrationsDir)
+      .filter((f) => f.endsWith(".ts") || f.endsWith(".js"))
+      .sort();
 
-  let files = fs
-    .readdirSync(migrationsDir)
-    .filter((f) => f.endsWith(".ts") || f.endsWith(".js"))
-    .sort();
+    if (modelName) {
+      const lower = modelName.toLowerCase();
+      files = files.filter((f) => f.includes(lower));
+      if (files.length === 0) {
+        console.log(chalk.yellow(`No migrations found for model: ${modelName}`));
+        return;
+      }
+    }
 
-  if (modelName) {
-    const lower = modelName.toLowerCase();
-    files = files.filter((f) => f.includes(lower));
-    if (files.length === 0) {
-      console.log(chalk.yellow(`No migrations found for model: ${modelName}`));
-      await closeAllConnections();
-      exitCli();
+    const appliedRows = await validateMigrationHistory(db, migrationsDir);
+    const executed = appliedRows.map((row) => row.name);
+
+    const pending = files.filter((f) => !executed.includes(f));
+    if (pending.length === 0) {
+      console.log(chalk.yellow("\nNo new migrations to run."));
       return;
     }
-  }
 
-  let executed: string[] = [];
-  try {
-    const rows = await db.query<{ name: string }>("SELECT name FROM migrations");
-    executed = rows.map((row) => row.name);
-  } catch {
-    executed = [];
-  }
+    console.log(chalk.gray(`Pending migrations: ${pending.length}`));
 
-  const pending = files.filter((f) => !executed.includes(f));
-  if (pending.length === 0) {
-    console.log(chalk.yellow("\nNo new migrations to run."));
-    await closeAllConnections();
-    exitCli();
-    return;
-  }
+    const lastBatch = await readLastBatch(db);
+    const newBatch = lastBatch + 1;
+    let applied = 0;
 
-  console.log(chalk.gray(`Pending migrations: ${pending.length}`));
-
-  let lastBatch = 0;
-  try {
-    const rows = await db.query<{ max: number | string | null }>(
-      "SELECT MAX(batch) as max FROM migrations"
-    );
-    const max = rows[0]?.max;
-    if (max !== null && max !== undefined) {
-      lastBatch = Number(max);
-    }
-  } catch {
-    lastBatch = 0;
-  }
-  const newBatch = lastBatch + 1;
-
-  let applied = 0;
-
-  try {
     for (const file of pending) {
       const filePath = path.join(migrationsDir, file);
       const migrationModule = (await import(path.resolve(filePath))) as {
@@ -168,10 +135,12 @@ export async function migrateRun(
       await migrationModule.up({ query: runQuery });
 
       if (!dryRun) {
-        const insertSql = `INSERT INTO migrations (name, batch) VALUES (${db.placeholder(
-          1
-        )}, ${db.placeholder(2)});`;
-        await runQuery(insertSql, [file, newBatch]);
+        await recordAppliedMigration(
+          db,
+          file,
+          newBatch,
+          computeMigrationChecksum(filePath)
+        );
       }
 
       console.log(chalk.green(`Migration applied: ${file}`));
@@ -184,6 +153,9 @@ export async function migrateRun(
     console.error(err);
     console.warn(chalk.yellow("Rolling back partial changes..."));
   } finally {
+    if (!dryRun) {
+      await releaseMigrationLock(db, lockOwner);
+    }
     await closeAllConnections();
     console.log(chalk.gray("\nAll database connections closed.\n"));
     exitCli();

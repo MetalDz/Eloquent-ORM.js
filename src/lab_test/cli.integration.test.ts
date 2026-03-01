@@ -209,6 +209,24 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     expect(result.combined).toContain("Scenario check: counts");
   });
 
+  test("migrate:rollback --test --step 1 exits cleanly and migrations can be re-applied", () => {
+    const rollbackArgs = ["migrate:rollback", "--test", "--step", "1"];
+    const rollbackResult = runCli(rollbackArgs, 180000);
+
+    assertCliSuccess(rollbackResult, rollbackArgs);
+    expect(rollbackResult.combined).toContain("Rolling back migrations in TEST mode");
+    expect(rollbackResult.combined).toMatch(/migration\(s\) rolled back successfully/i);
+
+    const rerunArgs = ["migrate:run", "--test"];
+    const rerunResult = runCli(rerunArgs, 180000);
+
+    assertCliSuccess(rerunResult, rerunArgs);
+    expect(rerunResult.combined).toContain("Running migrations in TEST mode");
+    expect(rerunResult.combined).toMatch(
+      /No new migrations to run|migration\(s\) applied successfully/i
+    );
+  });
+
   test("make:scenario media --test exits cleanly", () => {
     const args = [
       "make:scenario",
