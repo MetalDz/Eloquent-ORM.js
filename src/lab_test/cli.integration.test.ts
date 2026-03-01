@@ -10,6 +10,8 @@ jest.setTimeout(120000);
 
 type CliResult = SpawnSyncReturns<string> & {
   combined: string;
+  durationMs: number;
+  timeoutMs: number;
 };
 
 const rootDir = process.cwd();
@@ -34,6 +36,7 @@ const describeIfTestDbAndBuild =
   hasTestDbEnv && hasBuiltCli ? describe : describe.skip;
 
 function runCli(args: string[], timeoutMs = 120000, input?: string): CliResult {
+  const startedAt = Date.now();
   const result = spawnSync(process.execPath, [cliPath, ...args], {
     cwd: rootDir,
     env: { ...process.env, FORCE_COLOR: "0" },
@@ -48,6 +51,8 @@ function runCli(args: string[], timeoutMs = 120000, input?: string): CliResult {
   return {
     ...result,
     combined: `${stdout}\n${stderr}`,
+    durationMs: Date.now() - startedAt,
+    timeoutMs,
   };
 }
 
@@ -56,16 +61,21 @@ function assertCliSuccess(result: CliResult, args: string[]): void {
     const err = result.error as NodeJS.ErrnoException;
     if (err.code === "ETIMEDOUT") {
       throw new Error(
-        `CLI command timed out: eloquent ${args.join(" ")}\n\n${result.combined}`
+        `CLI command timed out after ${result.timeoutMs}ms: eloquent ${args.join(
+          " "
+        )}\n\n${result.combined}`
       );
     }
     throw new Error(
-      `CLI command failed to spawn: eloquent ${args.join(" ")}\n${err.message}\n\n${result.combined}`
+      `CLI command failed to spawn after ${result.durationMs}ms: eloquent ${args.join(
+        " "
+      )}\n${err.message}\n\n${result.combined}`
     );
   }
 
   expect(result.signal).toBeNull();
   expect(result.status).toBe(0);
+  expect(result.durationMs).toBeLessThan(result.timeoutMs);
 }
 
 function assertSafeIdentifier(value: string, label: string): void {

@@ -15,6 +15,7 @@ jobs:
   quality-gate:
     name: Typecheck, Build, Test (MySQL)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       mysql:
         image: mysql:8.0
@@ -79,11 +80,86 @@ jobs:
         run: npm run build
 
       - name: Test
+        timeout-minutes: 8
         run: npm run test:coverage
+
+  critical-stability:
+    name: Critical Stability Re-runs (MySQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: eloquentjs
+      DB_TEST_CONNECTION: mysql_test
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_USER: root
+      DB_TEST_PASSWORD: root
+      DB_TEST_NAME: db_test
+      DB_TEST_PORT: 3306
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Initialize MySQL databases
+        run: |
+          node <<'NODE'
+          const mysql = require("mysql2/promise");
+          (async () => {
+            const conn = await mysql.createConnection({
+              host: "127.0.0.1",
+              user: "root",
+              password: "root",
+              port: 3306,
+            });
+            await conn.query("CREATE DATABASE IF NOT EXISTS `eloquentjs`");
+            await conn.query("CREATE DATABASE IF NOT EXISTS `db_test`");
+            await conn.end();
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Build
+        run: npm run build
+
+      - name: Repeat critical suites
+        timeout-minutes: 10
+        run: |
+          for run in 1 2 3; do
+            echo "::group::Critical stability run ${run}"
+            npm run test:critical
+            echo "::endgroup::"
+          done
 
   scenario-matrix:
     name: Scenario Matrix (${{ matrix.driver }})
     runs-on: ubuntu-latest
+    timeout-minutes: 18
     strategy:
       fail-fast: false
       matrix:
@@ -209,22 +285,29 @@ jobs:
           NODE
 
       - name: Generate scenario artifacts (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js make:scenario blog --test --controllers --services --force
 
       - name: Generate migrations (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js make:migration --all --test
 
       - name: Run migrations (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js migrate:run --test
 
       - name: Seed scenario (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js db:seed --test --class BlogScenarioSeeder
 
       - name: Verify scenario relations (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js demo:scenario --test --random
 
       - name: Roll back latest migration (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js migrate:rollback --test --step 1
 
       - name: Re-run migrations after rollback (test)
+        timeout-minutes: 3
         run: node dist/cli/eloquent.js migrate:run --test

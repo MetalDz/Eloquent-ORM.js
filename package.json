@@ -17,6 +17,7 @@
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
+    "test:critical": "jest --runInBand src/lab_test/cli.integration.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
     "release": "semantic-release"
