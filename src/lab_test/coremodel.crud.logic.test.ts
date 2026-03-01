@@ -22,6 +22,15 @@ function makeAdapter(name: CrudConnection): DriverAdapter & {
   const execute = jest.fn();
   const insert = jest.fn();
 
+  const wrapId = (id: string) => {
+    for (const part of id.split(".")) {
+      if (part !== "*" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(part)) {
+        throw new Error(`Unsafe SQL identifier: ${part}`);
+      }
+    }
+    return `\`${id}\``;
+  };
+
   return {
     name,
     kind: "sql",
@@ -37,7 +46,7 @@ function makeAdapter(name: CrudConnection): DriverAdapter & {
       params: values,
       nextIndex: values.length + 1,
     }),
-    wrapId: (id: string) => `\`${id}\``,
+    wrapId,
   };
 }
 
@@ -123,6 +132,30 @@ describe.each<CrudConnection>(["mysql", "sqlite"])(
       await model.update(9, {});
 
       expect(adapter.execute).not.toHaveBeenCalled();
+    });
+
+    test("malicious values remain bound params and unsafe identifiers are rejected", async () => {
+      const adapter = makeAdapter(driverName);
+      adapter.insert.mockResolvedValue({ id: 9 });
+      mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+      const model = new CrudModel(driverName);
+
+      const payload = "x'; DROP TABLE users; --";
+      await model.create({ name: payload });
+
+      expect(adapter.insert).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO `users`"),
+        [payload]
+      );
+
+      await expect(
+        model.create({ ["name); DROP TABLE users; --"]: payload })
+      ).rejects.toThrow("Unsafe SQL identifier");
+      await expect(model.find(1, "id OR 1=1")).rejects.toThrow("Unsafe SQL identifier");
+      await expect(model.update(1, { name: "safe" }, "id; DELETE")).rejects.toThrow(
+        "Unsafe SQL identifier"
+      );
+      await expect(model.delete(1, "id desc")).rejects.toThrow("Unsafe SQL identifier");
     });
   }
 );

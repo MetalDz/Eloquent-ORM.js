@@ -49,6 +49,10 @@ function wrapIdentifier(id: string, quote: string): string {
   return wrapped.join(".");
 }
 
+function hasReturningClause(sql: string): boolean {
+  return /\breturning\b/i.test(sql);
+}
+
 function buildSqlAdapter(
   name: ConnectionName,
   connection: ConnectionInstance,
@@ -154,7 +158,8 @@ function buildSqlAdapter(
       await (connection as any).query(sql, params);
     },
     async insert(sql: string, params: unknown[] = []) {
-      const res = await (connection as any).query(`${sql} RETURNING *`, params);
+      const finalSql = hasReturningClause(sql) ? sql : `${sql} RETURNING *`;
+      const res = await (connection as any).query(finalSql, params);
       const row = res.rows?.[0];
       return { id: row?.id, row };
     },

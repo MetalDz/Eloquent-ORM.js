@@ -1,6 +1,12 @@
 // src/orm/mixins/MorphableMixin.ts
 import { MorphRegistry, type MorphableConstructor } from "./MorphRegistry";
 
+function assertSafeRelationName(relationName: string): void {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(relationName)) {
+    throw new Error(`Unsafe relation name: ${relationName}`);
+  }
+}
+
 /**
  * ✅ Base interface for all morphable ORM models
  */
@@ -45,6 +51,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
 
     /** 🌀 morphTo('commentable') */
     async morphTo(this: MorphableBaseModel, relationName: string): Promise<MorphableBaseModel | null> {
+      assertSafeRelationName(relationName);
       const record = this as Record<string, unknown>;
       const type = record[`${relationName}_type`] as string | undefined;
       const id = record[`${relationName}_id`] as number | string | undefined;
@@ -67,6 +74,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       RelatedModel: { query(): ORMQuery<T> },
       relationName: string
     ): Promise<T | null> {
+      assertSafeRelationName(relationName);
       const self = this as { getMorphClass?: () => string; constructor: { name: string } };
       const modelName =
         typeof self.getMorphClass === "function"
@@ -86,6 +94,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       RelatedModel: { query(): ORMQuery<T> },
       relationName: string
     ): Promise<T[]> {
+      assertSafeRelationName(relationName);
       const self = this as { getMorphClass?: () => string; constructor: { name: string } };
       const modelName =
         typeof self.getMorphClass === "function"

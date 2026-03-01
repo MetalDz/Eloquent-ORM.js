@@ -26,6 +26,15 @@ function makeAdapter(name: DriverAdapter["name"] = "mysql"): MockAdapter {
     async () => ({ id: undefined })
   );
 
+  const wrapId = (id: string) => {
+    for (const part of id.split(".")) {
+      if (part !== "*" && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(part)) {
+        throw new Error(`Unsafe SQL identifier: ${part}`);
+      }
+    }
+    return id;
+  };
+
   return {
     name,
     kind: "sql",
@@ -40,7 +49,7 @@ function makeAdapter(name: DriverAdapter["name"] = "mysql"): MockAdapter {
       params: values,
       nextIndex: startIndex + values.length,
     }),
-    wrapId: (id: string) => id,
+    wrapId,
   };
 }
 
@@ -345,5 +354,26 @@ describe("Relation logic coverage", () => {
       url: "b.png",
     });
     expect((parents[2] as Row).image).toBeNull();
+  });
+
+  test("relations reject unsafe identifiers before building SQL", async () => {
+    const adapter = makeAdapter();
+    const RelatedModel = makeRelatedModel(adapter, "users");
+
+    const belongsTo = new BelongsTo(
+      RelatedModel,
+      "user_id",
+      "id OR 1=1",
+      "author"
+    );
+    await expect(belongsTo.getResults({ user_id: 1 })).rejects.toThrow("Unsafe SQL identifier");
+
+    const belongsToMany = new BelongsToMany(
+      RelatedModel,
+      "post_user_pivot;DROP",
+      "user_id",
+      "post_id"
+    );
+    await expect(belongsToMany.attach(1, 2)).rejects.toThrow("Unsafe SQL identifier");
   });
 });

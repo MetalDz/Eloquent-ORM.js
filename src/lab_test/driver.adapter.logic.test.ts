@@ -128,6 +128,29 @@ describe("DriverAdapter parity", () => {
     );
   });
 
+  test("pg adapter does not append RETURNING twice when SQL already has one", async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValue({ rows: [{ id: 77 }] });
+
+    const adapter = createAdapter(
+      "pg_test",
+      { query } as never
+    );
+
+    await expect(
+      adapter.insert("INSERT INTO users (name) VALUES ($1) RETURNING id", ["D"])
+    ).resolves.toEqual({
+      id: 77,
+      row: { id: 77 },
+    });
+
+    expect(query).toHaveBeenCalledWith(
+      "INSERT INTO users (name) VALUES ($1) RETURNING id",
+      ["D"]
+    );
+  });
+
   test("adapter rejects unsafe identifiers and mongo adapter creation", () => {
     const mysqlAdapter = createAdapter(
       "mysql_test",
@@ -135,6 +158,12 @@ describe("DriverAdapter parity", () => {
     );
 
     expect(() => mysqlAdapter.wrapId("users;DROP TABLE users")).toThrow(
+      "Unsafe SQL identifier"
+    );
+    expect(() => mysqlAdapter.wrapId("users.name DESC")).toThrow(
+      "Unsafe SQL identifier"
+    );
+    expect(() => mysqlAdapter.wrapId("users.name--comment")).toThrow(
       "Unsafe SQL identifier"
     );
     expect(() => createAdapter("mongo", {} as never)).toThrow(
