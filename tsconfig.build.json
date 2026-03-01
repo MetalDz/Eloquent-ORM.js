@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/app/**/*",
+    "src/test/**/*",
+    "src/lab_test/**/*",
+    "src/**/*.test.ts",
+    "src/pivot.factory.test.ts"
+  ]
+}

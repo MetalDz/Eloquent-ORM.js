@@ -21,13 +21,13 @@ export function SerializeMixin<TBase extends Constructor<SerializableModel>>(Bas
      * 🕵️‍♂️ Attributes to hide during serialization
      * Example: ['password', 'api_token']
      */
-    protected hidden: string[] = [];
+    public hidden: string[] = [];
 
     /**
      * 🌟 Computed attributes to append to output
      * Example: ['full_name', 'profile_url']
      */
-    protected appends: string[] = [];
+    public appends: string[] = [];
 
     constructor(...args: any[]) {
       super(...args);
@@ -72,7 +72,7 @@ export function SerializeMixin<TBase extends Constructor<SerializableModel>>(Bas
     /**
      * ♻️ Recursively serialize nested models, arrays, or plain objects
      */
-    protected serializeValue(value: unknown): unknown {
+    public serializeValue(value: unknown): unknown {
       if (value === null || value === undefined) return value;
 
       // 🧩 Handle arrays

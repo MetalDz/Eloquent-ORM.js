@@ -34,9 +34,8 @@
 
   /* ---------- Paths ---------- */
   "include": [
-    "src/**/*.ts" , "src/test", "src/tps.ts"    // "src/test/testConnection.ts" // can be uncommented for integration testing
-, "src/pivot.factory.test.ts"  ],
-  "exclude": [
-    "src/tps.ts"
+    "src/**/*.ts",
+    "src/test",
+    "src/pivot.factory.test.ts"
   ]
 }

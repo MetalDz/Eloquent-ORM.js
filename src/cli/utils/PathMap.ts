@@ -9,6 +9,7 @@ import fs from "fs";
 export class PathMap {
   // Root project directory
   private static readonly ROOT = process.cwd();
+  private static readonly PACKAGE_ROOT = path.resolve(__dirname, "..", "..", "..");
   static get root(): string {
     return this.ROOT;
   }
@@ -20,7 +21,11 @@ export class PathMap {
   static readonly SEEDS = path.resolve(this.ROOT, "src/app/database/seeds");
 
   // --- CLI template directory ---
-  static readonly CLI_TEMPLATES = path.resolve(this.ROOT, "src/cli/templates");
+  private static readonly PROJECT_CLI_TEMPLATES = path.resolve(this.ROOT, "src/cli/templates");
+  private static readonly PACKAGE_CLI_TEMPLATES = path.resolve(
+    this.PACKAGE_ROOT,
+    "src/cli/templates"
+  );
 
   // --- Test folders ---
   static readonly TEST_MODELS = path.resolve(this.ROOT, "src/test/database/models");
@@ -86,7 +91,10 @@ export class PathMap {
    */
   static template(name: string): string {
     const fileName = name.endsWith(".tpl") ? name : `${name}.tpl`;
-    return path.resolve(this.CLI_TEMPLATES, fileName);
+    const baseDir = fs.existsSync(this.PROJECT_CLI_TEMPLATES)
+      ? this.PROJECT_CLI_TEMPLATES
+      : this.PACKAGE_CLI_TEMPLATES;
+    return path.resolve(baseDir, fileName);
   }
 
   /**

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
+import { PathMap } from "./PathMap";
 
 /**
  * 🧩 TemplateEngine
@@ -15,7 +16,7 @@ import chalk from "chalk";
  */
 export class TemplateEngine {
   static load(templateName: string): string {
-    const tplPath = path.resolve(process.cwd(), `src/cli/templates/${templateName}.tpl`);
+    const tplPath = PathMap.template(templateName);
     if (!fs.existsSync(tplPath)) {
       console.error(chalk.red(`❌ Template not found: ${tplPath}`));
       throw new Error(`Template missing: ${templateName}.tpl`);
