@@ -1,9 +1,7 @@
 export {
   BaseModel,
   SqlModel,
-  MorphableMixin,
   MorphRegistry,
-  type MorphableBaseModel,
   type ORMRecord,
   type ModelAttrs,
   type ModelInstance,
@@ -15,7 +13,6 @@ export {
   CoreModel,
   MongoModel,
   type ModelEventHooks,
-  type ModelBaseContract,
 } from "./core/model/CoreModel";
 
 export {
@@ -47,21 +44,5 @@ export {
 
 export { SchemaBuilder, type SchemaBuildResult } from "./core/schema/SchemaBuilder";
 
-export {
-  getConnection,
-  getAdapter,
-  closeAllConnections,
-  type ConnectionName,
-} from "./core/connection/ConnectionFactory";
-
-export { resolveConnectionName } from "./core/connection/resolveConnectionName";
-
-export type { DriverAdapter, AdapterKind } from "./core/connection/DriverAdapter";
-
 export { CacheManager } from "./core/cache/CacheManager";
-export { CacheRegistry } from "./core/cache/CacheRegistry";
-export { CacheAnalytics } from "./core/cache/CacheAnalytics";
-export { CacheFallbackManager } from "./core/cache/CacheFallbackManager";
 export { setupCache } from "./core/cache/setupCache";
-
-export { dbConfig } from "./config/database";
