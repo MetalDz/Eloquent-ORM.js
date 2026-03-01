@@ -18,10 +18,11 @@ import {
 export async function migrateRun(
   isTest: boolean = false,
   modelName?: string,
-  dryRun: boolean = false
+  dryRun: boolean = false,
+  exitOnFinish: boolean = true
 ): Promise<void> {
   const exitCli = (): void => {
-    if (process.env.ELOQUENT_CLI === "true") {
+    if (exitOnFinish && process.env.ELOQUENT_CLI === "true") {
       setImmediate(() => process.exit(0));
     }
   };

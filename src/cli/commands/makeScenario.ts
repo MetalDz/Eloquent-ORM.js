@@ -503,7 +503,7 @@ export async function ${preset.seedName}() {
   }
 
   if (options.run) {
-    await migrateRun(true);
+    await migrateRun(true, undefined, false, false);
     await dbSeed({ test: true, class: preset.seedName, close: true, exit: false });
   }
 

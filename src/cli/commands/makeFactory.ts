@@ -181,14 +181,19 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
 
     // 🔄 Generate Pivot Factories automatically
     for (const rel of relations) {
-      if (rel.isPivot && rel.pivotTable && rel.target && typeof rel.target === "string") {
+      if (rel.isPivot && rel.target && typeof rel.target === "string") {
         const left = ModelName;
         const right = rel.target;
+        const pivotTable =
+          rel.pivotTable ??
+          [left.toLowerCase(), right.toLowerCase()].sort().join("_") + "_pivot";
         const pivotFactoryName = `${left}${right}PivotFactory`;
         const pivotTemplatePath = PathMap.template("pivot-factory");
 
         if (!fs.existsSync(pivotTemplatePath)) {
-          console.warn(chalk.yellow(`⚠️  Pivot template not found at: ${pivotTemplatePath} — skipping pivot ${rel.pivotTable}.`));
+          console.warn(
+            chalk.yellow(`⚠️  Pivot template not found at: ${pivotTemplatePath} — skipping pivot ${pivotTable}.`)
+          );
           continue;
         }
 
@@ -197,7 +202,7 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
 
         const pivotRenderData = {
           PivotFactoryName: pivotFactoryName,
-          pivotTable: rel.pivotTable,
+          pivotTable,
           foreignKey,
           relatedKey,
         } as const;

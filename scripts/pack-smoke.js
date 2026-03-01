@@ -57,6 +57,51 @@ function assertContains(step, text, expected) {
   }
 }
 
+function assertOneOf(step, text, options) {
+  if (!options.some((value) => text.includes(value))) {
+    throw new Error(`[${step}] expected one of ${options.join(" | ")}\n${text}`);
+  }
+}
+
+function assertFileExists(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Expected file to exist: ${filePath}`);
+  }
+}
+
+function assertFileContains(filePath, expected) {
+  assertFileExists(filePath);
+  const content = fs.readFileSync(filePath, "utf8");
+  if (!content.includes(expected)) {
+    throw new Error(`Expected file ${filePath} to contain:\n${expected}\n\nActual:\n${content}`);
+  }
+}
+
+function findFiles(dir, predicate) {
+  if (!fs.existsSync(dir)) {
+    return [];
+  }
+
+  return fs.readdirSync(dir).filter(predicate);
+}
+
+function assertNonEmptyMigration(dir, needle) {
+  const matches = findFiles(dir, (file) => file.includes(needle) && file.endsWith(".ts"));
+  if (matches.length === 0) {
+    throw new Error(`Expected migration matching "${needle}" in ${dir}`);
+  }
+
+  for (const file of matches) {
+    const filePath = path.join(dir, file);
+    const content = fs.readFileSync(filePath, "utf8");
+    if (content.includes("await db.query(`") && !content.includes("// (no SQL changes detected)")) {
+      return filePath;
+    }
+  }
+
+  throw new Error(`Expected non-empty migration matching "${needle}" in ${dir}`);
+}
+
 function resolveTarballName(packOutput) {
   const line = packOutput
     .split(/\r?\n/)
@@ -75,6 +120,45 @@ function resolveTarballName(packOutput) {
   return line;
 }
 
+function listTarballEntries(tarballName) {
+  const listed = run("tar", ["-tf", tarballName], { cwd: repoRoot });
+  assertSuccess("tarball listing", listed);
+  return listed.combined
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function assertTarballSurface(entries) {
+  const requiredEntries = [
+    "package/package.json",
+    "package/README.md",
+    "package/CHANGELOG.md",
+    "package/dist/index.js",
+    "package/dist/cli/eloquent.js",
+    "package/src/cli/templates/model.tpl",
+  ];
+
+  for (const entry of requiredEntries) {
+    if (!entries.includes(entry)) {
+      throw new Error(`Tarball is missing required entry: ${entry}`);
+    }
+  }
+
+  const forbiddenPrefixes = [
+    "package/.env",
+    "package/src/app/",
+    "package/src/test/",
+    "package/src/lab_test/",
+  ];
+
+  for (const entry of entries) {
+    if (entry === ".env" || forbiddenPrefixes.some((prefix) => entry.startsWith(prefix))) {
+      throw new Error(`Tarball contains forbidden entry: ${entry}`);
+    }
+  }
+}
+
 function runCli(sampleDir, args, env) {
   const binPath =
     process.platform === "win32"
@@ -88,36 +172,41 @@ function runCli(sampleDir, args, env) {
   return run(binPath, args, { cwd: sampleDir, env });
 }
 
-let tarballPath = "";
-let sampleDir = "";
+function runNodeScript(sampleDir, fileName, content, env, step) {
+  const scriptPath = path.join(sampleDir, fileName);
+  fs.writeFileSync(scriptPath, content, "utf8");
+  const result = run(nodeCmd, [scriptPath], { cwd: sampleDir, env });
+  assertSuccess(step, result);
+  return result;
+}
 
-try {
-  const packed = run(npmCmd, ["pack"], { cwd: repoRoot });
-  assertSuccess("npm pack", packed);
+function createSampleApp(tarballName, label) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `eloquent-pack-smoke-${label}-`));
+  const localTarballPath = path.join(dir, tarballName);
+  fs.copyFileSync(path.join(repoRoot, tarballName), localTarballPath);
 
-  const tarballName = resolveTarballName(`${packed.stdout}\n${packed.stderr}`);
-  tarballPath = path.join(repoRoot, tarballName);
-  sampleDir = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-pack-smoke-"));
-  const localTarballPath = path.join(sampleDir, tarballName);
-  fs.copyFileSync(tarballPath, localTarballPath);
+  assertSuccess("npm init", run(npmCmd, ["init", "-y"], { cwd: dir }));
+  assertSuccess("npm install tarball", run(npmCmd, ["install", `./${tarballName}`], { cwd: dir }));
 
-  assertSuccess("npm init", run(npmCmd, ["init", "-y"], { cwd: sampleDir }));
-  assertSuccess("npm install tarball", run(npmCmd, ["install", `./${tarballName}`], { cwd: sampleDir }));
-
-  const env = {
-    ...process.env,
-    DB_TEST_CONNECTION: "sqlite_test",
-    SQLITE_TEST_PATH: path.join(sampleDir, "data.test.sqlite"),
+  return {
+    dir,
+    env: {
+      ...process.env,
+      DB_TEST_CONNECTION: "sqlite_test",
+      SQLITE_TEST_PATH: path.join(dir, "data.test.sqlite"),
+    },
   };
+}
 
-  const importCheckPath = path.join(sampleDir, "smoke-import-check.cjs");
-  fs.writeFileSync(
-    importCheckPath,
+function verifyPublicExports(sample) {
+  const imports = runNodeScript(
+    sample.dir,
+    "smoke-import-check.cjs",
     'const pkg = require("eloquentjs");\nconsole.log(Object.keys(pkg).sort().join(","));\n',
-    "utf8"
+    sample.env,
+    "package import"
   );
-  const imports = run(nodeCmd, [importCheckPath], { cwd: sampleDir, env });
-  assertSuccess("package import", imports);
+
   const exportLine = imports.combined
     .split(/\r?\n/)
     .map((value) => value.trim())
@@ -128,40 +217,380 @@ try {
     .map((value) => value.trim())
     .filter(Boolean)
     .sort();
+
   if (JSON.stringify(actualExports) !== JSON.stringify(expectedPublicExports)) {
     throw new Error(
       `[package import] export surface mismatch\nExpected: ${expectedPublicExports.join(",")}\nActual: ${actualExports.join(",")}`
     );
   }
+}
 
-  const listResult = runCli(sampleDir, ["list"], env);
+function runGeneralCliSmoke(sample) {
+  const migrationsDir = path.join(sample.dir, "src", "test", "database", "migrations");
+
+  const listResult = runCli(sample.dir, ["list"], sample.env);
   assertSuccess("eloquent list", listResult);
   assertContains("eloquent list", listResult.combined, "Available Commands");
 
-  const scenarioResult = runCli(sampleDir, ["make:scenario", "blog", "--test", "--force"], env);
-  assertSuccess("make:scenario", scenarioResult);
-  assertContains("make:scenario", scenarioResult.combined, "Scenario generation complete");
+  const cacheStatsResult = runCli(sample.dir, ["cache:stats"], sample.env);
+  assertSuccess("cache:stats", cacheStatsResult);
+  assertContains("cache:stats", cacheStatsResult.combined, "cache:stats");
 
-  const makeMigrationResult = runCli(sampleDir, ["make:migration", "--all", "--test"], env);
-  assertSuccess("make:migration", makeMigrationResult);
-  assertContains("make:migration", makeMigrationResult.combined, "Migration generation complete");
+  const cacheClearResult = runCli(sample.dir, ["cache:clear"], sample.env);
+  assertSuccess("cache:clear", cacheClearResult);
+  assertContains("cache:clear", cacheClearResult.combined, "cache:clear");
 
-  const migrateRunResult = runCli(sampleDir, ["migrate:run", "--test"], env);
-  assertSuccess("migrate:run", migrateRunResult);
-  if (
-    !migrateRunResult.combined.includes("migration(s) applied successfully") &&
-    !migrateRunResult.combined.includes("No new migrations to run")
-  ) {
-    throw new Error(`[migrate:run] unexpected output\n${migrateRunResult.combined}`);
+  const modelResult = runCli(
+    sample.dir,
+    ["make:model", "DemoAuto", "--test", "--with-migration", "--attrs-from-schema", "--force"],
+    sample.env
+  );
+  assertSuccess("make:model", modelResult);
+  assertContains("make:model", modelResult.combined, "Model created");
+
+  const demoAutoModelPath = path.join(sample.dir, "src", "test", "database", "models", "DemoAuto.ts");
+  assertFileContains(demoAutoModelPath, 'import { SqlModel, ModelInstance } from "eloquentjs";');
+  assertFileContains(demoAutoModelPath, 'import { column, validate } from "eloquentjs";');
+  assertNonEmptyMigration(migrationsDir, "_demoautos_table");
+
+  const plainModelResult = runCli(
+    sample.dir,
+    ["make:model", "Demo", "--test", "--attrs-from-schema", "--force"],
+    sample.env
+  );
+  assertSuccess("make:model Demo", plainModelResult);
+  const demoModelPath = path.join(sample.dir, "src", "test", "database", "models", "Demo.ts");
+  assertFileContains(demoModelPath, 'import { SqlModel, ModelInstance } from "eloquentjs";');
+  assertFileContains(demoModelPath, 'import { column, validate } from "eloquentjs";');
+
+  const directMigrationResult = runCli(sample.dir, ["make:migration", "Demo", "--test"], sample.env);
+  assertSuccess("make:migration Demo", directMigrationResult);
+  assertContains("make:migration Demo", directMigrationResult.combined, "Migration");
+  assertNonEmptyMigration(migrationsDir, "_demos_table");
+
+  const controllerResult = runCli(
+    sample.dir,
+    ["make:controller", "Demo", "--test", "--soft"],
+    sample.env
+  );
+  assertSuccess("make:controller", controllerResult);
+  assertFileExists(path.join(sample.dir, "src", "test", "controllers", "DemoController.ts"));
+
+  const serviceResult = runCli(sample.dir, ["make:service", "Demo", "--test"], sample.env);
+  assertSuccess("make:service", serviceResult);
+  assertFileExists(path.join(sample.dir, "src", "test", "services", "DemoService.ts"));
+
+  const factoryResult = runCli(sample.dir, ["make:factory", "Demo", "--test", "--force"], sample.env);
+  assertSuccess("make:factory", factoryResult);
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "factories", "DemoFactory.ts"),
+    'import { Factory } from "eloquentjs";'
+  );
+
+  const seedResult = runCli(sample.dir, ["make:seed", "Demo", "--test", "--count", "2"], sample.env);
+  assertSuccess("make:seed", seedResult);
+  assertFileExists(path.join(sample.dir, "src", "test", "database", "seeds", "DemoSeeder.ts"));
+
+  const factoryStatusResult = runCli(
+    sample.dir,
+    ["factory:status", "--test", "--details", "--graph"],
+    sample.env
+  );
+  assertSuccess("factory:status", factoryStatusResult);
+  assertContains("factory:status", factoryStatusResult.combined, "DemoFactory");
+
+  const statusBeforeRunResult = runCli(sample.dir, ["migrate:status", "--test"], sample.env);
+  assertSuccess("migrate:status", statusBeforeRunResult);
+  assertOneOf("migrate:status", statusBeforeRunResult.combined, ["Pending", "No migrations table found"]);
+
+  const runTestResult = runCli(sample.dir, ["migrate:run:test", "Demo"], sample.env);
+  assertSuccess("migrate:run:test", runTestResult);
+  assertOneOf("migrate:run:test", runTestResult.combined, [
+    "migration(s) applied successfully",
+    "No new migrations to run",
+  ]);
+
+  const rollbackResult = runCli(sample.dir, ["migrate:rollback", "--test", "--step", "1"], sample.env);
+  assertSuccess("migrate:rollback", rollbackResult);
+  assertContains("migrate:rollback", rollbackResult.combined, "rolled back successfully");
+
+  const rerunResult = runCli(sample.dir, ["migrate:run", "--test", "Demo"], sample.env);
+  assertSuccess("migrate:run", rerunResult);
+  assertOneOf("migrate:run", rerunResult.combined, [
+    "migration(s) applied successfully",
+    "No new migrations to run",
+  ]);
+
+  const freshResult = runCli(sample.dir, ["migrate:fresh", "--test", "--force"], sample.env);
+  assertSuccess("migrate:fresh", freshResult);
+  assertOneOf("migrate:fresh", freshResult.combined, [
+    "migration(s) applied successfully",
+    "No new migrations to run",
+  ]);
+
+  const resetResult = runCli(sample.dir, ["migrate:reset", "--test"], sample.env);
+  assertSuccess("migrate:reset", resetResult);
+  assertOneOf("migrate:reset", resetResult.combined, [
+    "rolled back successfully",
+    "No migrations found to roll back",
+  ]);
+}
+
+function runBlogScenarioSmoke(sample) {
+  const scenarioResult = runCli(
+    sample.dir,
+    ["make:scenario", "blog", "--test", "--controllers", "--services", "--force"],
+    sample.env
+  );
+  assertSuccess("make:scenario blog", scenarioResult);
+  assertContains("make:scenario blog", scenarioResult.combined, "Scenario generation complete");
+
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "models", "User.ts"),
+    'import { SqlModel, ModelInstance } from "eloquentjs";'
+  );
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "factories", "UserFactory.ts"),
+    'import { Factory } from "eloquentjs";'
+  );
+  assertFileExists(
+    path.join(sample.dir, "src", "test", "database", "factories", "UserPostPivotFactory.ts")
+  );
+  assertFileExists(path.join(sample.dir, "src", "test", "controllers", "UserController.ts"));
+  assertFileExists(path.join(sample.dir, "src", "test", "services", "UserService.ts"));
+
+  const makeMigrationResult = runCli(sample.dir, ["make:migration", "--all", "--test"], sample.env);
+  assertSuccess("make:migration --all", makeMigrationResult);
+  assertContains("make:migration --all", makeMigrationResult.combined, "Migration generation complete");
+
+  const migrationFiles = fs.readdirSync(
+    path.join(sample.dir, "src", "test", "database", "migrations")
+  );
+  if (!migrationFiles.some((file) => file.includes("post_user_pivot"))) {
+    throw new Error("Expected blog scenario migrations to include post_user_pivot.");
   }
 
-  const seedResult = runCli(sampleDir, ["db:seed", "--test", "--class", "BlogScenarioSeeder"], env);
-  assertSuccess("db:seed", seedResult);
-  assertContains("db:seed", seedResult.combined, "Completed: BlogScenarioSeeder");
+  const statusResult = runCli(sample.dir, ["migrate:status", "--test"], sample.env);
+  assertSuccess("blog migrate:status", statusResult);
 
-  const demoResult = runCli(sampleDir, ["demo:scenario", "--test", "--random"], env);
-  assertSuccess("demo:scenario", demoResult);
-  assertContains("demo:scenario", demoResult.combined, "favorite posts: 2");
+  const runResult = runCli(sample.dir, ["migrate:run", "--test"], sample.env);
+  assertSuccess("blog migrate:run", runResult);
+  assertOneOf("blog migrate:run", runResult.combined, [
+    "migration(s) applied successfully",
+    "No new migrations to run",
+  ]);
+
+  const factoryStatusResult = runCli(
+    sample.dir,
+    ["factory:status", "--test", "--details", "--graph"],
+    sample.env
+  );
+  assertSuccess("blog factory:status", factoryStatusResult);
+  assertContains("blog factory:status", factoryStatusResult.combined, "UserFactory");
+  assertContains("blog factory:status", factoryStatusResult.combined, "PostFactory");
+  assertContains("blog factory:status", factoryStatusResult.combined, "CommentFactory");
+  assertContains("blog factory:status", factoryStatusResult.combined, "UserPostPivotFactory");
+
+  const seedResult = runCli(
+    sample.dir,
+    ["db:seed", "--test", "--class", "BlogScenarioSeeder"],
+    sample.env
+  );
+  assertSuccess("blog db:seed", seedResult);
+  assertContains("blog db:seed", seedResult.combined, "Completed: BlogScenarioSeeder");
+
+  const demoResult = runCli(sample.dir, ["demo:scenario", "--test", "--random"], sample.env);
+  assertSuccess("blog demo:scenario", demoResult);
+  assertContains("blog demo:scenario", demoResult.combined, "users: 5");
+  assertContains("blog demo:scenario", demoResult.combined, "posts: 15");
+  assertContains("blog demo:scenario", demoResult.combined, "comments: 35");
+  assertContains("blog demo:scenario", demoResult.combined, "post_user_pivot: 10");
+  assertContains("blog demo:scenario", demoResult.combined, "posts for user: 3");
+  assertContains("blog demo:scenario", demoResult.combined, "comments on user: 1");
+  assertContains("blog demo:scenario", demoResult.combined, "comments on posts: 5");
+  assertContains("blog demo:scenario", demoResult.combined, "favorite posts: 2");
+
+  const demoByUserResult = runCli(sample.dir, ["demo:scenario", "--test", "--user", "1"], sample.env);
+  assertSuccess("blog demo:scenario --user", demoByUserResult);
+  assertContains("blog demo:scenario --user", demoByUserResult.combined, "Scenario check: relations");
+
+  const rollbackResult = runCli(sample.dir, ["migrate:rollback", "--test", "--step", "1"], sample.env);
+  assertSuccess("blog migrate:rollback", rollbackResult);
+
+  const rerunAllResult = runCli(sample.dir, ["migrate:run:test", "--all"], sample.env);
+  assertSuccess("blog migrate:run:test --all", rerunAllResult);
+
+  const seedFreshResult = runCli(
+    sample.dir,
+    ["db:seed:fresh", "--test", "--class", "BlogScenarioSeeder", "--force"],
+    sample.env
+  );
+  assertSuccess("blog db:seed:fresh", seedFreshResult);
+  assertContains("blog db:seed:fresh", seedFreshResult.combined, "Database fully refreshed and seeded");
+
+  const demoAfterFreshResult = runCli(sample.dir, ["demo:scenario", "--test", "--random"], sample.env);
+  assertSuccess("blog demo after fresh", demoAfterFreshResult);
+  assertContains("blog demo after fresh", demoAfterFreshResult.combined, "favorite posts: 2");
+}
+
+function runMediaScenarioSmoke(sample) {
+  const scenarioResult = runCli(
+    sample.dir,
+    ["make:scenario", "media", "--test", "--controllers", "--services", "--force"],
+    sample.env
+  );
+  assertSuccess("make:scenario media", scenarioResult);
+  assertContains("make:scenario media", scenarioResult.combined, "Scenario generation complete");
+
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "models", "Photo.ts"),
+    'import { SqlModel, ModelInstance } from "eloquentjs";'
+  );
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "factories", "PhotoFactory.ts"),
+    'import { Factory } from "eloquentjs";'
+  );
+  assertFileExists(
+    path.join(sample.dir, "src", "test", "database", "factories", "UserPhotoPivotFactory.ts")
+  );
+  assertFileExists(path.join(sample.dir, "src", "test", "controllers", "PhotoController.ts"));
+  assertFileExists(path.join(sample.dir, "src", "test", "services", "PhotoService.ts"));
+
+  const makeMigrationResult = runCli(sample.dir, ["make:migration", "--all", "--test"], sample.env);
+  assertSuccess("media make:migration --all", makeMigrationResult);
+
+  const migrationFiles = fs.readdirSync(
+    path.join(sample.dir, "src", "test", "database", "migrations")
+  );
+  if (!migrationFiles.some((file) => file.includes("photo_user_pivot"))) {
+    throw new Error("Expected media scenario migrations to include photo_user_pivot.");
+  }
+
+  const runResult = runCli(sample.dir, ["migrate:run", "--test"], sample.env);
+  assertSuccess("media migrate:run", runResult);
+
+  const seedResult = runCli(
+    sample.dir,
+    ["db:seed", "--test", "--class", "MediaScenarioSeeder"],
+    sample.env
+  );
+  assertSuccess("media db:seed", seedResult);
+  assertContains("media db:seed", seedResult.combined, "Completed: MediaScenarioSeeder");
+
+  const factoryStatusResult = runCli(
+    sample.dir,
+    ["factory:status", "--test", "--details", "--graph"],
+    sample.env
+  );
+  assertSuccess("media factory:status", factoryStatusResult);
+  assertContains("media factory:status", factoryStatusResult.combined, "PhotoFactory");
+  assertContains("media factory:status", factoryStatusResult.combined, "VideoFactory");
+  assertContains("media factory:status", factoryStatusResult.combined, "UserPhotoPivotFactory");
+
+  const mediaCheck = runNodeScript(
+    sample.dir,
+    "media-check.cjs",
+    [
+      'const sqlite3 = require("sqlite3");',
+      'const { open } = require("sqlite");',
+      "",
+      "(async () => {",
+      "  const db = await open({",
+      '    filename: process.env.SQLITE_TEST_PATH,',
+      "    driver: sqlite3.Database,",
+      "  });",
+      "",
+      "  const scalar = async (sql, params = []) => {",
+      "    const row = await db.get(sql, params);",
+      "    return Number(row.count || 0);",
+      "  };",
+      "",
+      '  const users = await scalar("SELECT COUNT(*) AS count FROM users");',
+      '  const photos = await scalar("SELECT COUNT(*) AS count FROM photos");',
+      '  const videos = await scalar("SELECT COUNT(*) AS count FROM videos");',
+      '  const comments = await scalar("SELECT COUNT(*) AS count FROM comments");',
+      '  const pivot = await scalar("SELECT COUNT(*) AS count FROM photo_user_pivot");',
+      "",
+      "  if (users !== 4 || photos !== 8 || videos !== 8 || comments !== 16 || pivot !== 8) {",
+      '    throw new Error(`Unexpected media counts: users=${users}, photos=${photos}, videos=${videos}, comments=${comments}, pivot=${pivot}`);',
+      "  }",
+      "",
+      '  const user = await db.get("SELECT id FROM users ORDER BY id LIMIT 1");',
+      "  if (!user || typeof user.id !== 'number') throw new Error('No media user found');",
+      "",
+      '  const userPhotos = await scalar("SELECT COUNT(*) AS count FROM photos WHERE user_id = ?", [user.id]);',
+      '  const userVideos = await scalar("SELECT COUNT(*) AS count FROM videos WHERE user_id = ?", [user.id]);',
+      '  const userPhotoComments = await scalar("SELECT COUNT(*) AS count FROM comments WHERE commentable_type = ? AND commentable_id IN (SELECT id FROM photos WHERE user_id = ?)", ["photos", user.id]);',
+      '  const userVideoComments = await scalar("SELECT COUNT(*) AS count FROM comments WHERE commentable_type = ? AND commentable_id IN (SELECT id FROM videos WHERE user_id = ?)", ["videos", user.id]);',
+      '  const userLikes = await scalar("SELECT COUNT(*) AS count FROM photo_user_pivot WHERE user_id = ?", [user.id]);',
+      "",
+      "  if (userPhotos !== 2 || userVideos !== 2 || userPhotoComments !== 2 || userVideoComments !== 2 || userLikes !== 2) {",
+      '    throw new Error(`Unexpected media relation counts: photos=${userPhotos}, videos=${userVideos}, photoComments=${userPhotoComments}, videoComments=${userVideoComments}, likes=${userLikes}`);',
+      "  }",
+      "",
+      '  console.log(`media-check: users=${users}, photos=${photos}, videos=${videos}, comments=${comments}, pivot=${pivot}, userPhotos=${userPhotos}, userVideos=${userVideos}, userLikes=${userLikes}`);',
+      "  await db.close();",
+      "})().catch((err) => {",
+      "  console.error(err);",
+      "  process.exit(1);",
+      "});",
+      "",
+    ].join("\n"),
+    sample.env,
+    "media-check"
+  );
+  assertContains("media-check", mediaCheck.combined, "media-check:");
+}
+
+function runScenarioAutoSmoke(sample) {
+  const scenarioResult = runCli(
+    sample.dir,
+    ["make:scenario", "blog", "--test", "--controllers", "--services", "--run", "--force"],
+    sample.env
+  );
+  assertSuccess("make:scenario blog --run", scenarioResult);
+  assertContains("make:scenario blog --run", scenarioResult.combined, "Scenario generation complete");
+  assertContains("make:scenario blog --run", scenarioResult.combined, "Running database seeders");
+
+  const demoResult = runCli(sample.dir, ["demo:scenario", "--test", "--random"], sample.env);
+  assertSuccess("blog auto demo:scenario", demoResult);
+  assertContains("blog auto demo:scenario", demoResult.combined, "users: 5");
+  assertContains("blog auto demo:scenario", demoResult.combined, "posts: 15");
+  assertContains("blog auto demo:scenario", demoResult.combined, "comments: 35");
+  assertContains("blog auto demo:scenario", demoResult.combined, "post_user_pivot: 10");
+  assertContains("blog auto demo:scenario", demoResult.combined, "favorite posts: 2");
+}
+
+let tarballPath = "";
+let tarballName = "";
+const sampleDirs = [];
+
+try {
+  const packed = run(npmCmd, ["pack"], { cwd: repoRoot });
+  assertSuccess("npm pack", packed);
+
+  tarballName = resolveTarballName(`${packed.stdout}\n${packed.stderr}`);
+  tarballPath = path.join(repoRoot, tarballName);
+
+  const tarballEntries = listTarballEntries(tarballName);
+  assertTarballSurface(tarballEntries);
+
+  const generalSample = createSampleApp(tarballName, "commands");
+  sampleDirs.push(generalSample.dir);
+  verifyPublicExports(generalSample);
+  runGeneralCliSmoke(generalSample);
+
+  const blogSample = createSampleApp(tarballName, "blog");
+  sampleDirs.push(blogSample.dir);
+  runBlogScenarioSmoke(blogSample);
+
+  const mediaSample = createSampleApp(tarballName, "media");
+  sampleDirs.push(mediaSample.dir);
+  runMediaScenarioSmoke(mediaSample);
+
+  const autoScenarioSample = createSampleApp(tarballName, "scenario-run");
+  sampleDirs.push(autoScenarioSample.dir);
+  runScenarioAutoSmoke(autoScenarioSample);
 
   console.log("Tarball smoke passed.");
 } catch (error) {
@@ -171,14 +600,18 @@ try {
     console.error(String(error));
   }
 
-  if (sampleDir) {
-    console.error(`Smoke app kept at: ${sampleDir}`);
+  for (const dir of sampleDirs) {
+    if (dir) {
+      console.error(`Smoke app kept at: ${dir}`);
+    }
   }
 
   process.exit(1);
 } finally {
-  if (sampleDir && fs.existsSync(sampleDir)) {
-    fs.rmSync(sampleDir, { recursive: true, force: true });
+  for (const dir of sampleDirs) {
+    if (dir && fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   }
 
   if (tarballPath && fs.existsSync(tarballPath)) {

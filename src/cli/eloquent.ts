@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 🧠 EloquentJS Artisan v2.0 CLI
+ * 🧠 EloquentJS Artisan v1.0 CLI
  * Author: MEKHERBECHE Fares
  * Description:
  *   Official CLI for EloquentJS ORM — generates models, controllers,
@@ -286,9 +286,10 @@ program
   .command("db:seed:fresh")
   .option("--test", "Run in test database")
   .option("--class <name>", "Run a specific seeder after migration refresh")
+  .option("--force", "Skip confirmation prompt during refresh")
   .description("Drop all tables, rerun migrations, and seed the database")
-  .action(async (options: { test?: boolean; class?: string }) => {
-    await dbSeedFresh({ test: !!options.test, class: options.class });
+  .action(async (options: { test?: boolean; class?: string; force?: boolean }) => {
+    await dbSeedFresh({ test: !!options.test, class: options.class, force: !!options.force });
   });
 
 program
@@ -386,7 +387,8 @@ program
 program
   .command("migrate:reset")
   .description("Rollback *all* migrations completely")
-  .action(migrateReset);
+  .option("--test", "Reset all test migrations completely")
+  .action((options: { test?: boolean }) => migrateReset({ test: !!options.test }));
 
 // -----------------------------------------------------------------------------
 // 🧩 CACHE COMMANDS
@@ -399,10 +401,11 @@ program.command("cache:stats").description("Show current cache performance analy
 // -----------------------------------------------------------------------------
 program
   .command("factory:status")
+  .option("--test", "Inspect factories from test environment")
   .option("--details", "Show detailed factory metadata including relations")
   .option("--graph", "Display an ASCII diagram of model relationships")
   .description("Show all registered factories (model + pivot + relations)")
-  .action(async (options: { details?: boolean; graph?: boolean }) => {
+  .action(async (options: { test?: boolean; details?: boolean; graph?: boolean }) => {
     await factoryStatus(options as { details?: boolean; graph?: boolean });
   });
 
@@ -423,16 +426,16 @@ program
       { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force" },
       { Command: "make:factory <name>", Description: "--model <model> --pivot --test --force" },
       { Command: "make:migration [model]", Description: "--test --update --all --pivot-separate" },
-      { Command: "factory:status", Description: "--details --graph" },
+      { Command: "factory:status", Description: "--test --details --graph" },
       { Command: "db:seed", Description: "--test --class <name>" },
-      { Command: "db:seed:fresh", Description: "--test --class <name>" },
+      { Command: "db:seed:fresh", Description: "--test --class <name> --force" },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
       { Command: "migrate:run [model]", Description: "--test --all --pivot-separate" },
       { Command: "migrate:run:test [model]", Description: "--all" },
       { Command: "migrate:rollback", Description: "--test --step <number>" },
       { Command: "migrate:status", Description: "--test" },
       { Command: "migrate:fresh", Description: "--test --force" },
-      { Command: "migrate:reset", Description: "(no options)" },
+      { Command: "migrate:reset", Description: "--test" },
       { Command: "cache:clear", Description: "(no options)" },
       { Command: "cache:stats", Description: "(no options)" },
       { Command: "list", Description: "(no options)" },

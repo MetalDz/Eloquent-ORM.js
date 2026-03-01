@@ -71,7 +71,7 @@ export async function migrateFresh(options?: { test?: boolean; force?: boolean }
     await closeAllConnections();
   }
 
-  await migrateRun(!!options?.test);
+  await migrateRun(!!options?.test, undefined, false, false);
 }
 
 async function confirmDangerousAction(): Promise<boolean> {

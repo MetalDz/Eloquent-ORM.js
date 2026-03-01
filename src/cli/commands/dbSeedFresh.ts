@@ -8,7 +8,7 @@ import { closeAllConnections } from "../../core/connection/ConnectionFactory";
  * Drops all tables, re-runs migrations, and executes seeders.
  */
 export async function dbSeedFresh(
-  options?: { test?: boolean; class?: string }
+  options?: { test?: boolean; class?: string; force?: boolean }
 ): Promise<void> {
   console.log(chalk.cyanBright("\n🧬 Running db:seed:fresh\n"));
 
@@ -18,8 +18,9 @@ export async function dbSeedFresh(
 
     // ✅ Handle migrateFresh gracefully: only pass param if accepted
     if (typeof migrateFresh === "function" && migrateFresh.length > 0) {
-      await (migrateFresh as (opts: { test?: boolean }) => Promise<void>)({
+      await (migrateFresh as (opts: { test?: boolean; force?: boolean }) => Promise<void>)({
         test: !!options?.test,
+        force: !!options?.force,
       });
     } else {
       await migrateFresh(); // if it's a no-arg function
