@@ -6,6 +6,24 @@ const { spawnSync } = require("child_process");
 const repoRoot = path.resolve(__dirname, "..");
 const npmCmd = "npm";
 const nodeCmd = "node";
+const expectedPublicExports = [
+  "BaseModel",
+  "CacheManager",
+  "CoreModel",
+  "Factory",
+  "MongoModel",
+  "MorphRegistry",
+  "PivotHelperMixin",
+  "SchemaBuilder",
+  "SchemaValidator",
+  "SqlModel",
+  "column",
+  "mixin",
+  "relation",
+  "setupCache",
+  "validate",
+  "validateSchema",
+].sort();
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -100,8 +118,21 @@ try {
   );
   const imports = run(nodeCmd, [importCheckPath], { cwd: sampleDir, env });
   assertSuccess("package import", imports);
-  assertContains("package import", imports.combined, "SqlModel");
-  assertContains("package import", imports.combined, "Factory");
+  const exportLine = imports.combined
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .pop() || "";
+  const actualExports = exportLine
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .sort();
+  if (JSON.stringify(actualExports) !== JSON.stringify(expectedPublicExports)) {
+    throw new Error(
+      `[package import] export surface mismatch\nExpected: ${expectedPublicExports.join(",")}\nActual: ${actualExports.join(",")}`
+    );
+  }
 
   const listResult = runCli(sampleDir, ["list"], env);
   assertSuccess("eloquent list", listResult);

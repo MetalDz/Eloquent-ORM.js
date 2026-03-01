@@ -1,3 +1,8 @@
+/**
+ * Public package entrypoint.
+ * Only exports from this file are semver-tracked and supported for consumers.
+ * Deep imports into internal `dist/core/*`, `dist/cli/*`, or `src/*` paths are private.
+ */
 export {
   BaseModel,
   SqlModel,

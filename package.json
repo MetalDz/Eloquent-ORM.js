@@ -24,7 +24,8 @@
   "files": [
     "dist/**/*",
     "src/cli/templates/**/*",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
