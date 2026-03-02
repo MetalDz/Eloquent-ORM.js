@@ -1,7 +1,11 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { getAdapter, closeAllConnections } from "../../core/connection/ConnectionFactory";
+import {
+  getAdapter,
+  closeAllConnections,
+  type ConnectionName,
+} from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
@@ -16,36 +20,67 @@ import {
 } from "../utils/migrations/MigrationTracker";
 import { loadModule } from "../utils/typescript/tsRuntime";
 
-export async function migrateRun(
-  isTest: boolean = false,
-  modelName?: string,
-  dryRun: boolean = false,
-  exitOnFinish: boolean = true
-): Promise<void> {
-  const exitCli = (): void => {
-    if (exitOnFinish && process.env.ELOQUENT_CLI === "true") {
-      setImmediate(() => process.exit(0));
-    }
-  };
+export type MigrationConnectionFlags = {
+  mysql?: boolean;
+  pg?: boolean;
+  sqlite?: boolean;
+  allConnections?: boolean;
+};
 
-  if (process.env.ELOQUENT_DEBUG === "true") {
-    console.log("[migrate:run] start", { isTest, modelName, dryRun });
+export type MigrateRunOptions = {
+  connectionNames?: ConnectionName[];
+};
+
+export function resolveMigrationConnectionNames(
+  isTest: boolean,
+  flags: MigrationConnectionFlags = {}
+): ConnectionName[] {
+  const selected = (["mysql", "pg", "sqlite"] as const).filter(
+    (name) => flags[name]
+  );
+
+  if (flags.allConnections) {
+    return isTest
+      ? ["mysql_test", "pg_test", "sqlite_test"]
+      : ["mysql", "pg", "sqlite"];
   }
 
+  if (selected.length === 0) {
+    return [];
+  }
+
+  if (selected.length > 1) {
+    throw new Error(
+      "Choose only one explicit connection flag or use --all-connections."
+    );
+  }
+
+  const [selectedConnection] = selected;
+  if (isTest) {
+    return [`${selectedConnection}_test` as ConnectionName];
+  }
+
+  return [selectedConnection];
+}
+
+async function runMigrationsForConnection(
+  connectionName: ConnectionName,
+  isTest: boolean,
+  modelName?: string,
+  dryRun: boolean = false
+): Promise<boolean> {
   console.log(
     chalk.cyan(
-      `\nRunning migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode${
+      `\nRunning migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode on "${connectionName}"${
         modelName ? ` for model "${modelName}"` : ""
       }...\n`
     )
   );
 
-  const connectionName = resolveConnectionName(undefined, { test: isTest });
   const migrationsDir = PathMap.migrations(isTest, connectionName);
   if (!fs.existsSync(migrationsDir)) {
     console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
-    exitCli();
-    return;
+    return true;
   }
   if (process.env.ELOQUENT_DEBUG === "true") {
     console.log("[migrate:run] connectionName", connectionName);
@@ -54,8 +89,7 @@ export async function migrateRun(
   const driver = dbConfig.connections[connectionName]?.driver;
   if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
     console.warn(chalk.yellow(`Skipping migrations: "${connectionName}" is not SQL-based.`));
-    exitCli();
-    return;
+    return true;
   }
 
   if (process.env.ELOQUENT_DEBUG === "true") {
@@ -66,7 +100,7 @@ export async function migrateRun(
     console.log("[migrate:run] after getAdapter");
   }
   console.log(chalk.gray(`Connected to ${connectionName}.`));
-  const lockOwner = `migrate:run:${process.pid}:${Date.now()}`;
+  const lockOwner = `migrate:run:${connectionName}:${process.pid}:${Date.now()}`;
 
   const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
     if (!sql || sql.trim() === "") return;
@@ -76,6 +110,7 @@ export async function migrateRun(
     }
     await db.execute(sql, params);
   };
+
   await ensureMigrationTables(db);
   if (!dryRun) {
     await acquireMigrationLock(db, lockOwner);
@@ -92,7 +127,7 @@ export async function migrateRun(
       files = files.filter((f) => f.includes(lower));
       if (files.length === 0) {
         console.log(chalk.yellow(`No migrations found for model: ${modelName}`));
-        return;
+        return true;
       }
     }
 
@@ -102,7 +137,7 @@ export async function migrateRun(
     const pending = files.filter((f) => !executed.includes(f));
     if (pending.length === 0) {
       console.log(chalk.yellow("\nNo new migrations to run."));
-      return;
+      return true;
     }
 
     console.log(chalk.gray(`Pending migrations: ${pending.length}`));
@@ -149,16 +184,64 @@ export async function migrateRun(
     }
 
     console.log(chalk.greenBright(`\n${applied} migration(s) applied successfully.`));
+    return true;
   } catch (err) {
     console.error(chalk.red("\nError during migration execution:"));
     console.error(err);
     console.warn(chalk.yellow("Rolling back partial changes..."));
+    return false;
   } finally {
     if (!dryRun) {
       await releaseMigrationLock(db, lockOwner);
     }
     await closeAllConnections();
     console.log(chalk.gray("\nAll database connections closed.\n"));
-    exitCli();
   }
+}
+
+export async function migrateRun(
+  isTest: boolean = false,
+  modelName?: string,
+  dryRun: boolean = false,
+  exitOnFinish: boolean = true,
+  options: MigrateRunOptions = {}
+): Promise<void> {
+  const exitCli = (): void => {
+    if (exitOnFinish && process.env.ELOQUENT_CLI === "true") {
+      setImmediate(() => process.exit(process.exitCode ?? 0));
+    }
+  };
+
+  if (process.env.ELOQUENT_DEBUG === "true") {
+    console.log("[migrate:run] start", {
+      isTest,
+      modelName,
+      dryRun,
+      connectionNames: options.connectionNames,
+    });
+  }
+
+  const connectionNames =
+    options.connectionNames && options.connectionNames.length > 0
+      ? options.connectionNames
+      : [resolveConnectionName(undefined, { test: isTest })];
+
+  let hadFailure = false;
+  for (const connectionName of connectionNames) {
+    const success = await runMigrationsForConnection(
+      connectionName,
+      isTest,
+      modelName,
+      dryRun
+    );
+    if (!success) {
+      hadFailure = true;
+    }
+  }
+
+  if (hadFailure) {
+    process.exitCode = 1;
+  }
+
+  exitCli();
 }

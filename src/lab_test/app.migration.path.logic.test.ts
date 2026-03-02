@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { PathMap } from "../cli/utils/PathMap";
 import { migrateStatus } from "../cli/commands/migrateStatus";
+import { resolveMigrationConnectionNames } from "../cli/commands/migrateRun";
 import {
   getAdapter,
   closeAllConnections,
@@ -49,6 +50,32 @@ describe("App migration path resolution", () => {
     expect(PathMap.migrations(false, "sqlite")).toBe(
       path.resolve(process.cwd(), "src/app/database/migrations/sqlite")
     );
+  });
+
+  test("resolveMigrationConnectionNames maps app and test flags correctly", () => {
+    expect(resolveMigrationConnectionNames(false, { mysql: true })).toEqual(["mysql"]);
+    expect(resolveMigrationConnectionNames(false, { pg: true })).toEqual(["pg"]);
+    expect(resolveMigrationConnectionNames(false, { sqlite: true })).toEqual(["sqlite"]);
+    expect(resolveMigrationConnectionNames(false, { allConnections: true })).toEqual([
+      "mysql",
+      "pg",
+      "sqlite",
+    ]);
+
+    expect(resolveMigrationConnectionNames(true, { mysql: true })).toEqual(["mysql_test"]);
+    expect(resolveMigrationConnectionNames(true, { pg: true })).toEqual(["pg_test"]);
+    expect(resolveMigrationConnectionNames(true, { sqlite: true })).toEqual(["sqlite_test"]);
+    expect(resolveMigrationConnectionNames(true, { allConnections: true })).toEqual([
+      "mysql_test",
+      "pg_test",
+      "sqlite_test",
+    ]);
+  });
+
+  test("resolveMigrationConnectionNames rejects conflicting explicit flags", () => {
+    expect(() =>
+      resolveMigrationConnectionNames(false, { mysql: true, pg: true })
+    ).toThrow("Choose only one explicit connection flag or use --all-connections.");
   });
 
   test("migrateStatus reads the resolved app connection directory", async () => {

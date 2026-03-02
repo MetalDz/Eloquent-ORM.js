@@ -149,7 +149,10 @@ import { makeController } from "./commands/makeController";
 import { makeService } from "./commands/makeService";
 import { makeSeed } from "./commands/makeSeed";
 import { makeMigration } from "./commands/makeMigration";
-import { migrateRun } from "./commands/migrateRun";
+import {
+  migrateRun,
+  resolveMigrationConnectionNames,
+} from "./commands/migrateRun";
 import { migrateRollback } from "./commands/migrateRollback";
 import { cacheClear } from "./commands/cacheClear";
 import { cacheStats } from "./commands/cacheStats";
@@ -330,28 +333,112 @@ program
   .command("migrate:run [model]")
   .description("Run pending migrations (optionally for one model)")
   .option("--test", "Run migrations in test database")
-  .option("--all", "Auto-generate migrations for all models before running")
-  .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all)")
-  .action(async (model?: string, options?: { test?: boolean; all?: boolean; pivotSeparate?: boolean }) => {
-    if (options?.all) {
-      await makeMigration("all", {
-        test: !!options.test,
-        exit: false,
-        pivotSeparate: !!options.pivotSeparate,
-      });
+  .option("--mysql", "Run migrations only for the mysql connection")
+  .option("--pg", "Run migrations only for the pg connection")
+  .option("--sqlite", "Run migrations only for the sqlite connection")
+  .option("--all-connections", "Run migrations for mysql, pg, and sqlite")
+  .option("--all-migrations", "Auto-generate migrations for all models before running")
+  .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all-migrations)")
+  .action(async (
+    model?: string,
+    options?: {
+      test?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      allConnections?: boolean;
+      allMigrations?: boolean;
+      pivotSeparate?: boolean;
     }
-    return migrateRun(!!options?.test, model);
+  ) => {
+    try {
+      const connectionNames = resolveMigrationConnectionNames(!!options?.test, {
+        mysql: !!options?.mysql,
+        pg: !!options?.pg,
+        sqlite: !!options?.sqlite,
+        allConnections: !!options?.allConnections,
+      });
+
+      if (options?.allMigrations) {
+        if (connectionNames.length === 0) {
+          await makeMigration("all", {
+            test: !!options.test,
+            exit: false,
+            pivotSeparate: !!options.pivotSeparate,
+          });
+        } else {
+          for (const connectionName of connectionNames) {
+            await makeMigration("all", {
+              test: !!options.test,
+              exit: false,
+              pivotSeparate: !!options.pivotSeparate,
+              connectionName,
+            });
+          }
+        }
+      }
+
+      return migrateRun(!!options?.test, model, false, true, { connectionNames });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`❌ ${message}`));
+      process.exitCode = 1;
+    }
   });
 
 program
   .command("migrate:run:test [model]")
   .description("Run pending test migrations (optionally for one model)")
-  .option("--all", "Auto-generate migrations for all models before running")
-  .action(async (model?: string, options?: { all?: boolean }) => {
-    if (options?.all) {
-      await makeMigration("all", { test: true, exit: false });
+  .option("--mysql", "Run test migrations only for the mysql_test connection")
+  .option("--pg", "Run test migrations only for the pg_test connection")
+  .option("--sqlite", "Run test migrations only for the sqlite_test connection")
+  .option("--all-connections", "Run test migrations for mysql_test, pg_test, and sqlite_test")
+  .option("--all-migrations", "Auto-generate migrations for all test models before running")
+  .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all-migrations)")
+  .action(async (
+    model?: string,
+    options?: {
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      allConnections?: boolean;
+      allMigrations?: boolean;
+      pivotSeparate?: boolean;
     }
-    return migrateRun(true, model);
+  ) => {
+    try {
+      const connectionNames = resolveMigrationConnectionNames(true, {
+        mysql: !!options?.mysql,
+        pg: !!options?.pg,
+        sqlite: !!options?.sqlite,
+        allConnections: !!options?.allConnections,
+      });
+
+      if (options?.allMigrations) {
+        if (connectionNames.length === 0) {
+          await makeMigration("all", {
+            test: true,
+            exit: false,
+            pivotSeparate: !!options?.pivotSeparate,
+          });
+        } else {
+          for (const connectionName of connectionNames) {
+            await makeMigration("all", {
+              test: true,
+              exit: false,
+              pivotSeparate: !!options?.pivotSeparate,
+              connectionName,
+            });
+          }
+        }
+      }
+
+      return migrateRun(true, model, false, true, { connectionNames });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`❌ ${message}`));
+      process.exitCode = 1;
+    }
   });
 
 program
@@ -425,8 +512,16 @@ program
       { Command: "db:seed", Description: "--test --class <name>" },
       { Command: "db:seed:fresh", Description: "--test --class <name> --force" },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
-      { Command: "migrate:run [model]", Description: "--test --all --pivot-separate" },
-      { Command: "migrate:run:test [model]", Description: "--all" },
+      {
+        Command: "migrate:run [model]",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --all-migrations --pivot-separate",
+      },
+      {
+        Command: "migrate:run:test [model]",
+        Description:
+          "--mysql --pg --sqlite --all-connections --all-migrations --pivot-separate",
+      },
       { Command: "migrate:rollback", Description: "--test --step <number>" },
       { Command: "migrate:status", Description: "--test" },
       { Command: "migrate:fresh", Description: "--test --force" },

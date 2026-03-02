@@ -7,7 +7,10 @@ import { SchemaField } from "../../core/schema/SchemaBlueprint";
 import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
-import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import {
+  closeAllConnections,
+  type ConnectionName,
+} from "../../core/connection/ConnectionFactory";
 import { dbConfig } from "../../config/database";
 import { loadModule } from "../utils/typescript/tsRuntime";
 
@@ -15,6 +18,7 @@ interface MigrationOptions {
   test?: boolean;
   exit?: boolean;
   pivotSeparate?: boolean;
+  connectionName?: ConnectionName;
 }
 
 type SchemaRelation = {
@@ -104,6 +108,7 @@ export async function makeMigration(
   options: MigrationOptions = {}
 ): Promise<void> {
   const isTest = options.test === true;
+  const forcedConnectionName = options.connectionName;
   const pivotSeparate = options.pivotSeparate === true || modelName.toLowerCase() === "all";
 
   const modelsDir = PathMap.models(isTest);
@@ -194,8 +199,8 @@ export async function makeMigration(
 
   for (const { file, modelClassName, ModelClass } of orderedModels) {
     try {
-
-      const connectionName = resolveConnectionName(ModelClass, { test: isTest });
+      const resolvedConnectionName = resolveConnectionName(ModelClass, { test: isTest });
+      const connectionName = forcedConnectionName ?? resolvedConnectionName;
       const migrationsDir = PathMap.migrations(isTest, connectionName);
       if (!fs.existsSync(migrationsDir)) {
         fs.mkdirSync(migrationsDir, { recursive: true });

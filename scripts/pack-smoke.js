@@ -434,8 +434,12 @@ function runBlogScenarioSmoke(sample) {
   const rollbackResult = runCli(sample.dir, ["migrate:rollback", "--test", "--step", "1"], sample.env);
   assertSuccess("blog migrate:rollback", rollbackResult);
 
-  const rerunAllResult = runCli(sample.dir, ["migrate:run:test", "--all"], sample.env);
-  assertSuccess("blog migrate:run:test --all", rerunAllResult);
+  const rerunAllResult = runCli(
+    sample.dir,
+    ["migrate:run:test", "--all-migrations"],
+    sample.env
+  );
+  assertSuccess("blog migrate:run:test --all-migrations", rerunAllResult);
 
   const seedFreshResult = runCli(
     sample.dir,
