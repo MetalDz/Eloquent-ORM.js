@@ -5,8 +5,13 @@ import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 export async function migrateStatus(isTest = false): Promise<void> {
-  const migrationsDir = PathMap.migrations(isTest);
   const connectionName = resolveConnectionName(undefined, { test: isTest });
+  const migrationsDir = PathMap.migrations(isTest, connectionName);
+
+  if (!fs.existsSync(migrationsDir)) {
+    console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
+    return;
+  }
 
   const db = await getAdapter(connectionName);
   console.log(chalk.gray(`Connected to ${connectionName}.`));

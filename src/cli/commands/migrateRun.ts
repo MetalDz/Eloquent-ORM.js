@@ -14,6 +14,7 @@ import {
   validateMigrationHistory,
   computeMigrationChecksum,
 } from "../utils/migrations/MigrationTracker";
+import { loadModule } from "../utils/typescript/tsRuntime";
 
 export async function migrateRun(
   isTest: boolean = false,
@@ -39,14 +40,13 @@ export async function migrateRun(
     )
   );
 
-  const migrationsDir = PathMap.migrations(isTest);
+  const connectionName = resolveConnectionName(undefined, { test: isTest });
+  const migrationsDir = PathMap.migrations(isTest, connectionName);
   if (!fs.existsSync(migrationsDir)) {
-    console.log(chalk.yellow("No migrations directory found."));
+    console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
     exitCli();
     return;
   }
-
-  const connectionName = resolveConnectionName(undefined, { test: isTest });
   if (process.env.ELOQUENT_DEBUG === "true") {
     console.log("[migrate:run] connectionName", connectionName);
   }
@@ -113,7 +113,7 @@ export async function migrateRun(
 
     for (const file of pending) {
       const filePath = path.join(migrationsDir, file);
-      const migrationModule = (await import(path.resolve(filePath))) as {
+      const migrationModule = loadModule(path.resolve(filePath)) as {
         up?: (db: { query(sql: string, params?: unknown[]): Promise<void> }) => Promise<void>;
       };
 

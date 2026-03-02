@@ -498,9 +498,7 @@ export async function ${preset.seedName}() {
   console.log(chalk.green(`Seeder created: ${seederPath}`));
 
   // 4) Migrations
-  for (const model of preset.models) {
-    await makeMigration(model.name, { test: true, exit: false });
-  }
+  await makeMigration("all", { test: true, exit: false });
 
   if (options.run) {
     await migrateRun(true, undefined, false, false);

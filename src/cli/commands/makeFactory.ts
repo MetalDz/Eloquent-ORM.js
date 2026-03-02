@@ -11,8 +11,6 @@ type MakeFactoryOptions = {
   overwrite?: boolean;
   test?: boolean;
   force?: boolean;
-  pivot?: boolean;
-  // add future flags here, e.g. details?: boolean
 };
 
 type IntrospectedField = {

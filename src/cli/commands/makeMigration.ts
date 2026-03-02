@@ -9,6 +9,7 @@ import { resolveConnectionName } from "../../core/connection/resolveConnectionNa
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
 import { dbConfig } from "../../config/database";
+import { loadModule } from "../utils/typescript/tsRuntime";
 
 interface MigrationOptions {
   test?: boolean;
@@ -106,7 +107,6 @@ export async function makeMigration(
   const pivotSeparate = options.pivotSeparate === true || modelName.toLowerCase() === "all";
 
   const modelsDir = PathMap.models(isTest);
-  const migrationsDir = PathMap.migrations(isTest);
   PathMap.ensureDirs();
 
   if (!fs.existsSync(modelsDir)) {
@@ -114,12 +114,12 @@ export async function makeMigration(
     return;
   }
 
-  if (!fs.existsSync(migrationsDir)) {
-    fs.mkdirSync(migrationsDir, { recursive: true });
-  }
-
   console.log(chalk.gray(`ًں“پ Models Path: ${modelsDir}`));
-  console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
+  console.log(
+    chalk.gray(
+      `ًں“پ Migrations Root: ${isTest ? PathMap.testMigrations() : PathMap.appMigrations()}`
+    )
+  );
 
   const requestedModelFiles =
     modelName.toLowerCase() === "all"
@@ -157,7 +157,7 @@ export async function makeMigration(
 
       const absModelPath = path.resolve(modelPath);
       delete require.cache[require.resolve(absModelPath)];
-      const modelModule = await import(absModelPath);
+      const modelModule = loadModule(absModelPath);
 
       const modelClassName = path.basename(file, ".ts");
       const ModelClass = modelModule[modelClassName] as
@@ -196,7 +196,12 @@ export async function makeMigration(
     try {
 
       const connectionName = resolveConnectionName(ModelClass, { test: isTest });
+      const migrationsDir = PathMap.migrations(isTest, connectionName);
+      if (!fs.existsSync(migrationsDir)) {
+        fs.mkdirSync(migrationsDir, { recursive: true });
+      }
       console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
+      console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
 
       // ًں§  Generate SQL
       const driver =

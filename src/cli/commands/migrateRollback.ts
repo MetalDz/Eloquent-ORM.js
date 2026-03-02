@@ -12,6 +12,7 @@ import {
   releaseMigrationLock,
   validateMigrationHistory,
 } from "../utils/migrations/MigrationTracker";
+import { loadModule } from "../utils/typescript/tsRuntime";
 
 export async function migrateRollback(
   _dialect: ConnectionName = "mysql",
@@ -26,13 +27,12 @@ export async function migrateRollback(
     )
   );
 
-  const migrationsDir = PathMap.migrations(isTest);
+  const connectionName = resolveConnectionName(undefined, { test: isTest });
+  const migrationsDir = PathMap.migrations(isTest, connectionName);
   if (!fs.existsSync(migrationsDir)) {
-    console.log(chalk.yellow("No migrations directory found."));
+    console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
     return;
   }
-
-  const connectionName = resolveConnectionName(undefined, { test: isTest });
   const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
   if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
     console.warn(chalk.yellow(`Rollback skipped: "${connectionName}" is not SQL-based.`));
@@ -87,7 +87,7 @@ export async function migrateRollback(
       }
 
       try {
-        const migrationModule = (await import(path.resolve(filePath))) as {
+        const migrationModule = loadModule(path.resolve(filePath)) as {
           down?: (db: { query(sql: string, params?: unknown[]): Promise<void> }) => Promise<void>;
         };
 

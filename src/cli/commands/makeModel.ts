@@ -10,6 +10,7 @@ import { resolveConnectionName } from "../../core/connection/resolveConnectionNa
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
 import { dbConfig } from "../../config/database";
+import { loadModule } from "../utils/typescript/tsRuntime";
 import type {
   SchemaField,
   ColumnDefinition,
@@ -21,6 +22,14 @@ interface ModelOptions {
   force?: boolean;
   attrsFromSchema?: boolean;
 }
+
+type LoadedModelClass = {
+  schema?: Record<string, SchemaField>;
+  tableName?: string;
+  timestamps?: boolean;
+  softDeletes?: boolean;
+  connectionName?: string;
+};
 
 function pascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
@@ -140,7 +149,7 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
 
   PathMap.ensureDirs();
   const modelsDir = PathMap.models(isTest);
-  const migrationsDir = PathMap.migrations(isTest);
+  const migrationsDir = isTest ? PathMap.testMigrations() : PathMap.appMigrations();
 
   console.log(chalk.gray(`📁 Models Path: ${modelsDir}`));
   console.log(chalk.gray(`📁 Migrations Path: ${migrationsDir}`));
@@ -191,8 +200,8 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       } else {
         const absModelPath = path.resolve(modelFilePath);
         delete require.cache[require.resolve(absModelPath)];
-        const modelModule = await import(absModelPath);
-        const ModelClass = modelModule[modelName];
+        const modelModule = loadModule(absModelPath);
+        const ModelClass = modelModule[modelName] as LoadedModelClass | undefined;
 
         if (!ModelClass?.schema) {
           console.log(chalk.yellow(`⚠️  Schema not found in ${modelName}.ts — keeping defaults.`));
@@ -244,8 +253,8 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
 
     const absModelPath = path.resolve(modelFilePath);
     delete require.cache[require.resolve(absModelPath)];
-    const modelModule = await import(absModelPath);
-    const ModelClass = modelModule[modelName];
+    const modelModule = loadModule(absModelPath);
+    const ModelClass = modelModule[modelName] as LoadedModelClass | undefined;
 
     if (!ModelClass?.schema || !ModelClass?.tableName) {
       console.log(chalk.yellow(`⚠️  Schema not found in ${modelName}.ts — skipping migration.`));
@@ -253,6 +262,12 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     }
 
     const connectionName = resolveConnectionName(ModelClass, { test: isTest });
+    const connectionMigrationsDir = PathMap.migrations(isTest, connectionName);
+    if (!fs.existsSync(connectionMigrationsDir)) {
+      fs.mkdirSync(connectionMigrationsDir, { recursive: true });
+    }
+    console.log(chalk.gray(`Using connection: ${connectionName}`));
+    console.log(chalk.gray(`Migrations Path: ${connectionMigrationsDir}`));
     const driver =
       (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
       connectionName;
@@ -268,22 +283,22 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     const prefix = isCreate ? "create" : "update";
     const timestamp = new Date().toISOString().replace(/[-:TZ]/g, "").slice(0, 14);
     const migrationFile = `${timestamp}_${prefix}_${ModelClass.tableName}_table.ts`;
-    const migrationPath = path.join(migrationsDir, migrationFile);
+    const migrationPath = path.join(connectionMigrationsDir, migrationFile);
 
     // 🧹 Clean old opposite migration
     const opposite = isCreate ? "update" : "create";
     const oldFile = fs
-      .readdirSync(migrationsDir)
+      .readdirSync(connectionMigrationsDir)
       .find((f) => f.includes(`${opposite}_${ModelClass.tableName}_table.ts`));
 
     if (oldFile) {
-      fs.unlinkSync(path.join(migrationsDir, oldFile));
+      fs.unlinkSync(path.join(connectionMigrationsDir, oldFile));
       console.log(chalk.gray(`🧹 Removed old ${opposite} migration: ${oldFile}`));
     }
 
     // 🧩 Prevent duplicates
     const existing = fs
-      .readdirSync(migrationsDir)
+      .readdirSync(connectionMigrationsDir)
       .find((f) => f.includes(`${prefix}_${ModelClass.tableName}_table.ts`));
 
     if (existing && !force) {

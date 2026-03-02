@@ -10,13 +10,15 @@ export class PathMap {
   // Root project directory
   private static readonly ROOT = process.cwd();
   private static readonly PACKAGE_ROOT = path.resolve(__dirname, "..", "..", "..");
+  private static readonly APP_DATABASE_ROOT = path.resolve(this.ROOT, "src/app/database");
+  private static readonly TEST_DATABASE_ROOT = path.resolve(this.ROOT, "src/test/database");
   static get root(): string {
     return this.ROOT;
   }
 
   // --- Default app folders ---
   static readonly MODELS = path.resolve(this.ROOT, "src/app/models");
-  static readonly MIGRATIONS = path.resolve(this.ROOT, "src/app/database/migrations");
+  static readonly MIGRATIONS_ROOT = path.resolve(this.APP_DATABASE_ROOT, "migrations");
   static readonly FACTORIES = path.resolve(this.ROOT, "src/app/database/factories");
   static readonly SEEDS = path.resolve(this.ROOT, "src/app/database/seeds");
 
@@ -29,7 +31,7 @@ export class PathMap {
 
   // --- Test folders ---
   static readonly TEST_MODELS = path.resolve(this.ROOT, "src/test/database/models");
-  static readonly TEST_MIGRATIONS = path.resolve(this.ROOT, "src/test/database/migrations");
+  static readonly TEST_MIGRATIONS_ROOT = path.resolve(this.TEST_DATABASE_ROOT, "migrations");
   static readonly TEST_FACTORIES = path.resolve(this.ROOT, "src/test/database/factories");
   static readonly TEST_SEEDS = path.resolve(this.ROOT, "src/test/database/seeds");
 
@@ -39,11 +41,11 @@ export class PathMap {
   static ensureDirs(): void {
     [
       this.MODELS,
-      this.MIGRATIONS,
+      this.MIGRATIONS_ROOT,
       this.FACTORIES,
       this.SEEDS,
       this.TEST_MODELS,
-      this.TEST_MIGRATIONS,
+      this.TEST_MIGRATIONS_ROOT,
       this.TEST_FACTORIES,
       this.TEST_SEEDS,
     ].forEach((dir) => {
@@ -68,8 +70,36 @@ export class PathMap {
   /**
    * 🔹 Get migrations directory.
    */
-  static migrations(isTest = false): string {
-    return this.isTestEnv(isTest) ? this.TEST_MIGRATIONS : this.MIGRATIONS;
+  private static sanitizePathSegment(segment: string): string {
+    return segment.replace(/[^A-Za-z0-9_-]/g, "_");
+  }
+
+  static appMigrations(connectionName?: string): string {
+    if (!connectionName) {
+      return this.MIGRATIONS_ROOT;
+    }
+
+    return path.resolve(
+      this.MIGRATIONS_ROOT,
+      this.sanitizePathSegment(connectionName)
+    );
+  }
+
+  static testMigrations(connectionName?: string): string {
+    if (!connectionName) {
+      return this.TEST_MIGRATIONS_ROOT;
+    }
+
+    return path.resolve(
+      this.TEST_MIGRATIONS_ROOT,
+      this.sanitizePathSegment(connectionName)
+    );
+  }
+
+  static migrations(isTest = false, connectionName?: string): string {
+    return this.isTestEnv(isTest)
+      ? this.testMigrations(connectionName)
+      : this.appMigrations(connectionName);
   }
 
   /**
@@ -103,7 +133,7 @@ export class PathMap {
   static clearTestDirs(): void {
     [
       this.TEST_MODELS,
-      this.TEST_MIGRATIONS,
+      this.TEST_MIGRATIONS_ROOT,
       this.TEST_FACTORIES,
       this.TEST_SEEDS,
     ].forEach((dir) => {

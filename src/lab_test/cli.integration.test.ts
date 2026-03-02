@@ -17,7 +17,6 @@ type CliResult = SpawnSyncReturns<string> & {
 const rootDir = process.cwd();
 const cliPath = path.resolve(rootDir, "dist/cli/eloquent.js");
 const testRootDir = path.resolve(rootDir, "src/test");
-const testMigrationsDir = path.resolve(rootDir, "src/test/database/migrations");
 const testSeedsDir = path.resolve(rootDir, "src/test/database/seeds");
 const integrationSeederClass = "CliIntegrationSeeder";
 const blogScenarioSeederClass = "BlogScenarioSeeder";
@@ -34,6 +33,22 @@ const hasTestDbEnv = Boolean(
 
 const describeIfTestDbAndBuild =
   hasTestDbEnv && hasBuiltCli ? describe : describe.skip;
+
+function sanitizePathSegment(segment: string): string {
+  return segment.replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+function currentTestConnectionName(): string {
+  return process.env.DB_TEST_CONNECTION || "mysql_test";
+}
+
+function testMigrationsDir(): string {
+  return path.resolve(
+    rootDir,
+    "src/test/database/migrations",
+    sanitizePathSegment(currentTestConnectionName())
+  );
+}
 
 function runCli(args: string[], timeoutMs = 120000, input?: string): CliResult {
   const startedAt = Date.now();
@@ -179,7 +194,7 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     expect(result.combined).toContain("Migration generation complete");
 
     const migrationFiles = fs
-      .readdirSync(testMigrationsDir)
+      .readdirSync(testMigrationsDir())
       .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
     expect(migrationFiles.length).toBeGreaterThan(0);
   });

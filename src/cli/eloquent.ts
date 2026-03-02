@@ -214,31 +214,27 @@ program
 program
   .command("make:seed <model>")
   .option("--count <number>", "Number of records to seed", "10")
-  .option("--pivot", "Generate pivot seeder (for belongsToMany relations)")
   .option("--test", "Generate seed in test environment")
   .description("Generate a seeder file linked to a model factory")
-  .action(async (model: string, options: { count: string; test?: boolean; pivot?: boolean }) => {
+  .action(async (model: string, options: { count: string; test?: boolean }) => {
     await makeSeed(model, {
       count: Number(options.count),
       test: !!options.test,
-      pivot: !!options.pivot,
     });
   });
 
 program
   .command("make:factory <name>")
   .option("--model <model>", "Specify the model this factory belongs to")
-  .option("--pivot", "Generate a pivot factory instead of a model factory")
   .option("--test", "Generate in test environment")
   .option("--force", "Overwrite existing file")
   .description("Generate a factory for a model")
-  .action(async (name: string, options: { model?: string; pivot?: boolean; test?: boolean; force?: boolean }) => {
+  .action(async (name: string, options: { model?: string; test?: boolean; force?: boolean }) => {
     const modelName = options.model ?? name;
 
     await makeFactory(modelName, {
       test: !!options.test,
       force: !!options.force,
-      pivot: !!options.pivot
     });
   });
 
@@ -315,7 +311,6 @@ program
   .option("--test", "Generate migration in test mode")
   .option("--all", "Generate migrations for all models")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
-  .option("--update", "Generate an update (ALTER TABLE) migration")
   .description("Generate migration from a model or all models")
   .action((model: string | undefined, options: Record<string, unknown>) => {
     const useAll = !!(options as { all?: boolean }).all;
@@ -422,10 +417,10 @@ program
       { Command: "make:model <name>", Description: "--test --with-migration --attrs-from-schema --force" },
       { Command: "make:controller <name>", Description: "--soft --test" },
       { Command: "make:service <name>", Description: "--test" },
-      { Command: "make:seed <model>", Description: "--count <number> --pivot --test" },
+      { Command: "make:seed <model>", Description: "--count <number> --test" },
       { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force" },
-      { Command: "make:factory <name>", Description: "--model <model> --pivot --test --force" },
-      { Command: "make:migration [model]", Description: "--test --update --all --pivot-separate" },
+      { Command: "make:factory <name>", Description: "--model <model> --test --force" },
+      { Command: "make:migration [model]", Description: "--test --all --pivot-separate" },
       { Command: "factory:status", Description: "--test --details --graph" },
       { Command: "db:seed", Description: "--test --class <name>" },
       { Command: "db:seed:fresh", Description: "--test --class <name> --force" },

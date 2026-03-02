@@ -10,7 +10,7 @@ import { writeFileSafe } from "../utils/fileWriter";
  */
 export async function makeSeed(
   name: string,
-  options?: { count?: number; test?: boolean; pivot?: boolean }
+  options?: { count?: number; test?: boolean }
 ) {
   try {
     PathMap.ensureDirs();

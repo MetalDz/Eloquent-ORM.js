@@ -77,6 +77,21 @@ function assertFileContains(filePath, expected) {
   }
 }
 
+function sanitizePathSegment(segment) {
+  return String(segment).replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+function testMigrationsDir(sample) {
+  return path.join(
+    sample.dir,
+    "src",
+    "test",
+    "database",
+    "migrations",
+    sanitizePathSegment(sample.env.DB_TEST_CONNECTION || "sqlite_test")
+  );
+}
+
 function findFiles(dir, predicate) {
   if (!fs.existsSync(dir)) {
     return [];
@@ -226,7 +241,7 @@ function verifyPublicExports(sample) {
 }
 
 function runGeneralCliSmoke(sample) {
-  const migrationsDir = path.join(sample.dir, "src", "test", "database", "migrations");
+  const migrationsDir = testMigrationsDir(sample);
 
   const listResult = runCli(sample.dir, ["list"], sample.env);
   assertSuccess("eloquent list", listResult);
@@ -358,14 +373,16 @@ function runBlogScenarioSmoke(sample) {
   );
   assertFileExists(path.join(sample.dir, "src", "test", "controllers", "UserController.ts"));
   assertFileExists(path.join(sample.dir, "src", "test", "services", "UserService.ts"));
+  assertNonEmptyMigration(
+    testMigrationsDir(sample),
+    "_users_table"
+  );
 
   const makeMigrationResult = runCli(sample.dir, ["make:migration", "--all", "--test"], sample.env);
   assertSuccess("make:migration --all", makeMigrationResult);
   assertContains("make:migration --all", makeMigrationResult.combined, "Migration generation complete");
 
-  const migrationFiles = fs.readdirSync(
-    path.join(sample.dir, "src", "test", "database", "migrations")
-  );
+  const migrationFiles = fs.readdirSync(testMigrationsDir(sample));
   if (!migrationFiles.some((file) => file.includes("post_user_pivot"))) {
     throw new Error("Expected blog scenario migrations to include post_user_pivot.");
   }
@@ -455,13 +472,15 @@ function runMediaScenarioSmoke(sample) {
   );
   assertFileExists(path.join(sample.dir, "src", "test", "controllers", "PhotoController.ts"));
   assertFileExists(path.join(sample.dir, "src", "test", "services", "PhotoService.ts"));
+  assertNonEmptyMigration(
+    testMigrationsDir(sample),
+    "_users_table"
+  );
 
   const makeMigrationResult = runCli(sample.dir, ["make:migration", "--all", "--test"], sample.env);
   assertSuccess("media make:migration --all", makeMigrationResult);
 
-  const migrationFiles = fs.readdirSync(
-    path.join(sample.dir, "src", "test", "database", "migrations")
-  );
+  const migrationFiles = fs.readdirSync(testMigrationsDir(sample));
   if (!migrationFiles.some((file) => file.includes("photo_user_pivot"))) {
     throw new Error("Expected media scenario migrations to include photo_user_pivot.");
   }
