@@ -19,49 +19,17 @@ import {
   computeMigrationChecksum,
 } from "../utils/migrations/MigrationTracker";
 import { loadModule } from "../utils/typescript/tsRuntime";
-
-export type MigrationConnectionFlags = {
-  mysql?: boolean;
-  pg?: boolean;
-  sqlite?: boolean;
-  allConnections?: boolean;
-};
+import {
+  resolveSqlConnectionNames,
+  type SqlConnectionFlags,
+} from "../utils/resolveSqlConnectionFlags";
 
 export type MigrateRunOptions = {
   connectionNames?: ConnectionName[];
 };
 
-export function resolveMigrationConnectionNames(
-  isTest: boolean,
-  flags: MigrationConnectionFlags = {}
-): ConnectionName[] {
-  const selected = (["mysql", "pg", "sqlite"] as const).filter(
-    (name) => flags[name]
-  );
-
-  if (flags.allConnections) {
-    return isTest
-      ? ["mysql_test", "pg_test", "sqlite_test"]
-      : ["mysql", "pg", "sqlite"];
-  }
-
-  if (selected.length === 0) {
-    return [];
-  }
-
-  if (selected.length > 1) {
-    throw new Error(
-      "Choose only one explicit connection flag or use --all-connections."
-    );
-  }
-
-  const [selectedConnection] = selected;
-  if (isTest) {
-    return [`${selectedConnection}_test` as ConnectionName];
-  }
-
-  return [selectedConnection];
-}
+export type MigrationConnectionFlags = SqlConnectionFlags;
+export const resolveMigrationConnectionNames = resolveSqlConnectionNames;
 
 async function runMigrationsForConnection(
   connectionName: ConnectionName,

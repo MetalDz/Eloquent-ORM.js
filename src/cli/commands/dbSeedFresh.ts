@@ -1,50 +1,69 @@
 import chalk from "chalk";
 import { migrateFresh } from "./migrateFresh";
 import { dbSeed } from "./dbSeed";
-import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import {
+  closeAllConnections,
+  type ConnectionName,
+} from "../../core/connection/ConnectionFactory";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 /**
- * 🧩 db:seed:fresh
+ * db:seed:fresh
  * Drops all tables, re-runs migrations, and executes seeders.
  */
 export async function dbSeedFresh(
-  options?: { test?: boolean; class?: string; force?: boolean }
+  options?: {
+    test?: boolean;
+    class?: string;
+    force?: boolean;
+    connectionNames?: ConnectionName[];
+  }
 ): Promise<void> {
-  console.log(chalk.cyanBright("\n🧬 Running db:seed:fresh\n"));
+  console.log(chalk.cyanBright("\nRunning db:seed:fresh\n"));
+
+  const isTest = !!options?.test;
+  const envKey = isTest ? "DB_TEST_CONNECTION" : "DB_CONNECTION";
+  const originalConnection = process.env[envKey];
+  const connectionNames =
+    options?.connectionNames && options.connectionNames.length > 0
+      ? options.connectionNames
+      : [resolveConnectionName(undefined, { test: isTest })];
+  let hadFailure = false;
 
   try {
-    // Step 1️⃣ — Drop and recreate schema
-    console.log(chalk.yellow("🧱 Rebuilding database..."));
+    for (const connectionName of connectionNames) {
+      process.env[envKey] = connectionName;
 
-    // ✅ Handle migrateFresh gracefully: only pass param if accepted
-    if (typeof migrateFresh === "function" && migrateFresh.length > 0) {
-      await (migrateFresh as (opts: { test?: boolean; force?: boolean }) => Promise<void>)({
-        test: !!options?.test,
+      console.log(chalk.yellow(`Rebuilding database for ${connectionName}...`));
+      await migrateFresh({
+        test: isTest,
         force: !!options?.force,
       });
-    } else {
-      await migrateFresh(); // if it's a no-arg function
+
+      console.log(chalk.greenBright(`\nRunning seeders for ${connectionName}...\n`));
+      await dbSeed({
+        test: isTest,
+        ...(options?.class ? { class: options.class } : {}),
+        close: false,
+        exit: false,
+        connectionNames: [connectionName],
+      });
     }
 
-    // Step 2️⃣ — Run seeders
-    console.log(chalk.greenBright("\n🌱 Running seeders...\n"));
-
-    await dbSeed({
-      test: !!options?.test,
-      ...(options?.class ? { class: options.class } : {}),
-      close: false,
-      exit: false,
-    });
-
-    console.log(chalk.greenBright("\n✅ Database fully refreshed and seeded!\n"));
+    console.log(chalk.greenBright("\nDatabase fully refreshed and seeded!\n"));
   } catch (err) {
-    console.error(chalk.red("❌ db:seed:fresh failed."));
+    hadFailure = true;
+    console.error(chalk.red("db:seed:fresh failed."));
     if (err instanceof Error) console.error(chalk.red(err.message));
   } finally {
+    process.env[envKey] = originalConnection;
     await closeAllConnections();
-    console.log(chalk.gray("🔒 All database connections closed.\n"));
+    console.log(chalk.gray("All database connections closed.\n"));
+    if (hadFailure) {
+      process.exitCode = 1;
+    }
     if (process.env.ELOQUENT_CLI === "true") {
-      setImmediate(() => process.exit(0));
+      setImmediate(() => process.exit(process.exitCode ?? 0));
     }
   }
 }

@@ -151,8 +151,8 @@ import { makeSeed } from "./commands/makeSeed";
 import { makeMigration } from "./commands/makeMigration";
 import {
   migrateRun,
-  resolveMigrationConnectionNames,
 } from "./commands/migrateRun";
+import { resolveSqlConnectionNames } from "./utils/resolveSqlConnectionFlags";
 import { migrateRollback } from "./commands/migrateRollback";
 import { cacheClear } from "./commands/cacheClear";
 import { cacheStats } from "./commands/cacheStats";
@@ -275,20 +275,78 @@ program
 program
   .command("db:seed")
   .option("--test", "Run seeders from test database")
+  .option("--mysql", "Run seeders only for the mysql connection")
+  .option("--pg", "Run seeders only for the pg connection")
+  .option("--sqlite", "Run seeders only for the sqlite connection")
+  .option("--all-connections", "Run seeders for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder by class name")
   .description("Run database seeders (all or specific)")
-  .action(async (options: { test?: boolean; class?: string }) => {
-    await dbSeed({ test: !!options.test, class: options.class });
+  .action(async (options: {
+    test?: boolean;
+    class?: string;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+  }) => {
+    try {
+      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+        mysql: !!options.mysql,
+        pg: !!options.pg,
+        sqlite: !!options.sqlite,
+        allConnections: !!options.allConnections,
+      });
+
+      await dbSeed({
+        test: !!options.test,
+        class: options.class,
+        connectionNames,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`❌ ${message}`));
+      process.exitCode = 1;
+    }
   });
 
 program
   .command("db:seed:fresh")
   .option("--test", "Run in test database")
+  .option("--mysql", "Run fresh seed only for the mysql connection")
+  .option("--pg", "Run fresh seed only for the pg connection")
+  .option("--sqlite", "Run fresh seed only for the sqlite connection")
+  .option("--all-connections", "Run fresh seed for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder after migration refresh")
   .option("--force", "Skip confirmation prompt during refresh")
   .description("Drop all tables, rerun migrations, and seed the database")
-  .action(async (options: { test?: boolean; class?: string; force?: boolean }) => {
-    await dbSeedFresh({ test: !!options.test, class: options.class, force: !!options.force });
+  .action(async (options: {
+    test?: boolean;
+    class?: string;
+    force?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+  }) => {
+    try {
+      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+        mysql: !!options.mysql,
+        pg: !!options.pg,
+        sqlite: !!options.sqlite,
+        allConnections: !!options.allConnections,
+      });
+
+      await dbSeedFresh({
+        test: !!options.test,
+        class: options.class,
+        force: !!options.force,
+        connectionNames,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`❌ ${message}`));
+      process.exitCode = 1;
+    }
   });
 
 program
@@ -352,7 +410,7 @@ program
     }
   ) => {
     try {
-      const connectionNames = resolveMigrationConnectionNames(!!options?.test, {
+      const connectionNames = resolveSqlConnectionNames(!!options?.test, {
         mysql: !!options?.mysql,
         pg: !!options?.pg,
         sqlite: !!options?.sqlite,
@@ -407,7 +465,7 @@ program
     }
   ) => {
     try {
-      const connectionNames = resolveMigrationConnectionNames(true, {
+      const connectionNames = resolveSqlConnectionNames(true, {
         mysql: !!options?.mysql,
         pg: !!options?.pg,
         sqlite: !!options?.sqlite,
@@ -509,8 +567,15 @@ program
       { Command: "make:factory <name>", Description: "--model <model> --test --force" },
       { Command: "make:migration [model]", Description: "--test --all --pivot-separate" },
       { Command: "factory:status", Description: "--test --details --graph" },
-      { Command: "db:seed", Description: "--test --class <name>" },
-      { Command: "db:seed:fresh", Description: "--test --class <name> --force" },
+      {
+        Command: "db:seed",
+        Description: "--test --mysql --pg --sqlite --all-connections --class <name>",
+      },
+      {
+        Command: "db:seed:fresh",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --class <name> --force",
+      },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
       {
         Command: "migrate:run [model]",
