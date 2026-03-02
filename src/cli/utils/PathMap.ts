@@ -57,7 +57,10 @@ export class PathMap {
    * 🔹 Auto-detect test environment.
    */
   private static isTestEnv(isTest?: boolean): boolean {
-    return isTest || process.env.NODE_ENV === "test";
+    if (typeof isTest === "boolean") {
+      return isTest;
+    }
+    return process.env.NODE_ENV === "test";
   }
 
   /**

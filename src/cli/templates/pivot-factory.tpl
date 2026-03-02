@@ -1,5 +1,8 @@
 import { BaseModel, Factory, PivotHelperMixin } from "eloquentjs";
 
+class PivotModelBase extends BaseModel {}
+const PivotModel = PivotHelperMixin(PivotModelBase);
+
 /**
  * 🧩 Auto-generated Pivot Factory
  * Handles many-to-many pivot table operations.
@@ -12,7 +15,7 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
    * Model instance using PivotHelperMixin for pivot operations.
    * Marked readonly to indicate the factory won't reassign it.
    */
-  readonly model = PivotHelperMixin(BaseModel);
+  readonly model = PivotModel;
 
   definition(): Partial<Record<string, unknown>> {
     return {
@@ -59,9 +62,10 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
         }));
         await pivotInstance.attachMany(entries);
       } else if (typeof pivotInstance.attach === "function") {
+        const attach = pivotInstance.attach.bind(pivotInstance);
         if (typeof pivotInstance.withTransaction === "function") {
           await pivotInstance.withTransaction(async () => {
-            await pivotInstance.attach(
+            await attach(
               "{{pivotTable}}",
               "{{foreignKey}}",
               "{{relatedKey}}",
@@ -71,7 +75,7 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
             );
           });
         } else {
-          await pivotInstance.attach(
+          await attach(
             "{{pivotTable}}",
             "{{foreignKey}}",
             "{{relatedKey}}",

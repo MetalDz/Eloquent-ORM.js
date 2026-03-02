@@ -17,6 +17,10 @@
 
     /* ---------- Compatibility ---------- */
     "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "eloquentjs": ["src/index.ts"]
+    },
     "esModuleInterop": true,            // Enables `import fs from 'fs'`
     "resolveJsonModule": true,          // Allows importing JSON configs
     "skipLibCheck": true,               // Skip checking .d.ts files

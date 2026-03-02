@@ -1,4 +1,4 @@
-import { Factory } from "../../../cli/utils/factories/Factory";
+import { Factory } from "eloquentjs";
 import { Post } from "../../models/Post";
 
 export class PostFactory extends Factory<Post> {
@@ -8,8 +8,6 @@ export class PostFactory extends Factory<Post> {
     return {
 
       name: this.faker.person.fullName(),
-
-      user_id: this.faker.number.int(),
     };
   }
 }

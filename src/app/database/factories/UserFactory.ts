@@ -1,4 +1,4 @@
-import { Factory } from "../../../cli/utils/factories/Factory";
+import { Factory } from "eloquentjs";
 import { User } from "../../models/User";
 
 export class UserFactory extends Factory<User> {
