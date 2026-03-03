@@ -371,20 +371,60 @@ program
   .command("make:migration [model]")
   .option("--test", "Generate migration in test mode")
   .option("--all", "Generate migrations for all models")
+  .option("--mysql", "Generate migrations only for the mysql connection")
+  .option("--pg", "Generate migrations only for the pg connection")
+  .option("--sqlite", "Generate migrations only for the sqlite connection")
+  .option("--all-connections", "Generate migrations for mysql, pg, and sqlite")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
   .description("Generate migration from a model or all models")
-  .action((model: string | undefined, options: Record<string, unknown>) => {
+  .action(async (
+    model: string | undefined,
+    options: {
+      test?: boolean;
+      all?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      allConnections?: boolean;
+      pivotSeparate?: boolean;
+    }
+  ) => {
     const useAll = !!(options as { all?: boolean }).all;
     const target = useAll ? "all" : model;
     if (!target) {
       console.error(chalk.red("❌ Please provide a model name or use --all"));
       return;
     }
-    return makeMigration(target, {
-      ...options,
-      test: !!(options as { test?: boolean }).test,
-      pivotSeparate: !!(options as { pivotSeparate?: boolean }).pivotSeparate,
-    });
+    try {
+      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+        mysql: !!options.mysql,
+        pg: !!options.pg,
+        sqlite: !!options.sqlite,
+        allConnections: !!options.allConnections,
+      });
+
+      if (connectionNames.length === 0) {
+        await makeMigration(target, {
+          test: !!options.test,
+          pivotSeparate: !!options.pivotSeparate,
+          exit: false,
+        });
+        return;
+      }
+
+      for (const connectionName of connectionNames) {
+        await makeMigration(target, {
+          test: !!options.test,
+          pivotSeparate: !!options.pivotSeparate,
+          connectionName,
+          exit: false,
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`â‌Œ ${message}`));
+      process.exitCode = 1;
+    }
   });
 
 program
@@ -565,7 +605,11 @@ program
       { Command: "make:seed <model>", Description: "--count <number> --test" },
       { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force" },
       { Command: "make:factory <name>", Description: "--model <model> --test --force" },
-      { Command: "make:migration [model]", Description: "--test --all --pivot-separate" },
+      {
+        Command: "make:migration [model]",
+        Description:
+          "--test --all --mysql --pg --sqlite --all-connections --pivot-separate",
+      },
       { Command: "factory:status", Description: "--test --details --graph" },
       {
         Command: "db:seed",

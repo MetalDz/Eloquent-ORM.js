@@ -17,6 +17,7 @@ type CliResult = SpawnSyncReturns<string> & {
 
 const rootDir = process.cwd();
 const cliPath = path.resolve(rootDir, "dist/cli/eloquent.js");
+const appRootDir = path.resolve(rootDir, "src/app");
 const testRootDir = path.resolve(rootDir, "src/test");
 const testSeedsDir = path.resolve(rootDir, "src/test/database/seeds");
 const integrationSeederClass = "CliIntegrationSeeder";
@@ -27,7 +28,9 @@ const integrationSeederFile = path.resolve(
 );
 const hasBuiltCli = fs.existsSync(cliPath);
 const appModelsDir = path.resolve(rootDir, "src/app/models");
-const hasAppModels = fs.existsSync(appModelsDir);
+const appSeedsDir = path.resolve(rootDir, "src/app/database/seeds");
+const appFactoriesDir = path.resolve(rootDir, "src/app/database/factories");
+const hasAppModels = true;
 const hasTestDbEnv = Boolean(
   process.env.DB_HOST &&
     process.env.DB_TEST_USER &&
@@ -263,6 +266,311 @@ function resetSqliteDatabase(filePath: string): void {
   }
 }
 
+function ensureDir(dirPath: string): void {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function writeFixture(filePath: string, content: string): void {
+  ensureDir(path.dirname(filePath));
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
+function bootstrapAppFixtures(): void {
+  writeFixture(
+    path.join(appModelsDir, "User.ts"),
+    `import { SqlModel, ModelInstance } from "../../core/model/BaseModel";
+import { column, validate } from "../../core/schema/SchemaBlueprint";
+
+type UserAttrs = {
+  id?: number | null;
+  name?: string | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+};
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static morphAlias = "users";
+
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: validate(column("string", 255), { required: true, min: 3 }),
+    created_at: column("timestamp"),
+    updated_at: column("timestamp"),
+    posts: {
+      kind: "relation",
+      relation: "hasMany",
+      model: "Post",
+      options: { foreignKey: "user_id" },
+    },
+    favorites: {
+      kind: "relation",
+      relation: "belongsToMany",
+      model: "Post",
+      options: {},
+    },
+    comments: {
+      kind: "relation",
+      relation: "morphMany",
+      model: "Comment",
+      options: { morphName: "commentable" },
+    },
+  };
+
+  constructor() {
+    super("users", process.env.DB_CONNECTION ?? "mysql");
+  }
+}
+
+export interface User extends ModelInstance<UserAttrs> {}
+`
+  );
+
+  writeFixture(
+    path.join(appModelsDir, "Post.ts"),
+    `import { SqlModel, ModelInstance } from "../../core/model/BaseModel";
+import { column, validate } from "../../core/schema/SchemaBlueprint";
+
+type PostAttrs = {
+  id?: number | null;
+  name?: string | null;
+  user_id?: number | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+};
+
+export class Post extends SqlModel<PostAttrs> {
+  static tableName = "posts";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static morphAlias = "posts";
+
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: validate(column("string", 255), { required: true, min: 3 }),
+    user_id: column("int", undefined, { notNull: true }),
+    created_at: column("timestamp"),
+    updated_at: column("timestamp"),
+    author: {
+      kind: "relation",
+      relation: "belongsTo",
+      model: "User",
+      options: { foreignKey: "user_id" },
+    },
+    favoritedBy: {
+      kind: "relation",
+      relation: "belongsToMany",
+      model: "User",
+      options: {},
+    },
+    comments: {
+      kind: "relation",
+      relation: "morphMany",
+      model: "Comment",
+      options: { morphName: "commentable" },
+    },
+  };
+
+  constructor() {
+    super("posts", process.env.DB_CONNECTION ?? "mysql");
+  }
+}
+
+export interface Post extends ModelInstance<PostAttrs> {}
+`
+  );
+
+  writeFixture(
+    path.join(appModelsDir, "Comment.ts"),
+    `import { SqlModel, ModelInstance } from "../../core/model/BaseModel";
+import { column, validate } from "../../core/schema/SchemaBlueprint";
+
+type CommentAttrs = {
+  id?: number | null;
+  name?: string | null;
+  commentable_id?: number | null;
+  commentable_type?: string | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+};
+
+export class Comment extends SqlModel<CommentAttrs> {
+  static tableName = "comments";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static morphAlias = "comments";
+
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: validate(column("string", 255), { required: true, min: 3 }),
+    commentable_id: column("int", undefined, { notNull: true }),
+    commentable_type: column("string", 255, { notNull: true }),
+    created_at: column("timestamp"),
+    updated_at: column("timestamp"),
+    commentable: {
+      kind: "relation",
+      relation: "morphTo",
+      model: "Commentable",
+      options: { morphName: "commentable" },
+    },
+  };
+
+  constructor() {
+    super("comments", process.env.DB_CONNECTION ?? "mysql");
+  }
+}
+
+export interface Comment extends ModelInstance<CommentAttrs> {}
+`
+  );
+
+  writeFixture(
+    path.join(appFactoriesDir, "UserFactory.ts"),
+    `import { Factory } from "eloquentjs";
+import { User } from "../../models/User";
+
+export class UserFactory extends Factory<User> {
+  model = User;
+
+  definition(): Partial<User> {
+    return {
+      name: this.faker.person.fullName(),
+    };
+  }
+}
+`
+  );
+
+  writeFixture(
+    path.join(appFactoriesDir, "PostFactory.ts"),
+    `import { Factory } from "eloquentjs";
+import { Post } from "../../models/Post";
+
+export class PostFactory extends Factory<Post> {
+  model = Post;
+
+  definition(): Partial<Post> {
+    return {
+      name: this.faker.person.fullName(),
+    };
+  }
+}
+`
+  );
+
+  writeFixture(
+    path.join(appFactoriesDir, "CommentFactory.ts"),
+    `import { Factory } from "eloquentjs";
+import { Comment } from "../../models/Comment";
+
+export class CommentFactory extends Factory<Comment> {
+  model = Comment;
+
+  definition(): Partial<Comment> {
+    return {
+      name: this.faker.person.fullName(),
+    };
+  }
+}
+`
+  );
+
+  writeFixture(
+    path.join(appSeedsDir, "UserSeeder.ts"),
+    `import { UserFactory } from "../factories/UserFactory";
+
+export async function UserSeeder(): Promise<void> {
+  console.log("Running seeder: UserSeeder");
+
+  const factory = new UserFactory();
+  await factory.createMany(5);
+
+  console.log("Seeding completed for User");
+}
+`
+  );
+
+  writeFixture(
+    path.join(appSeedsDir, "BlogScenarioSeeder.ts"),
+    `import { CommentFactory } from "../factories/CommentFactory";
+import { PostFactory } from "../factories/PostFactory";
+import { UserFactory } from "../factories/UserFactory";
+
+type SeedModel = {
+  id: number;
+  getMorphClass?: () => string;
+  attach?: (
+    pivotTable: string,
+    foreignKey: string,
+    relatedKey: string,
+    foreignId: number,
+    relatedIds: number[]
+  ) => Promise<void>;
+};
+
+function morphTypeOf(model: SeedModel): string {
+  if (typeof model.getMorphClass === "function") {
+    return model.getMorphClass();
+  }
+
+  const ctor = model.constructor as { name?: string } | undefined;
+  return String(ctor?.name ?? "Model");
+}
+
+function pickRandomIds(items: SeedModel[], count: number): number[] {
+  const pool = items.map((item) => item.id).filter((id) => typeof id === "number");
+
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const current = pool[i];
+    pool[i] = pool[j];
+    pool[j] = current;
+  }
+
+  return pool.slice(0, Math.min(count, pool.length));
+}
+
+export async function BlogScenarioSeeder(): Promise<void> {
+  console.log("Running seeder: BlogScenarioSeeder");
+
+  const userFactory = new UserFactory();
+  const postFactory = new PostFactory();
+  const commentFactory = new CommentFactory();
+
+  const users = (await userFactory.createMany(5)) as SeedModel[];
+  const allPosts: SeedModel[] = [];
+
+  for (const user of users) {
+    for (let i = 0; i < 3; i += 1) {
+      const post = (await postFactory.create({ user_id: user.id })) as SeedModel;
+      allPosts.push(post);
+
+      for (let j = 0; j < 2; j += 1) {
+        await commentFactory.create({
+          commentable_id: post.id,
+          commentable_type: morphTypeOf(post),
+        });
+      }
+    }
+
+    await commentFactory.create({
+      commentable_id: user.id,
+      commentable_type: morphTypeOf(user),
+    });
+  }
+
+  for (const user of users) {
+    const favorites = pickRandomIds(allPosts, 2);
+    if (typeof user.attach === "function") {
+      await user.attach("post_user_pivot", "user_id", "post_id", user.id, favorites);
+    }
+  }
+
+  console.log("Seeding completed for BlogScenarioSeeder");
+}
+`
+  );
+}
+
 describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => {
   let testRootBackupDir: string | null = null;
 
@@ -401,6 +709,8 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
 const describeIfBuiltOnly = hasBuiltCli ? describe : describe.skip;
 
 describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
+  let appRootBackupDir: string | null = null;
+
   function appMysqlEnv(): NodeJS.ProcessEnv {
     return {
       DB_CONNECTION: "mysql",
@@ -513,6 +823,18 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
   }
 
   beforeAll(async () => {
+    const appBackupRoot = fs.mkdtempSync(
+      path.join(os.tmpdir(), "eloquent-cli-app-root-")
+    );
+    appRootBackupDir = path.join(appBackupRoot, "app");
+    if (fs.existsSync(appRootDir)) {
+      fs.cpSync(appRootDir, appRootBackupDir, { recursive: true });
+    }
+
+    fs.rmSync(appRootDir, { recursive: true, force: true });
+    ensureDir(appRootDir);
+    bootstrapAppFixtures();
+
     const scenarioArgs = [
       "make:scenario",
       "blog",
@@ -538,6 +860,16 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
     resetSqliteDatabase("./cli.integration.app.sqlite");
     resetSqliteDatabase("./cli.integration.test.sqlite");
+  });
+
+  afterAll(() => {
+    if (!appRootBackupDir) return;
+
+    fs.rmSync(appRootDir, { recursive: true, force: true });
+    if (fs.existsSync(appRootBackupDir)) {
+      fs.cpSync(appRootBackupDir, appRootDir, { recursive: true });
+      fs.rmSync(path.dirname(appRootBackupDir), { recursive: true, force: true });
+    }
   });
 
   function migrateTestConnection(args: string[], env?: NodeJS.ProcessEnv): CliResult {
@@ -582,6 +914,16 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     );
   });
 
+  test("make:migration rejects conflicting connection flags", () => {
+    const args = ["make:migration", "--all", "--mysql", "--pg"];
+    const result = runCli(args);
+
+    expect(result.status).toBe(1);
+    expect(result.combined).toContain(
+      "Choose only one explicit connection flag or use --all-connections."
+    );
+  });
+
   (hasTestDbEnv ? test : test.skip)(
     "make:migration --all --test --pivot-separate emits a separate pivot migration",
     () => {
@@ -602,6 +944,65 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       expect(migrationFiles.length).toBeGreaterThan(0);
     }
   );
+
+  test("make:migration --all --pg emits app pg migrations", () => {
+    const pgMigrationsDir = connectionMigrationsDir(false, "pg");
+    fs.rmSync(pgMigrationsDir, { recursive: true, force: true });
+
+    const args = ["make:migration", "--all", "--pg"];
+    const result = runCli(args, 240000, undefined, appPgEnv());
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Using connection: pg");
+
+    const migrationFiles = fs
+      .readdirSync(pgMigrationsDir)
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+    expect(migrationFiles.length).toBeGreaterThan(0);
+  });
+
+  test("make:migration --all --test --pg emits test pg migrations", () => {
+    const pgMigrationsDir = connectionMigrationsDir(true, "pg_test");
+    fs.rmSync(pgMigrationsDir, { recursive: true, force: true });
+
+    const args = ["make:migration", "--all", "--test", "--pg"];
+    const result = runCli(args, 240000, undefined, testPgEnv());
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Using connection: pg_test");
+
+    const migrationFiles = fs
+      .readdirSync(pgMigrationsDir)
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+    expect(migrationFiles.length).toBeGreaterThan(0);
+  });
+
+  test("make:migration --all --all-connections emits app migrations for all SQL drivers", () => {
+    const mysqlMigrationsDir = connectionMigrationsDir(false, "mysql");
+    const pgMigrationsDir = connectionMigrationsDir(false, "pg");
+    const sqliteMigrationsDir = connectionMigrationsDir(false, "sqlite");
+
+    fs.rmSync(mysqlMigrationsDir, { recursive: true, force: true });
+    fs.rmSync(pgMigrationsDir, { recursive: true, force: true });
+    fs.rmSync(sqliteMigrationsDir, { recursive: true, force: true });
+
+    const args = ["make:migration", "--all", "--all-connections"];
+    const result = runCli(args, 240000, undefined, appAllConnectionsEnv());
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Using connection: mysql");
+    expect(result.combined).toContain("Using connection: pg");
+    expect(result.combined).toContain("Using connection: sqlite");
+
+    const countFiles = (dir: string): number =>
+      fs
+        .readdirSync(dir)
+        .filter((file) => file.endsWith(".ts") || file.endsWith(".js")).length;
+
+    expect(countFiles(mysqlMigrationsDir)).toBeGreaterThan(0);
+    expect(countFiles(pgMigrationsDir)).toBeGreaterThan(0);
+    expect(countFiles(sqliteMigrationsDir)).toBeGreaterThan(0);
+  });
 
   test("make:migration User --test generates only the single model migration", () => {
     resetSqliteDatabase("./cli.integration.test.sqlite");

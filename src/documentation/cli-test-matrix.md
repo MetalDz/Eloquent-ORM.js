@@ -15,6 +15,7 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `make:controller` | app-mode soft-delete shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `make:factory` | app/test `--model` shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `make:model` | app-mode create/overwrite shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:migration` | app/test single-connection flags, `--all`, `--all-connections`, `--pivot-separate`, plus direct single-model shell coverage | `src/lab_test/cli.integration.test.ts` |
 | `make:scenario` | `--test --preset blog/media --controllers --services --force`, plus `--run` shell coverage | `src/lab_test/cli.integration.test.ts`, `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `make:seed` | app/test count assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `make:service` | app-mode shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
@@ -29,7 +30,6 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 
 | Command | Covered now | Remaining gaps |
 | --- | --- | --- |
-| `make:migration` | `--test --all --pivot-separate`, plus direct single-model shell coverage | broader app-mode single-model assertions if needed |
 | `migrate:rollback` | `--test --step`, app sqlite/mysql/pg shell coverage | all-connections rollback command does not exist by design |
 
 ## Command-to-test ownership
@@ -59,5 +59,4 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 
 ## Next test targets
 
-1. review whether broader app-mode single-model `make:migration <Model>` assertions are worth adding beyond current test-mode shell coverage
-2. decide whether tarball smoke should mirror every generator assertion already covered in lab tests
+1. decide whether tarball smoke should mirror every generator assertion already covered in lab tests
