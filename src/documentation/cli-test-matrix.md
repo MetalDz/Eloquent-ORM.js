@@ -30,7 +30,7 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `demo:scenario` | `--test --random`, `--test --user <id>`, plus tarball smoke | app-mode `--user` with scenario-complete app fixtures |
 | `migrate:run` | app/test single-connection flags, `--all-connections`, `--all-migrations` | app-side `--pivot-separate` with pivot-capable app models |
 | `migrate:run:test` | `--all-connections --all-migrations --pivot-separate`, help/options | broader `--pivot-separate` matrix if needed |
-| `migrate:rollback` | `--test --step`, app sqlite shell coverage | broader app mysql/pg shell coverage |
+| `migrate:rollback` | `--test --step`, app sqlite/mysql/pg shell coverage | all-connections rollback command does not exist by design |
 
 ## Command-to-test ownership
 
@@ -61,6 +61,6 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 
 1. `migrate:run --pivot-separate` for app models that actually emit pivot migrations
 2. `demo:scenario --user <id>` for app-mode scenario-complete fixtures
-3. broader app mysql/pg coverage for `migrate:rollback`
-4. review whether test mysql/pg single-connection `db:seed:fresh` needs standalone shell coverage beyond all-connections
-5. review whether app/test direct CLI assertions are needed for `make:model`, `make:controller`, `make:service`, `make:seed`, and `make:factory` beyond tarball smoke
+3. review whether test mysql/pg single-connection `db:seed:fresh` needs standalone shell coverage beyond all-connections
+4. review whether app/test direct CLI assertions are needed for `make:model`, `make:controller`, `make:service`, `make:seed`, and `make:factory` beyond tarball smoke
+5. decide whether app fixtures should ever include scenario-ready relations for `demo:scenario`

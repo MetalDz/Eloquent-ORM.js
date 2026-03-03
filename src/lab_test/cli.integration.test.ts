@@ -1038,6 +1038,44 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  (hasAppMysqlEnv && hasAppModels ? test : test.skip)(
+    "migrate:rollback --step 1 exits cleanly for app mysql",
+    async () => {
+      await resetAppMysql();
+      migrateAppConnection(
+        ["migrate:run", "--mysql", "--all-migrations"],
+        appMysqlEnv()
+      );
+
+      const args = ["migrate:rollback", "--step", "1"];
+      const result = runCli(args, 240000, undefined, appMysqlEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rolling back migrations in DEVELOPMENT mode");
+      expect(result.combined).toContain("Connected to mysql");
+      expect(result.combined).toMatch(/migration\(s\) rolled back successfully/i);
+    }
+  );
+
+  (hasPgAppEnv && hasAppModels ? test : test.skip)(
+    "migrate:rollback --step 1 exits cleanly for app pg",
+    async () => {
+      await resetAppPg();
+      migrateAppConnection(
+        ["migrate:run", "--pg", "--all-migrations"],
+        appPgEnv()
+      );
+
+      const args = ["migrate:rollback", "--step", "1"];
+      const result = runCli(args, 240000, undefined, appPgEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rolling back migrations in DEVELOPMENT mode");
+      expect(result.combined).toContain("Connected to pg");
+      expect(result.combined).toMatch(/migration\(s\) rolled back successfully/i);
+    }
+  );
+
   test("migrate:status --test shows sqlite_test migration status", () => {
     resetSqliteDatabase("./cli.integration.test.sqlite");
     migrateTestConnection(
