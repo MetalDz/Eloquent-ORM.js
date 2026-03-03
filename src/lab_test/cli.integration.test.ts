@@ -688,6 +688,36 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  (hasAppModels ? test : test.skip)(
+    "migrate:run --sqlite --all-migrations --pivot-separate emits app pivot migration and exits cleanly",
+    () => {
+      resetSqliteDatabase("./cli.integration.app.sqlite");
+      const sqliteMigrationsDir = connectionMigrationsDir(false, "sqlite");
+      fs.rmSync(sqliteMigrationsDir, { recursive: true, force: true });
+
+      const args = [
+        "migrate:run",
+        "--sqlite",
+        "--all-migrations",
+        "--pivot-separate",
+      ];
+      const result = runCli(args, 240000, undefined, appSqliteEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Pivot migration saved");
+      expect(result.combined).toContain(
+        'Running migrations in DEVELOPMENT mode on "sqlite"'
+      );
+
+      const migrationFiles = fs
+        .readdirSync(sqliteMigrationsDir)
+        .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+      expect(
+        migrationFiles.some((file) => file.includes("create_post_user_pivot_table"))
+      ).toBe(true);
+    }
+  );
+
   (hasTestDbEnv ? test : test.skip)(
     "migrate:run --test --mysql --all-migrations exits cleanly",
     async () => {
@@ -799,6 +829,32 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       assertCliSuccess(result, args);
       expect(result.combined).toContain("Seeding connection: sqlite");
       expect(result.combined).toContain("Completed: UserSeeder");
+    }
+  );
+
+  (hasAppModels ? test : test.skip)(
+    "demo:scenario --user 1 exits cleanly in app sqlite mode after BlogScenarioSeeder",
+    () => {
+      resetSqliteDatabase("./cli.integration.app.sqlite");
+      migrateAppConnection(
+        ["migrate:run", "--sqlite", "--all-migrations", "--pivot-separate"],
+        appSqliteEnv()
+      );
+
+      const seedArgs = ["db:seed", "--sqlite", "--class", blogScenarioSeederClass];
+      const seedResult = runCli(seedArgs, 240000, undefined, appSqliteEnv());
+
+      assertCliSuccess(seedResult, seedArgs);
+      expect(seedResult.combined).toContain("Seeding connection: sqlite");
+      expect(seedResult.combined).toContain(`Completed: ${blogScenarioSeederClass}`);
+
+      const args = ["demo:scenario", "--user", "1"];
+      const result = runCli(args, 240000, undefined, appSqliteEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Scenario check: counts");
+      expect(result.combined).toContain("Scenario check: relations");
+      expect(result.combined).toContain("favorite posts:");
     }
   );
 

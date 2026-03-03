@@ -11,6 +11,12 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `cache:stats` | no options | `scripts/pack-smoke.js` |
 | `db:seed` | app/test class mode, single-connection flags, and `--all-connections` | `src/lab_test/cli.integration.test.ts` |
 | `factory:status` | direct shell coverage for `--details --graph --test` plus tarball smoke | `src/lab_test/cli.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:controller` | app-mode soft-delete shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:factory` | app/test `--model` shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:model` | app-mode create/overwrite shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:scenario` | `--test --preset blog/media --controllers --services --force`, plus `--run` shell coverage | `src/lab_test/cli.integration.test.ts`, `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:seed` | app/test count assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:service` | app-mode shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `migrate:status` | app and test shell coverage | `src/lab_test/cli.integration.test.ts` |
 | `migrate:fresh` | app and test shell coverage with `--force` | `src/lab_test/cli.integration.test.ts` |
 | `migrate:reset` | app and test shell coverage | `src/lab_test/cli.integration.test.ts` |
@@ -19,16 +25,10 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 
 | Command | Covered now | Remaining gaps |
 | --- | --- | --- |
-| `make:model` | `--test --with-migration --attrs-from-schema --force` through tarball smoke | direct CLI lab test for app mode output assertions |
-| `make:controller` | `--test --soft` through tarball smoke | dedicated CLI assertions for generated content in app mode |
-| `make:service` | `--test` through tarball smoke | dedicated CLI assertions for generated content in app mode |
-| `make:seed` | basic generation through tarball smoke | direct CLI assertions for `--count` in app and test mode |
-| `make:factory` | `--test --force --model` through tarball smoke | dedicated CLI assertions for generated content in app mode |
-| `make:scenario` | `--test --preset blog/media --controllers --services --force`, plus `--run` in tarball smoke | explicit CLI assertions for `--run` inside lab tests |
 | `make:migration` | `--test --all --pivot-separate`, plus direct single-model shell coverage | broader app-mode single-model assertions if needed |
 | `db:seed:fresh` | app sqlite/mysql/pg/app all-connections and test sqlite/test all-connections | test mysql/pg single-connection shell coverage if desired |
-| `demo:scenario` | `--test --random`, `--test --user <id>`, plus tarball smoke | app-mode `--user` with scenario-complete app fixtures |
-| `migrate:run` | app/test single-connection flags, `--all-connections`, `--all-migrations` | app-side `--pivot-separate` with pivot-capable app models |
+| `demo:scenario` | `--test --random`, `--test --user <id>`, app-mode `--user <id>`, plus tarball smoke | app-mode `--random` if you want explicit shell coverage beyond the tarball smoke |
+| `migrate:run` | app/test single-connection flags, `--all-connections`, `--all-migrations`, app-side `--pivot-separate` | broader app mysql/pg `--pivot-separate` matrix if you want parity beyond sqlite |
 | `migrate:run:test` | `--all-connections --all-migrations --pivot-separate`, help/options | broader `--pivot-separate` matrix if needed |
 | `migrate:rollback` | `--test --step`, app sqlite/mysql/pg shell coverage | all-connections rollback command does not exist by design |
 
@@ -37,12 +37,12 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | Command | Current main test file |
 | --- | --- |
 | `list` | `src/lab_test/cli.commands.help.test.ts` |
-| `make:model` | `scripts/pack-smoke.js` |
-| `make:controller` | `scripts/pack-smoke.js` |
-| `make:service` | `scripts/pack-smoke.js` |
-| `make:seed` | `scripts/pack-smoke.js` |
-| `make:factory` | `scripts/pack-smoke.js` |
-| `make:scenario` | `src/lab_test/cli.integration.test.ts` |
+| `make:model` | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:controller` | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:service` | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:seed` | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:factory` | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:scenario` | `src/lab_test/cli.integration.test.ts`, `src/lab_test/cli.generators.integration.test.ts` |
 | `make:migration` | `src/lab_test/cli.integration.test.ts` |
 | `db:seed` | `src/lab_test/cli.integration.test.ts` |
 | `db:seed:fresh` | `src/lab_test/cli.integration.test.ts` |
@@ -59,8 +59,6 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 
 ## Next test targets
 
-1. `migrate:run --pivot-separate` for app models that actually emit pivot migrations
-2. `demo:scenario --user <id>` for app-mode scenario-complete fixtures
-3. review whether test mysql/pg single-connection `db:seed:fresh` needs standalone shell coverage beyond all-connections
-4. review whether app/test direct CLI assertions are needed for `make:model`, `make:controller`, `make:service`, `make:seed`, and `make:factory` beyond tarball smoke
-5. decide whether app fixtures should ever include scenario-ready relations for `demo:scenario`
+1. review whether test mysql/pg single-connection `db:seed:fresh` needs standalone shell coverage beyond all-connections
+2. extend app mysql/pg `migrate:run --pivot-separate` if you want parity beyond the current sqlite proof path
+3. decide whether app-mode `demo:scenario --random` needs separate shell coverage beyond the current `--user` proof path
