@@ -603,6 +603,27 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  test("make:migration User --test generates only the single model migration", () => {
+    resetSqliteDatabase("./cli.integration.test.sqlite");
+    const sqliteMigrationsDir = connectionMigrationsDir(true, "sqlite_test");
+    fs.rmSync(sqliteMigrationsDir, { recursive: true, force: true });
+
+    const args = ["make:migration", "User", "--test"];
+    const result = runCli(args, 240000, undefined, testSqliteEnv());
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("create_users_table");
+    expect(result.combined).not.toContain("create_posts_table");
+    expect(result.combined).not.toContain("create_comments_table");
+
+    const migrationFiles = fs
+      .readdirSync(sqliteMigrationsDir)
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+    expect(migrationFiles.some((file) => file.includes("create_users_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_posts_table"))).toBe(false);
+    expect(migrationFiles.some((file) => file.includes("create_comments_table"))).toBe(false);
+  });
+
   test("migrate:run:test --sqlite --all-migrations --pivot-separate exits cleanly", () => {
     resetSqliteDatabase("./cli.integration.test.sqlite");
 
@@ -801,6 +822,26 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  (hasAppMysqlEnv && hasAppModels ? test : test.skip)(
+    "db:seed:fresh --mysql --class UserSeeder exits cleanly",
+    async () => {
+      await resetAppMysql();
+
+      const args = [
+        "db:seed:fresh",
+        "--mysql",
+        "--class",
+        "UserSeeder",
+        "--force",
+      ];
+      const result = runCli(args, 300000, undefined, appMysqlEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rebuilding database for mysql");
+      expect(result.combined).toContain("Completed: UserSeeder");
+    }
+  );
+
   (hasPgAppEnv && hasAppModels ? test : test.skip)(
     "db:seed --pg --class UserSeeder exits cleanly",
     async () => {
@@ -815,6 +856,26 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
 
       assertCliSuccess(result, args);
       expect(result.combined).toContain("Seeding connection: pg");
+      expect(result.combined).toContain("Completed: UserSeeder");
+    }
+  );
+
+  (hasPgAppEnv && hasAppModels ? test : test.skip)(
+    "db:seed:fresh --pg --class UserSeeder exits cleanly",
+    async () => {
+      await resetAppPg();
+
+      const args = [
+        "db:seed:fresh",
+        "--pg",
+        "--class",
+        "UserSeeder",
+        "--force",
+      ];
+      const result = runCli(args, 300000, undefined, appPgEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rebuilding database for pg");
       expect(result.combined).toContain("Completed: UserSeeder");
     }
   );

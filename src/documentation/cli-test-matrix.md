@@ -10,6 +10,7 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `cache:clear` | no options | `src/lab_test/cache.commands.logic.test.ts`, `scripts/pack-smoke.js` |
 | `cache:stats` | no options | `scripts/pack-smoke.js` |
 | `db:seed` | app/test class mode, single-connection flags, and `--all-connections` | `src/lab_test/cli.integration.test.ts` |
+| `factory:status` | direct shell coverage for `--details --graph --test` plus tarball smoke | `src/lab_test/cli.integration.test.ts`, `scripts/pack-smoke.js` |
 | `migrate:status` | app and test shell coverage | `src/lab_test/cli.integration.test.ts` |
 | `migrate:fresh` | app and test shell coverage with `--force` | `src/lab_test/cli.integration.test.ts` |
 | `migrate:reset` | app and test shell coverage | `src/lab_test/cli.integration.test.ts` |
@@ -24,13 +25,12 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `make:seed` | basic generation through tarball smoke | direct CLI assertions for `--count` in app and test mode |
 | `make:factory` | `--test --force --model` through tarball smoke | dedicated CLI assertions for generated content in app mode |
 | `make:scenario` | `--test --preset blog/media --controllers --services --force`, plus `--run` in tarball smoke | explicit CLI assertions for `--run` inside lab tests |
-| `make:migration` | `--test --all --pivot-separate`, plus app/test generation in smoke/integration | direct CLI assertions for single-model mode |
-| `db:seed:fresh` | app sqlite/app all-connections and test sqlite/test all-connections | app mysql/pg single-connection shell coverage |
+| `make:migration` | `--test --all --pivot-separate`, plus direct single-model shell coverage | broader app-mode single-model assertions if needed |
+| `db:seed:fresh` | app sqlite/mysql/pg/app all-connections and test sqlite/test all-connections | test mysql/pg single-connection shell coverage if desired |
 | `demo:scenario` | `--test --random`, `--test --user <id>`, plus tarball smoke | app-mode `--user` with scenario-complete app fixtures |
 | `migrate:run` | app/test single-connection flags, `--all-connections`, `--all-migrations` | app-side `--pivot-separate` with pivot-capable app models |
 | `migrate:run:test` | `--all-connections --all-migrations --pivot-separate`, help/options | broader `--pivot-separate` matrix if needed |
 | `migrate:rollback` | `--test --step`, app sqlite shell coverage | broader app mysql/pg shell coverage |
-| `factory:status` | tarball smoke | direct shell coverage for `--details --graph --test` |
 
 ## Command-to-test ownership
 
@@ -55,12 +55,12 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `migrate:reset` | `src/lab_test/cli.integration.test.ts` |
 | `cache:clear` | `src/lab_test/cache.commands.logic.test.ts` |
 | `cache:stats` | `scripts/pack-smoke.js` |
-| `factory:status` | `scripts/pack-smoke.js` |
+| `factory:status` | `src/lab_test/cli.integration.test.ts`, `scripts/pack-smoke.js` |
 
 ## Next test targets
 
 1. `migrate:run --pivot-separate` for app models that actually emit pivot migrations
-2. `db:seed:fresh` app mysql/pg single-connection shell coverage
-3. `demo:scenario --user <id>` for app-mode scenario-complete fixtures
-4. direct single-model shell coverage for `make:migration`
-5. broader app mysql/pg coverage for `migrate:rollback`
+2. `demo:scenario --user <id>` for app-mode scenario-complete fixtures
+3. broader app mysql/pg coverage for `migrate:rollback`
+4. review whether test mysql/pg single-connection `db:seed:fresh` needs standalone shell coverage beyond all-connections
+5. review whether app/test direct CLI assertions are needed for `make:model`, `make:controller`, `make:service`, `make:seed`, and `make:factory` beyond tarball smoke

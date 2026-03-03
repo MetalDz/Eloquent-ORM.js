@@ -179,7 +179,7 @@ console.log(chalk.green("🚀 Ready to manage your EloquentJS models and databas
 // 🧩 Core Configuration
 // -----------------------------------------------------------------------------
 program
-  .name("eloquent")
+  .name("eloquent" )
   .description("EloquentJS ORM Command Line Interface (Artisan-like tool)")
   .version("2.0.0");
 
