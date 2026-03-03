@@ -603,6 +603,22 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  test("migrate:run:test --sqlite --all-migrations --pivot-separate exits cleanly", () => {
+    resetSqliteDatabase("./cli.integration.test.sqlite");
+
+    const args = [
+      "migrate:run:test",
+      "--sqlite",
+      "--all-migrations",
+      "--pivot-separate",
+    ];
+    const result = runCli(args, 240000, undefined, testSqliteEnv());
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Pivot migration saved");
+    expect(result.combined).toContain('Running migrations in TEST mode on "sqlite_test"');
+  });
+
   (hasAppMysqlEnv && hasAppModels ? test : test.skip)(
     "migrate:run --mysql --all-migrations exits cleanly",
     async () => {
@@ -765,6 +781,26 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  (hasAppModels ? test : test.skip)(
+    "db:seed:fresh --sqlite --class UserSeeder exits cleanly",
+    () => {
+      resetSqliteDatabase("./cli.integration.app.sqlite");
+
+      const args = [
+        "db:seed:fresh",
+        "--sqlite",
+        "--class",
+        "UserSeeder",
+        "--force",
+      ];
+      const result = runCli(args, 240000, undefined, appSqliteEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rebuilding database for sqlite");
+      expect(result.combined).toContain("Completed: UserSeeder");
+    }
+  );
+
   (hasPgAppEnv && hasAppModels ? test : test.skip)(
     "db:seed --pg --class UserSeeder exits cleanly",
     async () => {
@@ -816,6 +852,28 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       expect(result.combined).toContain("Seeding connection: mysql");
       expect(result.combined).toContain("Seeding connection: pg");
       expect(result.combined).toContain("Seeding connection: sqlite");
+      expect(result.combined).toContain("Completed: UserSeeder");
+    }
+  );
+
+  (hasAppMysqlEnv && hasPgAppEnv && hasAppModels ? test : test.skip)(
+    "db:seed:fresh --all-connections --class UserSeeder exits cleanly in app mode",
+    async () => {
+      await resetAllAppDatabases();
+
+      const args = [
+        "db:seed:fresh",
+        "--all-connections",
+        "--class",
+        "UserSeeder",
+        "--force",
+      ];
+      const result = runCli(args, 300000, undefined, appAllConnectionsEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rebuilding database for mysql");
+      expect(result.combined).toContain("Rebuilding database for pg");
+      expect(result.combined).toContain("Rebuilding database for sqlite");
       expect(result.combined).toContain("Completed: UserSeeder");
     }
   );
@@ -901,6 +959,24 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     }
   );
 
+  (hasAppModels ? test : test.skip)(
+    "migrate:rollback --step 1 exits cleanly for app sqlite",
+    () => {
+      resetSqliteDatabase("./cli.integration.app.sqlite");
+      migrateAppConnection(
+        ["migrate:run", "--sqlite", "--all-migrations"],
+        appSqliteEnv()
+      );
+
+      const args = ["migrate:rollback", "--step", "1"];
+      const result = runCli(args, 240000, undefined, appSqliteEnv());
+
+      assertCliSuccess(result, args);
+      expect(result.combined).toContain("Rolling back migrations in DEVELOPMENT mode");
+      expect(result.combined).toMatch(/migration\(s\) rolled back successfully/i);
+    }
+  );
+
   test("migrate:status --test shows sqlite_test migration status", () => {
     resetSqliteDatabase("./cli.integration.test.sqlite");
     migrateTestConnection(
@@ -980,6 +1056,46 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     assertCliSuccess(result, args);
     expect(result.combined).toContain("Resetting test database");
     expect(result.combined).toMatch(/migration\(s\) rolled back successfully/i);
+  });
+
+  test("demo:scenario --test --user 1 exits cleanly", () => {
+    resetSqliteDatabase("./cli.integration.test.sqlite");
+    migrateTestConnection(
+      ["migrate:run", "--test", "--sqlite", "--all-migrations"],
+      testSqliteEnv()
+    );
+    const seedResult = runCli(
+      ["db:seed", "--test", "--sqlite", "--class", blogScenarioSeederClass],
+      240000,
+      undefined,
+      testSqliteEnv()
+    );
+    assertCliSuccess(seedResult, ["db:seed", "--test", "--sqlite", "--class", blogScenarioSeederClass]);
+
+    const args = ["demo:scenario", "--test", "--user", "1"];
+    const result = runCli(args, 240000, undefined, testSqliteEnv());
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Scenario check: relations");
+    expect(result.combined).toContain("user:");
+  });
+
+  test("factory:status --details --test exits cleanly", () => {
+    const args = ["factory:status", "--details", "--test"];
+    const result = runCli(args, 240000);
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Factory Status");
+    expect(result.combined).toContain("CommentFactory");
+  });
+
+  test("factory:status --graph --test exits cleanly", () => {
+    const args = ["factory:status", "--graph", "--test"];
+    const result = runCli(args, 240000);
+
+    assertCliSuccess(result, args);
+    expect(result.combined).toContain("Model Relationship Graph");
+    expect(result.combined).toContain("User");
   });
 
   (hasTestDbEnv && hasPgTestEnv ? test : test.skip)(
