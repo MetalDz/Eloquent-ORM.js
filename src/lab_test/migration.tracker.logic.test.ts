@@ -101,4 +101,29 @@ describe("MigrationTracker logic", () => {
 
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
+
+  test("validateMigrationHistory relinks regenerated auto-migrations with the same logical name", async () => {
+    const adapter = makeAdapter();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "migration-relink-"));
+    const oldName = "20260303121115001_create_comments_table.ts";
+    const nextName = "20260303121159001_create_comments_table.ts";
+    const nextPath = path.join(tempDir, nextName);
+    fs.writeFileSync(nextPath, "export async function up() { return; }\n", "utf8");
+
+    adapter.query.mockResolvedValueOnce([
+      { id: 1, name: oldName, batch: 1, checksum: "stale-checksum", run_at: "2026-03-03" },
+    ]);
+
+    const rows = await validateMigrationHistory(adapter, tempDir);
+    const expectedChecksum = computeMigrationChecksum(nextPath);
+
+    expect(rows[0]?.name).toBe(nextName);
+    expect(rows[0]?.checksum).toBe(expectedChecksum);
+    expect(adapter.execute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE `migrations` SET `name` = ?, `checksum` = ?"),
+      [nextName, expectedChecksum, oldName]
+    );
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
 });

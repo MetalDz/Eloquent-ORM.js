@@ -14,7 +14,15 @@ export type MigrationRow = {
   run_at?: string;
 };
 
+type ResolvedMigrationFile = {
+  fileName: string;
+  filePath: string;
+  relinked: boolean;
+};
+
 const MIGRATION_LOCK_ID = 1;
+const AUTO_GENERATED_MIGRATION_RE =
+  /^\d+_(create|update)_[A-Za-z0-9_]+_table\.(ts|js)$/;
 
 function resolveDriver(db: DriverAdapter): SqlMigrationDriver {
   const driver = dbConfig.connections[db.name]?.driver ?? db.name;
@@ -166,6 +174,63 @@ export function computeMigrationChecksum(filePath: string): string {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
+function logicalMigrationName(fileName: string): string {
+  return fileName.replace(/^\d+_/, "");
+}
+
+function isGeneratedMigrationFile(fileName: string): boolean {
+  return AUTO_GENERATED_MIGRATION_RE.test(fileName);
+}
+
+function findMatchingMigrationFile(
+  migrationsDir: string,
+  fileName: string
+): ResolvedMigrationFile | null {
+  const exactPath = path.join(migrationsDir, fileName);
+  if (fs.existsSync(exactPath)) {
+    return {
+      fileName,
+      filePath: exactPath,
+      relinked: false,
+    };
+  }
+
+  if (!isGeneratedMigrationFile(fileName) || !fs.existsSync(migrationsDir)) {
+    return null;
+  }
+
+  const logicalName = logicalMigrationName(fileName);
+  const candidates = fs
+    .readdirSync(migrationsDir)
+    .filter((entry) => entry.endsWith(".ts") || entry.endsWith(".js"))
+    .filter((entry) => isGeneratedMigrationFile(entry))
+    .filter((entry) => logicalMigrationName(entry) === logicalName);
+
+  if (candidates.length !== 1) {
+    return null;
+  }
+
+  return {
+    fileName: candidates[0],
+    filePath: path.join(migrationsDir, candidates[0]),
+    relinked: true,
+  };
+}
+
+async function relinkAppliedMigration(
+  db: DriverAdapter,
+  previousName: string,
+  nextName: string,
+  checksum: string
+): Promise<void> {
+  const sql = `UPDATE ${db.wrapId("migrations")} SET ${db.wrapId("name")} = ${db.placeholder(
+    1
+  )}, ${db.wrapId("checksum")} = ${db.placeholder(2)} WHERE ${db.wrapId(
+    "name"
+  )} = ${db.placeholder(3)}`;
+  await db.execute(sql, [nextName, checksum, previousName]);
+}
+
 export async function acquireMigrationLock(
   db: DriverAdapter,
   owner: string
@@ -256,14 +321,20 @@ export async function backfillMissingChecksums(
       continue;
     }
 
-    const filePath = path.join(migrationsDir, row.name);
-    if (!fs.existsSync(filePath)) {
+    const resolved = findMatchingMigrationFile(migrationsDir, row.name);
+    if (!resolved) {
       throw new Error(
         `Applied migration "${row.name}" is missing from disk and cannot be checksum-validated.`
       );
     }
 
-    const checksum = computeMigrationChecksum(filePath);
+    const checksum = computeMigrationChecksum(resolved.filePath);
+    if (resolved.relinked) {
+      await relinkAppliedMigration(db, row.name, resolved.fileName, checksum);
+      updatedRows.push({ ...row, name: resolved.fileName, checksum });
+      continue;
+    }
+
     const sql = `UPDATE ${db.wrapId("migrations")} SET ${db.wrapId("checksum")} = ${db.placeholder(
       1
     )} WHERE ${db.wrapId("name")} = ${db.placeholder(2)}`;
@@ -282,12 +353,19 @@ export async function validateMigrationHistory(
   const hydratedRows = await backfillMissingChecksums(db, rows, migrationsDir);
 
   for (const row of hydratedRows) {
-    const filePath = path.join(migrationsDir, row.name);
-    if (!fs.existsSync(filePath)) {
+    const resolved = findMatchingMigrationFile(migrationsDir, row.name);
+    if (!resolved) {
       throw new Error(`Applied migration "${row.name}" is missing from disk.`);
     }
 
-    const currentChecksum = computeMigrationChecksum(filePath);
+    const currentChecksum = computeMigrationChecksum(resolved.filePath);
+    if (resolved.relinked) {
+      await relinkAppliedMigration(db, row.name, resolved.fileName, currentChecksum);
+      row.name = resolved.fileName;
+      row.checksum = currentChecksum;
+      continue;
+    }
+
     if (row.checksum !== currentChecksum) {
       throw new Error(
         `Migration checksum mismatch for "${row.name}". The applied migration file was modified after execution.`
