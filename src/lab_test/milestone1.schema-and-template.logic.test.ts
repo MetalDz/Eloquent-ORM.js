@@ -269,6 +269,160 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     );
   });
 
+  test("SchemaBuilder adds MySQL belongsTo column and FK constraint during smart update", async () => {
+    const mysqlQuery = jest.fn(async (sql: string) => {
+      if (sql.startsWith("SHOW TABLES LIKE")) {
+        return [{ table: "posts" }];
+      }
+      if (sql.includes("SHOW COLUMNS FROM `posts`;")) {
+        return [
+          {
+            Field: "id",
+            Type: "int",
+            Null: "NO",
+            Key: "PRI",
+            Default: null,
+            Extra: "auto_increment",
+          },
+        ];
+      }
+      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
+        return [];
+      }
+      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+    });
+
+    mockedGetAdapter.mockResolvedValueOnce({
+      query: mysqlQuery,
+      placeholder: () => "?",
+    } as never);
+
+    const mysqlSchema: Record<string, SchemaField> = {
+      id: column("increments", undefined, { primary: true }),
+      author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+    };
+
+    const result = await SchemaBuilder.toCreateSQL(
+      "posts",
+      mysqlSchema,
+      "mysql",
+      true,
+      "mysql"
+    );
+
+    expect(result.mainSQL).toContain("ALTER TABLE `posts`");
+    expect(result.mainSQL).toContain("ADD COLUMN `user_id` INT");
+    expect(result.mainSQL).toContain(
+      "ADD CONSTRAINT `posts_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)"
+    );
+    expect(result.rollbackMainSQL).toContain("DROP FOREIGN KEY `posts_user_id_foreign`");
+    expect(result.rollbackMainSQL).toContain("DROP COLUMN `user_id`");
+  });
+
+  test("SchemaBuilder drops MySQL belongsTo FK constraint before dropping the column", async () => {
+    const mysqlQuery = jest.fn(async (sql: string) => {
+      if (sql.startsWith("SHOW TABLES LIKE")) {
+        return [{ table: "posts" }];
+      }
+      if (sql.includes("SHOW COLUMNS FROM `posts`;")) {
+        return [
+          {
+            Field: "id",
+            Type: "int",
+            Null: "NO",
+            Key: "PRI",
+            Default: null,
+            Extra: "auto_increment",
+          },
+          {
+            Field: "user_id",
+            Type: "int",
+            Null: "YES",
+            Key: "",
+            Default: null,
+            Extra: "",
+          },
+        ];
+      }
+      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
+        return [
+          {
+            constraint_name: "posts_user_id_foreign",
+            column_name: "user_id",
+            referenced_table_name: "users",
+            referenced_column_name: "id",
+          },
+        ];
+      }
+      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+    });
+
+    mockedGetAdapter.mockResolvedValueOnce({
+      query: mysqlQuery,
+      placeholder: () => "?",
+    } as never);
+
+    const mysqlSchema: Record<string, SchemaField> = {
+      id: column("increments", undefined, { primary: true }),
+    };
+
+    const result = await SchemaBuilder.toCreateSQL(
+      "posts",
+      mysqlSchema,
+      "mysql",
+      true,
+      "mysql"
+    );
+
+    expect(result.mainSQL).toContain("DROP FOREIGN KEY `posts_user_id_foreign`");
+    expect(result.mainSQL).toContain("DROP COLUMN `user_id`");
+    expect(
+      result.mainSQL.indexOf("DROP FOREIGN KEY `posts_user_id_foreign`")
+    ).toBeLessThan(result.mainSQL.indexOf("DROP COLUMN `user_id`"));
+    expect(result.rollbackMainSQL).toContain("ADD COLUMN `user_id` INT");
+    expect(result.rollbackMainSQL).toContain(
+      "ADD CONSTRAINT `posts_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)"
+    );
+  });
+
+  test("SchemaBuilder keeps SQLite smart updates constraint-safe for belongsTo changes", async () => {
+    const sqliteQuery = jest.fn(async (sql: string) => {
+      if (sql.startsWith('PRAGMA table_info("posts")')) {
+        return [
+          { name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 },
+        ];
+      }
+      if (sql.startsWith('PRAGMA foreign_key_list("posts")')) {
+        return [];
+      }
+      throw new Error(`Unexpected SQLite SQL: ${sql}`);
+    });
+
+    mockedGetAdapter.mockResolvedValueOnce({
+      query: sqliteQuery,
+      placeholder: () => "?",
+    } as never);
+
+    const sqliteSchema: Record<string, SchemaField> = {
+      id: column("increments", undefined, { primary: true }),
+      author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+    };
+
+    const result = await SchemaBuilder.toCreateSQL(
+      "posts",
+      sqliteSchema,
+      "sqlite",
+      true,
+      "sqlite_test"
+    );
+
+    expect(result.mainSQL).toContain('ALTER TABLE "posts"');
+    expect(result.mainSQL).toContain('ADD COLUMN "user_id" INTEGER');
+    expect(result.mainSQL).not.toContain("ADD CONSTRAINT");
+    expect(result.mainSQL).not.toContain("DROP CONSTRAINT");
+    expect(result.mainSQL).not.toContain("DROP FOREIGN KEY");
+  });
+
   test("pivot factory template uses corrected import paths", () => {
     const templatePath = path.join(
       process.cwd(),
