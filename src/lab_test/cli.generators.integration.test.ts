@@ -222,6 +222,7 @@ describeIfBuilt("CLI integration: generators", () => {
 
     assertCliSuccess(result, args);
     expect(result.combined).toContain("Scenario generation complete");
+    expect(result.combined).toContain("All tables dropped. Re-running migrations...");
     expect(result.combined).toContain('Running migrations in TEST mode on "sqlite_test"');
     expect(result.combined).toContain("Completed: BlogScenarioSeeder");
   });

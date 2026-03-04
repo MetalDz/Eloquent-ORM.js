@@ -153,6 +153,122 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(pgResult.rollbackExtraTables).toContain('DROP TABLE IF EXISTS "post_user_pivot";');
   });
 
+  test("SchemaBuilder adds PG belongsTo column and FK constraint during smart update", async () => {
+    const pgQuery = jest.fn(async (sql: string) => {
+      if (sql.includes("FROM information_schema.columns")) {
+        return [
+          {
+            column_name: "id",
+            data_type: "integer",
+            udt_name: "int4",
+            is_nullable: "NO",
+            column_default: "nextval('posts_id_seq'::regclass)",
+            character_maximum_length: null,
+            numeric_precision: 32,
+            numeric_scale: 0,
+          },
+        ];
+      }
+      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
+        return [];
+      }
+      throw new Error(`Unexpected PG SQL: ${sql}`);
+    });
+
+    mockedGetAdapter.mockResolvedValueOnce({
+      query: pgQuery,
+      placeholder: (index: number) => `$${index}`,
+    } as never);
+
+    const pgSchema: Record<string, SchemaField> = {
+      id: column("increments", undefined, { primary: true }),
+      author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+    };
+
+    const result = await SchemaBuilder.toCreateSQL(
+      "posts",
+      pgSchema,
+      "pg",
+      true,
+      "pg_test"
+    );
+
+    expect(result.mainSQL).toContain('ALTER TABLE "posts"');
+    expect(result.mainSQL).toContain('ADD COLUMN "user_id" INTEGER');
+    expect(result.mainSQL).toContain(
+      'ADD CONSTRAINT "posts_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id")'
+    );
+    expect(result.rollbackMainSQL).toContain('DROP CONSTRAINT "posts_user_id_foreign"');
+    expect(result.rollbackMainSQL).toContain('DROP COLUMN "user_id"');
+  });
+
+  test("SchemaBuilder drops PG belongsTo FK constraint before dropping the column", async () => {
+    const pgQuery = jest.fn(async (sql: string) => {
+      if (sql.includes("FROM information_schema.columns")) {
+        return [
+          {
+            column_name: "id",
+            data_type: "integer",
+            udt_name: "int4",
+            is_nullable: "NO",
+            column_default: "nextval('posts_id_seq'::regclass)",
+            character_maximum_length: null,
+            numeric_precision: 32,
+            numeric_scale: 0,
+          },
+          {
+            column_name: "user_id",
+            data_type: "integer",
+            udt_name: "int4",
+            is_nullable: "YES",
+            column_default: null,
+            character_maximum_length: null,
+            numeric_precision: 32,
+            numeric_scale: 0,
+          },
+        ];
+      }
+      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
+        return [
+          {
+            constraint_name: "posts_user_id_foreign",
+            column_name: "user_id",
+            referenced_table_name: "users",
+            referenced_column_name: "id",
+          },
+        ];
+      }
+      throw new Error(`Unexpected PG SQL: ${sql}`);
+    });
+
+    mockedGetAdapter.mockResolvedValueOnce({
+      query: pgQuery,
+      placeholder: (index: number) => `$${index}`,
+    } as never);
+
+    const pgSchema: Record<string, SchemaField> = {
+      id: column("increments", undefined, { primary: true }),
+    };
+
+    const result = await SchemaBuilder.toCreateSQL(
+      "posts",
+      pgSchema,
+      "pg",
+      true,
+      "pg_test"
+    );
+
+    expect(result.mainSQL).toContain('DROP CONSTRAINT "posts_user_id_foreign"');
+    expect(result.mainSQL).toContain('DROP COLUMN "user_id"');
+    expect(
+      result.mainSQL.indexOf('DROP CONSTRAINT "posts_user_id_foreign"')
+    ).toBeLessThan(result.mainSQL.indexOf('DROP COLUMN "user_id"'));
+    expect(result.rollbackMainSQL).toContain('ADD COLUMN "user_id" INTEGER');
+    expect(result.rollbackMainSQL).toContain(
+      'ADD CONSTRAINT "posts_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id")'
+    );
+  });
+
   test("pivot factory template uses corrected import paths", () => {
     const templatePath = path.join(
       process.cwd(),

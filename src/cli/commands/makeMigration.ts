@@ -37,6 +37,32 @@ type LoadedModel = {
   };
 };
 
+function stableMigrationBody(content: string): string {
+  const marker = "export async function up";
+  const markerIndex = content.indexOf(marker);
+  return markerIndex >= 0 ? content.slice(markerIndex).trim() : content.trim();
+}
+
+function hasSameGeneratedBody(filePath: string, nextContent: string): boolean {
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+  const current = fs.readFileSync(filePath, "utf8");
+  return stableMigrationBody(current) === stableMigrationBody(nextContent);
+}
+
+function migrationTimestampPrefix(fileName: string): string {
+  const match = fileName.match(/^(\d+)_/);
+  return match?.[1] ?? "";
+}
+
+type PendingPivotMigration = {
+  connectionName: string;
+  migrationsDir: string;
+  pivotTable: string;
+  content: string;
+};
+
 function pascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
@@ -137,6 +163,7 @@ export async function makeMigration(
   }
 
   const loadedModels: LoadedModel[] = [];
+  const pendingPivotMigrations = new Map<string, PendingPivotMigration>();
   const timestampSeed = new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, "")
@@ -205,6 +232,14 @@ export async function makeMigration(
       if (!fs.existsSync(migrationsDir)) {
         fs.mkdirSync(migrationsDir, { recursive: true });
       }
+      const files = fs.readdirSync(migrationsDir);
+      const createFile = files.find((f) =>
+        f.includes(`create_${ModelClass.tableName}_table.ts`)
+      );
+      const updateFile = files.find((f) =>
+        f.includes(`update_${ModelClass.tableName}_table.ts`)
+      );
+      const needsBaselineCreate = !createFile && !updateFile;
       console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
       console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
 
@@ -216,22 +251,15 @@ export async function makeMigration(
         ModelClass.tableName,
         ModelClass.schema,
         driver,
-        true,
-        connectionName
+        !needsBaselineCreate,
+        connectionName,
+        needsBaselineCreate
       );
 
       if ((!mainSQL || mainSQL.trim() === "") && extraTables.length === 0) {
         console.log(chalk.gray(`ℹ️ No new columns or schema changes — skipping.`));
         continue;
       }
-
-      const files = fs.readdirSync(migrationsDir);
-      const createFile = files.find((f) =>
-        f.includes(`create_${ModelClass.tableName}_table.ts`)
-      );
-      const updateFile = files.find((f) =>
-        f.includes(`update_${ModelClass.tableName}_table.ts`)
-      );
 
       // 📆 Generate timestamp (always fresh)
       const timestampBase = nextTimestamp();
@@ -297,20 +325,33 @@ export async function down(db: { query(sql: string): Promise<void> }) {
 }`;
 
       if (hasMainSQL || !pivotSeparate) {
-        // ✅ Clean logic: only keep 1 file per model
-        if (createFile) {
-          fs.unlinkSync(path.join(migrationsDir, createFile));
-          console.log(chalk.gray(`🧹 Removed outdated CREATE migration: ${createFile}`));
-        }
-        if (updateFile) {
-          fs.unlinkSync(path.join(migrationsDir, updateFile));
-          console.log(chalk.gray(`🧹 Removed old UPDATE migration: ${updateFile}`));
-        }
+        const unchangedFile =
+          prefix === "create"
+            ? createFile && hasSameGeneratedBody(path.join(migrationsDir, createFile), migrationContent)
+              ? createFile
+              : null
+            : updateFile && hasSameGeneratedBody(path.join(migrationsDir, updateFile), migrationContent)
+              ? updateFile
+              : null;
 
-        fs.writeFileSync(migrationPath, migrationContent, "utf8");
+        if (unchangedFile) {
+          console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
+        } else {
+          // ✅ Clean logic: only keep 1 file per model
+          if (createFile) {
+            fs.unlinkSync(path.join(migrationsDir, createFile));
+            console.log(chalk.gray(`🧹 Removed outdated CREATE migration: ${createFile}`));
+          }
+          if (updateFile) {
+            fs.unlinkSync(path.join(migrationsDir, updateFile));
+            console.log(chalk.gray(`🧹 Removed old UPDATE migration: ${updateFile}`));
+          }
 
-        const label = prefix === "create" ? "CREATE" : "UPDATE";
-        console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
+          fs.writeFileSync(migrationPath, migrationContent, "utf8");
+
+          const label = prefix === "create" ? "CREATE" : "UPDATE";
+          console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
+        }
       }
 
       if (pivotSeparate && extraTables.length > 0) {
@@ -323,24 +364,6 @@ export async function down(db: { query(sql: string): Promise<void> }) {
           const safeRollbackPivotSql = (
             rollbackExtraTables[pivotIndex] ?? `DROP TABLE IF EXISTS ${pivotTable};`
           ).replace(/`/g, "\\`");
-          const existingPivotFiles = fs
-            .readdirSync(migrationsDir)
-            .filter((f) => /_create_[A-Za-z0-9_]+_table\.ts$/.test(f))
-            .filter((f) => f.includes(`_create_${pivotTable}_table.ts`));
-          if (pivotTable !== "pivot") {
-            const genericPivotFiles = fs
-              .readdirSync(migrationsDir)
-              .filter((f) => f.includes("_create_pivot_table.ts"));
-            existingPivotFiles.push(...genericPivotFiles);
-          }
-          for (const oldPivot of existingPivotFiles) {
-            fs.unlinkSync(path.join(migrationsDir, oldPivot));
-            console.log(chalk.gray(`🧹 Removed old PIVOT migration: ${oldPivot}`));
-          }
-
-          const pivotTimestamp = nextTimestamp();
-          const pivotFile = `${pivotTimestamp}_create_${pivotTable}_table.ts`;
-          const pivotPath = path.join(migrationsDir, pivotFile);
           const pivotHeader = `/**
  * ✅ Auto-generated CREATE migration for ${pivotTable}
  * Connection: ${connectionName}
@@ -355,14 +378,55 @@ export async function up(db: { query(sql: string): Promise<void> }) {
 export async function down(db: { query(sql: string): Promise<void> }) {
   await db.query(\`${safeRollbackPivotSql}\`);
 }`;
-          fs.writeFileSync(pivotPath, pivotContent, "utf8");
-          console.log(chalk.green(`📄 Pivot migration saved: ${pivotPath}`));
+          pendingPivotMigrations.set(`${connectionName}:${pivotTable}`, {
+            connectionName,
+            migrationsDir,
+            pivotTable,
+            content: pivotContent,
+          });
         }
       }
     } catch (err) {
       console.error(chalk.red(`â‌Œ Error processing ${file}:`));
       console.error(err instanceof Error ? err.message : err);
     }
+  }
+
+  for (const pendingPivot of pendingPivotMigrations.values()) {
+    const allFiles = fs
+      .readdirSync(pendingPivot.migrationsDir)
+      .filter((f) => f.endsWith(".ts") || f.endsWith(".js"));
+    const existingPivotFiles = allFiles
+      .filter((f) => /_create_[A-Za-z0-9_]+_table\.ts$/.test(f))
+      .filter((f) => f.includes(`_create_${pendingPivot.pivotTable}_table.ts`));
+    if (pendingPivot.pivotTable !== "pivot") {
+      const genericPivotFiles = allFiles.filter((f) => f.includes("_create_pivot_table.ts"));
+      existingPivotFiles.push(...genericPivotFiles);
+    }
+
+    const maxBaseTimestamp = allFiles
+      .filter((fileName) => !existingPivotFiles.includes(fileName))
+      .map(migrationTimestampPrefix)
+      .reduce((max, current) => (current > max ? current : max), "");
+
+    const unchangedPivot = existingPivotFiles.find((fileName) =>
+      hasSameGeneratedBody(path.join(pendingPivot.migrationsDir, fileName), pendingPivot.content)
+    );
+    if (unchangedPivot && migrationTimestampPrefix(unchangedPivot) > maxBaseTimestamp) {
+      console.log(chalk.gray(`ℹ️ Pivot migration unchanged: ${unchangedPivot}`));
+      continue;
+    }
+
+    for (const oldPivot of existingPivotFiles) {
+      fs.unlinkSync(path.join(pendingPivot.migrationsDir, oldPivot));
+      console.log(chalk.gray(`🧹 Removed old PIVOT migration: ${oldPivot}`));
+    }
+
+    const pivotTimestamp = nextTimestamp();
+    const pivotFile = `${pivotTimestamp}_create_${pendingPivot.pivotTable}_table.ts`;
+    const pivotPath = path.join(pendingPivot.migrationsDir, pivotFile);
+    fs.writeFileSync(pivotPath, pendingPivot.content, "utf8");
+    console.log(chalk.green(`📄 Pivot migration saved: ${pivotPath}`));
   }
 
   try {

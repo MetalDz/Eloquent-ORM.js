@@ -19,13 +19,27 @@ export interface SchemaBuildResult {
   rollbackExtraTables: string[];
 }
 
+type ConstraintDefinition = {
+  key: string;
+  createSql: string;
+  addClause: string;
+  dropClause: string;
+};
+
+type ExistingConstraint = {
+  key: string;
+  addClause: string;
+  dropClause: string;
+};
+
 export class SchemaBuilder {
   static async toCreateSQL(
     tableName: string,
     schema: Record<string, SchemaField>,
     explicitDialect?: Dialect | string,
     smartUpdate: boolean = false,
-    connectionNameOverride?: string
+    connectionNameOverride?: string,
+    forceCreate: boolean = false
   ): Promise<SchemaBuildResult> {
     const supportedDialects: Dialect[] = ["mysql", "pg", "sqlite"];
     let dialectName = supportedDialects.includes(explicitDialect as Dialect)
@@ -56,6 +70,7 @@ export class SchemaBuilder {
     const extraTables: string[] = [];
     const rollbackExtraTables: string[] = [];
     const columnSqlByName = new Map<string, string>();
+    const desiredConstraintsByKey = new Map<string, ConstraintDefinition>();
 
     for (const [name, field] of Object.entries(schema)) {
       switch (field.kind) {
@@ -77,7 +92,10 @@ export class SchemaBuilder {
                   columnSqlByName.set(col.name, col.sql);
                 }
               }
-              columns.push(...rel.constraints);
+              columns.push(...rel.constraints.map((constraint) => constraint.createSql));
+              for (const constraint of rel.constraints) {
+                desiredConstraintsByKey.set(constraint.key, constraint);
+              }
             }
             if (rel.type === "pivot") {
               extraTables.push(rel.sql);
@@ -119,12 +137,14 @@ export class SchemaBuilder {
     let tableExists = false;
     let existingColumns: string[] = [];
     const existingColumnSqlByName = new Map<string, string>();
+    const existingConstraintsByKey = new Map<string, ExistingConstraint>();
 
-    try {
-      const { getAdapter } = await import("../connection/ConnectionFactory");
-      const adapter = await getAdapter(
-        ((connectionNameOverride as unknown) || dialectName) as any
-      );
+    if (!forceCreate) {
+      try {
+        const { getAdapter } = await import("../connection/ConnectionFactory");
+        const adapter = await getAdapter(
+          ((connectionNameOverride as unknown) || dialectName) as any
+        );
 
       if (dialectName === "mysql") {
         const rows = await adapter.query<Record<string, unknown>>(
@@ -145,6 +165,10 @@ export class SchemaBuilder {
           existingColumns = cols.map((c) => c.Field);
           for (const c of cols) {
             existingColumnSqlByName.set(c.Field, this.mysqlColumnSQL(c, dialect));
+          }
+          const constraints = await this.mysqlForeignKeys(adapter, tableName, dialect);
+          for (const constraint of constraints) {
+            existingConstraintsByKey.set(constraint.key, constraint);
           }
         }
       } else if (dialectName === "pg") {
@@ -177,6 +201,10 @@ export class SchemaBuilder {
         for (const r of rows) {
           existingColumnSqlByName.set(r.column_name, this.pgColumnSQL(r, dialect));
         }
+        const constraints = await this.pgForeignKeys(adapter, tableName, dialect);
+        for (const constraint of constraints) {
+          existingConstraintsByKey.set(constraint.key, constraint);
+        }
       } else if (dialectName === "sqlite") {
         const rows = await adapter.query<{
           name: string;
@@ -190,9 +218,15 @@ export class SchemaBuilder {
         for (const r of rows) {
           existingColumnSqlByName.set(r.name, this.sqliteColumnSQL(r, dialect));
         }
+        const constraints = await this.sqliteForeignKeys(adapter, tableName, dialect);
+        for (const constraint of constraints) {
+          existingConstraintsByKey.set(constraint.key, constraint);
+        }
       }
     } catch {
       console.warn(`âڑ ï¸ڈ Could not verify structure for '${tableName}'.`);
+    }
+
     }
 
     let mainSQL = "";
@@ -206,6 +240,8 @@ export class SchemaBuilder {
       const missingColumns: string[] = [];
       const missingColumnNames: string[] = [];
       const dropColumns: string[] = [];
+      const addConstraints: ConstraintDefinition[] = [];
+      const dropConstraints: ExistingConstraint[] = [];
 
       // ًں§© Detect new columns
       for (const colName of schemaColumns) {
@@ -228,8 +264,25 @@ export class SchemaBuilder {
         }
       }
 
+      for (const [key, constraint] of desiredConstraintsByKey.entries()) {
+        if (!existingConstraintsByKey.has(key) && constraint.addClause.trim().length > 0) {
+          addConstraints.push(constraint);
+        }
+      }
+
+      for (const [key, constraint] of existingConstraintsByKey.entries()) {
+        if (!desiredConstraintsByKey.has(key) && constraint.dropClause.trim().length > 0) {
+          dropConstraints.push(constraint);
+        }
+      }
+
       // ًں§© Nothing to change
-      if (missingColumns.length === 0 && dropColumns.length === 0) {
+      if (
+        missingColumns.length === 0 &&
+        dropColumns.length === 0 &&
+        addConstraints.length === 0 &&
+        dropConstraints.length === 0
+      ) {
         console.log(`ًں§¬ No schema differences for '${tableName}'.`);
       } else {
         // Order timestamps last
@@ -242,14 +295,27 @@ export class SchemaBuilder {
           (c) => !c.includes(createdAtToken) && !c.includes(updatedAtToken)
         );
 
-        const addSQL = [...normalCols, ...lastCols]
+        const addColumnSQL = [...normalCols, ...lastCols]
           .map((c) => `ADD COLUMN ${c}`)
           .join(",\n  ");
-        const dropSQL = dropColumns
+        const addConstraintSQL = addConstraints
+          .map((constraint) => constraint.addClause)
+          .join(",\n  ");
+        const dropConstraintSQL = dropConstraints
+          .map((constraint) => constraint.dropClause)
+          .join(",\n  ");
+        const dropColumnSQL = dropColumns
           .map((name) => `DROP COLUMN ${dialect.wrap(name)}`)
           .join(",\n  ");
 
-        const combined = [addSQL, dropSQL].filter(Boolean).join(",\n  ");
+        const combined = [
+          dropConstraintSQL,
+          dropColumnSQL,
+          addColumnSQL,
+          addConstraintSQL,
+        ]
+          .filter(Boolean)
+          .join(",\n  ");
         mainSQL = `ALTER TABLE ${dialect.wrap(tableName)}\n  ${combined};`;
 
         const restoreDroppedSQL = dropColumns
@@ -259,7 +325,18 @@ export class SchemaBuilder {
         const dropAddedSQL = missingColumnNames.map(
           (name) => `DROP COLUMN ${dialect.wrap(name)}`
         );
-        const rollbackCombined = [...restoreDroppedSQL, ...dropAddedSQL]
+        const rollbackDropConstraints = addConstraints
+          .map((constraint) => constraint.dropClause)
+          .filter(Boolean);
+        const rollbackAddConstraints = dropConstraints
+          .map((constraint) => constraint.addClause)
+          .filter(Boolean);
+        const rollbackCombined = [
+          ...rollbackDropConstraints,
+          ...dropAddedSQL,
+          ...restoreDroppedSQL,
+          ...rollbackAddConstraints,
+        ]
           .filter(Boolean)
           .join(",\n  ");
         if (rollbackCombined.length > 0) {
@@ -269,6 +346,8 @@ export class SchemaBuilder {
         console.log(
           `Schema diff -> +[${missingColumnNames.join(", ") || "-"}], -[${
             dropColumns.join(", ") || "-"
+          }], +fk[${addConstraints.map((constraint) => constraint.key).join(", ") || "-"}], -fk[${
+            dropConstraints.map((constraint) => constraint.key).join(", ") || "-"
           }]`
         );
       }
@@ -377,7 +456,7 @@ export class SchemaBuilder {
     dialect: SQLDialect,
     dialectName: Dialect
   ): 
-    | { type: "inline"; columns: Array<{ name: string; sql: string }>; constraints: string[] }
+    | { type: "inline"; columns: Array<{ name: string; sql: string }>; constraints: ConstraintDefinition[] }
     | { type: "pivot"; sql: string; tableName: string }
     | { type: "morph"; sqls: string[]; columns: Array<{ name: string; sql: string }> }
     | null {
@@ -387,10 +466,17 @@ export class SchemaBuilder {
 
     if (r.relation === "belongsTo" && r.options.foreignKey && r.model) {
       const fk = r.options.foreignKey;
+      const referencedTable = this.referencedTableName(r.model);
+      const referencedColumn = r.options.localKey ?? "id";
       const colSql = `${wrap(fk)} ${integerType}`;
-      const fkSql = `FOREIGN KEY (${wrap(fk)}) REFERENCES ${wrap(
-        r.model.toLowerCase() + "s"
-      )}(${wrap(r.options.localKey ?? "id")})`;
+      const fkSql = this.foreignKeyConstraintDefinition(
+        currentTable,
+        fk,
+        referencedTable,
+        referencedColumn,
+        dialect,
+        dialectName
+      );
       return {
         type: "inline",
         columns: [{ name: fk, sql: colSql }],
@@ -408,13 +494,21 @@ export class SchemaBuilder {
       const keyB = tableB.endsWith("s") ? tableB.slice(0, -1) : tableB;
 
       const pivotTable = [keyA, keyB].sort().join("_") + "_pivot";
+      const pivotSides = [
+        { key: keyA, table: tableA },
+        { key: keyB, table: tableB },
+      ].sort((left, right) => left.key.localeCompare(right.key));
 
       const pivotSQL = dialect.formatCreateSQL(pivotTable, [
-        `${wrap(keyA + "_id")} ${integerType} NOT NULL`,
-        `${wrap(keyB + "_id")} ${integerType} NOT NULL`,
-        `PRIMARY KEY (${wrap(keyA + "_id")}, ${wrap(keyB + "_id")})`,
-        `FOREIGN KEY (${wrap(keyA + "_id")}) REFERENCES ${wrap(tableA)}(${wrap("id")})`,
-        `FOREIGN KEY (${wrap(keyB + "_id")}) REFERENCES ${wrap(tableB)}(${wrap("id")})`,
+        `${wrap(pivotSides[0].key + "_id")} ${integerType} NOT NULL`,
+        `${wrap(pivotSides[1].key + "_id")} ${integerType} NOT NULL`,
+        `PRIMARY KEY (${wrap(pivotSides[0].key + "_id")}, ${wrap(pivotSides[1].key + "_id")})`,
+        `FOREIGN KEY (${wrap(pivotSides[0].key + "_id")}) REFERENCES ${wrap(
+          pivotSides[0].table
+        )}(${wrap("id")})`,
+        `FOREIGN KEY (${wrap(pivotSides[1].key + "_id")}) REFERENCES ${wrap(
+          pivotSides[1].table
+        )}(${wrap("id")})`,
       ]);
 
       return { type: "pivot", sql: pivotSQL, tableName: pivotTable };
@@ -561,6 +655,181 @@ export class SchemaBuilder {
     if (column.pk === 1) parts.push("PRIMARY KEY");
     return parts.join(" ");
   }
+
+  private static referencedTableName(model: string): string {
+    return model.toLowerCase().endsWith("s") ? model.toLowerCase() : `${model.toLowerCase()}s`;
+  }
+
+  private static foreignKeyConstraintName(tableName: string, foreignKey: string): string {
+    return `${tableName}_${foreignKey}_foreign`;
+  }
+
+  private static foreignKeyConstraintKey(
+    foreignKey: string,
+    referencedTable: string,
+    referencedColumn: string
+  ): string {
+    return `fk:${foreignKey}:${referencedTable}:${referencedColumn}`;
+  }
+
+  private static foreignKeyConstraintDefinition(
+    tableName: string,
+    foreignKey: string,
+    referencedTable: string,
+    referencedColumn: string,
+    dialect: SQLDialect,
+    dialectName: Dialect,
+    existingName?: string
+  ): ConstraintDefinition {
+    const wrap = (value: string) => dialect.wrap(value);
+    const constraintName = existingName ?? this.foreignKeyConstraintName(tableName, foreignKey);
+    const key = this.foreignKeyConstraintKey(foreignKey, referencedTable, referencedColumn);
+    const createSql = `FOREIGN KEY (${wrap(foreignKey)}) REFERENCES ${wrap(referencedTable)}(${wrap(
+      referencedColumn
+    )})`;
+    const addClause =
+      dialectName === "sqlite"
+        ? ""
+        : `ADD CONSTRAINT ${wrap(constraintName)} ${createSql}`;
+    const dropClause =
+      dialectName === "mysql"
+        ? `DROP FOREIGN KEY ${wrap(constraintName)}`
+        : dialectName === "pg"
+          ? `DROP CONSTRAINT ${wrap(constraintName)}`
+          : "";
+
+    return {
+      key,
+      createSql,
+      addClause,
+      dropClause,
+    };
+  }
+
+  private static async mysqlForeignKeys(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+      placeholder(index: number): string;
+    },
+    tableName: string,
+    dialect: SQLDialect
+  ): Promise<ExistingConstraint[]> {
+    const rows = await adapter.query<{
+      constraint_name: string;
+      column_name: string;
+      referenced_table_name: string;
+      referenced_column_name: string;
+    }>(
+      `SELECT
+         CONSTRAINT_NAME AS constraint_name,
+         COLUMN_NAME AS column_name,
+         REFERENCED_TABLE_NAME AS referenced_table_name,
+         REFERENCED_COLUMN_NAME AS referenced_column_name
+       FROM information_schema.KEY_COLUMN_USAGE
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = ${adapter.placeholder(1)}
+         AND REFERENCED_TABLE_NAME IS NOT NULL`,
+      [tableName]
+    );
+
+    return rows.map((row) => {
+      const definition = this.foreignKeyConstraintDefinition(
+        tableName,
+        row.column_name,
+        row.referenced_table_name,
+        row.referenced_column_name,
+        dialect,
+        "mysql",
+        row.constraint_name
+      );
+      return {
+        key: definition.key,
+        addClause: definition.addClause,
+        dropClause: definition.dropClause,
+      };
+    });
+  }
+
+  private static async pgForeignKeys(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+      placeholder(index: number): string;
+    },
+    tableName: string,
+    dialect: SQLDialect
+  ): Promise<ExistingConstraint[]> {
+    const rows = await adapter.query<{
+      constraint_name: string;
+      column_name: string;
+      referenced_table_name: string;
+      referenced_column_name: string;
+    }>(
+      `SELECT
+         tc.constraint_name,
+         kcu.column_name,
+         ccu.table_name AS referenced_table_name,
+         ccu.column_name AS referenced_column_name
+       FROM information_schema.table_constraints tc
+       JOIN information_schema.key_column_usage kcu
+         ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+       JOIN information_schema.constraint_column_usage ccu
+         ON ccu.constraint_name = tc.constraint_name
+        AND ccu.table_schema = tc.table_schema
+       WHERE tc.constraint_type = 'FOREIGN KEY'
+         AND tc.table_schema = current_schema()
+         AND tc.table_name = ${adapter.placeholder(1)}`,
+      [tableName]
+    );
+
+    return rows.map((row) => {
+      const definition = this.foreignKeyConstraintDefinition(
+        tableName,
+        row.column_name,
+        row.referenced_table_name,
+        row.referenced_column_name,
+        dialect,
+        "pg",
+        row.constraint_name
+      );
+      return {
+        key: definition.key,
+        addClause: definition.addClause,
+        dropClause: definition.dropClause,
+      };
+    });
+  }
+
+  private static async sqliteForeignKeys(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+    },
+    tableName: string,
+    dialect: SQLDialect
+  ): Promise<ExistingConstraint[]> {
+    const rows = await adapter.query<{
+      table: string;
+      from: string;
+      to: string;
+    }>(`PRAGMA foreign_key_list(${dialect.wrap(tableName)});`);
+
+    return rows.map((row) => {
+      const definition = this.foreignKeyConstraintDefinition(
+        tableName,
+        row.from,
+        row.table,
+        row.to || "id",
+        dialect,
+        "sqlite"
+      );
+      return {
+        key: definition.key,
+        addClause: definition.addClause,
+        dropClause: definition.dropClause,
+      };
+    });
+  }
+
   private static mixinSQL(m: MixinDefinition, dialectName: Dialect, dialect: SQLDialect): string[] {
     switch (m.name) {
       case "SoftDeletes":

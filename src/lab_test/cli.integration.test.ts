@@ -632,7 +632,9 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     const migrationFiles = fs
       .readdirSync(testMigrationsDir())
       .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
-    expect(migrationFiles.length).toBeGreaterThan(0);
+    expect(migrationFiles.some((file) => file.includes("create_comments_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_users_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_posts_table"))).toBe(true);
   });
 
   test("migrate:run --test exits cleanly", () => {
@@ -689,6 +691,14 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
   });
 
   test("make:scenario media --test exits cleanly", () => {
+    const blockedArgs = ["make:scenario", "media", "--test"];
+    const blockedResult = runCli(blockedArgs, 180000);
+
+    expect(blockedResult.status).toBe(1);
+    expect(blockedResult.combined).toContain(
+      'Existing test scenario "blog" is active. Re-run with --force to replace it.'
+    );
+
     const args = [
       "make:scenario",
       "media",
@@ -703,6 +713,34 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     expect(result.combined).toContain("Scenario generation complete");
     expect(result.combined).toContain("MediaScenarioSeeder");
     expect(result.combined).toContain("Seeder created:");
+    expect(result.combined).toContain("Run `eloquent migrate:fresh --test --force` before `migrate:run`");
+    expect(fs.existsSync(path.join(rootDir, "src/test/database/models/Post.ts"))).toBe(false);
+    expect(fs.existsSync(path.join(rootDir, "src/test/database/factories/PostFactory.ts"))).toBe(
+      false
+    );
+    expect(fs.existsSync(path.join(rootDir, "src/test/database/seeds/BlogScenarioSeeder.ts"))).toBe(
+      false
+    );
+    expect(fs.existsSync(path.join(rootDir, "src/test/database/models/Photo.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(rootDir, "src/test/database/models/Video.ts"))).toBe(true);
+
+    const migrationFiles = fs
+      .readdirSync(testMigrationsDir())
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+    expect(migrationFiles.some((file) => file.includes("create_photos_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_videos_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_posts_table"))).toBe(false);
+    expect(migrationFiles.some((file) => file.includes("create_post_user_pivot_table"))).toBe(
+      false
+    );
+  });
+
+  test("make:scenario without --test fails closed", () => {
+    const args = ["make:scenario", "media"];
+    const result = runCli(args);
+
+    expect(result.status).toBe(1);
+    expect(result.combined).toContain("make:scenario is test-only. Use --test to generate scenarios.");
   });
 });
 
@@ -936,7 +974,7 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       const result = runCli(args, 240000, undefined, testMysqlEnv());
 
       assertCliSuccess(result, args);
-      expect(result.combined).toContain("Pivot migration saved");
+      expect(result.combined).toMatch(/Pivot migration (saved|unchanged)/);
 
       const migrationFiles = fs
         .readdirSync(connectionMigrationsDir(true, "mysql_test"))
@@ -974,7 +1012,18 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     const migrationFiles = fs
       .readdirSync(pgMigrationsDir)
       .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
-    expect(migrationFiles.length).toBeGreaterThan(0);
+    expect(migrationFiles.some((file) => file.includes("create_comments_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_users_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_posts_table"))).toBe(true);
+
+    const rerunResult = runCli(args, 240000, undefined, testPgEnv());
+    assertCliSuccess(rerunResult, args);
+    expect(rerunResult.combined).toContain("Migration unchanged");
+
+    const rerunFiles = fs
+      .readdirSync(pgMigrationsDir)
+      .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+    expect(rerunFiles).toEqual(migrationFiles);
   });
 
   test("make:migration --all --all-connections emits app migrations for all SQL drivers", () => {
@@ -999,9 +1048,9 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
         .readdirSync(dir)
         .filter((file) => file.endsWith(".ts") || file.endsWith(".js")).length;
 
-    expect(countFiles(mysqlMigrationsDir)).toBeGreaterThan(0);
-    expect(countFiles(pgMigrationsDir)).toBeGreaterThan(0);
-    expect(countFiles(sqliteMigrationsDir)).toBeGreaterThan(0);
+    expect(countFiles(mysqlMigrationsDir)).toBeGreaterThanOrEqual(3);
+    expect(countFiles(pgMigrationsDir)).toBeGreaterThanOrEqual(3);
+    expect(countFiles(sqliteMigrationsDir)).toBeGreaterThanOrEqual(3);
   });
 
   test("make:migration User --test generates only the single model migration", () => {
@@ -1037,7 +1086,7 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
     const result = runCli(args, 240000, undefined, testSqliteEnv());
 
     assertCliSuccess(result, args);
-    expect(result.combined).toContain("Pivot migration saved");
+    expect(result.combined).toMatch(/Pivot migration (saved|unchanged)/);
     expect(result.combined).toContain('Running migrations in TEST mode on "sqlite_test"');
   });
 
@@ -1105,7 +1154,7 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       const result = runCli(args, 240000, undefined, appSqliteEnv());
 
       assertCliSuccess(result, args);
-      expect(result.combined).toContain("Pivot migration saved");
+      expect(result.combined).toMatch(/Pivot migration (saved|unchanged)/);
       expect(result.combined).toContain(
         'Running migrations in DEVELOPMENT mode on "sqlite"'
       );
@@ -1135,7 +1184,7 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       const result = runCli(args, 240000, undefined, appMysqlEnv());
 
       assertCliSuccess(result, args);
-      expect(result.combined).toContain("Pivot migration saved");
+      expect(result.combined).toMatch(/Pivot migration (saved|unchanged)/);
       expect(result.combined).toContain(
         'Running migrations in DEVELOPMENT mode on "mysql"'
       );
@@ -1165,7 +1214,7 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
       const result = runCli(args, 240000, undefined, appPgEnv());
 
       assertCliSuccess(result, args);
-      expect(result.combined).toContain("Pivot migration saved");
+      expect(result.combined).toMatch(/Pivot migration (saved|unchanged)/);
       expect(result.combined).toContain(
         'Running migrations in DEVELOPMENT mode on "pg"'
       );

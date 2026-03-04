@@ -6,7 +6,7 @@ import { makeFactory } from "./makeFactory";
 import { makeController } from "./makeController";
 import { makeService } from "./makeService";
 import { makeMigration } from "./makeMigration";
-import { migrateRun } from "./migrateRun";
+import { migrateFresh } from "./migrateFresh";
 import { dbSeed } from "./dbSeed";
 import { ImportResolver } from "../utils/ImportResolver";
 
@@ -32,6 +32,13 @@ type ScenarioPreset = {
   models: ModelSpec[];
   seedName: string;
   seedBody: string[];
+};
+
+type ScenarioManifest = {
+  presetId: string;
+  generatedAt: string;
+  models: string[];
+  seedName: string;
 };
 
 function renderModel(spec: ModelSpec): string {
@@ -381,6 +388,131 @@ const mediaPreset: ScenarioPreset = {
 
 const presets: ScenarioPreset[] = [blogPreset, mediaPreset];
 
+const scenarioManifestPath = path.resolve(
+  PathMap.root,
+  "src/test/.eloquent-scenario.json"
+);
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function scenarioManagedModelNames(): string[] {
+  return Array.from(new Set(presets.flatMap((preset) => preset.models.map((model) => model.name))));
+}
+
+function scenarioManagedTables(): string[] {
+  return Array.from(new Set(presets.flatMap((preset) => preset.models.map((model) => model.table))));
+}
+
+function scenarioManagedSeeders(): string[] {
+  return Array.from(new Set(presets.map((preset) => preset.seedName)));
+}
+
+function scenarioManagedPivotFactories(): string[] {
+  return [
+    "PhotoUserPivotFactory",
+    "PostUserPivotFactory",
+    "UserPhotoPivotFactory",
+    "UserPostPivotFactory",
+  ];
+}
+
+function scenarioManagedPivotTables(): string[] {
+  return ["photo_user_pivot", "post_user_pivot"];
+}
+
+function removeFileIfExists(filePath: string): boolean {
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+  fs.rmSync(filePath, { force: true });
+  return true;
+}
+
+function readScenarioManifest(): ScenarioManifest | null {
+  if (!fs.existsSync(scenarioManifestPath)) {
+    return null;
+  }
+
+  try {
+    const content = fs.readFileSync(scenarioManifestPath, "utf8");
+    return JSON.parse(content) as ScenarioManifest;
+  } catch {
+    return null;
+  }
+}
+
+function writeScenarioManifest(preset: ScenarioPreset): void {
+  const payload: ScenarioManifest = {
+    presetId: preset.id,
+    generatedAt: new Date().toISOString(),
+    models: preset.models.map((model) => model.name),
+    seedName: preset.seedName,
+  };
+
+  fs.mkdirSync(path.dirname(scenarioManifestPath), { recursive: true });
+  fs.writeFileSync(scenarioManifestPath, JSON.stringify(payload, null, 2), "utf8");
+}
+
+function cleanupScenarioArtifacts(): number {
+  let removedCount = 0;
+  const modelNames = scenarioManagedModelNames();
+  const seederNames = scenarioManagedSeeders();
+  const tableNames = [...scenarioManagedTables(), ...scenarioManagedPivotTables()];
+  const migrationPattern = new RegExp(
+    `^\\d+_(create|update)_(${tableNames.map(escapeRegex).join("|")})_table\\.(ts|js)$`
+  );
+
+  const modelsDir = PathMap.models(true);
+  const factoriesDir = PathMap.factories(true);
+  const seedsDir = PathMap.seeds(true);
+  const controllersDir = path.resolve(PathMap.root, "src/test/controllers");
+  const servicesDir = path.resolve(PathMap.root, "src/test/services");
+  const migrationsRoot = PathMap.migrations(true);
+
+  for (const modelName of modelNames) {
+    removedCount += Number(removeFileIfExists(path.join(modelsDir, `${modelName}.ts`)));
+    removedCount += Number(removeFileIfExists(path.join(factoriesDir, `${modelName}Factory.ts`)));
+    removedCount += Number(removeFileIfExists(path.join(controllersDir, `${modelName}Controller.ts`)));
+    removedCount += Number(removeFileIfExists(path.join(servicesDir, `${modelName}Service.ts`)));
+  }
+
+  for (const pivotFactory of scenarioManagedPivotFactories()) {
+    removedCount += Number(removeFileIfExists(path.join(factoriesDir, `${pivotFactory}.ts`)));
+  }
+
+  for (const seedName of seederNames) {
+    removedCount += Number(removeFileIfExists(path.join(seedsDir, `${seedName}.ts`)));
+  }
+
+  removedCount += Number(removeFileIfExists(scenarioManifestPath));
+
+  const migrationDirs = [migrationsRoot];
+  if (fs.existsSync(migrationsRoot)) {
+    for (const entry of fs.readdirSync(migrationsRoot, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        migrationDirs.push(path.join(migrationsRoot, entry.name));
+      }
+    }
+  }
+
+  for (const dir of migrationDirs) {
+    if (!fs.existsSync(dir)) {
+      continue;
+    }
+
+    for (const entry of fs.readdirSync(dir)) {
+      if (!migrationPattern.test(entry)) {
+        continue;
+      }
+      removedCount += Number(removeFileIfExists(path.join(dir, entry)));
+    }
+  }
+
+  return removedCount;
+}
+
 function selectPreset(name: string | undefined): ScenarioPreset {
   if (name) {
     const hit = presets.find((p) => p.id === name.toLowerCase());
@@ -395,12 +527,27 @@ export async function makeScenario(
 ): Promise<void> {
   const isTest = options.test === true;
   if (!isTest) {
-    console.log(chalk.yellow("Use --test to generate scenarios in the test folders."));
+    throw new Error("make:scenario is test-only. Use --test to generate scenarios.");
   }
 
   const preset = selectPreset(options.preset ?? name);
   console.log(chalk.cyanBright(`\nScenario preset: ${preset.id}`));
   console.log(chalk.gray(preset.description));
+
+  const existingManifest = readScenarioManifest();
+  const presetChanged = existingManifest?.presetId !== undefined && existingManifest.presetId !== preset.id;
+  if (presetChanged && options.force !== true) {
+    throw new Error(
+      `Existing test scenario "${existingManifest?.presetId}" is active. Re-run with --force to replace it.`
+    );
+  }
+
+  if (options.force === true) {
+    const removedArtifacts = cleanupScenarioArtifacts();
+    if (removedArtifacts > 0) {
+      console.log(chalk.yellow(`Force cleanup removed ${removedArtifacts} stale scenario artifact(s).`));
+    }
+  }
 
   PathMap.ensureDirs();
   const modelsDir = PathMap.models(true);
@@ -497,12 +644,20 @@ export async function ${preset.seedName}() {
   fs.writeFileSync(seederPath, seedContent, "utf8");
   console.log(chalk.green(`Seeder created: ${seederPath}`));
 
+  writeScenarioManifest(preset);
+
   // 4) Migrations
   await makeMigration("all", { test: true, exit: false });
 
   if (options.run) {
-    await migrateRun(true, undefined, false, false);
+    await migrateFresh({ test: true, force: true });
     await dbSeed({ test: true, class: preset.seedName, close: true, exit: false });
+  } else if (presetChanged) {
+    console.log(
+      chalk.yellow(
+        "Scenario preset changed. Run `eloquent migrate:fresh --test --force` before `migrate:run` to reset old scenario tables and history."
+      )
+    );
   }
 
   console.log(chalk.greenBright("\nScenario generation complete.\n"));

@@ -258,14 +258,20 @@ program
     run?: boolean;
     force?: boolean;
   }) => {
-    await makeScenario(name, {
-      test: !!options.test,
-      preset: options.preset,
-      controllers: !!options.controllers,
-      services: !!options.services,
-      run: !!options.run,
-      force: !!options.force,
-    });
+    try {
+      await makeScenario(name, {
+        test: !!options.test,
+        preset: options.preset,
+        controllers: !!options.controllers,
+        services: !!options.services,
+        run: !!options.run,
+        force: !!options.force,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`â‌Œ ${message}`));
+      process.exitCode = 1;
+    }
   });
 
 
