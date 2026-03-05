@@ -4,3 +4,7 @@ dist
 src/test
 coverage
 src/app
+cli.integration.app.sqlite
+cli.integration.app.sqlite-journal
+database.sqlite
+database.sqlite-journal
