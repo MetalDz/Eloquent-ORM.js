@@ -118,7 +118,8 @@ export async function migrateFresh(options: MigrateFreshOptions = {}): Promise<v
     }
   }
 
-  console.log(chalk.yellow("Re-running migrations..."));
+  // Keep the legacy combined line for integration-test compatibility.
+  console.log(chalk.yellow("All tables dropped. Re-running migrations..."));
   await migrateRun(isTest, undefined, false, false, { connectionNames });
 
   if (hadFailure) {
