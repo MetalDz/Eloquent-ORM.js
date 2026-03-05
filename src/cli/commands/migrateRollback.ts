@@ -14,38 +14,46 @@ import {
 } from "../utils/migrations/MigrationTracker";
 import { loadModule } from "../utils/typescript/tsRuntime";
 
-export async function migrateRollback(
-  _dialect: ConnectionName = "mysql",
-  options: { test?: boolean; step?: number } = {}
-): Promise<void> {
-  const isTest = !!options.test;
-  const step = Math.max(1, Number(options.step || 1));
+export type MigrateRollbackOptions = {
+  test?: boolean;
+  step?: number;
+  connectionNames?: ConnectionName[];
+  allMigrations?: boolean;
+};
+
+async function rollbackConnection(
+  connectionName: ConnectionName,
+  isTest: boolean,
+  step: number
+): Promise<boolean> {
+  const stepLabel = step === Number.MAX_SAFE_INTEGER ? "all" : String(step);
 
   console.log(
     chalk.cyan(
-      `\nRolling back migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode (step ${step})...\n`
+      `\nRolling back migrations in ${isTest ? "TEST" : "DEVELOPMENT"} mode on "${connectionName}" (step ${stepLabel})...\n`
     )
   );
 
-  const connectionName = resolveConnectionName(undefined, { test: isTest });
   const migrationsDir = PathMap.migrations(isTest, connectionName);
   if (!fs.existsSync(migrationsDir)) {
     console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
-    return;
+    return true;
   }
+
   const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
   if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
     console.warn(chalk.yellow(`Rollback skipped: "${connectionName}" is not SQL-based.`));
-    return;
+    return true;
   }
 
   const db = await getAdapter(connectionName);
   console.log(chalk.gray(`Connected to ${connectionName}.`));
-  const lockOwner = `migrate:rollback:${process.pid}:${Date.now()}`;
+  const lockOwner = `migrate:rollback:${connectionName}:${process.pid}:${Date.now()}`;
 
   const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
     await db.execute(sql, params);
   };
+
   let lockAcquired = false;
 
   try {
@@ -63,7 +71,7 @@ export async function migrateRollback(
 
     if (rows.length === 0) {
       console.log(chalk.yellow("No migrations found to roll back."));
-      return;
+      return true;
     }
 
     const targetBatches = Array.from(new Set(rows.map((r) => r.batch))).slice(0, step);
@@ -71,7 +79,7 @@ export async function migrateRollback(
 
     if (toRollback.length === 0) {
       console.log(chalk.yellow("Nothing to roll back."));
-      return;
+      return true;
     }
 
     console.log(chalk.gray(`Rolling back ${toRollback.length} migration(s)...`));
@@ -110,14 +118,42 @@ export async function migrateRollback(
     }
 
     console.log(chalk.greenBright(`\n${rolledBack} migration(s) rolled back successfully.\n`));
+    return true;
   } catch (err) {
     console.error(chalk.red("Unable to read or validate migrations table."));
     console.error(err);
+    return false;
   } finally {
     if (lockAcquired) {
       await releaseMigrationLock(db, lockOwner);
     }
     await closeAllConnections();
     console.log(chalk.gray("All database connections closed.\n"));
+  }
+}
+
+export async function migrateRollback(
+  options: MigrateRollbackOptions = {}
+): Promise<void> {
+  const isTest = !!options.test;
+  const step = options.allMigrations
+    ? Number.MAX_SAFE_INTEGER
+    : Math.max(1, Number(options.step || 1));
+
+  const connectionNames =
+    options.connectionNames && options.connectionNames.length > 0
+      ? options.connectionNames
+      : [resolveConnectionName(undefined, { test: isTest })];
+
+  let hadFailure = false;
+  for (const connectionName of connectionNames) {
+    const success = await rollbackConnection(connectionName, isTest, step);
+    if (!success) {
+      hadFailure = true;
+    }
+  }
+
+  if (hadFailure) {
+    process.exitCode = 1;
   }
 }

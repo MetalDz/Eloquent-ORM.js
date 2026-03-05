@@ -71,6 +71,13 @@ export class SchemaBuilder {
     const rollbackExtraTables: string[] = [];
     const columnSqlByName = new Map<string, string>();
     const desiredConstraintsByKey = new Map<string, ConstraintDefinition>();
+    const desiredPivotTables = new Map<
+      string,
+      {
+        createSql: string;
+        dropSql: string;
+      }
+    >();
 
     for (const [name, field] of Object.entries(schema)) {
       switch (field.kind) {
@@ -98,8 +105,10 @@ export class SchemaBuilder {
               }
             }
             if (rel.type === "pivot") {
-              extraTables.push(rel.sql);
-              rollbackExtraTables.push(dialect.formatDropSQL(rel.tableName));
+              desiredPivotTables.set(rel.tableName, {
+                createSql: rel.sql,
+                dropSql: dialect.formatDropSQL(rel.tableName),
+              });
             }
             if (rel.type === "morph") {
               for (const col of rel.columns) {
@@ -138,6 +147,12 @@ export class SchemaBuilder {
     let existingColumns: string[] = [];
     const existingColumnSqlByName = new Map<string, string>();
     const existingConstraintsByKey = new Map<string, ExistingConstraint>();
+    let introspectionAdapter:
+      | {
+          query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+          placeholder(index: number): string;
+        }
+      | null = null;
 
     if (!forceCreate) {
       try {
@@ -145,6 +160,7 @@ export class SchemaBuilder {
         const adapter = await getAdapter(
           ((connectionNameOverride as unknown) || dialectName) as any
         );
+        introspectionAdapter = adapter;
 
       if (dialectName === "mysql") {
         const rows = await adapter.query<Record<string, unknown>>(
@@ -229,6 +245,29 @@ export class SchemaBuilder {
 
     }
 
+    if (desiredPivotTables.size > 0) {
+      if (!tableExists || !smartUpdate) {
+        for (const pivotTable of desiredPivotTables.values()) {
+          extraTables.push(pivotTable.createSql);
+          rollbackExtraTables.push(pivotTable.dropSql);
+        }
+      } else {
+        for (const [pivotName, pivotTable] of desiredPivotTables.entries()) {
+          const exists =
+            introspectionAdapter &&
+            (await this.pivotTableExists(
+              introspectionAdapter,
+              dialectName,
+              dialect,
+              pivotName
+            ));
+          if (exists) continue;
+          extraTables.push(pivotTable.createSql);
+          rollbackExtraTables.push(pivotTable.dropSql);
+        }
+      }
+    }
+
     let mainSQL = "";
     let rollbackMainSQL = "";
 
@@ -258,7 +297,7 @@ export class SchemaBuilder {
       for (const existing of existingColumns) {
         if (
           !schemaColumns.includes(existing) &&
-          !["id", "created_at", "updated_at", "deleted_at"].includes(existing)
+          !["id", "created_at", "updated_at"].includes(existing)
         ) {
           dropColumns.push(existing);
         }
@@ -528,6 +567,17 @@ export class SchemaBuilder {
           { name: typeName, sql: typeSql },
         ],
       };
+    }
+
+    // Inverse-side relations do not own columns on the current table.
+    // Their schema effects are represented by belongsTo / morphTo on the related model.
+    if (
+      r.relation === "hasOne" ||
+      r.relation === "hasMany" ||
+      r.relation === "morphOne" ||
+      r.relation === "morphMany"
+    ) {
+      return null;
     }
 
     return null;
@@ -828,6 +878,44 @@ export class SchemaBuilder {
         dropClause: definition.dropClause,
       };
     });
+  }
+
+  private static async pivotTableExists(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+      placeholder(index: number): string;
+    },
+    dialectName: Dialect,
+    dialect: SQLDialect,
+    pivotTable: string
+  ): Promise<boolean> {
+    if (dialectName === "mysql") {
+      const rows = await adapter.query<Record<string, unknown>>(
+        `SHOW TABLES LIKE ${adapter.placeholder(1)}`,
+        [pivotTable]
+      );
+      return rows.length > 0;
+    }
+
+    if (dialectName === "pg") {
+      const rows = await adapter.query<{ table_name: string }>(
+        `SELECT table_name
+         FROM information_schema.tables
+         WHERE table_schema = current_schema()
+           AND table_name = ${adapter.placeholder(1)}`,
+        [pivotTable]
+      );
+      return rows.length > 0;
+    }
+
+    const rows = await adapter.query<{ name: string }>(
+      `SELECT name
+       FROM sqlite_master
+       WHERE type = 'table'
+         AND name = ${adapter.placeholder(1)}`,
+      [pivotTable]
+    );
+    return rows.length > 0;
   }
 
   private static mixinSQL(m: MixinDefinition, dialectName: Dialect, dialect: SQLDialect): string[] {

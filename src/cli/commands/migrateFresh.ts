@@ -1,9 +1,11 @@
 import chalk from "chalk";
 import readline from "readline";
 import { migrateRun } from "./migrateRun";
+import { makeMigration } from "./makeMigration";
 import {
   getAdapter,
   closeAllConnections,
+  ConnectionName,
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
@@ -12,15 +14,14 @@ import { dbConfig } from "../../config/database";
  * migrate:fresh
  * Drops all tables and re-runs every migration from scratch, with confirmation.
  */
-export async function migrateFresh(options?: { test?: boolean; force?: boolean }): Promise<void> {
-  const connectionName = resolveConnectionName(undefined, { test: !!options?.test });
+export type MigrateFreshOptions = {
+  test?: boolean;
+  force?: boolean;
+  connectionNames?: ConnectionName[];
+  allMigrations?: boolean;
+};
 
-  const confirmed = options?.force === true ? true : await confirmDangerousAction();
-  if (!confirmed) {
-    console.log(chalk.yellow("\nOperation cancelled by user.\n"));
-    return;
-  }
-
+async function dropAllTablesForConnection(connectionName: ConnectionName): Promise<boolean> {
   const db = await getAdapter(connectionName);
   console.log(chalk.gray(`Connected to ${connectionName}.`));
 
@@ -61,17 +62,68 @@ export async function migrateFresh(options?: { test?: boolean; force?: boolean }
       }
 
       await db.execute("SET FOREIGN_KEY_CHECKS = 1;");
+    } else {
+      console.warn(chalk.yellow(`Skipping non-SQL connection: ${connectionName}`));
+      return true;
     }
 
-    console.log(chalk.yellow("All tables dropped. Re-running migrations..."));
+    console.log(chalk.yellow(`All tables dropped for ${connectionName}.`));
+    return true;
   } catch (err) {
-    console.error(chalk.red("Error while dropping tables:"));
+    console.error(chalk.red(`Error while dropping tables for ${connectionName}:`));
     console.error(err);
+    return false;
   } finally {
     await closeAllConnections();
   }
+}
 
-  await migrateRun(!!options?.test, undefined, false, false);
+export async function migrateFresh(options: MigrateFreshOptions = {}): Promise<void> {
+  const isTest = !!options.test;
+  const connectionNames =
+    options.connectionNames && options.connectionNames.length > 0
+      ? options.connectionNames
+      : [resolveConnectionName(undefined, { test: isTest })];
+
+  const confirmed = options?.force === true ? true : await confirmDangerousAction();
+  if (!confirmed) {
+    console.log(chalk.yellow("\nOperation cancelled by user.\n"));
+    return;
+  }
+
+  let hadFailure = false;
+
+  for (const connectionName of connectionNames) {
+    const success = await dropAllTablesForConnection(connectionName);
+    if (!success) {
+      hadFailure = true;
+    }
+  }
+
+  if (options.allMigrations) {
+    for (const connectionName of connectionNames) {
+      try {
+        await makeMigration("all", {
+          test: isTest,
+          connectionName,
+          exit: false,
+        });
+      } catch (error) {
+        hadFailure = true;
+        console.error(
+          chalk.red(`Failed to auto-generate migrations (--all-migrations) for ${connectionName}.`)
+        );
+        console.error(error);
+      }
+    }
+  }
+
+  console.log(chalk.yellow("Re-running migrations..."));
+  await migrateRun(isTest, undefined, false, false, { connectionNames });
+
+  if (hadFailure) {
+    process.exitCode = 1;
+  }
 }
 
 async function confirmDangerousAction(): Promise<boolean> {

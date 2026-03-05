@@ -1,6 +1,7 @@
 import { CoreModel } from "../core/model/CoreModel";
 import type { DriverAdapter } from "../core/connection/DriverAdapter";
 import { getAdapter } from "../core/connection/ConnectionFactory";
+import { column, validate } from "../core/schema/SchemaBlueprint";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
@@ -9,7 +10,7 @@ jest.mock("../core/connection/ConnectionFactory", () => ({
 
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 
-type CrudConnection = "mysql" | "sqlite";
+type CrudConnection = "mysql" | "sqlite" | "pg";
 
 function makeAdapter(name: CrudConnection): DriverAdapter & {
   query: jest.Mock;
@@ -21,6 +22,7 @@ function makeAdapter(name: CrudConnection): DriverAdapter & {
   const queryOne = jest.fn();
   const execute = jest.fn();
   const insert = jest.fn();
+  const quote = name === "mysql" ? "`" : "\"";
 
   const wrapId = (id: string) => {
     for (const part of id.split(".")) {
@@ -28,7 +30,7 @@ function makeAdapter(name: CrudConnection): DriverAdapter & {
         throw new Error(`Unsafe SQL identifier: ${part}`);
       }
     }
-    return `\`${id}\``;
+    return `${quote}${id}${quote}`;
   };
 
   return {
@@ -38,14 +40,24 @@ function makeAdapter(name: CrudConnection): DriverAdapter & {
     queryOne,
     execute,
     insert,
-    placeholder: () => "?",
-    placeholders: (count: number) =>
-      Array.from({ length: count }, () => "?").join(", "),
-    inClause: (field: string, values: unknown[]) => ({
-      sql: `${field} IN (${Array.from({ length: values.length }, () => "?").join(", ")})`,
-      params: values,
-      nextIndex: values.length + 1,
-    }),
+    placeholder: (index: number) => (name === "pg" ? `$${index}` : "?"),
+    placeholders: (count: number, startIndex = 1) =>
+      Array.from(
+        { length: count },
+        (_, idx) => (name === "pg" ? `$${startIndex + idx}` : "?")
+      ).join(", "),
+    inClause: (field: string, values: unknown[], startIndex = 1) =>
+      name === "pg"
+        ? {
+            sql: `${field} = ANY($${startIndex})`,
+            params: [values],
+            nextIndex: startIndex + 1,
+          }
+        : {
+            sql: `${field} IN (${Array.from({ length: values.length }, () => "?").join(", ")})`,
+            params: values,
+            nextIndex: startIndex + values.length,
+          },
     wrapId,
   };
 }
@@ -56,7 +68,18 @@ class CrudModel extends CoreModel {
   }
 }
 
-describe.each<CrudConnection>(["mysql", "sqlite"])(
+class ValidatedCrudModel extends CoreModel {
+  static schema = {
+    name: validate(column("string", 255), { required: true, min: 3 }),
+    email: validate(column("string", 255), { required: true, email: true }),
+  };
+
+  constructor(connectionName: CrudConnection = "mysql") {
+    super("users", connectionName);
+  }
+}
+
+describe.each<CrudConnection>(["mysql", "sqlite", "pg"])(
   "CoreModel CRUD logic (%s)",
   (driverName) => {
     beforeEach(() => {
@@ -65,7 +88,11 @@ describe.each<CrudConnection>(["mysql", "sqlite"])(
 
     test("create/find/all/update/delete use adapter and hydrate model instances", async () => {
       const adapter = makeAdapter(driverName);
-      adapter.insert.mockResolvedValue({ id: 7 });
+      if (driverName === "pg") {
+        adapter.insert.mockResolvedValue({ id: 7, row: { id: 7, name: "Alice" } });
+      } else {
+        adapter.insert.mockResolvedValue({ id: 7 });
+      }
       adapter.queryOne.mockResolvedValue({ id: 7, name: "Alice" });
       adapter.query.mockResolvedValue([
         { id: 7, name: "Alice" },
@@ -82,10 +109,22 @@ describe.each<CrudConnection>(["mysql", "sqlite"])(
       const createdRow = created as unknown as { id?: unknown; name?: unknown };
       expect(createdRow.id).toBe(7);
       expect(createdRow.name).toBe("Alice");
-      expect(adapter.insert).toHaveBeenCalledWith(
-        expect.stringContaining("INSERT INTO `users`"),
-        ["Alice"]
-      );
+      if (driverName === "pg") {
+        expect(adapter.insert).toHaveBeenCalledWith(
+          expect.stringContaining('INSERT INTO "users" ("name") VALUES ($1)'),
+          ["Alice"]
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.insert).toHaveBeenCalledWith(
+          expect.stringContaining("INSERT INTO `users`"),
+          ["Alice"]
+        );
+      } else {
+        expect(adapter.insert).toHaveBeenCalledWith(
+          expect.stringContaining('INSERT INTO "users"'),
+          ["Alice"]
+        );
+      }
 
       const found = await model.find(7);
       expect(found).toBeInstanceOf(CrudModel);
@@ -93,33 +132,83 @@ describe.each<CrudConnection>(["mysql", "sqlite"])(
       const foundRow = found as unknown as { id?: unknown; name?: unknown };
       expect(foundRow.id).toBe(7);
       expect(foundRow.name).toBe("Alice");
-      expect(adapter.queryOne).toHaveBeenCalledWith(
-        expect.stringContaining("SELECT * FROM `users` WHERE `id` = ?"),
-        [7]
-      );
+      if (driverName === "pg") {
+        expect(adapter.queryOne).toHaveBeenCalledWith(
+          expect.stringContaining('SELECT * FROM "users" WHERE "id" = $1'),
+          [7]
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.queryOne).toHaveBeenCalledWith(
+          expect.stringContaining("SELECT * FROM `users` WHERE `id` = ?"),
+          [7]
+        );
+      } else {
+        expect(adapter.queryOne).toHaveBeenCalledWith(
+          expect.stringContaining('SELECT * FROM "users" WHERE "id" = ?'),
+          [7]
+        );
+      }
 
       const allRows = await model.all();
       expect(allRows).toHaveLength(2);
       expect(allRows[0]).toBeInstanceOf(CrudModel);
       const secondRow = allRows[1] as unknown as { name?: unknown };
       expect(secondRow.name).toBe("Bob");
-      expect(adapter.query).toHaveBeenCalledWith(
-        expect.stringContaining("SELECT * FROM `users`")
-      );
+      if (driverName === "pg") {
+        expect(adapter.query).toHaveBeenCalledWith(
+          expect.stringContaining('SELECT * FROM "users"')
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.query).toHaveBeenCalledWith(
+          expect.stringContaining("SELECT * FROM `users`")
+        );
+      } else {
+        expect(adapter.query).toHaveBeenCalledWith(
+          expect.stringContaining('SELECT * FROM "users"')
+        );
+      }
 
       await model.update(7, { name: "Alice 2" });
-      expect(adapter.execute).toHaveBeenNthCalledWith(
-        1,
-        expect.stringContaining("UPDATE `users` SET `name` = ? WHERE `id` = ?"),
-        ["Alice 2", 7]
-      );
+      if (driverName === "pg") {
+        expect(adapter.execute).toHaveBeenNthCalledWith(
+          1,
+          expect.stringContaining('UPDATE "users" SET "name" = $1 WHERE "id" = $2'),
+          ["Alice 2", 7]
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.execute).toHaveBeenNthCalledWith(
+          1,
+          expect.stringContaining("UPDATE `users` SET `name` = ? WHERE `id` = ?"),
+          ["Alice 2", 7]
+        );
+      } else {
+        expect(adapter.execute).toHaveBeenNthCalledWith(
+          1,
+          expect.stringContaining('UPDATE "users" SET "name" = ? WHERE "id" = ?'),
+          ["Alice 2", 7]
+        );
+      }
 
       await model.delete(7);
-      expect(adapter.execute).toHaveBeenNthCalledWith(
-        2,
-        expect.stringContaining("DELETE FROM `users` WHERE `id` = ?"),
-        [7]
-      );
+      if (driverName === "pg") {
+        expect(adapter.execute).toHaveBeenNthCalledWith(
+          2,
+          expect.stringContaining('DELETE FROM "users" WHERE "id" = $1'),
+          [7]
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.execute).toHaveBeenNthCalledWith(
+          2,
+          expect.stringContaining("DELETE FROM `users` WHERE `id` = ?"),
+          [7]
+        );
+      } else {
+        expect(adapter.execute).toHaveBeenNthCalledWith(
+          2,
+          expect.stringContaining('DELETE FROM "users" WHERE "id" = ?'),
+          [7]
+        );
+      }
 
       expect(mockedGetAdapter).toHaveBeenCalledWith(driverName);
     });
@@ -143,10 +232,22 @@ describe.each<CrudConnection>(["mysql", "sqlite"])(
       const payload = "x'; DROP TABLE users; --";
       await model.create({ name: payload });
 
-      expect(adapter.insert).toHaveBeenCalledWith(
-        expect.stringContaining("INSERT INTO `users`"),
-        [payload]
-      );
+      if (driverName === "pg") {
+        expect(adapter.insert).toHaveBeenCalledWith(
+          expect.stringContaining('INSERT INTO "users" ("name") VALUES ($1)'),
+          [payload]
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.insert).toHaveBeenCalledWith(
+          expect.stringContaining("INSERT INTO `users`"),
+          [payload]
+        );
+      } else {
+        expect(adapter.insert).toHaveBeenCalledWith(
+          expect.stringContaining('INSERT INTO "users"'),
+          [payload]
+        );
+      }
 
       await expect(
         model.create({ ["name); DROP TABLE users; --"]: payload })
@@ -156,6 +257,42 @@ describe.each<CrudConnection>(["mysql", "sqlite"])(
         "Unsafe SQL identifier"
       );
       await expect(model.delete(1, "id desc")).rejects.toThrow("Unsafe SQL identifier");
+    });
+
+    test("patch-style updates validate only provided fields while create remains strict", async () => {
+      const adapter = makeAdapter(driverName);
+      if (driverName === "pg") {
+        adapter.insert.mockResolvedValue({ id: 10, row: { id: 10, name: "Alice" } });
+      } else {
+        adapter.insert.mockResolvedValue({ id: 10 });
+      }
+
+      mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+      const model = new ValidatedCrudModel(driverName);
+
+      await expect(model.update(10, { name: "Alice" })).resolves.toBeUndefined();
+      await expect(model.update(10, { email: "not-an-email" })).rejects.toThrow(
+        "is not a valid email address"
+      );
+      await expect(model.create({ name: "Alice" })).rejects.toThrow("email is required");
+
+      if (driverName === "pg") {
+        expect(adapter.execute).toHaveBeenCalledWith(
+          expect.stringContaining('UPDATE "users" SET "name" = $1 WHERE "id" = $2'),
+          ["Alice", 10]
+        );
+      } else if (driverName === "mysql") {
+        expect(adapter.execute).toHaveBeenCalledWith(
+          expect.stringContaining("UPDATE `users` SET `name` = ? WHERE `id` = ?"),
+          ["Alice", 10]
+        );
+      } else {
+        expect(adapter.execute).toHaveBeenCalledWith(
+          expect.stringContaining('UPDATE "users" SET "name" = ? WHERE "id" = ?'),
+          ["Alice", 10]
+        );
+      }
     });
   }
 );

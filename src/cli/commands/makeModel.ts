@@ -127,6 +127,25 @@ function buildAttrsTypeBody(
   return lines.length ? lines.join("\n") : "  // No columns found in schema";
 }
 
+function hasSoftDeletesSchema(schema: Record<string, SchemaField>): boolean {
+  for (const [name, field] of Object.entries(schema)) {
+    if (field.kind === "mixin" && field.name === "SoftDeletes") return true;
+    if (field.kind === "column") {
+      if (field.type === "softDeletes") return true;
+      if (name === "deleted_at") return true;
+    }
+  }
+  return false;
+}
+
+function normalizedSchemaForMigration(modelClass: LoadedModelClass): Record<string, SchemaField> {
+  const schema = { ...(modelClass.schema ?? {}) } as Record<string, SchemaField>;
+  if (modelClass.softDeletes && !hasSoftDeletesSchema(schema)) {
+    schema.deleted_at = { kind: "mixin", name: "SoftDeletes" };
+  }
+  return schema;
+}
+
 /**
  * 🧱 make:model
  * Generates a new model file (and optionally a migration).
@@ -271,9 +290,10 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     const driver =
       (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
       connectionName;
+    const normalizedSchema = normalizedSchemaForMigration(ModelClass);
     const { mainSQL } = await SchemaBuilder.toCreateSQL(
       ModelClass.tableName,
-      ModelClass.schema,
+      normalizedSchema,
       driver,
       true, // smart update detection
       connectionName

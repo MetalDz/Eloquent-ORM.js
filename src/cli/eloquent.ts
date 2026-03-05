@@ -548,33 +548,129 @@ program
 program
   .command("migrate:rollback")
   .option("--test", "Rollback migration in test mode")
+  .option("--mysql", "Rollback migrations only for the mysql connection")
+  .option("--pg", "Rollback migrations only for the pg connection")
+  .option("--sqlite", "Rollback migrations only for the sqlite connection")
+  .option("--all-connections", "Rollback migrations for mysql, pg, and sqlite")
+  .option("--all-migrations", "Rollback all applied migration batches")
   .option("--step <number>", "Number of migrations to rollback", "1")
   .description("Rollback the latest migration(s)")
-  .action(async (options: { test?: boolean; step?: string }) => {
+  .action(async (options: {
+    test?: boolean;
+    step?: string;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+    allMigrations?: boolean;
+  }) => {
     const stepNumber = Number(options.step ?? 1);
-    await migrateRollback("mysql", { test: !!options.test, step: stepNumber });
+    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      mysql: !!options.mysql,
+      pg: !!options.pg,
+      sqlite: !!options.sqlite,
+      allConnections: !!options.allConnections,
+    });
+    await migrateRollback({
+      test: !!options.test,
+      step: stepNumber,
+      allMigrations: !!options.allMigrations,
+      connectionNames,
+    });
   });
 
 program
   .command("migrate:status")
   .description("Show status of all migrations (applied vs pending)")
   .option("--test", "Show test migration status")
-  .action((options: { test?: boolean }) => migrateStatus(!!options.test));
+  .option("--mysql", "Show status only for the mysql connection")
+  .option("--pg", "Show status only for the pg connection")
+  .option("--sqlite", "Show status only for the sqlite connection")
+  .option("--all-connections", "Show status for mysql, pg, and sqlite")
+  .option("--all-migrations", "Accepted for parity; status already covers all migration files")
+  .action((options: {
+    test?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+    allMigrations?: boolean;
+  }) => {
+    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      mysql: !!options.mysql,
+      pg: !!options.pg,
+      sqlite: !!options.sqlite,
+      allConnections: !!options.allConnections,
+    });
+    return migrateStatus({
+      test: !!options.test,
+      allMigrations: !!options.allMigrations,
+      connectionNames,
+    });
+  });
 
 program
   .command("migrate:fresh")
   .description("Drop all tables and re-run every migration from scratch")
   .option("--test", "Run in test database")
+  .option("--mysql", "Run fresh migration only for the mysql connection")
+  .option("--pg", "Run fresh migration only for the pg connection")
+  .option("--sqlite", "Run fresh migration only for the sqlite connection")
+  .option("--all-connections", "Run fresh migration for mysql, pg, and sqlite")
+  .option("--all-migrations", "Auto-generate migrations for all models before running")
   .option("--force", "Skip confirmation prompt")
-  .action((options: { test?: boolean; force?: boolean }) =>
-    migrateFresh({ test: !!options.test, force: !!options.force })
-  );
+  .action((options: {
+    test?: boolean;
+    force?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+    allMigrations?: boolean;
+  }) => {
+    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      mysql: !!options.mysql,
+      pg: !!options.pg,
+      sqlite: !!options.sqlite,
+      allConnections: !!options.allConnections,
+    });
+    return migrateFresh({
+      test: !!options.test,
+      force: !!options.force,
+      allMigrations: !!options.allMigrations,
+      connectionNames,
+    });
+  });
 
 program
   .command("migrate:reset")
   .description("Rollback *all* migrations completely")
   .option("--test", "Reset all test migrations completely")
-  .action((options: { test?: boolean }) => migrateReset({ test: !!options.test }));
+  .option("--mysql", "Reset migrations only for the mysql connection")
+  .option("--pg", "Reset migrations only for the pg connection")
+  .option("--sqlite", "Reset migrations only for the sqlite connection")
+  .option("--all-connections", "Reset migrations for mysql, pg, and sqlite")
+  .option("--all-migrations", "Accepted for parity; reset already rolls back all batches")
+  .action((options: {
+    test?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+    allMigrations?: boolean;
+  }) => {
+    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      mysql: !!options.mysql,
+      pg: !!options.pg,
+      sqlite: !!options.sqlite,
+      allConnections: !!options.allConnections,
+    });
+    return migrateReset({
+      test: !!options.test,
+      connectionNames,
+      allMigrations: !!options.allMigrations,
+    });
+  });
 
 // -----------------------------------------------------------------------------
 // 🧩 CACHE COMMANDS
@@ -637,10 +733,26 @@ program
         Description:
           "--mysql --pg --sqlite --all-connections --all-migrations --pivot-separate",
       },
-      { Command: "migrate:rollback", Description: "--test --step <number>" },
-      { Command: "migrate:status", Description: "--test" },
-      { Command: "migrate:fresh", Description: "--test --force" },
-      { Command: "migrate:reset", Description: "--test" },
+      {
+        Command: "migrate:rollback",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --all-migrations --step <number>",
+      },
+      {
+        Command: "migrate:status",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --all-migrations",
+      },
+      {
+        Command: "migrate:fresh",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --all-migrations --force",
+      },
+      {
+        Command: "migrate:reset",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --all-migrations",
+      },
       { Command: "cache:clear", Description: "(no options)" },
       { Command: "cache:stats", Description: "(no options)" },
       { Command: "list", Description: "(no options)" },

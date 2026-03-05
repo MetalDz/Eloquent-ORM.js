@@ -76,6 +76,21 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--all-migrations");
   });
 
+  test.each([
+    "migrate:rollback",
+    "migrate:status",
+    "migrate:fresh",
+    "migrate:reset",
+  ])("%s help exposes connection targeting flags", (commandName) => {
+    const res = runCli([commandName, "--help"]);
+    assertOk(res, [commandName, "--help"]);
+    expect(res.combined).toContain("--mysql");
+    expect(res.combined).toContain("--pg");
+    expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--all-connections");
+    expect(res.combined).toContain("--all-migrations");
+  });
+
   test("make:migration help exposes connection targeting flags", () => {
     const res = runCli(["make:migration", "--help"]);
     assertOk(res, ["make:migration", "--help"]);

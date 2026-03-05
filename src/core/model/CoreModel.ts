@@ -107,6 +107,13 @@ export abstract class CoreModel<
    * Validate incoming data using schema + hooks + custom rules
    */
   private async validateData(data: Record<string, unknown>): Promise<void> {
+    return this.validateDataInternal(data, { partial: false });
+  }
+
+  private async validateDataInternal(
+    data: Record<string, unknown>,
+    options: { partial: boolean }
+  ): Promise<void> {
     const schema = (this.constructor as typeof CoreModel).schema;
     const hooks = (this.constructor as typeof CoreModel).validationHooks;
     const customRules = (this.constructor as typeof CoreModel).customRules;
@@ -117,6 +124,9 @@ export abstract class CoreModel<
 
     for (const [key, field] of Object.entries(schema)) {
       if (field.kind === "column" && field.validate) {
+        if (options.partial && !Object.prototype.hasOwnProperty.call(data, key)) {
+          continue;
+        }
         validationRules[key] = field.validate;
       }
     }
@@ -286,7 +296,7 @@ export abstract class CoreModel<
     pk: string = "id"
   ): Promise<void> {
     // 1) Validate
-    await this.validateData(data);
+    await this.validateDataInternal(data, { partial: true });
 
     // 2) beforeUpdate (can cancel)
     const canUpdate = await this.fireEvent("beforeUpdate", data);

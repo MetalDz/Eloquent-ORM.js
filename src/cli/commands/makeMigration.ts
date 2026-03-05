@@ -34,8 +34,33 @@ type LoadedModel = {
     schema: Record<string, SchemaField>;
     tableName: string;
     connectionName?: string;
+    softDeletes?: boolean;
   };
 };
+
+function hasSoftDeletesSchema(schema: Record<string, SchemaField>): boolean {
+  for (const [name, field] of Object.entries(schema)) {
+    if (field.kind === "mixin" && field.name === "SoftDeletes") {
+      return true;
+    }
+    if (field.kind === "column") {
+      if (field.type === "softDeletes") return true;
+      if (name === "deleted_at") return true;
+    }
+  }
+  return false;
+}
+
+function normalizedSchemaForMigration(modelClass: {
+  schema: Record<string, SchemaField>;
+  softDeletes?: boolean;
+}): Record<string, SchemaField> {
+  const schema: Record<string, SchemaField> = { ...modelClass.schema };
+  if (modelClass.softDeletes && !hasSoftDeletesSchema(schema)) {
+    schema.deleted_at = { kind: "mixin", name: "SoftDeletes" };
+  }
+  return schema;
+}
 
 function stableMigrationBody(content: string): string {
   const marker = "export async function up";
@@ -197,6 +222,7 @@ export async function makeMigration(
             schema?: Record<string, SchemaField>;
             tableName?: string;
             connectionName?: string;
+            softDeletes?: boolean;
           }
         | undefined;
       if (!ModelClass?.schema || !ModelClass?.tableName) {
@@ -211,6 +237,7 @@ export async function makeMigration(
           schema: ModelClass.schema,
           tableName: ModelClass.tableName,
           connectionName: ModelClass.connectionName,
+          softDeletes: ModelClass.softDeletes,
         },
       });
     } catch (err) {
@@ -247,9 +274,10 @@ export async function makeMigration(
       const driver =
         (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
         connectionName;
+      const normalizedSchema = normalizedSchemaForMigration(ModelClass);
       const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
         ModelClass.tableName,
-        ModelClass.schema,
+        normalizedSchema,
         driver,
         !needsBaselineCreate,
         connectionName,

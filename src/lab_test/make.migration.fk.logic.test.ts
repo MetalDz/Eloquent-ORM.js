@@ -72,8 +72,16 @@ describe("makeMigration FK-aware update generation", () => {
     fs.mkdirSync(modelsDir, { recursive: true });
     fs.mkdirSync(migrationsDir, { recursive: true });
     fs.writeFileSync(path.join(modelsDir, "Post.ts"), "export class Post {}", "utf8");
+    fs.writeFileSync(path.join(modelsDir, "User.ts"), "export class User {}", "utf8");
     fs.writeFileSync(
       path.join(migrationsDir, "20260304090000001_create_posts_table.ts"),
+      `export async function up() {}
+export async function down() {}
+`,
+      "utf8"
+    );
+    fs.writeFileSync(
+      path.join(migrationsDir, "20260304090000002_create_users_table.ts"),
       `export async function up() {}
 export async function down() {}
 `,
@@ -104,15 +112,29 @@ export async function down() {}
     mockedCompile.mockReturnValue(true);
     mockedResolveConnectionName.mockReturnValue("pg_test" as never);
     mockedCloseAllConnections.mockResolvedValue(undefined);
-    mockedLoadModule.mockReturnValue({
-      Post: {
-        tableName: "posts",
-        connectionName: "pg_test",
-        schema: {
-          id: column("increments", undefined, { primary: true }),
-          author: relation("belongsTo", "User", { foreignKey: "user_id" }),
-        } satisfies Record<string, SchemaField>,
-      },
+    mockedLoadModule.mockImplementation((modulePath: string) => {
+      if (modulePath.endsWith("User.ts")) {
+        return {
+          User: {
+            tableName: "users",
+            connectionName: "pg_test",
+            softDeletes: true,
+            schema: {
+              id: column("increments", undefined, { primary: true }),
+            } satisfies Record<string, SchemaField>,
+          },
+        };
+      }
+      return {
+        Post: {
+          tableName: "posts",
+          connectionName: "pg_test",
+          schema: {
+            id: column("increments", undefined, { primary: true }),
+            author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+          } satisfies Record<string, SchemaField>,
+        },
+      };
     });
 
     mockedGetAdapter.mockResolvedValue({
@@ -168,5 +190,22 @@ export async function down() {}
     );
     expect(content).toContain('DROP CONSTRAINT "posts_user_id_foreign"');
     expect(content).toContain('DROP COLUMN "user_id"');
+  });
+
+  test("injects SoftDeletes mixin from static model flag during migration generation", async () => {
+    await makeMigration("User", { test: true, exit: false });
+
+    const migrationFiles = fs
+      .readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".ts"));
+    expect(migrationFiles.some((file) => file.includes("update_users_table"))).toBe(true);
+    expect(migrationFiles.some((file) => file.includes("create_users_table"))).toBe(false);
+
+    const updateFile = migrationFiles.find((file) => file.includes("update_users_table"));
+    expect(updateFile).toBeDefined();
+
+    const content = fs.readFileSync(path.join(migrationsDir, updateFile!), "utf8");
+    expect(content).toContain('ADD COLUMN "deleted_at" TIMESTAMP NULL DEFAULT NULL');
+    expect(content).toContain('DROP COLUMN "deleted_at"');
   });
 });
