@@ -73,10 +73,6 @@ export async function dbSeed(options: {
         }
       }
 
-      if (options?.close !== false || connectionNames.length > 1) {
-        await closeAllConnections();
-        console.log(chalk.gray("All database connections closed.\n"));
-      }
     }
 
     console.log(chalk.greenBright("\nAll seeders completed successfully!\n"));

@@ -1,6 +1,6 @@
 {
   "name": "eloquentjs",
-  "version": "0.9.9",
+  "version": "0.10.0",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
   "readme": "Factories seeds integration in 0.7.7v",
   "type": "commonjs",

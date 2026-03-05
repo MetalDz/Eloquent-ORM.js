@@ -95,8 +95,12 @@ if (isCliTest()) {
 // ⚙️ Lazy TypeScript Runtime Initialization
 // -----------------------------------------------------------------------------
 try {
-  if (RuntimeDetector.needsTypeScriptRuntime(process.argv)) {
+  const runtimeNeeded = RuntimeDetector.needsTypeScriptRuntime(process.argv);
+  if (runtimeNeeded) {
     TypeScriptCompiler.ensureRuntime();
+    if (process.env.ELOQUENT_RUNTIME_LOG !== "false") {
+      console.log(chalk.gray("TypeScript runtime enabled (ts-node)."));
+    }
     if (process.env.DEBUG === "true") {
       console.log(chalk.gray("🧠 TypeScript runtime initialized (for TS-based command)\n"));
     }
