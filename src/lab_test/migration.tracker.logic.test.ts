@@ -163,7 +163,7 @@ describe("MigrationTracker logic", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  test("validateMigrationHistory keeps strict failure when missing migration table still exists", async () => {
+  test("validateMigrationHistory keeps orphan row when missing generated create migration table still exists", async () => {
     const adapter = makeAdapter();
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "migration-prune-strict-"));
     const missingName = "20260304130722001_create_cligeneratortestartifacts_table.ts";
@@ -189,9 +189,16 @@ describe("MigrationTracker logic", () => {
       throw new Error(`Unexpected SQL: ${sql}`);
     });
 
-    await expect(validateMigrationHistory(adapter, tempDir)).rejects.toThrow(
-      `Applied migration "${missingName}" is missing from disk and table "cligeneratortestartifacts" still exists.`
-    );
+    const rows = await validateMigrationHistory(adapter, tempDir);
+    expect(rows).toEqual([
+      {
+        id: 1,
+        name: missingName,
+        batch: 1,
+        checksum: "checksum",
+        run_at: "2026-03-04",
+      },
+    ]);
     expect(adapter.execute).not.toHaveBeenCalledWith(
       expect.stringContaining("DELETE FROM `migrations` WHERE `name` = ?"),
       [missingName]
