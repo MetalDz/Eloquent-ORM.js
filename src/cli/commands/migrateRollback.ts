@@ -87,6 +87,7 @@ async function rollbackConnection(
     console.log(chalk.gray(`Rolling back ${toRollback.length} migration(s)...`));
 
     let rolledBack = 0;
+    let hadRollbackError = false;
     for (const entry of toRollback) {
       const migrationFile = entry.name;
       const filePath = path.join(migrationsDir, migrationFile);
@@ -120,11 +121,13 @@ async function rollbackConnection(
           } catch (fallbackError) {
             console.error(chalk.red(`Fallback rollback failed for ${migrationFile}:`));
             console.error(fallbackError);
+            hadRollbackError = true;
             break;
           }
         }
 
         console.error(chalk.red(`Missing file: ${migrationFile}`));
+        hadRollbackError = true;
         break;
       }
 
@@ -147,12 +150,13 @@ async function rollbackConnection(
       } catch (err) {
         console.error(chalk.red(`Error rolling back ${migrationFile}:`));
         console.error(err);
+        hadRollbackError = true;
         break;
       }
     }
 
     console.log(chalk.greenBright(`\n${rolledBack} migration(s) rolled back successfully.\n`));
-    return true;
+    return !hadRollbackError;
   } catch (err) {
     console.error(chalk.red("Unable to read or validate migrations table."));
     console.error(err);

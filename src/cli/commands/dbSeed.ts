@@ -24,6 +24,7 @@ export async function dbSeed(options: {
   const isTest = !!options?.test;
   const envKey = isTest ? "DB_TEST_CONNECTION" : "DB_CONNECTION";
   const originalConnection = process.env[envKey];
+  const originalDbConnection = process.env.DB_CONNECTION;
 
   try {
     const seedsDir = PathMap.seeds(isTest);
@@ -51,6 +52,10 @@ export async function dbSeed(options: {
 
     for (const connectionName of connectionNames) {
       process.env[envKey] = connectionName;
+      if (isTest) {
+        // Seeders/models may read DB_CONNECTION at module load; keep both in sync in test mode.
+        process.env.DB_CONNECTION = connectionName;
+      }
       console.log(chalk.gray(`Seeding connection: ${connectionName}`));
 
       // Run a specific seeder if requested
@@ -82,6 +87,7 @@ export async function dbSeed(options: {
     if (err instanceof Error) console.error(chalk.red(err.message));
   } finally {
     process.env[envKey] = originalConnection;
+    process.env.DB_CONNECTION = originalDbConnection;
     if (options?.close !== false) {
       await closeAllConnections();
       console.log(chalk.gray("All database connections closed.\n"));

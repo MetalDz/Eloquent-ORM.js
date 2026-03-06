@@ -11,6 +11,8 @@ export type { ConnectionName };
 
 const connectionCache: Partial<Record<ConnectionName, ConnectionInstance>> = {};
 const adapterCache: Partial<Record<ConnectionName, DriverAdapter>> = {};
+const connectionInitCache: Partial<Record<ConnectionName, Promise<ConnectionInstance>>> = {};
+const adapterInitCache: Partial<Record<ConnectionName, Promise<DriverAdapter>>> = {};
 type ConnectionInstance = any;
 
 /**
@@ -18,28 +20,68 @@ type ConnectionInstance = any;
  * Lazily initializes and caches the connection.
  */
 export async function getConnection(name: ConnectionName): Promise<ConnectionInstance> {
-  if (!connectionCache[name]) {
-    console.log(`Creating new ${name} connection...`);
-    connectionCache[name] = await connectDB(name);
+  if (connectionCache[name]) {
+    return connectionCache[name] as ConnectionInstance;
   }
-  return connectionCache[name] as ConnectionInstance;
+
+  if (connectionInitCache[name]) {
+    return await connectionInitCache[name];
+  }
+
+  console.log(`Creating new ${name} connection...`);
+  const initPromise = connectDB(name)
+    .then((connection) => {
+      connectionCache[name] = connection;
+      return connection;
+    })
+    .finally(() => {
+      delete connectionInitCache[name];
+    });
+
+  connectionInitCache[name] = initPromise;
+  return await initPromise;
 }
 
 /**
  * Get or create a driver adapter for SQL connections.
  */
 export async function getAdapter(name: ConnectionName): Promise<DriverAdapter> {
-  if (!adapterCache[name]) {
-    const conn = await getConnection(name);
-    adapterCache[name] = createAdapter(name, conn);
+  if (adapterCache[name]) {
+    return adapterCache[name] as DriverAdapter;
   }
-  return adapterCache[name] as DriverAdapter;
+
+  if (adapterInitCache[name]) {
+    return await adapterInitCache[name];
+  }
+
+  const initPromise = getConnection(name)
+    .then((conn) => {
+      const adapter = createAdapter(name, conn);
+      adapterCache[name] = adapter;
+      return adapter;
+    })
+    .finally(() => {
+      delete adapterInitCache[name];
+    });
+
+  adapterInitCache[name] = initPromise;
+  return await initPromise;
 }
 
 /**
  * Gracefully close all cached DB connections.
  */
 export async function closeAllConnections(): Promise<void> {
+  const inFlightConnections = Object.values(connectionInitCache).filter(
+    (promise): promise is Promise<ConnectionInstance> => Boolean(promise)
+  );
+  const inFlightAdapters = Object.values(adapterInitCache).filter(
+    (promise): promise is Promise<DriverAdapter> => Boolean(promise)
+  );
+  if (inFlightConnections.length > 0 || inFlightAdapters.length > 0) {
+    await Promise.allSettled([...inFlightConnections, ...inFlightAdapters]);
+  }
+
   for (const [name, conn] of Object.entries(connectionCache)) {
     if (!conn) continue;
 
@@ -81,6 +123,8 @@ export async function closeAllConnections(): Promise<void> {
 
     delete connectionCache[connectionName];
     delete adapterCache[connectionName];
+    delete connectionInitCache[connectionName];
+    delete adapterInitCache[connectionName];
     console.log(`Closed ${connectionName} connection.`);
   }
 }

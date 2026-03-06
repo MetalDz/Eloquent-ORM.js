@@ -24,6 +24,7 @@ export async function dbSeedFresh(
   const isTest = !!options?.test;
   const envKey = isTest ? "DB_TEST_CONNECTION" : "DB_CONNECTION";
   const originalConnection = process.env[envKey];
+  const originalDbConnection = process.env.DB_CONNECTION;
   const connectionNames =
     options?.connectionNames && options.connectionNames.length > 0
       ? options.connectionNames
@@ -33,6 +34,10 @@ export async function dbSeedFresh(
   try {
     for (const connectionName of connectionNames) {
       process.env[envKey] = connectionName;
+      if (isTest) {
+        // Keep DB_CONNECTION aligned for model code paths that read it during test mode.
+        process.env.DB_CONNECTION = connectionName;
+      }
 
       console.log(chalk.yellow(`Rebuilding database for ${connectionName}...`));
       await migrateFresh({
@@ -57,6 +62,7 @@ export async function dbSeedFresh(
     if (err instanceof Error) console.error(chalk.red(err.message));
   } finally {
     process.env[envKey] = originalConnection;
+    process.env.DB_CONNECTION = originalDbConnection;
     await closeAllConnections();
     console.log(chalk.gray("All database connections closed.\n"));
     if (hadFailure) {

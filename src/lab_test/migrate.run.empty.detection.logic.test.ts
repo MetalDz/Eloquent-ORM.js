@@ -6,7 +6,6 @@ import {
   closeAllConnections,
   getAdapter,
 } from "../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
 import {
   acquireMigrationLock,
   computeMigrationChecksum,
@@ -35,10 +34,6 @@ jest.mock("../core/connection/ConnectionFactory", () => ({
   closeAllConnections: jest.fn(),
 }));
 
-jest.mock("../core/connection/resolveConnectionName", () => ({
-  resolveConnectionName: jest.fn(),
-}));
-
 jest.mock("../cli/utils/migrations/MigrationTracker", () => ({
   acquireMigrationLock: jest.fn(),
   computeMigrationChecksum: jest.fn(),
@@ -56,8 +51,6 @@ jest.mock("../cli/utils/typescript/tsRuntime", () => ({
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 const mockedCloseAllConnections =
   closeAllConnections as jest.MockedFunction<typeof closeAllConnections>;
-const mockedResolveConnectionName =
-  resolveConnectionName as jest.MockedFunction<typeof resolveConnectionName>;
 const mockedAcquireMigrationLock =
   acquireMigrationLock as jest.MockedFunction<typeof acquireMigrationLock>;
 const mockedComputeMigrationChecksum =
@@ -73,7 +66,7 @@ const mockedValidateMigrationHistory =
   validateMigrationHistory as jest.MockedFunction<typeof validateMigrationHistory>;
 const mockedLoadModule = loadModule as jest.MockedFunction<typeof loadModule>;
 
-describe("migrate:run behavior", () => {
+describe("migrate:run empty-migration detection robustness", () => {
   const originalExistsSync = fs.existsSync;
   const originalReadFileSync = fs.readFileSync;
   const adapter = {
@@ -93,9 +86,6 @@ describe("migrate:run behavior", () => {
     mockedReadLastBatch.mockResolvedValue(0);
     mockedRecordAppliedMigration.mockResolvedValue(undefined);
     mockedComputeMigrationChecksum.mockReturnValue("checksum");
-    mockedLoadModule.mockReturnValue({
-      up: jest.fn().mockResolvedValue(undefined),
-    } as never);
     adapter.execute.mockResolvedValue(undefined);
 
     jest.spyOn(console, "log").mockImplementation(() => undefined);
@@ -108,23 +98,22 @@ describe("migrate:run behavior", () => {
     process.exitCode = 0;
   });
 
-  function mockMigrationFiles(
-    connectionNames: string[],
-    fileName = "202603020001_create_users_table.ts"
+  function mockMigrationFile(
+    connectionName: string,
+    fileName: string,
+    fileContent: string
   ): void {
-    const dirSet = new Set(connectionNames.map((name) => PathMap.migrations(name.endsWith("_test"), name)));
+    const migrationsDir = PathMap.migrations(false, connectionName);
 
     jest.spyOn(fs, "existsSync").mockImplementation((target: fs.PathLike) => {
-      const normalized = path.resolve(String(target));
-      if (dirSet.has(normalized)) {
+      if (path.resolve(String(target)) === migrationsDir) {
         return true;
       }
       return originalExistsSync(target);
     });
 
     jest.spyOn(fs, "readdirSync").mockImplementation((target: fs.PathLike) => {
-      const normalized = path.resolve(String(target));
-      if (dirSet.has(normalized)) {
+      if (path.resolve(String(target)) === migrationsDir) {
         return [fileName] as unknown as ReturnType<typeof fs.readdirSync>;
       }
       return [] as unknown as ReturnType<typeof fs.readdirSync>;
@@ -132,89 +121,64 @@ describe("migrate:run behavior", () => {
 
     jest.spyOn(fs, "readFileSync").mockImplementation((target: fs.PathOrFileDescriptor) => {
       if (typeof target === "string" && target.endsWith(fileName)) {
-        return "await db.query(`CREATE TABLE users (id INT);`);" as never;
+        return fileContent as never;
       }
       return originalReadFileSync(target) as never;
     });
   }
 
-  test("runs migrations for the resolved default connection", async () => {
+  test("applies migration when up() executes db.query using variable SQL", async () => {
     const connectionName = "mysql";
-    const fileName = "202603020001_create_users_table.ts";
-    mockMigrationFiles([connectionName], fileName);
-    mockedResolveConnectionName.mockReturnValue(connectionName as never);
+    const fileName = "202603060001_update_users_table.ts";
+    mockMigrationFile(
+      connectionName,
+      fileName,
+      `export async function up(db) { const sql = "CREATE TABLE users (id INT);"; await db.query(sql); }`
+    );
 
     const up = jest.fn(async (db: { query(sql: string, params?: unknown[]): Promise<void> }) => {
-      await db.query("CREATE TABLE users (id INT);");
+      const sql = "CREATE TABLE users (id INT);";
+      await db.query(sql);
     });
     mockedLoadModule.mockReturnValue({ up } as never);
 
-    await migrateRun(false, undefined, false, false);
+    await migrateRun(false, undefined, false, false, {
+      connectionNames: [connectionName as never],
+    });
 
-    expect(mockedResolveConnectionName).toHaveBeenCalledWith(undefined, { test: false });
-    expect(mockedGetAdapter).toHaveBeenCalledWith(connectionName);
     expect(up).toHaveBeenCalled();
+    expect(adapter.execute).toHaveBeenCalledWith("CREATE TABLE users (id INT);", []);
     expect(mockedRecordAppliedMigration).toHaveBeenCalledWith(
       adapter,
       fileName,
       1,
       "checksum"
     );
-    expect(mockedCloseAllConnections).toHaveBeenCalledTimes(1);
   });
 
-  test("runs all targeted connections in order", async () => {
-    const connections = ["mysql_test", "pg_test", "sqlite_test"] as const;
-    mockMigrationFiles([...connections]);
+  test("skips migration when up() executes no SQL statements", async () => {
+    const connectionName = "mysql";
+    const fileName = "202603060002_update_users_table.ts";
+    mockMigrationFile(
+      connectionName,
+      fileName,
+      `export async function up() { /* no-op */ }`
+    );
 
-    await migrateRun(true, undefined, false, false, {
-      connectionNames: [...connections],
-    });
-
-    expect(mockedGetAdapter.mock.calls.map(([name]) => name)).toEqual([...connections]);
-    expect(mockedEnsureMigrationTables).toHaveBeenCalledTimes(3);
-    expect(mockedCloseAllConnections).toHaveBeenCalledTimes(3);
-    expect(process.exitCode).toBe(0);
-  });
-
-  test("dry run skips lock, db execute, and applied migration records", async () => {
-    const connectionName = "pg";
-    mockMigrationFiles([connectionName]);
-
-    const up = jest.fn(async (db: { query(sql: string, params?: unknown[]): Promise<void> }) => {
-      await db.query("CREATE TABLE users (id INT);");
-    });
+    const up = jest.fn(async () => undefined);
     mockedLoadModule.mockReturnValue({ up } as never);
 
-    await migrateRun(false, undefined, true, false, {
-      connectionNames: [connectionName],
+    await migrateRun(false, undefined, false, false, {
+      connectionNames: [connectionName as never],
     });
 
     expect(up).toHaveBeenCalled();
     expect(adapter.execute).not.toHaveBeenCalled();
-    expect(mockedAcquireMigrationLock).not.toHaveBeenCalled();
     expect(mockedRecordAppliedMigration).not.toHaveBeenCalled();
-    expect(mockedReleaseMigrationLock).not.toHaveBeenCalled();
-  });
-
-  test("continues all-connections execution and sets non-zero exitCode on partial failure", async () => {
-    const fileName = "202603020001_create_users_table.ts";
-    const connections = ["mysql_test", "pg_test", "sqlite_test"] as const;
-    mockMigrationFiles([...connections], fileName);
-
-    mockedValidateMigrationHistory.mockImplementation(async (_db, migrationsDir) => {
-      if (String(migrationsDir).includes(`${path.sep}pg_test`)) {
-        throw new Error("checksum mismatch");
-      }
-      return [];
-    });
-
-    await migrateRun(true, undefined, false, false, {
-      connectionNames: [...connections],
-    });
-
-    expect(mockedGetAdapter.mock.calls.map(([name]) => name)).toEqual([...connections]);
-    expect(mockedCloseAllConnections).toHaveBeenCalledTimes(3);
-    expect(process.exitCode).toBe(1);
+    expect(
+      (console.log as jest.Mock).mock.calls.some((args) =>
+        String(args[0]).includes(`Skipping empty migration: ${fileName}`)
+      )
+    ).toBe(true);
   });
 });

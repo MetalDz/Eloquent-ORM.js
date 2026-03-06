@@ -1,10 +1,6 @@
-/**
- * ⚙️ HooksMixin
- * Adds event-driven lifecycle hooks (creating, created, updating, updated, deleting, deleted)
- * ✅ Fully TS-safe, mixin-compliant, and compatible with all ORM layers
- */
-
 import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+import { HookStore } from "./utils/HookStore";
+import { ModelRegistry, type ModelConstructor } from "./utils/ModelRegistry";
 
 export type LifecycleEvent =
   | "creating"
@@ -17,7 +13,7 @@ export type LifecycleEvent =
 export type HookHandler<TPayload> = (payload: TPayload) => Promise<void> | void;
 
 /**
- * Base interface for hookable models
+ * Base interface for hookable models.
  */
 export interface HookableModel {
   create(data: Record<string, unknown>): Promise<unknown>;
@@ -25,54 +21,57 @@ export interface HookableModel {
   delete(id: number | string, pk?: string): Promise<void>;
 }
 
-/** Generic mixin constructor helper */
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 export function HooksMixin<TBase extends Constructor>(Base: TBase) {
   const resolveBaseMethod = createBaseMethodResolver(Base);
+  const deprecationWarnings = new WeakMap<ModelConstructor, Set<string>>();
+
+  function warnDeprecatedApi(modelCtor: ModelConstructor, api: "on" | "registerHook"): void {
+    const seen = deprecationWarnings.get(modelCtor) ?? new Set<string>();
+    if (seen.has(api)) return;
+
+    const modelName = modelCtor.name || "AnonymousModel";
+    console.warn(
+      `[DEPRECATION] ${modelName}.${api}() is deprecated. Prefer static modelEvents and registerModels([...]).`
+    );
+
+    seen.add(api);
+    deprecationWarnings.set(modelCtor, seen);
+  }
 
   abstract class Hookable extends Base implements HookableModel {
-    /**
-     * Global registry of lifecycle hooks per subclass
-     */
-    static hooks: Record<LifecycleEvent, HookHandler<unknown>[]> = {
-      creating: [],
-      created: [],
-      updating: [],
-      updated: [],
-      deleting: [],
-      deleted: [],
-    };
-
     constructor(...args: any[]) {
       super(...args);
     }
 
     /**
-     * 📌 Register a hook for a specific event
-     * Example:
-     *   User.on("creating", async (data) => { ... })
+     * Register a class-level lifecycle hook.
+     * Model must be granted via ModelRegistry before registration.
      */
-    static on<TPayload>(event: LifecycleEvent, callback: HookHandler<TPayload>): void {
-      const hooks = (this as typeof Hookable).hooks[event] as HookHandler<TPayload>[];
-      hooks.push(callback);
+    static on<TPayload>(
+      this: Function,
+      event: LifecycleEvent,
+      callback: HookHandler<TPayload>
+    ): void {
+      const modelCtor = this as ModelConstructor;
+      warnDeprecatedApi(modelCtor, "on");
+      HookStore.add(modelCtor, event, callback);
     }
 
     /**
-     * 🧩 Internal helper to trigger all hooks for an event
+     * Internal helper to trigger all hooks for an event.
      */
     protected async fire<TPayload>(event: LifecycleEvent, payload: TPayload): Promise<void> {
-      const cls = this.constructor as typeof Hookable;
-      const listeners = cls.hooks[event] as HookHandler<TPayload>[];
+      const modelCtor = this.constructor as ModelConstructor;
+      ModelRegistry.ensureGranted(modelCtor, "lifecycle");
+      const listeners = HookStore.get(modelCtor, event) as HookHandler<TPayload>[];
 
       for (const cb of listeners) {
         await cb(payload);
       }
     }
 
-    /**
-     * 🧠 Override create() to trigger hooks
-     */
     async create(data: Record<string, unknown>): Promise<unknown> {
       const baseCreate = resolveBaseMethod(this, "create");
       if (typeof baseCreate !== "function") {
@@ -85,9 +84,6 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
       return record;
     }
 
-    /**
-     * 🧱 Override update() to trigger hooks
-     */
     async update(
       id: number | string,
       data: Record<string, unknown>,
@@ -103,9 +99,6 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
       await this.fire("updated", { id, data });
     }
 
-    /**
-     * 🗑️ Override delete() to trigger hooks
-     */
     async delete(id: number | string, pk: string = "id"): Promise<void> {
       const baseDelete = resolveBaseMethod(this, "delete");
       if (typeof baseDelete !== "function") {
@@ -118,15 +111,15 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
     }
 
     /**
-     * ✅ Instance method to register hooks dynamically at runtime
-     * Example: user.registerHook("created", fn)
+     * Register an instance-level hook on the model constructor bucket.
+     * Model must be granted via ModelRegistry before registration.
      */
     registerHook<TPayload>(event: LifecycleEvent, callback: HookHandler<TPayload>): void {
-      const cls = this.constructor as typeof Hookable;
-      (cls.hooks[event] as HookHandler<TPayload>[]).push(callback);
+      const modelCtor = this.constructor as ModelConstructor;
+      warnDeprecatedApi(modelCtor, "registerHook");
+      HookStore.add(modelCtor, event, callback);
     }
   }
 
-  // ✅ Return type cast ensures TS knows Base + Hookable merged
   return Hookable as unknown as TBase & (abstract new (...args: any[]) => HookableModel);
 }

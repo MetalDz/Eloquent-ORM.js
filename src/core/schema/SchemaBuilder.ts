@@ -476,10 +476,9 @@ export class SchemaBuilder {
     if (options.unique) parts.push("UNIQUE");
     if (options.primary && (type as string ) !== "increments") parts.push("PRIMARY KEY");
 
-    if (options.default !== undefined)
-      parts.push(
-        `DEFAULT ${typeof options.default === "string" ? `'${options.default}'` : options.default}`
-      );
+    if (options.default !== undefined) {
+      parts.push(`DEFAULT ${this.formatDefaultLiteral(options.default)}`);
+    }
 
     return parts.join(" ");
   }

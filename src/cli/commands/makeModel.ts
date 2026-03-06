@@ -291,7 +291,7 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
       connectionName;
     const normalizedSchema = normalizedSchemaForMigration(ModelClass);
-    const { mainSQL } = await SchemaBuilder.toCreateSQL(
+    const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
       ModelClass.tableName,
       normalizedSchema,
       driver,
@@ -328,18 +328,49 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     }
 
     // 🧾 Write migration file
-    const safeSQL = mainSQL.replace(/`/g, "\\`");
+    const escapeForTemplateLiteral = (sql: string): string =>
+      sql.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+
+    const safeSQL = escapeForTemplateLiteral(mainSQL);
+    const safeExtraTables = extraTables.map((sql) => escapeForTemplateLiteral(sql));
+    const safeRollbackSQL = escapeForTemplateLiteral(rollbackMainSQL);
+    const safeRollbackExtraTables = rollbackExtraTables.map((sql) =>
+      escapeForTemplateLiteral(sql)
+    );
+
+    const upStatements: string[] = [];
+    if (safeSQL.trim()) {
+      upStatements.push(`await db.query(\`${safeSQL}\`);`);
+    }
+    upStatements.push(...safeExtraTables.map((sql) => `await db.query(\`${sql}\`);`));
+
+    const downStatements: string[] = [];
+    downStatements.push(
+      ...safeRollbackExtraTables.map((sql) => `await db.query(\`${sql}\`);`)
+    );
+    if (safeRollbackSQL.trim()) {
+      downStatements.push(`await db.query(\`${safeRollbackSQL}\`);`);
+    }
+
     const migrationContent = `/**
  * 🧩 Auto-generated ${prefix.toUpperCase()} migration for ${modelName}
  * Mode: ${mode}
  * Generated at ${new Date().toISOString()}
  */
 export async function up(db: { query(sql: string): Promise<void> }) {
-  await db.query(\`${safeSQL}\`);
+  ${
+    upStatements.length > 0
+      ? upStatements.join("\n  ")
+      : "// (no SQL changes detected)"
+  }
 }
 
 export async function down(db: { query(sql: string): Promise<void> }) {
-  await db.query(\`DROP TABLE IF EXISTS \\\`${ModelClass.tableName}\\\`;\`);
+  ${
+    downStatements.length > 0
+      ? downStatements.join("\n  ")
+      : "// (no rollback SQL generated)"
+  }
 }
 `;
     fs.writeFileSync(migrationPath, migrationContent, "utf8");

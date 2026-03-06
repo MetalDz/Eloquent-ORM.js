@@ -1,18 +1,13 @@
-// src/core/cache/QueryCacheMixin.ts
 import * as crypto from "crypto";
 import { CacheManager } from "../../cache/CacheManager";
 import { CacheRegistry } from "../../cache/CacheRegistry";
 import { CacheFallbackManager } from "../../cache/CacheFallbackManager";
 import { CacheAnalytics } from "../../cache/CacheAnalytics";
+import { HookStore, type LifecycleEvent } from "./utils/HookStore";
+import { ModelRegistry, type ModelConstructor } from "./utils/ModelRegistry";
 
-/**
- * 🧩 CacheOptions: instance-level settings
- */
 export type CacheOptions = { enabled: boolean; ttl: number };
 
-/**
- * 🧠 Shared cache interface for managers and fallback drivers
- */
 export interface CacheInterface {
   get<T>(key: string): Promise<T | null>;
   set<T>(key: string, value: T, ttl?: number): Promise<void>;
@@ -20,34 +15,24 @@ export interface CacheInterface {
   clear(): Promise<void>;
 }
 
-/**
- * 🎯 Contract for models that can use cache
- */
 export interface CacheableModel {
   invalidateModelCache(): Promise<void>;
   invalidateCacheGroup(group: string): Promise<void>;
 }
 
-/**
- * 🎯 Contract for constructors that support cache settings (static properties)
- */
 export interface CacheableConstructor {
   defaultCacheTTL?: number;
   cacheTTL?: Record<string, number>;
   cacheStrategy?: (payload: unknown, group?: string) => number;
 }
 
-/**
- * ✅ Generic constructor type for mixins
- */
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
-/**
- * 🧠 QueryCacheMixin
- * Adds caching, analytics, and fallback manager support.
- * ✅ Fully strict and mixin-compliant (TS 5.x)
- */
+const CACHE_INVALIDATION_EVENTS: LifecycleEvent[] = ["created", "updated", "deleted"];
+
 export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
+  const cacheHooksRegistered = new WeakSet<ModelConstructor>();
+
   abstract class CachedModel extends Base implements CacheableModel {
     private __cache: CacheOptions = { enabled: false, ttl: 60 };
 
@@ -58,37 +43,45 @@ export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
     constructor(...args: any[]) {
       super(...args);
 
-      const selfAny = this as any;
-      if (typeof selfAny.registerHook === "function") {
-        try {
-          selfAny.registerHook("created", async () => await this.invalidateModelCache());
-          selfAny.registerHook("updated", async () => await this.invalidateModelCache());
-          selfAny.registerHook("deleted", async () => await this.invalidateModelCache());
-        } catch (err) {
-          console.warn("[QueryCacheMixin] Failed to register cache invalidation hooks:", err);
-        }
+      try {
+        this.ensureCacheInvalidationHooks();
+      } catch (err) {
+        console.warn("[QueryCacheMixin] Failed to register cache invalidation hooks:", err);
       }
     }
 
-    /**
-     * ⚙️ Enable caching for the current query chain with a TTL.
-     */
+    private ensureCacheInvalidationHooks(): void {
+      const modelCtor = this.constructor as unknown as ModelConstructor;
+      if (!ModelRegistry.isGranted(modelCtor) && ModelRegistry.isStrictMode()) {
+        return;
+      }
+
+      if (cacheHooksRegistered.has(modelCtor)) {
+        return;
+      }
+
+      const modelName = (this.constructor as typeof CachedModel).name || "Model";
+      const clearModelCache = async (): Promise<void> => {
+        await CacheRegistry.clearModel(modelName);
+      };
+
+      for (const event of CACHE_INVALIDATION_EVENTS) {
+        HookStore.add(modelCtor, event, clearModelCache);
+      }
+
+      cacheHooksRegistered.add(modelCtor);
+    }
+
     cache(ttl = 60): this {
       this.__cache = { enabled: true, ttl };
       return this;
     }
 
-    /**
-     * 🚫 Disable caching for the current context.
-     */
     withoutCache(): this {
       this.__cache = { enabled: false, ttl: 0 };
       return this;
     }
 
-    /**
-     * 🔑 Generate a deterministic key from query payload.
-     */
     protected generateCacheKey(payload: unknown): string {
       const normalized = JSON.stringify(payload, (_key, value) => {
         if (value instanceof Date) return value.toISOString();
@@ -99,9 +92,6 @@ export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
       return crypto.createHash("sha256").update(normalized).digest("hex");
     }
 
-    /**
-     * ⚙️ Selects the active cache API (normal or fallback).
-     */
     protected get cacheAPI(): CacheInterface {
       try {
         const fallbackActive =
@@ -116,10 +106,6 @@ export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
       }
     }
 
-    /**
-     * 🧮 Compute TTL:
-     * priority: explicit > strategy > group > default > fallback
-     */
     protected resolveTTL(payload: unknown, group: string): number {
       const cls = this.constructor as unknown as CacheableConstructor & typeof CachedModel;
 
@@ -138,12 +124,9 @@ export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
 
       if (typeof cls.defaultCacheTTL === "number") return cls.defaultCacheTTL;
 
-      return 60; // fallback
+      return 60;
     }
 
-    /**
-     * ⚡ Execute query with caching
-     */
     protected async runWithCache<R>(
       payload: unknown,
       executeFn: () => Promise<R>,
@@ -188,24 +171,17 @@ export function QueryCacheMixin<TBase extends Constructor>(Base: TBase) {
       return result;
     }
 
-    /**
-     * 🧹 Invalidate all caches for this model
-     */
     async invalidateModelCache(): Promise<void> {
       const modelName = (this.constructor as typeof CachedModel).name || "Model";
       await CacheRegistry.clearModel(modelName);
     }
 
-    /**
-     * 🧹 Invalidate a specific cache group (like "find" or "all")
-     */
     async invalidateCacheGroup(group: string): Promise<void> {
       const modelName = (this.constructor as typeof CachedModel).name || "Model";
       await CacheRegistry.clearGroup(modelName, group);
     }
   }
 
-  // ✅ Return merged type for both instance & static parts
   return CachedModel as unknown as TBase &
     (abstract new (...args: any[]) => CacheableModel) &
     CacheableConstructor;

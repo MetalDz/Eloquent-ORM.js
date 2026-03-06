@@ -120,28 +120,39 @@ export abstract class Factory<T extends BaseModel> {
       return results;
     }
 
-    const queue: Promise<void>[] = [];
     let active = 0;
     let index = 0;
+    let settled = false;
 
-    return new Promise((resolve) => {
-      const next = () => {
-        if (index >= count) {
-          if (active === 0) resolve(results);
-          return;
+    return new Promise((resolve, reject) => {
+      const maybeResolve = () => {
+        if (!settled && index >= count && active === 0) {
+          settled = true;
+          resolve(results);
         }
+      };
 
-        while (active < concurrency && index < count) {
+      const next = () => {
+        if (settled) return;
+
+        while (active < concurrency && index < count && !settled) {
           const i = index++;
           active++;
 
-          const task = executeCreate(i).finally(() => {
-            active--;
-            next();
-          });
-
-          queue.push(task);
+          void executeCreate(i)
+            .catch((err: unknown) => {
+              if (settled) return;
+              settled = true;
+              reject(err);
+            })
+            .finally(() => {
+              active--;
+              if (settled) return;
+              next();
+            });
         }
+
+        maybeResolve();
       };
 
       next();

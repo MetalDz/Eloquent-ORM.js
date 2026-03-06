@@ -76,11 +76,6 @@ function hasSameGeneratedBody(filePath: string, nextContent: string): boolean {
   return stableMigrationBody(current) === stableMigrationBody(nextContent);
 }
 
-function migrationTimestampPrefix(fileName: string): string {
-  const match = fileName.match(/^(\d+)_/);
-  return match?.[1] ?? "";
-}
-
 type PendingPivotMigration = {
   connectionName: string;
   migrationsDir: string;
@@ -146,13 +141,12 @@ function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
 }
 
 /**
- * ًں§± make:migration (v4.0)
+ * make:migration (v4.1)
  *
- * âœ… CREATE â†’ only once initially
- * âœ… UPDATE â†’ overwrites old CREATE with first UPDATE
- * âœ… Subsequent updates â†’ replace last UPDATE file
- * âœ… Keeps only ONE active migration file per model
- * âœ… No duplicates, no confusion
+ * - Baseline CREATE migrations are generated once.
+ * - UPDATE migrations are append-only.
+ * - Existing migration files are never deleted automatically.
+ * - Duplicate generated SQL bodies are skipped.
  */
 export async function makeMigration(
   modelName: string,
@@ -259,14 +253,16 @@ export async function makeMigration(
       if (!fs.existsSync(migrationsDir)) {
         fs.mkdirSync(migrationsDir, { recursive: true });
       }
-      const files = fs.readdirSync(migrationsDir);
-      const createFile = files.find((f) =>
+      const files = fs
+        .readdirSync(migrationsDir)
+        .filter((fileName) => fileName.endsWith(".ts") || fileName.endsWith(".js"));
+      const createFiles = files.filter((f) =>
         f.includes(`create_${ModelClass.tableName}_table.ts`)
       );
-      const updateFile = files.find((f) =>
+      const updateFiles = files.filter((f) =>
         f.includes(`update_${ModelClass.tableName}_table.ts`)
       );
-      const needsBaselineCreate = !createFile && !updateFile;
+      const needsBaselineCreate = createFiles.length === 0 && updateFiles.length === 0;
       console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
       console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
 
@@ -353,32 +349,27 @@ export async function down(db: { query(sql: string): Promise<void> }) {
 }`;
 
       if (hasMainSQL || !pivotSeparate) {
+        if (prefix === "create" && createFiles.length > 0) {
+          console.log(
+            chalk.gray(
+              `ℹ️ Baseline CREATE already exists for "${ModelClass.tableName}" — skipping CREATE regeneration.`
+            )
+          );
+        } else {
+        const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
         const unchangedFile =
-          prefix === "create"
-            ? createFile && hasSameGeneratedBody(path.join(migrationsDir, createFile), migrationContent)
-              ? createFile
-              : null
-            : updateFile && hasSameGeneratedBody(path.join(migrationsDir, updateFile), migrationContent)
-              ? updateFile
-              : null;
+          samePrefixFiles.find((fileName) =>
+            hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
+          ) ?? null;
 
         if (unchangedFile) {
           console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
         } else {
-          // ✅ Clean logic: only keep 1 file per model
-          if (createFile) {
-            fs.unlinkSync(path.join(migrationsDir, createFile));
-            console.log(chalk.gray(`🧹 Removed outdated CREATE migration: ${createFile}`));
-          }
-          if (updateFile) {
-            fs.unlinkSync(path.join(migrationsDir, updateFile));
-            console.log(chalk.gray(`🧹 Removed old UPDATE migration: ${updateFile}`));
-          }
-
           fs.writeFileSync(migrationPath, migrationContent, "utf8");
 
           const label = prefix === "create" ? "CREATE" : "UPDATE";
           console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
+        }
         }
       }
 
@@ -431,23 +422,13 @@ export async function down(db: { query(sql: string): Promise<void> }) {
       const genericPivotFiles = allFiles.filter((f) => f.includes("_create_pivot_table.ts"));
       existingPivotFiles.push(...genericPivotFiles);
     }
-
-    const maxBaseTimestamp = allFiles
-      .filter((fileName) => !existingPivotFiles.includes(fileName))
-      .map(migrationTimestampPrefix)
-      .reduce((max, current) => (current > max ? current : max), "");
-
-    const unchangedPivot = existingPivotFiles.find((fileName) =>
+    const uniquePivotFiles = [...new Set(existingPivotFiles)];
+    const unchangedPivot = uniquePivotFiles.find((fileName) =>
       hasSameGeneratedBody(path.join(pendingPivot.migrationsDir, fileName), pendingPivot.content)
     );
-    if (unchangedPivot && migrationTimestampPrefix(unchangedPivot) > maxBaseTimestamp) {
+    if (unchangedPivot) {
       console.log(chalk.gray(`ℹ️ Pivot migration unchanged: ${unchangedPivot}`));
       continue;
-    }
-
-    for (const oldPivot of existingPivotFiles) {
-      fs.unlinkSync(path.join(pendingPivot.migrationsDir, oldPivot));
-      console.log(chalk.gray(`🧹 Removed old PIVOT migration: ${oldPivot}`));
     }
 
     const pivotTimestamp = nextTimestamp();

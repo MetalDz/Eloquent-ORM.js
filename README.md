@@ -176,3 +176,36 @@ Includes clear philosophical comment explaining this in every generated file.
  
 🧑‍💻 Authors
 Created with ❤️ by ALPHA Consultings who love Laravel, Node.js, and TypeScript.
+## Model Registration and Hook Access
+
+Register your models once at startup:
+
+```ts
+import { registerModels } from "eloquentjs";
+import { User } from "./app/models/User";
+import { Post } from "./app/models/Post";
+
+registerModels([User, Post]); // strict mode is enabled by default
+
+// Optional: allow lazy auto-registration on first model usage
+registerModels([User, Post], { strict: false });
+```
+
+Lifecycle hook access is now gated:
+- In strict mode, hook registration is denied for unregistered models.
+- In strict mode, unregistered models are blocked from lifecycle hook execution paths.
+- In non-strict mode, models are lazily granted on first hook registration or first lifecycle usage.
+
+Migration notes:
+- `Model.on(...)` and `model.registerHook(...)` are deprecated and emit warnings.
+- Prefer `static modelEvents` and bootstrap registration with `registerModels([...])`.
+- Full guide: `src/documentation/model-registry-hooks.md`
+
+## Factory createMany Concurrency Behavior
+
+`Factory.createMany(count, callback, concurrency > 1)` now fails fast:
+- If any worker or callback fails, the whole call rejects.
+- It no longer resolves with partial/sparse arrays when one task fails.
+
+Migration note:
+- If you need best-effort partial success, use an explicit `Promise.allSettled(...)` strategy or run sequentially and handle per-item errors.

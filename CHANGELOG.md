@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased
+
+### Factory createMany concurrency hardening
+
+- `Factory.createMany(count, callback, concurrency > 1)` now rejects on the first worker or callback failure.
+- Concurrent `createMany` no longer resolves with sparse/partial success arrays when one task fails.
+
+### Consumer migration note
+
+- If your code relied on partial success in concurrent mode, switch to an explicit best-effort flow:
+  - run per-item creation with `Promise.allSettled(...)`, or
+  - run sequentially and handle per-item errors manually.
+
+### makeModel update rollback safety
+
+- `make:model --with-migration` now writes non-destructive `down()` SQL for generated `update_*` migrations.
+- Update migrations now use `SchemaBuilder` inverse rollback SQL instead of unconditional `DROP TABLE`.
+- When inverse rollback SQL is unavailable, generated `down()` emits a no-op rollback comment instead of dropping the table.
+
+### migrateRun empty-detection robustness
+
+- `migrate:run` no longer relies on brittle migration file source-text regex to detect empty migrations.
+- Empty detection is now based on actual non-empty `db.query(...)` calls executed during `up()`.
+- Valid migrations that use variable SQL or non-template query forms are no longer skipped as false-empty.
+
+### ConnectionFactory cold-start race protection
+
+- `getConnection()` now deduplicates concurrent cold-start initialization per connection name using in-flight promises.
+- `getAdapter()` now deduplicates concurrent cold-start adapter initialization per connection name.
+- Failed initialization now clears in-flight state so retries can succeed cleanly.
+
+### SchemaBuilder default-string escaping hardening
+
+- `SchemaBuilder.columnSQL()` now uses safe default-literal formatting for `options.default`.
+- String defaults with single quotes are escaped (`'` -> `''`) in generated SQL.
+- Applies consistently to create SQL and smart-update add-column SQL generation.
+
 ## Pre-release Notes
 
 ### Breaking package-surface changes in `0.9.x`

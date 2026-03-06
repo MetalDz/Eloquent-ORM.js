@@ -59,3 +59,11 @@ export { SchemaBuilder, type SchemaBuildResult } from "./core/schema/SchemaBuild
 
 export { CacheManager } from "./core/cache/CacheManager";
 export { setupCache } from "./core/cache/setupCache";
+
+export {
+  registerModels,
+  isModelRegistered,
+  setModelRegistryStrictMode,
+  isModelRegistryStrictMode,
+  type RegisterModelsOptions,
+} from "./core/orm/mixins/utils/modelRegistration";

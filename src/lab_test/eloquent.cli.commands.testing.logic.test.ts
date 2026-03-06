@@ -1,0 +1,228 @@
+import fs from "fs";
+import path from "path";
+
+type CommandSpec = {
+  name: string;
+  expectedFlags: string[];
+};
+
+type ParsedCommand = {
+  block: string;
+  commandDeclaration: string;
+  name: string;
+  optionFlags: string[];
+};
+
+const rootDir = process.cwd();
+const cliSourcePath = path.resolve(rootDir, "src/cli/eloquent.ts");
+const cliSource = fs.readFileSync(cliSourcePath, "utf8");
+
+const commandMatrix: CommandSpec[] = [
+  {
+    name: "make:model",
+    expectedFlags: ["--test", "--with-migration", "--attrs-from-schema", "--force"],
+  },
+  {
+    name: "make:controller",
+    expectedFlags: ["--test", "--soft"],
+  },
+  {
+    name: "make:service",
+    expectedFlags: ["--test"],
+  },
+  {
+    name: "make:seed",
+    expectedFlags: ["--count <number>", "--test"],
+  },
+  {
+    name: "make:factory",
+    expectedFlags: ["--model <model>", "--test", "--force"],
+  },
+  {
+    name: "make:scenario",
+    expectedFlags: ["--test", "--preset <name>", "--controllers", "--services", "--run", "--force"],
+  },
+  {
+    name: "make:migration",
+    expectedFlags: [
+      "--test",
+      "--all",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--pivot-separate",
+    ],
+  },
+  {
+    name: "db:seed",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--class <name>",
+    ],
+  },
+  {
+    name: "db:seed:fresh",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--class <name>",
+      "--force",
+    ],
+  },
+  {
+    name: "demo:scenario",
+    expectedFlags: ["--user <id>", "--random", "--test"],
+  },
+  {
+    name: "migrate:run",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--all-migrations",
+      "--pivot-separate",
+    ],
+  },
+  {
+    name: "migrate:run:test",
+    expectedFlags: [
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--all-migrations",
+      "--pivot-separate",
+    ],
+  },
+  {
+    name: "migrate:rollback",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--all-migrations",
+      "--step <number>",
+    ],
+  },
+  {
+    name: "migrate:status",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--all-migrations",
+    ],
+  },
+  {
+    name: "migrate:fresh",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--all-migrations",
+      "--force",
+    ],
+  },
+  {
+    name: "migrate:reset",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+      "--all-migrations",
+    ],
+  },
+  {
+    name: "cache:clear",
+    expectedFlags: [],
+  },
+  {
+    name: "cache:stats",
+    expectedFlags: [],
+  },
+  {
+    name: "factory:status",
+    expectedFlags: ["--test", "--details", "--graph"],
+  },
+  {
+    name: "list",
+    expectedFlags: [],
+  },
+];
+
+function parseCommandBlocks(source: string): ParsedCommand[] {
+  const commandMatches = [...source.matchAll(/\.command\("([^"]+)"\)/g)];
+  const parseBoundary = source.indexOf("program.parse(process.argv);");
+  const defaultBoundary = parseBoundary === -1 ? source.length : parseBoundary;
+
+  return commandMatches.map((match, index) => {
+    const declaration = match[1];
+    const start = match.index ?? 0;
+    const nextStart =
+      index + 1 < commandMatches.length
+        ? commandMatches[index + 1].index ?? defaultBoundary
+        : defaultBoundary;
+    const block = source.slice(start, nextStart);
+    const optionFlags = [...block.matchAll(/\.option\("([^"]+)"/g)].map(
+      (optionMatch) => optionMatch[1]
+    );
+
+    return {
+      block,
+      commandDeclaration: declaration,
+      name: declaration.split(" ")[0],
+      optionFlags,
+    };
+  });
+}
+
+function sortFlags(flags: string[]): string[] {
+  return [...flags].sort((a, b) => a.localeCompare(b));
+}
+
+describe("Eloquent CLI commands + parameters surface", () => {
+  const parsedCommands = parseCommandBlocks(cliSource);
+  const commandMap = new Map(parsedCommands.map((command) => [command.name, command]));
+
+  test("all expected commands are registered in CLI bootstrap", () => {
+    const expected = commandMatrix.map((entry) => entry.name).sort((a, b) => a.localeCompare(b));
+    const actual = parsedCommands.map((entry) => entry.name).sort((a, b) => a.localeCompare(b));
+    expect(actual).toEqual(expected);
+  });
+
+  test.each(commandMatrix)(
+    "$name command declares exactly the expected parameters",
+    ({ name, expectedFlags }) => {
+      const command = commandMap.get(name);
+      expect(command).toBeDefined();
+      expect(sortFlags(command?.optionFlags ?? [])).toEqual(sortFlags(expectedFlags));
+    }
+  );
+
+  test("list command includes all registered command names", () => {
+    const listCommand = commandMap.get("list");
+    expect(listCommand).toBeDefined();
+
+    for (const command of commandMatrix.map((entry) => entry.name)) {
+      expect(listCommand?.block).toContain(command);
+    }
+  });
+});

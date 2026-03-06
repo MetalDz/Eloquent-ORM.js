@@ -70,15 +70,6 @@ async function runMigrationsForConnection(
   console.log(chalk.gray(`Connected to ${connectionName}.`));
   const lockOwner = `migrate:run:${connectionName}:${process.pid}:${Date.now()}`;
 
-  const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
-    if (!sql || sql.trim() === "") return;
-    if (dryRun) {
-      console.log(chalk.gray(`[DRY-RUN] Would execute:\n${sql}\n`));
-      return;
-    }
-    await db.execute(sql, params);
-  };
-
   await ensureMigrationTables(db);
   if (!dryRun) {
     await acquireMigrationLock(db, lockOwner);
@@ -125,18 +116,24 @@ async function runMigrationsForConnection(
         continue;
       }
 
-      const fileContent = fs.readFileSync(filePath, "utf8");
-      const isEmpty =
-        !fileContent.includes("await db.query(") ||
-        fileContent.match(/await db\.query\(`[^`]*`\);/g)?.length === 0;
+      console.log(chalk.gray(`Applying: ${file}`));
+      let executedStatements = 0;
+      const runQuery = async (sql: string, params: unknown[] = []): Promise<void> => {
+        if (!sql || sql.trim() === "") return;
+        executedStatements++;
+        if (dryRun) {
+          console.log(chalk.gray(`[DRY-RUN] Would execute:\n${sql}\n`));
+          return;
+        }
+        await db.execute(sql, params);
+      };
 
-      if (isEmpty) {
+      await migrationModule.up({ query: runQuery });
+
+      if (executedStatements === 0) {
         console.log(chalk.gray(`Skipping empty migration: ${file}`));
         continue;
       }
-
-      console.log(chalk.gray(`Applying: ${file}`));
-      await migrationModule.up({ query: runQuery });
 
       if (!dryRun) {
         await recordAppliedMigration(
