@@ -55,13 +55,14 @@ Last updated: 2026-03-06
   - Tracking: `validation tasks/Observability-Audit-Trail-Plan.md`
 
 ### Step 5: Security and API Documentation
-- [ ] Add `SECURITY.md` (scope, supported versions, reporting process).
-- [ ] Add API documentation for public exports and extension points.
-- [ ] Add production CLI safety document (safe vs destructive commands).
-- [ ] Add usage guides (runtime, migrations, seeding, multi-driver, test mode).
-- [ ] Add versioned upgrade/migration guide.
-- [ ] Add docs presence test:
+- [x] Add `SECURITY.md` (scope, supported versions, reporting process).
+- [x] Add API documentation for public exports and extension points.
+- [x] Add production CLI safety document (safe vs destructive commands).
+- [x] Add usage guides (runtime, migrations, seeding, multi-driver, test mode).
+- [x] Add versioned upgrade/migration guide.
+- [x] Add docs presence test:
   - `src/lab_test/docs.production.presence.logic.test.ts`
+  - Tracking: `validation tasks/Security-API-Documentation-Plan.md`
 
 ### Step 6: CI + Release Qualification (Finalize Last)
 - [ ] CI enforcement: `typecheck`, hardening tests, CLI scenario gates.

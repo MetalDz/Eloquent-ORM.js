@@ -31,6 +31,9 @@ Last updated: 2026-03-06
   - structured logging mode (`ELOQUENT_LOG_FORMAT=json`, `ELOQUENT_LOG_LEVEL`)
   - migration/seed audit events with command/actor/connection/timestamp/result
   - audit trail validation test coverage
+- Production Readiness Step 5 completed:
+  - `SECURITY.md`, API reference, CLI safety guide, usage guides, and upgrade guide
+  - docs presence quality gate test for production documentation set
 
 ## Current
 - No active hardening tasks.
