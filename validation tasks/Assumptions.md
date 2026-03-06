@@ -23,6 +23,10 @@ Last updated: 2026-03-06
 - Production Readiness Step 2 completed:
   - partial rollback recovery runbook with operator commands
   - integration workflow test for partial rollback failure -> recover -> re-apply
+- Production Readiness Step 3 completed:
+  - secret redaction utility applied to CLI/core logs and surfaced errors
+  - role-aware DB env contract for runtime vs migration users
+  - least-privilege DB documentation + verification tests
 
 ## Current
 - No active hardening tasks.

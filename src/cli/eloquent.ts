@@ -17,6 +17,7 @@ import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";
 import { loadFactories } from "./utils/factories/FactoryLoader";
 import { checkProductionDestructiveCommand } from "./utils/ProductionSafety";
 import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
+import { redactSecretsInArgs } from "../core/security/SecretRedactor";
 
 if (process.env.ELOQUENT_DEBUG === "true") {
   console.log("[cli] start", { argv: process.argv.slice(2) });
@@ -63,7 +64,8 @@ try {
   fs.mkdirSync(logsDir, { recursive: true });
   const logFile = path.join(logsDir, `${commandName}.log`);
   const writeLog = (level: string, args: unknown[]) => {
-    const message = args
+    const redactedArgs = redactSecretsInArgs(args);
+    const message = redactedArgs
       .map((arg) => {
         if (typeof arg === "string") return arg;
         try {
@@ -89,20 +91,24 @@ try {
   const originalInfo = console.info.bind(console);
 
   console.log = (...args: unknown[]) => {
-    writeLog("LOG", args);
-    originalLog(...args);
+    const safeArgs = redactSecretsInArgs(args);
+    writeLog("LOG", safeArgs);
+    originalLog(...safeArgs);
   };
   console.warn = (...args: unknown[]) => {
-    writeLog("WARN", args);
-    originalWarn(...args);
+    const safeArgs = redactSecretsInArgs(args);
+    writeLog("WARN", safeArgs);
+    originalWarn(...safeArgs);
   };
   console.error = (...args: unknown[]) => {
-    writeLog("ERROR", args);
-    originalError(...args);
+    const safeArgs = redactSecretsInArgs(args);
+    writeLog("ERROR", safeArgs);
+    originalError(...safeArgs);
   };
   console.info = (...args: unknown[]) => {
-    writeLog("INFO", args);
-    originalInfo(...args);
+    const safeArgs = redactSecretsInArgs(args);
+    writeLog("INFO", safeArgs);
+    originalInfo(...safeArgs);
   };
 } catch {
   // If logging fails, continue without blocking CLI.

@@ -6,6 +6,7 @@ import {
 import { createAdapter } from "./DriverAdapter";
 import type { DriverAdapter } from "./DriverAdapter";
 import { dbConfig } from "../../config/database";
+import { redactSecretsInValue } from "../security/SecretRedactor";
 
 export type { ConnectionName };
 
@@ -117,7 +118,10 @@ export async function closeAllConnections(): Promise<void> {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (!message.includes("closed state")) {
-        console.error(`Error closing ${connectionName}:`, err);
+        console.error(
+          `Error closing ${connectionName}:`,
+          redactSecretsInValue(err)
+        );
       }
     }
 

@@ -39,11 +39,13 @@ Last updated: 2026-03-06
   - Tracking: `validation tasks/MigrateRollback-Partial-Recovery-Workflow-Plan.md`
 
 ### Step 3: Secrets + Access Hardening
-- [ ] Enforce secret redaction in CLI/core logs and surfaced errors.
-- [ ] Add least-privilege DB guidance and env contract (runtime user vs migration user).
-- [ ] Add tests:
+- [x] Enforce secret redaction in CLI/core logs and surfaced errors.
+- [x] Add least-privilege DB guidance and env contract (runtime user vs migration user).
+  - `src/documentation/db-least-privilege-env-contract.md`
+- [x] Add tests:
   - `src/lab_test/cli.secret.redaction.logic.test.ts`
   - `src/lab_test/db.user.role.separation.logic.test.ts`
+  - Tracking: `validation tasks/Secrets-Access-Hardening-Plan.md`
 
 ### Step 4: Observability + Audit Trail
 - [ ] Add structured logging mode (JSON + log levels).

@@ -15,6 +15,8 @@ describe("production readiness gates", () => {
       "src/lab_test/cli.production.safety.logic.test.ts",
       "src/lab_test/cli.bootstrap.precheck.logic.test.ts",
       "src/lab_test/migrate.rollback.partial.recovery.logic.test.ts",
+      "src/lab_test/cli.secret.redaction.logic.test.ts",
+      "src/lab_test/db.user.role.separation.logic.test.ts",
     ];
 
     const missing = requiredTests.filter((relPath) =>
@@ -35,6 +37,8 @@ describe("production readiness gates", () => {
       "validation tasks/CLI-Production-Safety-Controls-Plan.md",
       "validation tasks/MigrateRollback-Partial-Recovery-Workflow-Plan.md",
       "src/documentation/migration-rollback-recovery-runbook.md",
+      "validation tasks/Secrets-Access-Hardening-Plan.md",
+      "src/documentation/db-least-privilege-env-contract.md",
     ];
 
     const missing = requiredDocs.filter((relPath) =>
