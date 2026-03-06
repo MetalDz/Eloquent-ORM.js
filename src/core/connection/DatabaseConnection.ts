@@ -1,9 +1,11 @@
 import { Pool } from "mysql2/promise";
 import { Client as PgClient } from "pg";
-import { open, Database } from "sqlite";
-import * as sqlite3 from "sqlite3";
 import { MongoClient, Db } from "mongodb";
 import { dbConfig } from "../../config/database";
+import {
+  BetterSqliteConnection,
+  SQLiteConnectionLike,
+} from "./BetterSqliteConnection";
 
 /* ----------------------------------------------------------
  * 🧱 1. Type Declarations for Configurations
@@ -52,7 +54,7 @@ export interface MongoConfig {
 export type ConnectionConfig = MySQLConfig | PostgresConfig | SQLiteConfig | MongoConfig;
 
 /** Database connection instance types */
-export type ConnectionInstance = Pool | PgClient | Database | Db;
+export type ConnectionInstance = Pool | PgClient | SQLiteConnectionLike | Db;
 
 /** Supported connection names */
 export type ConnectionName = keyof typeof dbConfig.connections;
@@ -95,10 +97,7 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
 
     /* ---------- SQLite ---------- */
     case "sqlite": {
-      return await open({
-        filename: config.sqlitePath,
-        driver: sqlite3.Database,
-      });
+      return new BetterSqliteConnection(config.sqlitePath);
     }
 
     /* ---------- MongoDB ---------- */

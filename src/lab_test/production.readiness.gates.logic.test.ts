@@ -20,6 +20,8 @@ describe("production readiness gates", () => {
       "src/lab_test/cli.audit.trail.logic.test.ts",
       "src/lab_test/docs.production.presence.logic.test.ts",
       "src/lab_test/ci.release.qualification.logic.test.ts",
+      "src/lab_test/dependency.audit.tracking.logic.test.ts",
+      "src/lab_test/sqlite.driver.replacement.logic.test.ts",
     ];
 
     const missing = requiredTests.filter((relPath) =>
@@ -45,6 +47,7 @@ describe("production readiness gates", () => {
       "validation tasks/Observability-Audit-Trail-Plan.md",
       "validation tasks/Security-API-Documentation-Plan.md",
       "validation tasks/CI-Release-Qualification-Plan.md",
+      "validation tasks/Dependency-Security-Audit-Tracking-Plan.md",
       "SECURITY.md",
       "src/documentation/api-reference.md",
       "src/documentation/cli-production-safety.md",

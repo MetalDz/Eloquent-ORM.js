@@ -43,7 +43,7 @@ Relation	        Relation.ts	            Abstract base for relationships (HasOne
 Driver	        Library	                Type	        Notes
 MySQL	        mysql2/promise	        SQL	            Full support
 PostgreSQL	    pg	                    SQL	            Full support
-SQLite	        sqlite3	                SQL	            Local + test DBs
+SQLite	        better-sqlite3	        SQL	            Local + test DBs
 MongoDB	        mongodb	                NoSQL	        Document-based ORM support
 
 
