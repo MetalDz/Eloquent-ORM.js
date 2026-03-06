@@ -19,6 +19,7 @@ describe("production readiness gates", () => {
       "src/lab_test/db.user.role.separation.logic.test.ts",
       "src/lab_test/cli.audit.trail.logic.test.ts",
       "src/lab_test/docs.production.presence.logic.test.ts",
+      "src/lab_test/ci.release.qualification.logic.test.ts",
     ];
 
     const missing = requiredTests.filter((relPath) =>
@@ -43,11 +44,13 @@ describe("production readiness gates", () => {
       "src/documentation/db-least-privilege-env-contract.md",
       "validation tasks/Observability-Audit-Trail-Plan.md",
       "validation tasks/Security-API-Documentation-Plan.md",
+      "validation tasks/CI-Release-Qualification-Plan.md",
       "SECURITY.md",
       "src/documentation/api-reference.md",
       "src/documentation/cli-production-safety.md",
       "src/documentation/usage-guides.md",
       "src/documentation/upgrade-guide.md",
+      "src/documentation/release-qualification-checklist.md",
     ];
 
     const missing = requiredDocs.filter((relPath) =>

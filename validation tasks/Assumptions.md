@@ -34,11 +34,15 @@ Last updated: 2026-03-06
 - Production Readiness Step 5 completed:
   - `SECURITY.md`, API reference, CLI safety guide, usage guides, and upgrade guide
   - docs presence quality gate test for production documentation set
+- Production Readiness Step 6 completed:
+  - CI dependency/security gate (`package-lock` policy + `npm audit --omit=dev --audit-level=high`)
+  - release qualification checklist with explicit pass/fail criteria
+  - Step 6 validation test and tracking plan
 
 ## Current
 - No active hardening tasks.
 - ORM real-scenario CLI validation Phases 1-5 are completed with command evidence.
-- Production readiness assessment added with remaining P0/P1/P2 tasks:
+- Production readiness assessment Steps 1-6 are completed and tracked:
   - `validation tasks/Production-Readiness-Assessment.md`
 
 ## Locked (Until Previous Task Is Fully Closed)

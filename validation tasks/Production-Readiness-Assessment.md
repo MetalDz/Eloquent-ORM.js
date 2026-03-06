@@ -65,10 +65,14 @@ Last updated: 2026-03-06
   - Tracking: `validation tasks/Security-API-Documentation-Plan.md`
 
 ### Step 6: CI + Release Qualification (Finalize Last)
-- [ ] CI enforcement: `typecheck`, hardening tests, CLI scenario gates.
-- [ ] CI matrix coverage for `mysql`, `pg`, `sqlite`.
-- [ ] Add dependency/security checks in CI (`npm audit` policy + lockfile policy).
-- [ ] Add release qualification checklist with explicit pass/fail criteria.
+- [x] CI enforcement: `typecheck`, hardening tests, CLI scenario gates.
+- [x] CI matrix coverage for `mysql`, `pg`, `sqlite`.
+- [x] Added dependency/security checks in CI (`npm audit` policy + lockfile policy).
+- [x] Added release qualification checklist with explicit pass/fail criteria.
+- [x] Added Step 6 validation artifacts:
+  - `validation tasks/CI-Release-Qualification-Plan.md`
+  - `src/lab_test/ci.release.qualification.logic.test.ts`
+  - `src/documentation/release-qualification-checklist.md`
 
 ## Dependency Rules (Do Not Reorder)
 1. Complete Step 1 before new docs: behavior must be final before documenting it.

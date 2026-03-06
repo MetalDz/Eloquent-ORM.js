@@ -183,6 +183,30 @@ jobs:
       - name: Run tarball smoke
         run: npm run test:pack-smoke
 
+  dependency-security:
+    name: Dependency Security and Lockfile Policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Ensure lockfile exists
+        run: test -f package-lock.json
+
+      - name: Install from lockfile (policy)
+        run: npm ci --ignore-scripts
+
+      - name: Audit production dependencies (high+)
+        run: npm audit --omit=dev --audit-level=high
+
   scenario-matrix:
     name: Scenario Matrix (${{ matrix.driver }})
     runs-on: ubuntu-latest
