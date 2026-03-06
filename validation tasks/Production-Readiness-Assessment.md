@@ -18,21 +18,56 @@ Last updated: 2026-03-06
 - Real scenario CLI lifecycle (Phases 1-5) is documented with command evidence:
   - `validation tasks/ORM-Real-Scenario-CLI-Validation-Plan.md`
 
-## Remaining Tasks (Still Needed)
+## Ordered Production Task Plan (No Rework)
 
-### P0 (Blockers for strong production confidence)
-- [ ] Add CI enforcement for typecheck + hardening tests + CLI scenario gates (mysql/pg/sqlite matrix).
-- [ ] Add rollback failure policy docs and tests for partial rollback recovery runbook.
-- [ ] Add automated "clean bootstrap before all-connections seed" command path or precheck to avoid drifted DB state.
+### Step 1: CLI Production Safety Controls (Implement First)
+- [ ] Add production guardrails for destructive commands (`migrate:fresh`, `migrate:reset`, `db:seed:fresh`, `make:*` in prod).
+- [ ] Require explicit override contract for destructive prod actions (`--force --yes` + env allow flag).
+- [ ] Add preflight "clean bootstrap before all-connections seed" check/command.
+- [ ] Add tests:
+  - `src/lab_test/cli.production.safety.logic.test.ts`
+  - `src/lab_test/cli.bootstrap.precheck.logic.test.ts`
 
-### P1 (High value before broad rollout)
-- [ ] Add structured logging mode (JSON/log levels) for CLI and core connection/migration operations.
-- [ ] Add performance baseline tests (bulk create, large migration batches, concurrent queries).
-- [ ] Add dependency/security checks in CI (audit + lockfile policy).
+### Step 2: Migration/Rollback Failure Safety
+- [x] Rollback returns non-zero exit when `down()` fails.
+- [x] Regression test added for rollback failure exit code.
+- [ ] Add partial rollback recovery runbook section with concrete operator steps.
+- [ ] Add integration test for partial rollback recovery workflow.
 
-### P2 (Operational maturity)
-- [ ] Publish production runbook (backup/restore, migrate-forward strategy, rollback strategy, incident handling).
-- [ ] Add release qualification checklist with explicit pass criteria per version.
+### Step 3: Secrets + Access Hardening
+- [ ] Enforce secret redaction in CLI/core logs and surfaced errors.
+- [ ] Add least-privilege DB guidance and env contract (runtime user vs migration user).
+- [ ] Add tests:
+  - `src/lab_test/cli.secret.redaction.logic.test.ts`
+  - `src/lab_test/db.user.role.separation.logic.test.ts`
+
+### Step 4: Observability + Audit Trail
+- [ ] Add structured logging mode (JSON + log levels).
+- [ ] Add migration/seed audit fields (command, actor, connection, timestamp, result).
+- [ ] Add test:
+  - `src/lab_test/cli.audit.trail.logic.test.ts`
+
+### Step 5: Security and API Documentation
+- [ ] Add `SECURITY.md` (scope, supported versions, reporting process).
+- [ ] Add API documentation for public exports and extension points.
+- [ ] Add production CLI safety document (safe vs destructive commands).
+- [ ] Add usage guides (runtime, migrations, seeding, multi-driver, test mode).
+- [ ] Add versioned upgrade/migration guide.
+- [ ] Add docs presence test:
+  - `src/lab_test/docs.production.presence.logic.test.ts`
+
+### Step 6: CI + Release Qualification (Finalize Last)
+- [ ] CI enforcement: `typecheck`, hardening tests, CLI scenario gates.
+- [ ] CI matrix coverage for `mysql`, `pg`, `sqlite`.
+- [ ] Add dependency/security checks in CI (`npm audit` policy + lockfile policy).
+- [ ] Add release qualification checklist with explicit pass/fail criteria.
+
+## Dependency Rules (Do Not Reorder)
+1. Complete Step 1 before new docs: behavior must be final before documenting it.
+2. Complete Step 2 before release checklist: rollback behavior is a release gate.
+3. Complete Step 3 before Step 4: structured logs must not leak secrets.
+4. Complete Step 5 after core behavior stabilizes: avoid documentation churn/rewrite.
+5. Complete Step 6 last: CI should lock final behavior/docs, not moving targets.
 
 ## New Test Coverage Added for this Assessment
 - `src/lab_test/production.readiness.gates.logic.test.ts`
