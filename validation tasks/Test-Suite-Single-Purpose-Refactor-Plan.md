@@ -18,8 +18,8 @@ Last updated: 2026-03-06
   - `src/lab_test/support/cli.integration.harness.ts`
 - [x] Split scenario lifecycle assertions into:
   - `src/lab_test/cli.integration.scenario.lifecycle.test.ts`
-- [x] Split connection-targeting assertions into:
-  - `src/lab_test/cli.integration.connection.targeting.test.ts`
+- [x] Split connection-targeting assertions (initial pass) into:
+  - `src/lab_test/cli.integration.connection.targeting.test.ts` (transitional file)
 - [x] Removed legacy mixed file:
   - `src/lab_test/cli.integration.test.ts`
 - [x] Updated critical test script:
@@ -29,14 +29,29 @@ Last updated: 2026-03-06
 - [x] Verified test-case parity after split:
   - old file test cases: `57`
   - new split files test cases: `57`
+- [x] Verified command-family distribution:
+  - scenario lifecycle: `7`
+  - make:migration targeting: `6`
+  - migrate:* targeting: `23`
+  - db:seed/demo targeting: `19`
+  - factory:status targeting: `2`
 
-## Phase 2 (Next)
-- [ ] Further split `cli.integration.connection.targeting.test.ts` into command-focused files:
+## Phase 2 (Completed)
+- [x] Further split `cli.integration.connection.targeting.test.ts` into command-focused files:
   - `make:migration` targeting
   - `migrate:*` targeting
   - `db:seed*` and `demo:scenario` targeting
   - `factory:status` targeting
-- [ ] Keep each resulting file scoped to one command family.
+- [x] Keep each resulting file scoped to one command family.
+- [x] Added shared connection-targeting support module:
+  - `src/lab_test/support/cli.integration.connection.shared.ts`
+- [x] Added command-focused files:
+  - `src/lab_test/cli.integration.make-migration.targeting.test.ts`
+  - `src/lab_test/cli.integration.migrate.targeting.test.ts`
+  - `src/lab_test/cli.integration.seed-and-demo.targeting.test.ts`
+  - `src/lab_test/cli.integration.factory-status.targeting.test.ts`
+- [x] Removed transitional mixed file:
+  - `src/lab_test/cli.integration.connection.targeting.test.ts`
 
 ## Phase 3 (Validation)
 - [x] Update docs that still reference removed file paths.
@@ -44,7 +59,7 @@ Last updated: 2026-03-06
 
 ## Test Evidence
 - Run:
-  - `npm.cmd test -- --runTestsByPath src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.connection.targeting.test.ts`
+  - `npm.cmd test -- --runTestsByPath src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts`
   - `npm.cmd test -- --runTestsByPath src/lab_test/test.suite.granularity.logic.test.ts`
   - `npm.cmd run typecheck`
 - Expected:
