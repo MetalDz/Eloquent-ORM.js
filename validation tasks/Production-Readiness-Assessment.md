@@ -32,8 +32,11 @@ Last updated: 2026-03-06
 ### Step 2: Migration/Rollback Failure Safety
 - [x] Rollback returns non-zero exit when `down()` fails.
 - [x] Regression test added for rollback failure exit code.
-- [ ] Add partial rollback recovery runbook section with concrete operator steps.
-- [ ] Add integration test for partial rollback recovery workflow.
+- [x] Add partial rollback recovery runbook section with concrete operator steps.
+  - `src/documentation/migration-rollback-recovery-runbook.md`
+- [x] Add integration test for partial rollback recovery workflow.
+  - `src/lab_test/migrate.rollback.partial.recovery.logic.test.ts`
+  - Tracking: `validation tasks/MigrateRollback-Partial-Recovery-Workflow-Plan.md`
 
 ### Step 3: Secrets + Access Hardening
 - [ ] Enforce secret redaction in CLI/core logs and surfaced errors.

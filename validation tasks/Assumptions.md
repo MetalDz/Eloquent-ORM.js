@@ -20,6 +20,9 @@ Last updated: 2026-03-06
   - production destructive-command guardrails (`--force --yes` + `ELOQUENT_ALLOW_PROD_DESTRUCTIVE=true`)
   - `db:seed:precheck` bootstrap validation command
   - enforced precheck before `db:seed --all-connections`
+- Production Readiness Step 2 completed:
+  - partial rollback recovery runbook with operator commands
+  - integration workflow test for partial rollback failure -> recover -> re-apply
 
 ## Current
 - No active hardening tasks.
