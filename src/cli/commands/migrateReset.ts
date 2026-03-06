@@ -30,5 +30,6 @@ export async function migrateReset(options: MigrateResetOptions = {}): Promise<v
     connectionNames,
     allMigrations: options.allMigrations ?? true,
     step: Number.MAX_SAFE_INTEGER,
+    auditCommand: "migrate:reset",
   });
 }

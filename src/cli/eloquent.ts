@@ -18,6 +18,13 @@ import { loadFactories } from "./utils/factories/FactoryLoader";
 import { checkProductionDestructiveCommand } from "./utils/ProductionSafety";
 import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
 import { redactSecretsInArgs } from "../core/security/SecretRedactor";
+import {
+  buildStructuredLogLine,
+  isJsonLogFormat,
+  resolveLogLevel,
+  shouldLogAtLevel,
+  type StructuredLogLevel,
+} from "./utils/StructuredLogger";
 
 if (process.env.ELOQUENT_DEBUG === "true") {
   console.log("[cli] start", { argv: process.argv.slice(2) });
@@ -57,6 +64,8 @@ const commandName = (process.argv[2] ?? "unknown")
   .replace(/[^a-z0-9_-]/gi, "_")
   .toLowerCase();
 const logsDir = path.join(process.cwd(), "src", "test", "logs");
+const jsonLogs = isJsonLogFormat();
+const minLogLevel = resolveLogLevel();
 try {
   if (process.env.ELOQUENT_DEBUG === "true") {
     console.log("[cli] before runtime init");
@@ -90,26 +99,34 @@ try {
   const originalError = console.error.bind(console);
   const originalInfo = console.info.bind(console);
 
-  console.log = (...args: unknown[]) => {
+  const emitLog = (
+    level: StructuredLogLevel,
+    args: unknown[],
+    writer: (...writerArgs: unknown[]) => void
+  ): void => {
+    if (!shouldLogAtLevel(level, minLogLevel)) {
+      return;
+    }
+
     const safeArgs = redactSecretsInArgs(args);
-    writeLog("LOG", safeArgs);
-    originalLog(...safeArgs);
+    if (jsonLogs) {
+      const jsonLine = buildStructuredLogLine(level, safeArgs, {
+        command: commandName,
+        pid: process.pid,
+      });
+      writeLog(level.toUpperCase(), [jsonLine]);
+      writer(jsonLine);
+      return;
+    }
+
+    writeLog(level.toUpperCase(), safeArgs);
+    writer(...safeArgs);
   };
-  console.warn = (...args: unknown[]) => {
-    const safeArgs = redactSecretsInArgs(args);
-    writeLog("WARN", safeArgs);
-    originalWarn(...safeArgs);
-  };
-  console.error = (...args: unknown[]) => {
-    const safeArgs = redactSecretsInArgs(args);
-    writeLog("ERROR", safeArgs);
-    originalError(...safeArgs);
-  };
-  console.info = (...args: unknown[]) => {
-    const safeArgs = redactSecretsInArgs(args);
-    writeLog("INFO", safeArgs);
-    originalInfo(...safeArgs);
-  };
+
+  console.log = (...args: unknown[]) => emitLog("info", args, originalLog);
+  console.warn = (...args: unknown[]) => emitLog("warn", args, originalWarn);
+  console.error = (...args: unknown[]) => emitLog("error", args, originalError);
+  console.info = (...args: unknown[]) => emitLog("info", args, originalInfo);
 } catch {
   // If logging fails, continue without blocking CLI.
 }

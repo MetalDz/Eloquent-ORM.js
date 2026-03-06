@@ -43,6 +43,7 @@ export async function dbSeedFresh(
       await migrateFresh({
         test: isTest,
         force: !!options?.force,
+        auditCommand: "db:seed:fresh",
       });
 
       console.log(chalk.greenBright(`\nRunning seeders for ${connectionName}...\n`));
@@ -52,6 +53,7 @@ export async function dbSeedFresh(
         close: false,
         exit: false,
         connectionNames: [connectionName],
+        auditCommand: "db:seed:fresh",
       });
     }
 

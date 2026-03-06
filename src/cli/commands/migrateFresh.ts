@@ -19,6 +19,7 @@ export type MigrateFreshOptions = {
   force?: boolean;
   connectionNames?: ConnectionName[];
   allMigrations?: boolean;
+  auditCommand?: string;
 };
 
 async function dropAllTablesForConnection(connectionName: ConnectionName): Promise<boolean> {
@@ -120,7 +121,10 @@ export async function migrateFresh(options: MigrateFreshOptions = {}): Promise<v
 
   // Keep the legacy combined line for integration-test compatibility.
   console.log(chalk.yellow("All tables dropped. Re-running migrations..."));
-  await migrateRun(isTest, undefined, false, false, { connectionNames });
+  await migrateRun(isTest, undefined, false, false, {
+    connectionNames,
+    auditCommand: options.auditCommand ?? "migrate:fresh",
+  });
 
   if (hadFailure) {
     process.exitCode = 1;

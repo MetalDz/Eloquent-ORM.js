@@ -15,12 +15,14 @@ import {
   validateMigrationHistory,
 } from "../utils/migrations/MigrationTracker";
 import { loadModule } from "../utils/typescript/tsRuntime";
+import { appendAuditEvent } from "../utils/AuditTrail";
 
 export type MigrateRollbackOptions = {
   test?: boolean;
   step?: number;
   connectionNames?: ConnectionName[];
   allMigrations?: boolean;
+  auditCommand?: string;
 };
 
 async function rollbackConnection(
@@ -184,8 +186,19 @@ export async function migrateRollback(
       : [resolveConnectionName(undefined, { test: isTest })];
 
   let hadFailure = false;
+  const auditCommand = options.auditCommand ?? "migrate:rollback";
   for (const connectionName of connectionNames) {
     const success = await rollbackConnection(connectionName, isTest, step);
+    appendAuditEvent({
+      command: auditCommand,
+      connectionName,
+      test: isTest,
+      result: success ? "success" : "failure",
+      metadata: {
+        step,
+        allMigrations: options.allMigrations === true,
+      },
+    });
     if (!success) {
       hadFailure = true;
     }

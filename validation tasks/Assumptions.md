@@ -27,6 +27,10 @@ Last updated: 2026-03-06
   - secret redaction utility applied to CLI/core logs and surfaced errors
   - role-aware DB env contract for runtime vs migration users
   - least-privilege DB documentation + verification tests
+- Production Readiness Step 4 completed:
+  - structured logging mode (`ELOQUENT_LOG_FORMAT=json`, `ELOQUENT_LOG_LEVEL`)
+  - migration/seed audit events with command/actor/connection/timestamp/result
+  - audit trail validation test coverage
 
 ## Current
 - No active hardening tasks.

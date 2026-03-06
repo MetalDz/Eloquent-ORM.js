@@ -23,9 +23,11 @@ import {
   resolveSqlConnectionNames,
   type SqlConnectionFlags,
 } from "../utils/resolveSqlConnectionFlags";
+import { appendAuditEvent } from "../utils/AuditTrail";
 
 export type MigrateRunOptions = {
   connectionNames?: ConnectionName[];
+  auditCommand?: string;
 };
 
 export type MigrationConnectionFlags = SqlConnectionFlags;
@@ -192,6 +194,8 @@ export async function migrateRun(
       : [resolveConnectionName(undefined, { test: isTest })];
 
   let hadFailure = false;
+  const auditCommand =
+    options.auditCommand ?? (isTest ? "migrate:run:test" : "migrate:run");
   for (const connectionName of connectionNames) {
     const success = await runMigrationsForConnection(
       connectionName,
@@ -199,6 +203,16 @@ export async function migrateRun(
       modelName,
       dryRun
     );
+    appendAuditEvent({
+      command: auditCommand,
+      connectionName,
+      test: isTest,
+      result: success ? "success" : "failure",
+      metadata: {
+        modelName: modelName ?? null,
+        dryRun,
+      },
+    });
     if (!success) {
       hadFailure = true;
     }

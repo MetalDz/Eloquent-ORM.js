@@ -48,10 +48,11 @@ Last updated: 2026-03-06
   - Tracking: `validation tasks/Secrets-Access-Hardening-Plan.md`
 
 ### Step 4: Observability + Audit Trail
-- [ ] Add structured logging mode (JSON + log levels).
-- [ ] Add migration/seed audit fields (command, actor, connection, timestamp, result).
-- [ ] Add test:
+- [x] Add structured logging mode (JSON + log levels).
+- [x] Add migration/seed audit fields (command, actor, connection, timestamp, result).
+- [x] Add test:
   - `src/lab_test/cli.audit.trail.logic.test.ts`
+  - Tracking: `validation tasks/Observability-Audit-Trail-Plan.md`
 
 ### Step 5: Security and API Documentation
 - [ ] Add `SECURITY.md` (scope, supported versions, reporting process).

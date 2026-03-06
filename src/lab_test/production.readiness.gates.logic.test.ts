@@ -17,6 +17,7 @@ describe("production readiness gates", () => {
       "src/lab_test/migrate.rollback.partial.recovery.logic.test.ts",
       "src/lab_test/cli.secret.redaction.logic.test.ts",
       "src/lab_test/db.user.role.separation.logic.test.ts",
+      "src/lab_test/cli.audit.trail.logic.test.ts",
     ];
 
     const missing = requiredTests.filter((relPath) =>
@@ -39,6 +40,7 @@ describe("production readiness gates", () => {
       "src/documentation/migration-rollback-recovery-runbook.md",
       "validation tasks/Secrets-Access-Hardening-Plan.md",
       "src/documentation/db-least-privilege-env-contract.md",
+      "validation tasks/Observability-Audit-Trail-Plan.md",
     ];
 
     const missing = requiredDocs.filter((relPath) =>

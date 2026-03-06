@@ -8,6 +8,7 @@ import {
   type ConnectionName,
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import { appendAuditEvent } from "../utils/AuditTrail";
 
 /**
  * db:seed
@@ -19,6 +20,7 @@ export async function dbSeed(options: {
   close?: boolean;
   exit?: boolean;
   connectionNames?: ConnectionName[];
+  auditCommand?: string;
 }): Promise<void> {
   let hadFailure = false;
   const isTest = !!options?.test;
@@ -57,6 +59,7 @@ export async function dbSeed(options: {
         process.env.DB_CONNECTION = connectionName;
       }
       console.log(chalk.gray(`Seeding connection: ${connectionName}`));
+      let connectionFailed = false;
 
       // Run a specific seeder if requested
       const className = options?.class?.toLowerCase();
@@ -65,22 +68,66 @@ export async function dbSeed(options: {
 
         if (!target) {
           console.log(chalk.red(`Seeder '${options.class}' not found.`));
+          appendAuditEvent({
+            command: options.auditCommand ?? "db:seed",
+            connectionName,
+            test: isTest,
+            result: "failure",
+            metadata: {
+              className: options.class ?? null,
+              reason: "seeder_not_found",
+            },
+          });
           hadFailure = true;
           continue;
         }
 
-        await runSeederFile(path.join(seedsDir, target));
-        console.log(chalk.greenBright(`Completed: ${options.class}\n`));
+        try {
+          await runSeederFile(path.join(seedsDir, target));
+          console.log(chalk.greenBright(`Completed: ${options.class}\n`));
+        } catch (error) {
+          connectionFailed = true;
+          hadFailure = true;
+          throw error;
+        } finally {
+          appendAuditEvent({
+            command: options.auditCommand ?? "db:seed",
+            connectionName,
+            test: isTest,
+            result: connectionFailed ? "failure" : "success",
+            metadata: {
+              className: options.class ?? null,
+            },
+          });
+        }
       } else {
         // Otherwise, run all seeders in alphabetical order
-        for (const file of seedFiles) {
-          await runSeederFile(path.join(seedsDir, file));
+        try {
+          for (const file of seedFiles) {
+            await runSeederFile(path.join(seedsDir, file));
+          }
+        } catch (error) {
+          connectionFailed = true;
+          hadFailure = true;
+          throw error;
+        } finally {
+          appendAuditEvent({
+            command: options.auditCommand ?? "db:seed",
+            connectionName,
+            test: isTest,
+            result: connectionFailed ? "failure" : "success",
+            metadata: {
+              className: null,
+            },
+          });
         }
       }
 
     }
 
-    console.log(chalk.greenBright("\nAll seeders completed successfully!\n"));
+    if (!hadFailure) {
+      console.log(chalk.greenBright("\nAll seeders completed successfully!\n"));
+    }
   } catch (err) {
     hadFailure = true;
     console.error(chalk.red("Seeder execution failed."));
