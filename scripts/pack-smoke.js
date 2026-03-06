@@ -4,8 +4,10 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 
 const repoRoot = path.resolve(__dirname, "..");
-const npmCmd = "npm";
-const nodeCmd = "node";
+const nodeCmd = process.execPath;
+const npmCliPath =
+  process.env.npm_execpath ||
+  path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
 const expectedPublicExports = [
   "BaseModel",
   "CacheManager",
@@ -34,7 +36,7 @@ function run(command, args, options = {}) {
     cwd: options.cwd || repoRoot,
     env: options.env || process.env,
     encoding: "utf8",
-    shell: process.platform === "win32" ? true : options.shell || false,
+    shell: options.shell || false,
   });
 
   if (result.error) {
@@ -47,6 +49,10 @@ function run(command, args, options = {}) {
     stderr: result.stderr || "",
     combined: `${result.stdout || ""}${result.stderr || ""}`.trim(),
   };
+}
+
+function runNpm(args, options = {}) {
+  return run(nodeCmd, [npmCliPath, ...args], options);
 }
 
 function assertSuccess(step, result) {
@@ -179,16 +185,18 @@ function assertTarballSurface(entries) {
 }
 
 function runCli(sampleDir, args, env) {
-  const binPath =
-    process.platform === "win32"
-      ? path.join(sampleDir, "node_modules", ".bin", "eloquent.cmd")
-      : path.join(sampleDir, "node_modules", ".bin", "eloquent");
+  const binPath = path.join(
+    sampleDir,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "eloquent.cmd" : "eloquent"
+  );
+  const cliEntry = path.join(sampleDir, "node_modules", "eloquentjs", "dist", "cli", "eloquent.js");
 
-  if (process.platform === "win32") {
-    return run(binPath, args, { cwd: sampleDir, env, shell: true });
-  }
+  assertFileExists(binPath);
+  assertFileExists(cliEntry);
 
-  return run(binPath, args, { cwd: sampleDir, env });
+  return run(nodeCmd, [cliEntry, ...args], { cwd: sampleDir, env });
 }
 
 function runNodeScript(sampleDir, fileName, content, env, step) {
@@ -204,8 +212,8 @@ function createSampleApp(tarballName, label) {
   const localTarballPath = path.join(dir, tarballName);
   fs.copyFileSync(path.join(repoRoot, tarballName), localTarballPath);
 
-  assertSuccess("npm init", run(npmCmd, ["init", "-y"], { cwd: dir }));
-  assertSuccess("npm install tarball", run(npmCmd, ["install", `./${tarballName}`], { cwd: dir }));
+  assertSuccess("npm init", runNpm(["init", "-y"], { cwd: dir }));
+  assertSuccess("npm install tarball", runNpm(["install", `./${tarballName}`], { cwd: dir }));
 
   return {
     dir,
@@ -586,7 +594,7 @@ let tarballName = "";
 const sampleDirs = [];
 
 try {
-  const packed = run(npmCmd, ["pack"], { cwd: repoRoot });
+  const packed = runNpm(["pack"], { cwd: repoRoot });
   assertSuccess("npm pack", packed);
 
   tarballName = resolveTarballName(`${packed.stdout}\n${packed.stderr}`);

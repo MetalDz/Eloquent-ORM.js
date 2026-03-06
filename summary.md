@@ -3,7 +3,7 @@
 Date: 2026-03-06
 
 ## Scope
-This release consolidates hardening work across ORM hooks, factory concurrency, migration safety, migration execution robustness, connection initialization races, and schema SQL default escaping.
+This release consolidates hardening work across ORM hooks, factory concurrency, migration safety, migration execution robustness, connection initialization races, schema SQL default escaping, and production dependency security remediation.
 
 ## What Changed
 
@@ -38,8 +38,19 @@ This release consolidates hardening work across ORM hooks, factory concurrency, 
 - Hardened SQL default rendering to safely escape string literals.
 - Single quotes in defaults are now escaped correctly for generated SQL.
 
+### SQLite dependency audit remediation
+- Replaced the runtime SQLite driver with `better-sqlite3@12.2.0`.
+- Removed `sqlite3` and `sqlite` from production dependencies.
+- Added a compatibility wrapper so the ORM keeps the same SQLite adapter contract.
+- Updated tarball smoke coverage and readiness tracking for the new driver.
+
 ## Test Evidence (Current)
 - `npm.cmd run typecheck` -> passed.
+- `npm.cmd run build` -> passed.
+- `npm.cmd audit --omit=dev --audit-level=high` -> passed (`found 0 vulnerabilities`).
+- `npm.cmd test -- --runTestsByPath src/lab_test/sqlite.driver.replacement.logic.test.ts src/lab_test/dependency.audit.tracking.logic.test.ts src/lab_test/production.readiness.gates.logic.test.ts` -> passed (`3/3` suites, `7/7` tests).
+- `npm run test:pack-smoke` -> passed.
+- `npm run test:critical` -> passed (`7/7` suites, `66/66` tests).
 - `npm.cmd test` -> passed (`29` passed suites, `3` skipped suites; `123` passed tests, `72` skipped tests in latest run).
 - CLI command checks passed:
   - `npm.cmd run cli -- --help`
@@ -55,6 +66,7 @@ This release consolidates hardening work across ORM hooks, factory concurrency, 
   - `src/lab_test/migrate.run.empty.detection.logic.test.ts`
   - `src/lab_test/connection.factory.race.logic.test.ts`
   - `src/lab_test/schema.default.string.escape.logic.test.ts`
+  - `src/lab_test/sqlite.driver.replacement.logic.test.ts`
 
 ## Review Result
 - Focused code review pass completed on the hardening changes.
