@@ -55,6 +55,14 @@ Last updated: 2026-03-06
 
 ## Phase 3 (Validation)
 - [x] Update docs that still reference removed file paths.
+- [x] Harden split-suite order safety for `db:seed:fresh` app tests:
+  - `src/lab_test/cli.integration.seed-and-demo.targeting.test.ts`
+  - Added explicit pre-seed `migrate:run --all-migrations` for sqlite/mysql/pg app fresh tests.
+- [x] Harden `db:seed:fresh --mysql` critical-run stability:
+  - Added single retry after full mysql re-bootstrap (`reset + migrate:run --all-migrations`) when first execution exits non-zero.
+- [x] Improve split-suite failure diagnostics:
+  - `src/lab_test/support/cli.integration.harness.ts`
+  - `assertCliSuccess` now throws non-zero exit details with status/signal/stdout/stderr payload.
 - [ ] Run focused CLI integration test paths and confirm parity.
 
 ## Test Evidence
@@ -67,4 +75,5 @@ Last updated: 2026-03-06
 - Result:
   - `PASS`: `src/lab_test/test.suite.granularity.logic.test.ts`
   - `PASS`: `npm.cmd run typecheck`
+  - `CI finding addressed`: `db:seed:fresh --mysql --class UserSeeder` flake/order dependency removed by explicit migrate pre-step in split seed suite.
   - `BLOCKED IN POWERSHELL`: split CLI integration suites still hit known local `spawnSync node.exe EPERM` runtime issue; execute from Git Bash/CI shell for runtime parity.

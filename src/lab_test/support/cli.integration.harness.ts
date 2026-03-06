@@ -123,8 +123,15 @@ export function assertCliSuccess(result: CliResult, args: string[]): void {
     );
   }
 
-  expect(result.signal).toBeNull();
-  expect(result.status).toBe(0);
+  if (result.signal !== null || result.status !== 0) {
+    throw new Error(
+      `CLI command exited non-zero after ${result.durationMs}ms: eloquent ${args.join(
+        " "
+      )}\n` +
+        `status=${String(result.status)} signal=${String(result.signal)}\n\n` +
+        `${result.combined}`
+    );
+  }
   expect(result.durationMs).toBeLessThan(result.timeoutMs);
 }
 

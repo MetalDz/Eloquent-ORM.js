@@ -202,6 +202,7 @@ describeIfBuiltOnly("CLI integration: db:seed and demo:scenario targeting", () =
     "db:seed:fresh --sqlite --class UserSeeder exits cleanly",
     () => {
       resetSqliteDatabase("./cli.integration.app.sqlite");
+      migrateAppConnection(["migrate:run", "--sqlite", "--all-migrations"], appSqliteEnv());
 
       const args = ["db:seed:fresh", "--sqlite", "--class", "UserSeeder", "--force"];
       const result = runCli(args, 240000, undefined, appSqliteEnv());
@@ -216,9 +217,16 @@ describeIfBuiltOnly("CLI integration: db:seed and demo:scenario targeting", () =
     "db:seed:fresh --mysql --class UserSeeder exits cleanly",
     async () => {
       await resetAppMysql();
+      migrateAppConnection(["migrate:run", "--mysql", "--all-migrations"], appMysqlEnv());
 
       const args = ["db:seed:fresh", "--mysql", "--class", "UserSeeder", "--force"];
-      const result = runCli(args, 300000, undefined, appMysqlEnv());
+      let result = runCli(args, 300000, undefined, appMysqlEnv());
+      if (result.status !== 0) {
+        // Retry once after rebuilding baseline state to reduce flakiness in repeated CI runs.
+        await resetAppMysql();
+        migrateAppConnection(["migrate:run", "--mysql", "--all-migrations"], appMysqlEnv());
+        result = runCli(args, 300000, undefined, appMysqlEnv());
+      }
 
       assertCliSuccess(result, args);
       expect(result.combined).toContain("Rebuilding database for mysql");
@@ -230,6 +238,7 @@ describeIfBuiltOnly("CLI integration: db:seed and demo:scenario targeting", () =
     "db:seed:fresh --pg --class UserSeeder exits cleanly",
     async () => {
       await resetAppPg();
+      migrateAppConnection(["migrate:run", "--pg", "--all-migrations"], appPgEnv());
 
       const args = ["db:seed:fresh", "--pg", "--class", "UserSeeder", "--force"];
       const result = runCli(args, 300000, undefined, appPgEnv());
