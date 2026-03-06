@@ -29,6 +29,13 @@ describe("CI release qualification gates", () => {
     for (const snippet of requiredSnippets) {
       expect(workflow).toContain(snippet);
     }
+
+    expect(workflow).toMatch(
+      /critical-stability:\s+name:\s+Critical Stability Re-runs \(MySQL\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+25/s
+    );
+    expect(workflow).toMatch(
+      /- name:\s+Repeat critical suites\s+timeout-minutes:\s+15/s
+    );
   });
 
   test("release checklist defines explicit pass/fail criteria", () => {

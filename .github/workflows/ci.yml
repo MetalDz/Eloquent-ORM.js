@@ -86,7 +86,7 @@ jobs:
   critical-stability:
     name: Critical Stability Re-runs (MySQL)
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 25
     services:
       mysql:
         image: mysql:8.0
@@ -148,7 +148,7 @@ jobs:
         run: npm run build
 
       - name: Repeat critical suites
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           for run in 1 2 3; do
             echo "::group::Critical stability run ${run}"

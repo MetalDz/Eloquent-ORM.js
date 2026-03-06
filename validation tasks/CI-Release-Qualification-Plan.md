@@ -22,6 +22,10 @@ Last updated: 2026-03-06
 - [x] Wired Step 6 artifacts into global production readiness gate:
   - `src/lab_test/production.readiness.gates.logic.test.ts`
   - `validation tasks/Production-Readiness-Assessment.md`
+- [x] Adjusted critical stability CI runtime budget after measured test-suite expansion:
+  - `.github/workflows/ci.yml`
+  - `critical-stability` job timeout -> `25` minutes
+  - `Repeat critical suites` step timeout -> `15` minutes
 
 ## Test Evidence
 - Run:

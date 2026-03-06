@@ -21,10 +21,14 @@ Use this checklist before creating a release tag or publishing a package.
 - Command source:
   - CI job: `critical-stability`
   - Runs `npm run test:critical` three times in sequence.
+- CI budget:
+  - Job timeout: `25` minutes
+  - Repeat step timeout: `15` minutes
 - Pass Criteria:
   - All 3 critical runs pass.
 - Fail Criteria:
   - Any rerun fails once.
+  - CI times out before all 3 reruns complete.
 
 ### 3) Multi-Driver Scenario Matrix
 - Command source:
