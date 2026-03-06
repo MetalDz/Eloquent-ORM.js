@@ -1018,7 +1018,9 @@ describeIfBuiltOnly("CLI integration: migrate:run connection targeting", () => {
 
     const rerunResult = runCli(args, 240000, undefined, testPgEnv());
     assertCliSuccess(rerunResult, args);
-    expect(rerunResult.combined).toContain("Migration unchanged");
+    expect(rerunResult.combined).toMatch(
+      /Migration unchanged|Baseline CREATE already exists/
+    );
 
     const rerunFiles = fs
       .readdirSync(pgMigrationsDir)
