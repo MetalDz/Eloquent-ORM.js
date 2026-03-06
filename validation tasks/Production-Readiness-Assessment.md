@@ -21,12 +21,13 @@ Last updated: 2026-03-06
 ## Ordered Production Task Plan (No Rework)
 
 ### Step 1: CLI Production Safety Controls (Implement First)
-- [ ] Add production guardrails for destructive commands (`migrate:fresh`, `migrate:reset`, `db:seed:fresh`, `make:*` in prod).
-- [ ] Require explicit override contract for destructive prod actions (`--force --yes` + env allow flag).
-- [ ] Add preflight "clean bootstrap before all-connections seed" check/command.
-- [ ] Add tests:
+- [x] Add production guardrails for destructive commands (`migrate:fresh`, `migrate:reset`, `db:seed:fresh`, `make:*` in prod).
+- [x] Require explicit override contract for destructive prod actions (`--force --yes` + env allow flag).
+- [x] Add preflight "clean bootstrap before all-connections seed" check/command.
+- [x] Add tests:
   - `src/lab_test/cli.production.safety.logic.test.ts`
   - `src/lab_test/cli.bootstrap.precheck.logic.test.ts`
+  - Tracking: `validation tasks/CLI-Production-Safety-Controls-Plan.md`
 
 ### Step 2: Migration/Rollback Failure Safety
 - [x] Rollback returns non-zero exit when `down()` fails.

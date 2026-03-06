@@ -21,6 +21,7 @@ const commandHelpMatrix: Array<{ label: string; args: string[] }> = [
   { label: "make:scenario", args: ["make:scenario", "--help"] },
   { label: "make:migration", args: ["make:migration", "--help"] },
   { label: "db:seed", args: ["db:seed", "--help"] },
+  { label: "db:seed:precheck", args: ["db:seed:precheck", "--help"] },
   { label: "db:seed:fresh", args: ["db:seed:fresh", "--help"] },
   { label: "demo:scenario", args: ["demo:scenario", "--help"] },
   { label: "migrate:run", args: ["migrate:run", "--help"] },

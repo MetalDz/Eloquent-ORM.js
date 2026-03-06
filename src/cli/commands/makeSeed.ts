@@ -2,7 +2,7 @@ import path from "path";
 import chalk from "chalk";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { PathMap } from "../utils/PathMap";
-import { writeFileSafe } from "../utils/fileWriter";
+import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
 
 /**
  * 🧩 makeSeed
@@ -10,7 +10,7 @@ import { writeFileSafe } from "../utils/fileWriter";
  */
 export async function makeSeed(
   name: string,
-  options?: { count?: number; test?: boolean }
+  options?: { count?: number; test?: boolean; force?: boolean }
 ) {
   try {
     PathMap.ensureDirs();
@@ -34,7 +34,9 @@ export async function makeSeed(
     const outputDir = PathMap.seeds(!!options?.test);
     const filePath = path.resolve(outputDir, `${SeederName}.ts`);
 
-    const ok = writeFileSafe(filePath, rendered);
+    const ok = options?.force
+      ? overwriteFile(filePath, rendered)
+      : writeFileSafe(filePath, rendered);
     if (ok) {
       console.log(chalk.greenBright(`✅ Seeder created: ${SeederName}`));
     }

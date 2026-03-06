@@ -20,27 +20,41 @@ const cliSource = fs.readFileSync(cliSourcePath, "utf8");
 const commandMatrix: CommandSpec[] = [
   {
     name: "make:model",
-    expectedFlags: ["--test", "--with-migration", "--attrs-from-schema", "--force"],
+    expectedFlags: [
+      "--test",
+      "--with-migration",
+      "--attrs-from-schema",
+      "--force",
+      "--yes",
+    ],
   },
   {
     name: "make:controller",
-    expectedFlags: ["--test", "--soft"],
+    expectedFlags: ["--test", "--soft", "--force", "--yes"],
   },
   {
     name: "make:service",
-    expectedFlags: ["--test"],
+    expectedFlags: ["--test", "--force", "--yes"],
   },
   {
     name: "make:seed",
-    expectedFlags: ["--count <number>", "--test"],
+    expectedFlags: ["--count <number>", "--test", "--force", "--yes"],
   },
   {
     name: "make:factory",
-    expectedFlags: ["--model <model>", "--test", "--force"],
+    expectedFlags: ["--model <model>", "--test", "--force", "--yes"],
   },
   {
     name: "make:scenario",
-    expectedFlags: ["--test", "--preset <name>", "--controllers", "--services", "--run", "--force"],
+    expectedFlags: [
+      "--test",
+      "--preset <name>",
+      "--controllers",
+      "--services",
+      "--run",
+      "--force",
+      "--yes",
+    ],
   },
   {
     name: "make:migration",
@@ -52,6 +66,8 @@ const commandMatrix: CommandSpec[] = [
       "--sqlite",
       "--all-connections",
       "--pivot-separate",
+      "--force",
+      "--yes",
     ],
   },
   {
@@ -66,6 +82,16 @@ const commandMatrix: CommandSpec[] = [
     ],
   },
   {
+    name: "db:seed:precheck",
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--all-connections",
+    ],
+  },
+  {
     name: "db:seed:fresh",
     expectedFlags: [
       "--test",
@@ -75,6 +101,7 @@ const commandMatrix: CommandSpec[] = [
       "--all-connections",
       "--class <name>",
       "--force",
+      "--yes",
     ],
   },
   {
@@ -137,6 +164,7 @@ const commandMatrix: CommandSpec[] = [
       "--all-connections",
       "--all-migrations",
       "--force",
+      "--yes",
     ],
   },
   {
@@ -148,6 +176,8 @@ const commandMatrix: CommandSpec[] = [
       "--sqlite",
       "--all-connections",
       "--all-migrations",
+      "--force",
+      "--yes",
     ],
   },
   {

@@ -12,6 +12,8 @@ describe("production readiness gates", () => {
       "src/lab_test/migration.files.integrity.logic.test.ts",
       "src/lab_test/make.migration.append.only.logic.test.ts",
       "src/lab_test/schema.default.string.escape.logic.test.ts",
+      "src/lab_test/cli.production.safety.logic.test.ts",
+      "src/lab_test/cli.bootstrap.precheck.logic.test.ts",
     ];
 
     const missing = requiredTests.filter((relPath) =>
@@ -29,6 +31,7 @@ describe("production readiness gates", () => {
       "validation tasks/Migration-Append-Only-Tracking-Hardening-Plan.md",
       "validation tasks/Migration-Fixture-Baseline-Integrity-Recovery-Plan.md",
       "validation tasks/ORM-Real-Scenario-CLI-Validation-Plan.md",
+      "validation tasks/CLI-Production-Safety-Controls-Plan.md",
     ];
 
     const missing = requiredDocs.filter((relPath) =>

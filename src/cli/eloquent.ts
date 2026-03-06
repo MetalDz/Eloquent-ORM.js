@@ -15,6 +15,8 @@ import path from "path";
 import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler";
 import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";
 import { loadFactories } from "./utils/factories/FactoryLoader";
+import { checkProductionDestructiveCommand } from "./utils/ProductionSafety";
+import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
 
 if (process.env.ELOQUENT_DEBUG === "true") {
   console.log("[cli] start", { argv: process.argv.slice(2) });
@@ -25,6 +27,26 @@ process.env.ELOQUENT_CLI = "true";
 
 function isCliTest(): boolean {
   return process.argv.includes("--test");
+}
+
+function ensureProductionOverride(
+  commandName: string,
+  options: { force?: boolean; yes?: boolean }
+): boolean {
+  const verdict = checkProductionDestructiveCommand({
+    command: commandName,
+    force: options.force === true,
+    yes: options.yes === true,
+  });
+
+  if (verdict.allowed) {
+    return true;
+  }
+
+  const reason = verdict.reason ?? `${commandName} is blocked in production.`;
+  console.error(chalk.red(`❌ ${reason}`));
+  process.exitCode = 1;
+  return false;
 }
 
 // -------------------------------------------------------------------------
@@ -169,6 +191,7 @@ import { dbSeed } from "./commands/dbSeed";
 import { dbSeedFresh } from "./commands/dbSeedFresh";
 import { demoScenario } from "./commands/demoScenario";
 import { makeScenario } from "./commands/makeScenario";
+import { dbSeedBootstrapPrecheck } from "./commands/dbSeedBootstrapPrecheck";
 
 // -----------------------------------------------------------------------------
 // 🧱 CLI Setup
@@ -196,8 +219,17 @@ program
   .option("--with-migration", "Automatically generate a migration for this model")
   .option("--attrs-from-schema", "Infer model attrs type from schema fields")
   .option("--force", "Overwrite existing migration if it exists")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate a new model (with optional migration)")
   .action(async (name: string, options: Record<string, unknown>) => {
+    if (
+      !ensureProductionOverride("make:model", {
+        force: !!(options as { force?: boolean }).force,
+        yes: !!(options as { yes?: boolean }).yes,
+      })
+    ) {
+      return;
+    }
     await makeModel(name, { ...options, test: !!(options as { test?: boolean }).test });
   });
 
@@ -205,28 +237,48 @@ program
   .command("make:controller <name>")
   .option("--test", "Generate controller inside test directory")
   .option("--soft", "Generate controller with soft delete support")
+  .option("--force", "Overwrite existing controller file if it exists")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Create a new controller (linked to service)")
-  .action((name: string, options: { test?: boolean; soft?: boolean }) => {
-    return makeController(name, { test: !!options.test, soft: !!options.soft });
+  .action((name: string, options: { test?: boolean; soft?: boolean; force?: boolean; yes?: boolean }) => {
+    if (!ensureProductionOverride("make:controller", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
+    return makeController(name, {
+      test: !!options.test,
+      soft: !!options.soft,
+      force: !!options.force,
+    });
   });
 
 program
   .command("make:service <name>")
   .option("--test", "Generate service inside test directory")
+  .option("--force", "Overwrite existing service file if it exists")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Create a new service (business logic layer)")
-  .action((name: string, options: { test?: boolean }) => {
-    return makeService(name, { test: !!options.test });
+  .action((name: string, options: { test?: boolean; force?: boolean; yes?: boolean }) => {
+    if (!ensureProductionOverride("make:service", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
+    return makeService(name, { test: !!options.test, force: !!options.force });
   });
 
 program
   .command("make:seed <model>")
   .option("--count <number>", "Number of records to seed", "10")
   .option("--test", "Generate seed in test environment")
+  .option("--force", "Overwrite existing seeder file if it exists")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate a seeder file linked to a model factory")
-  .action(async (model: string, options: { count: string; test?: boolean }) => {
+  .action(async (model: string, options: { count: string; test?: boolean; force?: boolean; yes?: boolean }) => {
+    if (!ensureProductionOverride("make:seed", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
     await makeSeed(model, {
       count: Number(options.count),
       test: !!options.test,
+      force: !!options.force,
     });
   });
 
@@ -235,8 +287,12 @@ program
   .option("--model <model>", "Specify the model this factory belongs to")
   .option("--test", "Generate in test environment")
   .option("--force", "Overwrite existing file")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate a factory for a model")
-  .action(async (name: string, options: { model?: string; test?: boolean; force?: boolean }) => {
+  .action(async (name: string, options: { model?: string; test?: boolean; force?: boolean; yes?: boolean }) => {
+    if (!ensureProductionOverride("make:factory", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
     const modelName = options.model ?? name;
 
     await makeFactory(modelName, {
@@ -253,6 +309,7 @@ program
   .option("--services", "Generate services (test)")
   .option("--run", "Run migrate:run:test and db:seed --test for the scenario")
   .option("--force", "Overwrite existing scenario files")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate an automated test scenario (models, migrations, factories, seeds)")
   .action(async (name: string, options: {
     test?: boolean;
@@ -261,8 +318,12 @@ program
     services?: boolean;
     run?: boolean;
     force?: boolean;
+    yes?: boolean;
   }) => {
     try {
+      if (!ensureProductionOverride("make:scenario", { force: !!options.force, yes: !!options.yes })) {
+        return;
+      }
       await makeScenario(name, {
         test: !!options.test,
         preset: options.preset,
@@ -307,9 +368,54 @@ program
         allConnections: !!options.allConnections,
       });
 
+      if (options.allConnections) {
+        const cleanBootstrap = await assertSeedBootstrapPrecheck({
+          test: !!options.test,
+          connectionNames,
+        });
+        if (!cleanBootstrap) {
+          throw new Error(
+            "All-connections seed precheck failed. Run migrate:run/migrate:run:test first, then retry db:seed."
+          );
+        }
+      }
+
       await dbSeed({
         test: !!options.test,
         class: options.class,
+        connectionNames,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`❌ ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command("db:seed:precheck")
+  .option("--test", "Run precheck against test connections")
+  .option("--mysql", "Check only the mysql connection")
+  .option("--pg", "Check only the pg connection")
+  .option("--sqlite", "Check only the sqlite connection")
+  .option("--all-connections", "Check mysql, pg, and sqlite")
+  .description("Validate migration bootstrap state before running db:seed")
+  .action(async (options: {
+    test?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    allConnections?: boolean;
+  }) => {
+    try {
+      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+        mysql: !!options.mysql,
+        pg: !!options.pg,
+        sqlite: !!options.sqlite,
+        allConnections: !!options.allConnections,
+      });
+      await dbSeedBootstrapPrecheck({
+        test: !!options.test,
         connectionNames,
       });
     } catch (error) {
@@ -328,17 +434,22 @@ program
   .option("--all-connections", "Run fresh seed for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder after migration refresh")
   .option("--force", "Skip confirmation prompt during refresh")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Drop all tables, rerun migrations, and seed the database")
   .action(async (options: {
     test?: boolean;
     class?: string;
     force?: boolean;
+    yes?: boolean;
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
     allConnections?: boolean;
   }) => {
     try {
+      if (!ensureProductionOverride("db:seed:fresh", { force: !!options.force, yes: !!options.yes })) {
+        return;
+      }
       const connectionNames = resolveSqlConnectionNames(!!options.test, {
         mysql: !!options.mysql,
         pg: !!options.pg,
@@ -386,6 +497,8 @@ program
   .option("--sqlite", "Generate migrations only for the sqlite connection")
   .option("--all-connections", "Generate migrations for mysql, pg, and sqlite")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
+  .option("--force", "Required override flag in production mode")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate migration from a model or all models")
   .action(async (
     model: string | undefined,
@@ -397,8 +510,13 @@ program
       sqlite?: boolean;
       allConnections?: boolean;
       pivotSeparate?: boolean;
+      force?: boolean;
+      yes?: boolean;
     }
   ) => {
+    if (!ensureProductionOverride("make:migration", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
     const useAll = !!(options as { all?: boolean }).all;
     const target = useAll ? "all" : model;
     if (!target) {
@@ -623,15 +741,20 @@ program
   .option("--all-connections", "Run fresh migration for mysql, pg, and sqlite")
   .option("--all-migrations", "Auto-generate migrations for all models before running")
   .option("--force", "Skip confirmation prompt")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .action((options: {
     test?: boolean;
     force?: boolean;
+    yes?: boolean;
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
     allConnections?: boolean;
     allMigrations?: boolean;
   }) => {
+    if (!ensureProductionOverride("migrate:fresh", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
     const connectionNames = resolveSqlConnectionNames(!!options.test, {
       mysql: !!options.mysql,
       pg: !!options.pg,
@@ -655,6 +778,8 @@ program
   .option("--sqlite", "Reset migrations only for the sqlite connection")
   .option("--all-connections", "Reset migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Accepted for parity; reset already rolls back all batches")
+  .option("--force", "Required override flag in production mode")
+  .option("--yes", "Acknowledge production override for this destructive command")
   .action((options: {
     test?: boolean;
     mysql?: boolean;
@@ -662,7 +787,12 @@ program
     sqlite?: boolean;
     allConnections?: boolean;
     allMigrations?: boolean;
+    force?: boolean;
+    yes?: boolean;
   }) => {
+    if (!ensureProductionOverride("migrate:reset", { force: !!options.force, yes: !!options.yes })) {
+      return;
+    }
     const connectionNames = resolveSqlConnectionNames(!!options.test, {
       mysql: !!options.mysql,
       pg: !!options.pg,
@@ -705,16 +835,16 @@ program
     console.log(chalk.green("\n📜 Available Commands:\n"));
     console.log(chalk.gray("Tip: use --test to run supported commands in test mode.\n"));
     console.table([
-      { Command: "make:model <name>", Description: "--test --with-migration --attrs-from-schema --force" },
-      { Command: "make:controller <name>", Description: "--soft --test" },
-      { Command: "make:service <name>", Description: "--test" },
-      { Command: "make:seed <model>", Description: "--count <number> --test" },
-      { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force" },
-      { Command: "make:factory <name>", Description: "--model <model> --test --force" },
+      { Command: "make:model <name>", Description: "--test --with-migration --attrs-from-schema --force --yes" },
+      { Command: "make:controller <name>", Description: "--soft --test --force --yes" },
+      { Command: "make:service <name>", Description: "--test --force --yes" },
+      { Command: "make:seed <model>", Description: "--count <number> --test --force --yes" },
+      { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force --yes" },
+      { Command: "make:factory <name>", Description: "--model <model> --test --force --yes" },
       {
         Command: "make:migration [model]",
         Description:
-          "--test --all --mysql --pg --sqlite --all-connections --pivot-separate",
+          "--test --all --mysql --pg --sqlite --all-connections --pivot-separate --force --yes",
       },
       { Command: "factory:status", Description: "--test --details --graph" },
       {
@@ -722,9 +852,13 @@ program
         Description: "--test --mysql --pg --sqlite --all-connections --class <name>",
       },
       {
+        Command: "db:seed:precheck",
+        Description: "--test --mysql --pg --sqlite --all-connections",
+      },
+      {
         Command: "db:seed:fresh",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --class <name> --force",
+          "--test --mysql --pg --sqlite --all-connections --class <name> --force --yes",
       },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
       {
@@ -750,12 +884,12 @@ program
       {
         Command: "migrate:fresh",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations --force",
+          "--test --mysql --pg --sqlite --all-connections --all-migrations --force --yes",
       },
       {
         Command: "migrate:reset",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations",
+          "--test --mysql --pg --sqlite --all-connections --all-migrations --force --yes",
       },
       { Command: "cache:clear", Description: "(no options)" },
       { Command: "cache:stats", Description: "(no options)" },

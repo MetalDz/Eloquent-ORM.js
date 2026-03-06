@@ -2,7 +2,7 @@ import path from "path";
 import chalk from "chalk";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { PathMap } from "../utils/PathMap";
-import { writeFileSafe } from "../utils/fileWriter";
+import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
 
 /**
  * Command: eloquent make:controller
@@ -11,11 +11,12 @@ import { writeFileSafe } from "../utils/fileWriter";
  */
 export async function makeController(
   modelName: string,
-  options: { soft?: boolean; test?: boolean } = {}
+  options: { soft?: boolean; test?: boolean; force?: boolean } = {}
 ) {
   try {
     const isTest = !!options.test;
     const softDelete = !!options.soft;
+    const forceWrite = !!options.force;
 
     const className = `${capitalize(modelName)}Controller`;
     const fileName = `${className}.ts`;
@@ -62,7 +63,9 @@ export async function makeController(
       softDeleteBlock,
     });
 
-    const created = writeFileSafe(outputPath, rendered);
+    const created = forceWrite
+      ? overwriteFile(outputPath, rendered)
+      : writeFileSafe(outputPath, rendered);
     if (created) {
       const relPath = isTest
         ? `src/test/controllers/${fileName}`

@@ -2,14 +2,15 @@ import path from "path";
 import chalk from "chalk";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { PathMap } from "../utils/PathMap";
-import { writeFileSafe } from "../utils/fileWriter";
+import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
 
 export async function makeService(
   modelName: string,
-  options: { test?: boolean } = {}
+  options: { test?: boolean; force?: boolean } = {}
 ) {
   try {
     const isTest = !!options.test;
+    const forceWrite = !!options.force;
     const className = `${capitalize(modelName)}Service`;
     const fileName = `${className}.ts`;
     const servicesDir = path.resolve(
@@ -28,7 +29,9 @@ export async function makeService(
     });
 
     const outputPath = path.join(servicesDir, fileName);
-    const created = writeFileSafe(outputPath, rendered);
+    const created = forceWrite
+      ? overwriteFile(outputPath, rendered)
+      : writeFileSafe(outputPath, rendered);
     if (created) {
       const relPath = isTest
         ? `src/test/services/${fileName}`

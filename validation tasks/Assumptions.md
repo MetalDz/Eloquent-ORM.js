@@ -16,6 +16,10 @@ Last updated: 2026-03-06
 - ConnectionFactory cold-start race hardening completed (deduped in-flight initialization for connection and adapter caches).
 - SchemaBuilder default-string escaping hardening completed (safe default literal formatting for quoted strings).
 - makeMigration append-only tracking hardening completed (no auto-delete of generated model/pivot migrations).
+- Production Readiness Step 1 completed:
+  - production destructive-command guardrails (`--force --yes` + `ELOQUENT_ALLOW_PROD_DESTRUCTIVE=true`)
+  - `db:seed:precheck` bootstrap validation command
+  - enforced precheck before `db:seed --all-connections`
 
 ## Current
 - No active hardening tasks.
