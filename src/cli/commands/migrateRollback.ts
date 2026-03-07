@@ -59,6 +59,7 @@ async function rollbackConnection(
   };
 
   let lockAcquired = false;
+  let completedWithoutError = false;
 
   try {
     await ensureMigrationTables(db);
@@ -75,6 +76,7 @@ async function rollbackConnection(
 
     if (rows.length === 0) {
       console.log(chalk.yellow("No migrations found to roll back."));
+      completedWithoutError = true;
       return true;
     }
 
@@ -83,6 +85,7 @@ async function rollbackConnection(
 
     if (toRollback.length === 0) {
       console.log(chalk.yellow("Nothing to roll back."));
+      completedWithoutError = true;
       return true;
     }
 
@@ -158,6 +161,7 @@ async function rollbackConnection(
     }
 
     console.log(chalk.greenBright(`\n${rolledBack} migration(s) rolled back successfully.\n`));
+    completedWithoutError = !hadRollbackError;
     return !hadRollbackError;
   } catch (err) {
     console.error(chalk.red("Unable to read or validate migrations table."));
@@ -165,7 +169,7 @@ async function rollbackConnection(
     return false;
   } finally {
     if (lockAcquired) {
-      await releaseMigrationLock(db, lockOwner);
+      await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
     }
     await closeAllConnections();
     console.log(chalk.gray("All database connections closed.\n"));

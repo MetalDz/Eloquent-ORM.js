@@ -71,6 +71,7 @@ async function runMigrationsForConnection(
   }
   console.log(chalk.gray(`Connected to ${connectionName}.`));
   const lockOwner = `migrate:run:${connectionName}:${process.pid}:${Date.now()}`;
+  let completedWithoutError = false;
 
   await ensureMigrationTables(db);
   if (!dryRun) {
@@ -88,6 +89,7 @@ async function runMigrationsForConnection(
       files = files.filter((f) => f.includes(lower));
       if (files.length === 0) {
         console.log(chalk.yellow(`No migrations found for model: ${modelName}`));
+        completedWithoutError = true;
         return true;
       }
     }
@@ -98,6 +100,7 @@ async function runMigrationsForConnection(
     const pending = files.filter((f) => !executed.includes(f));
     if (pending.length === 0) {
       console.log(chalk.yellow("\nNo new migrations to run."));
+      completedWithoutError = true;
       return true;
     }
 
@@ -151,6 +154,7 @@ async function runMigrationsForConnection(
     }
 
     console.log(chalk.greenBright(`\n${applied} migration(s) applied successfully.`));
+    completedWithoutError = true;
     return true;
   } catch (err) {
     console.error(chalk.red("\nError during migration execution:"));
@@ -159,7 +163,7 @@ async function runMigrationsForConnection(
     return false;
   } finally {
     if (!dryRun) {
-      await releaseMigrationLock(db, lockOwner);
+      await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
     }
     await closeAllConnections();
     console.log(chalk.gray("\nAll database connections closed.\n"));

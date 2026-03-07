@@ -108,6 +108,15 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--pg");
     expect(res.combined).toContain("--sqlite");
     expect(res.combined).toContain("--all-connections");
+    expect(res.combined).toContain("--silent");
+    expect(res.combined).toContain("--no-hooks");
+  });
+
+  test("db:seed:fresh help exposes silent and no-hooks flags", () => {
+    const res = runCli(["db:seed:fresh", "--help"]);
+    assertOk(res, ["db:seed:fresh", "--help"]);
+    expect(res.combined).toContain("--silent");
+    expect(res.combined).toContain("--no-hooks");
   });
 
   test("all registered command --help entries exit cleanly", () => {

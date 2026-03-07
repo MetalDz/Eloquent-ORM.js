@@ -4,17 +4,10 @@ class PivotModelBase extends BaseModel {}
 const PivotModel = PivotHelperMixin(PivotModelBase);
 
 /**
- * 🧩 Auto-generated Pivot Factory
- * Handles many-to-many pivot table operations.
- *
+ * Auto-generated pivot factory for many-to-many operations.
  * Table: {{pivotTable}}
- * Generated for relation between {{foreignKey}} ↔ {{relatedKey}}
  */
 export class {{PivotFactoryName}} extends Factory<BaseModel> {
-  /**
-   * Model instance using PivotHelperMixin for pivot operations.
-   * Marked readonly to indicate the factory won't reassign it.
-   */
   readonly model = PivotModel;
 
   definition(): Partial<Record<string, unknown>> {
@@ -24,10 +17,6 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
     };
   }
 
-  /**
-   * Attach related IDs to the pivot.
-   * Accepts arrays or any iterable for flexibility.
-   */
   async createPivot(
     foreignId: string | number,
     relatedIds: Iterable<string | number>,
@@ -40,7 +29,7 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
         relatedKey: string,
         foreignId: string | number,
         relatedIds: Array<string | number>,
-        extra?: Record<string, unknown> | undefined
+        extra?: Record<string, unknown>
       ) => Promise<void>;
       attachMany?: (entries: Array<Record<string, unknown>>) => Promise<void>;
       withTransaction?: <R>(fn: () => Promise<R>) => Promise<R>;
@@ -48,11 +37,8 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
 
     const PivotCtor = this.model as unknown as new () => PivotInstanceLike;
     const pivotInstance = new PivotCtor();
-
-    // normalize iterable -> array
     const relatedArray = Array.from(relatedIds);
 
-    // prefer attachMany if available (faster), else use attach
     try {
       if (typeof pivotInstance.attachMany === "function") {
         const entries = relatedArray.map((rid) => ({
@@ -89,7 +75,10 @@ export class {{PivotFactoryName}} extends Factory<BaseModel> {
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error(`[pivot-factory] Failed to attach pivot rows for ${foreignId} -> ${relatedArray}:`, err);
+      console.error(
+        `[pivot-factory] Failed to attach pivot rows for ${foreignId} -> ${relatedArray}:`,
+        err
+      );
       throw err;
     }
   }

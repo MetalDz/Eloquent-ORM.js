@@ -3,8 +3,12 @@ import crypto from "crypto";
 import path from "path";
 import { dbConfig } from "../../../config/database";
 import type { DriverAdapter } from "../../../core/connection/DriverAdapter";
+import {
+  getMigrationLockStrategy,
+  type SqlMigrationDriver,
+} from "./MigrationLockStrategy";
 
-export type SqlMigrationDriver = "mysql" | "pg" | "sqlite";
+export type { SqlMigrationDriver };
 
 export type MigrationRow = {
   id?: number;
@@ -20,7 +24,6 @@ type ResolvedMigrationFile = {
   relinked: boolean;
 };
 
-const MIGRATION_LOCK_ID = 1;
 const AUTO_GENERATED_MIGRATION_RE =
   /^\d+_(create|update)_[A-Za-z0-9_]+_table\.(ts|js)$/;
 const AUTO_GENERATED_CREATE_MIGRATION_RE =
@@ -64,33 +67,6 @@ function trackerTableSQL(driver: SqlMigrationDriver): string {
       batch INT DEFAULT 1,
       checksum VARCHAR(64),
       run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );`;
-}
-
-function lockTableSQL(driver: SqlMigrationDriver): string {
-  if (driver === "pg") {
-    return `
-      CREATE TABLE IF NOT EXISTS migration_locks (
-        id INT PRIMARY KEY,
-        owner VARCHAR(255) NOT NULL,
-        acquired_at TIMESTAMP DEFAULT NOW()
-      );`;
-  }
-
-  if (driver === "sqlite") {
-    return `
-      CREATE TABLE IF NOT EXISTS migration_locks (
-        id INTEGER PRIMARY KEY,
-        owner VARCHAR(255) NOT NULL,
-        acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );`;
-  }
-
-  return `
-    CREATE TABLE IF NOT EXISTS migration_locks (
-      id INT PRIMARY KEY,
-      owner VARCHAR(255) NOT NULL,
-      acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );`;
 }
 
@@ -152,22 +128,11 @@ async function ensureChecksumColumn(
   );
 }
 
-function isLockConflict(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const code = (error as Error & { code?: string }).code;
-  return (
-    code === "ER_DUP_ENTRY" ||
-    code === "23505" ||
-    code === "SQLITE_CONSTRAINT" ||
-    /duplicate|unique constraint|constraint failed/i.test(error.message)
-  );
-}
-
 export async function ensureMigrationTables(db: DriverAdapter): Promise<SqlMigrationDriver> {
   const driver = resolveDriver(db);
   await db.execute(trackerTableSQL(driver));
   await ensureChecksumColumn(db, driver);
-  await db.execute(lockTableSQL(driver));
+  await getMigrationLockStrategy().ensureBootstrap(db, driver);
   return driver;
 }
 
@@ -306,35 +271,15 @@ export async function acquireMigrationLock(
   db: DriverAdapter,
   owner: string
 ): Promise<void> {
-  try {
-    await db.execute(
-      `INSERT INTO ${db.wrapId("migration_locks")} (${db.wrapId("id")}, ${db.wrapId(
-        "owner"
-      )}) VALUES (${db.placeholder(1)}, ${db.placeholder(2)})`,
-      [MIGRATION_LOCK_ID, owner]
-    );
-  } catch (error) {
-    if (isLockConflict(error)) {
-      throw new Error("Another migration process is already running.");
-    }
-    throw error;
-  }
+  await getMigrationLockStrategy().acquire(db, owner);
 }
 
 export async function releaseMigrationLock(
   db: DriverAdapter,
-  owner: string
+  owner: string,
+  outcome?: { success?: boolean }
 ): Promise<void> {
-  try {
-    await db.execute(
-      `DELETE FROM ${db.wrapId("migration_locks")} WHERE ${db.wrapId("id")} = ${db.placeholder(
-        1
-      )} AND ${db.wrapId("owner")} = ${db.placeholder(2)}`,
-      [MIGRATION_LOCK_ID, owner]
-    );
-  } catch {
-    // Do not mask the real migration error with lock cleanup noise.
-  }
+  await getMigrationLockStrategy().release(db, owner, outcome);
 }
 
 export async function readAppliedMigrations(db: DriverAdapter): Promise<MigrationRow[]> {

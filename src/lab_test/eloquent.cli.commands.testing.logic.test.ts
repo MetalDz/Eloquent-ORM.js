@@ -79,6 +79,8 @@ const commandMatrix: CommandSpec[] = [
       "--sqlite",
       "--all-connections",
       "--class <name>",
+      "--silent",
+      "--no-hooks",
     ],
   },
   {
@@ -100,6 +102,8 @@ const commandMatrix: CommandSpec[] = [
       "--sqlite",
       "--all-connections",
       "--class <name>",
+      "--silent",
+      "--no-hooks",
       "--force",
       "--yes",
     ],

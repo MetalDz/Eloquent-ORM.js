@@ -294,5 +294,60 @@ describe.each<CrudConnection>(["mysql", "sqlite", "pg"])(
         );
       }
     });
+
+    test("ELOQUENT_DISABLE_MODEL_HOOKS bypasses validation hooks and model events", async () => {
+      const adapter = makeAdapter(driverName);
+      if (driverName === "pg") {
+        adapter.insert.mockResolvedValue({ id: 12, row: { id: 12, name: "Alice" } });
+      } else {
+        adapter.insert.mockResolvedValue({ id: 12 });
+      }
+      mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+      const beforeValidate = jest.fn();
+      const afterValidate = jest.fn();
+      const beforeCreate = jest.fn();
+      const afterCreate = jest.fn();
+
+      class HookAwareModel extends CoreModel {
+        static schema = {
+          name: validate(column("string", 255), { required: true, min: 1 }),
+        };
+
+        static validationHooks = {
+          beforeValidate,
+          afterValidate,
+        };
+
+        static modelEvents = {
+          beforeCreate,
+          afterCreate,
+        };
+
+        constructor(connectionName: CrudConnection = "mysql") {
+          super("users", connectionName);
+        }
+      }
+
+      const originalDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+      process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+
+      try {
+        const model = new HookAwareModel(driverName);
+        await model.create({ name: "Alice" });
+      } finally {
+        if (originalDisableHooks === undefined) {
+          delete process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+        } else {
+          process.env.ELOQUENT_DISABLE_MODEL_HOOKS = originalDisableHooks;
+        }
+      }
+
+      expect(beforeValidate).not.toHaveBeenCalled();
+      expect(afterValidate).not.toHaveBeenCalled();
+      expect(beforeCreate).not.toHaveBeenCalled();
+      expect(afterCreate).not.toHaveBeenCalled();
+      expect(adapter.insert).toHaveBeenCalledTimes(1);
+    });
   }
 );

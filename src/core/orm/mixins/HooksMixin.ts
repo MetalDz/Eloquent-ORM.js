@@ -63,6 +63,10 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
      * Internal helper to trigger all hooks for an event.
      */
     protected async fire<TPayload>(event: LifecycleEvent, payload: TPayload): Promise<void> {
+      const hooksDisabled = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+      if (hooksDisabled === "true" || hooksDisabled === "1") {
+        return;
+      }
       const modelCtor = this.constructor as ModelConstructor;
       ModelRegistry.ensureGranted(modelCtor, "lifecycle");
       const listeners = HookStore.get(modelCtor, event) as HookHandler<TPayload>[];

@@ -10,18 +10,20 @@ import type { DriverAdapter } from "../core/connection/DriverAdapter";
 
 type MockAdapter = DriverAdapter & {
   query: jest.Mock;
+  queryOne: jest.Mock;
   execute: jest.Mock;
 };
 
 function makeAdapter(): MockAdapter {
   const query = jest.fn();
+  const queryOne = jest.fn();
   const execute = jest.fn();
 
   return {
     name: "mysql_test",
     kind: "sql",
     query,
-    queryOne: jest.fn(),
+    queryOne,
     execute,
     insert: jest.fn(),
     placeholder: () => "?",
@@ -50,11 +52,9 @@ describe("MigrationTracker logic", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  test("acquireMigrationLock maps duplicate-key errors to a clear concurrency error", async () => {
+  test("acquireMigrationLock maps native-lock denial to a clear concurrency error", async () => {
     const adapter = makeAdapter();
-    adapter.execute.mockRejectedValueOnce(
-      Object.assign(new Error("Duplicate entry '1' for key 'PRIMARY'"), { code: "ER_DUP_ENTRY" })
-    );
+    adapter.queryOne.mockResolvedValueOnce({ acquired: 0 });
 
     await expect(acquireMigrationLock(adapter, "owner-1")).rejects.toThrow(
       "Another migration process is already running."

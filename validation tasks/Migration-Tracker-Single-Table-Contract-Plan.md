@@ -1,6 +1,7 @@
 # Migration Tracker Single-Table Contract Plan
 
-Last updated: 2026-03-06
+Last updated: 2026-03-07
+Status: DONE (Closed)
 
 ## Goal
 - Refactor migration tracking so the consumer database persists only the `migrations` table for migration history.
@@ -16,13 +17,26 @@ Last updated: 2026-03-06
   - `20260304130722001_create_cligeneratortestartifacts_table.ts`
   as tracker-owned metadata instead of normal schema migration artifacts.
 
-## Current State
+## Current State (Post-Refactor)
 - History ledger:
   - `migrations`
-- Extra persistent coordination table:
-  - `migration_locks`
+- Persistent coordination table:
+  - none (native locking is used instead)
+- Legacy compatibility:
+  - existing `migration_locks` tables from older installs may remain on disk and are ignored by runtime
 - File checksums and relink/prune logic still depend on migration files on disk.
 - Generated `create_*_table.ts` files are schema source artifacts, not tracker tables.
+
+### Historical Baseline Responsibilities (Before Refactor)
+- `migrations`:
+  - stores applied migration name, batch, run timestamp, and checksum.
+  - powers pending detection, rollback ordering, checksum validation, and stale/relinked history handling.
+- `migration_locks`:
+  - stores a single lock row used for process-level migration concurrency control today.
+  - exists only to coordinate migrate run/rollback safety, not migration history.
+- migration files on disk:
+  - remain source artifacts for schema intent.
+  - are used for checksum validation and relink/prune decisions for generated `create_*` / `update_*` files.
 
 ## Target End State
 - Persistent migration metadata in consumer databases:
@@ -39,43 +53,53 @@ Last updated: 2026-03-06
 - [x] Create this tracking task.
 - [x] Add a focused test file:
   - `src/lab_test/migration.tracker.single-table.contract.logic.test.ts`
-- [ ] Document the exact current responsibilities of:
+- [x] Document the exact current responsibilities of:
   - `migrations`
   - `migration_locks`
   - migration files on disk
 
 ### Phase 2: Lock Strategy Abstraction
-- [ ] Extract migration locking behind a driver-aware strategy interface.
-- [ ] Keep behavior compatible while the abstraction is introduced.
+- [x] Extract migration locking behind a driver-aware strategy interface.
+- [x] Keep behavior compatible while the abstraction is introduced.
 
 ### Phase 3: Replace Persistent Lock Table
-- [ ] PostgreSQL:
+- [x] PostgreSQL:
   - use advisory locks such as `pg_advisory_lock` / `pg_try_advisory_lock`
-- [ ] MySQL:
+- [x] MySQL:
   - use named locks such as `GET_LOCK` / `RELEASE_LOCK`
-- [ ] SQLite:
+- [x] SQLite:
   - use transaction/file locking semantics such as `BEGIN IMMEDIATE`
-- [ ] Remove persistent `migration_locks` table creation from tracker bootstrap.
+- [x] Remove persistent `migration_locks` table creation from tracker bootstrap.
 
 ### Phase 4: Compatibility and Cleanup
-- [ ] Ensure old installs with an existing `migration_locks` table still work during upgrade.
-- [ ] Decide whether the old table is:
+- [x] Ensure old installs with an existing `migration_locks` table still work during upgrade.
+- [x] Decide whether the old table is:
   - ignored
   - optionally cleaned up
   - explicitly documented as legacy-only
 
+### Phase 4 Decision (Implemented)
+- Runtime policy: **ignore legacy `migration_locks`** table by default.
+  - New tracker bootstrap does not create `migration_locks`.
+  - Native lock paths (`pg_try_advisory_lock`, `GET_LOCK`, `BEGIN IMMEDIATE`) do not depend on that table.
+- Cleanup policy: **optional/manual** (non-breaking).
+  - Consumers may drop `migration_locks` after upgrade if they want a clean schema.
+  - No automatic destructive cleanup is performed.
+- Documentation policy: **legacy-only**.
+  - `migration_locks` is documented as a previous implementation artifact, not required by current tracker contract.
+
 ### Phase 5: Validation and Docs
-- [ ] Add active regression tests for the single-table contract.
-- [ ] Update migration docs so users understand:
+- [x] Add active regression tests for the single-table contract.
+- [x] Update migration docs so users understand:
   - `migrations` is the only persistent tracker table
   - migration files remain required for checksum/history validation
 
 ## Acceptance Criteria
-- `ensureMigrationTables()` creates only the `migrations` table.
-- No new consumer-facing persistent lock table is created.
-- Migration concurrency protection still works across supported SQL drivers.
-- Checksum validation and stale-history pruning still work.
-- Existing migration history remains compatible after the refactor.
+- [x] `ensureMigrationTables()` creates only the `migrations` table.
+- [x] No new consumer-facing persistent lock table is created.
+- [x] Migration concurrency protection still works across supported SQL drivers.
+- [x] Checksum validation and stale-history pruning still work.
+- [x] Existing migration history remains compatible after the refactor.
 
 ## Risks
 - Locking is driver-specific, so the abstraction must not weaken safety.
@@ -83,8 +107,8 @@ Last updated: 2026-03-06
 - Removing `migration_locks` too early without a replacement would reintroduce concurrent migration races.
 
 ## Validation Strategy
-- Keep this task tracked until active tests replace the current TODO contract markers.
-- Final validation should cover:
+- Active regression tests now cover the contract directly.
+- Final validation coverage in place:
   - bootstrap path
   - concurrent migration protection
   - history checksum validation

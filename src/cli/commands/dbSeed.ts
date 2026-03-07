@@ -9,6 +9,7 @@ import {
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { appendAuditEvent } from "../utils/AuditTrail";
+import { silenceConsoleOutput } from "../utils/ConsoleSilencer";
 
 /**
  * db:seed
@@ -21,14 +22,22 @@ export async function dbSeed(options: {
   exit?: boolean;
   connectionNames?: ConnectionName[];
   auditCommand?: string;
+  silent?: boolean;
+  noHooks?: boolean;
 }): Promise<void> {
   let hadFailure = false;
   const isTest = !!options?.test;
   const envKey = isTest ? "DB_TEST_CONNECTION" : "DB_CONNECTION";
   const originalConnection = process.env[envKey];
   const originalDbConnection = process.env.DB_CONNECTION;
+  const originalHooksDisabled = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+  const restoreConsole = silenceConsoleOutput(!!options?.silent);
 
   try {
+    if (options?.noHooks) {
+      process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+    }
+
     const seedsDir = PathMap.seeds(isTest);
 
     if (!fs.existsSync(seedsDir)) {
@@ -135,9 +144,20 @@ export async function dbSeed(options: {
   } finally {
     process.env[envKey] = originalConnection;
     process.env.DB_CONNECTION = originalDbConnection;
-    if (options?.close !== false) {
-      await closeAllConnections();
-      console.log(chalk.gray("All database connections closed.\n"));
+    if (originalHooksDisabled === undefined) {
+      delete process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+    } else {
+      process.env.ELOQUENT_DISABLE_MODEL_HOOKS = originalHooksDisabled;
+    }
+    try {
+      if (options?.close !== false) {
+        await closeAllConnections();
+        if (!options?.silent) {
+          console.log(chalk.gray("All database connections closed.\n"));
+        }
+      }
+    } finally {
+      restoreConsole();
     }
     if (hadFailure) {
       process.exitCode = 1;

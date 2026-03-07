@@ -103,6 +103,11 @@ export abstract class CoreModel<
     return dbConfig.connections[this.connectionName]?.driver ?? this.connectionName;
   }
 
+  private shouldSkipModelHooks(): boolean {
+    const value = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+    return value === "1" || value === "true";
+  }
+
   /**
    * Validate incoming data using schema + hooks + custom rules
    */
@@ -115,7 +120,9 @@ export abstract class CoreModel<
     options: { partial: boolean }
   ): Promise<void> {
     const schema = (this.constructor as typeof CoreModel).schema;
-    const hooks = (this.constructor as typeof CoreModel).validationHooks;
+    const hooks = this.shouldSkipModelHooks()
+      ? undefined
+      : (this.constructor as typeof CoreModel).validationHooks;
     const customRules = (this.constructor as typeof CoreModel).customRules;
 
     if (!schema) return;
@@ -150,6 +157,7 @@ export abstract class CoreModel<
    */
   
   private async fireEvent(eventName: keyof ModelEventHooks, payload?: unknown): Promise<boolean> {
+    if (this.shouldSkipModelHooks()) return true;
     const handler = (this.constructor as typeof CoreModel).modelEvents?.[eventName];
     if (!handler) return true;
 

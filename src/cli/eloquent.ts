@@ -374,6 +374,8 @@ program
   .option("--sqlite", "Run seeders only for the sqlite connection")
   .option("--all-connections", "Run seeders for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder by class name")
+  .option("--silent", "Suppress non-error output during seeding")
+  .option("--no-hooks", "Disable model validation/lifecycle hooks during seeding")
   .description("Run database seeders (all or specific)")
   .action(async (options: {
     test?: boolean;
@@ -382,6 +384,8 @@ program
     pg?: boolean;
     sqlite?: boolean;
     allConnections?: boolean;
+    silent?: boolean;
+    noHooks?: boolean;
   }) => {
     try {
       const connectionNames = resolveSqlConnectionNames(!!options.test, {
@@ -406,6 +410,8 @@ program
       await dbSeed({
         test: !!options.test,
         class: options.class,
+        silent: !!options.silent,
+        noHooks: !!options.noHooks,
         connectionNames,
       });
     } catch (error) {
@@ -456,6 +462,8 @@ program
   .option("--sqlite", "Run fresh seed only for the sqlite connection")
   .option("--all-connections", "Run fresh seed for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder after migration refresh")
+  .option("--silent", "Suppress non-error output during refresh+seed")
+  .option("--no-hooks", "Disable model validation/lifecycle hooks during seeding")
   .option("--force", "Skip confirmation prompt during refresh")
   .option("--yes", "Acknowledge production override for this destructive command")
   .description("Drop all tables, rerun migrations, and seed the database")
@@ -468,6 +476,8 @@ program
     pg?: boolean;
     sqlite?: boolean;
     allConnections?: boolean;
+    silent?: boolean;
+    noHooks?: boolean;
   }) => {
     try {
       if (!ensureProductionOverride("db:seed:fresh", { force: !!options.force, yes: !!options.yes })) {
@@ -484,6 +494,8 @@ program
         test: !!options.test,
         class: options.class,
         force: !!options.force,
+        silent: !!options.silent,
+        noHooks: !!options.noHooks,
         connectionNames,
       });
     } catch (error) {
@@ -872,7 +884,8 @@ program
       { Command: "factory:status", Description: "--test --details --graph" },
       {
         Command: "db:seed",
-        Description: "--test --mysql --pg --sqlite --all-connections --class <name>",
+        Description:
+          "--test --mysql --pg --sqlite --all-connections --class <name> --silent --no-hooks",
       },
       {
         Command: "db:seed:precheck",
@@ -881,7 +894,7 @@ program
       {
         Command: "db:seed:fresh",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --class <name> --force --yes",
+          "--test --mysql --pg --sqlite --all-connections --class <name> --silent --no-hooks --force --yes",
       },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
       {

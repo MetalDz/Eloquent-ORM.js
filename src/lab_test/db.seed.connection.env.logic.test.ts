@@ -103,4 +103,66 @@ describe("db seed connection env routing", () => {
     expect(process.env.DB_CONNECTION).toBe("mysql_test");
     expect(process.env.DB_TEST_CONNECTION).toBe("mysql_test");
   });
+
+  test("dbSeed toggles ELOQUENT_DISABLE_MODEL_HOOKS only during run when noHooks is enabled", async () => {
+    const originalDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+    const seenFlags: string[] = [];
+
+    jest.spyOn(PathMap, "seeds").mockReturnValue("virtual-seeds");
+    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest
+      .spyOn(fs, "readdirSync")
+      .mockReturnValue(["BlogScenarioSeeder.ts"] as unknown as ReturnType<typeof fs.readdirSync>);
+    jest.spyOn(tsRuntime, "loadModule").mockReturnValue({
+      BlogScenarioSeeder: async () => {
+        seenFlags.push(String(process.env.ELOQUENT_DISABLE_MODEL_HOOKS));
+      },
+    });
+
+    try {
+      delete process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+      await dbSeed({
+        test: true,
+        class: "BlogScenarioSeeder",
+        connectionNames: ["pg_test"],
+        noHooks: true,
+        close: false,
+        exit: false,
+      });
+    } finally {
+      if (originalDisableHooks === undefined) {
+        delete process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+      } else {
+        process.env.ELOQUENT_DISABLE_MODEL_HOOKS = originalDisableHooks;
+      }
+    }
+
+    expect(seenFlags).toEqual(["true"]);
+    expect(process.env.ELOQUENT_DISABLE_MODEL_HOOKS).toBe(originalDisableHooks);
+  });
+
+  test("dbSeedFresh forwards noHooks and silent flags to dbSeed", async () => {
+    jest.spyOn(migrateFreshCommand, "migrateFresh").mockImplementation(async () => undefined);
+    const dbSeedSpy = jest
+      .spyOn(dbSeedCommand, "dbSeed")
+      .mockImplementation(async () => undefined);
+    jest
+      .spyOn(connectionFactory, "closeAllConnections")
+      .mockImplementation(async () => undefined);
+
+    await dbSeedFresh({
+      test: true,
+      class: "BlogScenarioSeeder",
+      connectionNames: ["pg_test"],
+      noHooks: true,
+      silent: true,
+    });
+
+    expect(dbSeedSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        noHooks: true,
+        silent: true,
+      })
+    );
+  });
 });

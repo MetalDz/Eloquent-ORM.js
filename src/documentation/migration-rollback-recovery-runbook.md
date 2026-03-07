@@ -53,3 +53,13 @@ Last updated: 2026-03-06
 - Ensure `down()` handles already-absent columns/tables defensively.
 - Update release notes with migration remediation steps if needed.
 
+## Migration Tracker Single-Table Contract (Upgrade Note)
+- Current migration tracker contract persists only the `migrations` history table.
+- Legacy table `migration_locks` is no longer required for locking in current versions.
+- Existing installs that still have `migration_locks` remain compatible:
+  - runtime ignores that table
+  - migration locking uses native driver mechanisms
+- Optional cleanup (manual, after upgrade validation):
+  - MySQL / SQLite: `DROP TABLE IF EXISTS migration_locks;`
+  - PostgreSQL: `DROP TABLE IF EXISTS migration_locks CASCADE;`
+

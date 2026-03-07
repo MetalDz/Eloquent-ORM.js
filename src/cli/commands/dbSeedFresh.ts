@@ -6,6 +6,7 @@ import {
   type ConnectionName,
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import { silenceConsoleOutput } from "../utils/ConsoleSilencer";
 
 /**
  * db:seed:fresh
@@ -16,9 +17,12 @@ export async function dbSeedFresh(
     test?: boolean;
     class?: string;
     force?: boolean;
+    silent?: boolean;
+    noHooks?: boolean;
     connectionNames?: ConnectionName[];
   }
 ): Promise<void> {
+  const restoreConsole = silenceConsoleOutput(!!options?.silent);
   console.log(chalk.cyanBright("\nRunning db:seed:fresh\n"));
 
   const isTest = !!options?.test;
@@ -50,6 +54,8 @@ export async function dbSeedFresh(
       await dbSeed({
         test: isTest,
         ...(options?.class ? { class: options.class } : {}),
+        silent: !!options?.silent,
+        noHooks: !!options?.noHooks,
         close: false,
         exit: false,
         connectionNames: [connectionName],
@@ -65,8 +71,14 @@ export async function dbSeedFresh(
   } finally {
     process.env[envKey] = originalConnection;
     process.env.DB_CONNECTION = originalDbConnection;
-    await closeAllConnections();
-    console.log(chalk.gray("All database connections closed.\n"));
+    try {
+      await closeAllConnections();
+      if (!options?.silent) {
+        console.log(chalk.gray("All database connections closed.\n"));
+      }
+    } finally {
+      restoreConsole();
+    }
     if (hadFailure) {
       process.exitCode = 1;
     }
