@@ -488,10 +488,10 @@ describeIfRunnable("ORM real-situation validation via CLI phases", () => {
       );
     });
 
-    maybeTest(hasPgTestEnv, "pg_test lifecycle via migrate:run:test", async () => {
+    maybeTest(hasPgTestEnv, "pg_test lifecycle via migrate:run --test", async () => {
       await resetTestPgDatabase();
       runCliSuccess(
-        ["migrate:run:test", "--pg", "--all-migrations", "--pivot-separate"],
+        ["migrate:run", "--test", "--pg", "--all-migrations", "--pivot-separate"],
         testPgEnv()
       );
       runCliSuccess(
@@ -507,7 +507,7 @@ describeIfRunnable("ORM real-situation validation via CLI phases", () => {
     test("sqlite_test lifecycle", () => {
       resetSqliteDatabase(testSqlitePath);
       runCliSuccess(
-        ["migrate:run:test", "--sqlite", "--all-migrations", "--pivot-separate"],
+        ["migrate:run", "--test", "--sqlite", "--all-migrations", "--pivot-separate"],
         testSqliteEnv()
       );
       runCliSuccess(
@@ -572,7 +572,7 @@ describeIfRunnable("ORM real-situation validation via CLI phases", () => {
         testPgEnv()
       );
       runCliSuccess(
-        ["migrate:run:test", "--pg", "--all-migrations"],
+        ["migrate:run", "--test", "--pg", "--all-migrations"],
         testPgEnv()
       );
     });
@@ -583,7 +583,7 @@ describeIfRunnable("ORM real-situation validation via CLI phases", () => {
         testSqliteEnv()
       );
       runCliSuccess(
-        ["migrate:run:test", "--sqlite", "--all-migrations"],
+        ["migrate:run", "--test", "--sqlite", "--all-migrations"],
         testSqliteEnv()
       );
     });
@@ -630,7 +630,7 @@ describeIfRunnable("ORM real-situation validation via CLI phases", () => {
         resetSqliteDatabase(testSqlitePath);
 
         runCliSuccess(
-          ["migrate:run:test", "--all-connections", "--all-migrations", "--pivot-separate"],
+          ["migrate:run", "--test", "--all-connections", "--all-migrations", "--pivot-separate"],
           testSqliteEnv()
         );
         runCliSuccess(

@@ -198,8 +198,7 @@ export async function migrateRun(
       : [resolveConnectionName(undefined, { test: isTest })];
 
   let hadFailure = false;
-  const auditCommand =
-    options.auditCommand ?? (isTest ? "migrate:run:test" : "migrate:run");
+  const auditCommand = options.auditCommand ?? "migrate:run";
   for (const connectionName of connectionNames) {
     const success = await runMigrationsForConnection(
       connectionName,

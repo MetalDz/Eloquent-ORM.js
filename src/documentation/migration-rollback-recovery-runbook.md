@@ -44,7 +44,7 @@ Last updated: 2026-03-06
    - test mode: `eloquent migrate:rollback --test --all-connections --all-migrations`
 4. Re-run migration apply:
    - `eloquent migrate:run --all-connections --all-migrations`
-   - test mode: `eloquent migrate:run:test --all-connections --all-migrations`
+   - test mode: `eloquent migrate:run --test --all-connections --all-migrations`
 5. Re-check status:
    - `eloquent migrate:status --all-connections`
 

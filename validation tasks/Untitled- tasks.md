@@ -36,9 +36,9 @@ Updated: 2026-03-07
 
 ## Partial / Decision Needed
 
-- [ ] Test option naming final decision
-  - `migrate:run:test` still exists as a legacy/compat command alongside `migrate:run --test`.
-  - Decide whether to keep alias for compatibility or deprecate/remove it.
+- [x] Test option naming final decision
+  - Decision: standardize on `migrate:run --test` only.
+  - Legacy alias command `migrate:run:test` removed from CLI surface.
 
 ## Left
 

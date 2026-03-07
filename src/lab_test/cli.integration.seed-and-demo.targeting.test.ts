@@ -296,7 +296,7 @@ describeIfBuiltOnly("CLI integration: db:seed and demo:scenario targeting", () =
     async () => {
       await resetAllTestDatabases();
       migrateTestConnection(
-        ["migrate:run:test", "--all-connections", "--all-migrations"],
+        ["migrate:run", "--test", "--all-connections", "--all-migrations"],
         testAllConnectionsEnv()
       );
 

@@ -330,7 +330,7 @@ program
   .option("--preset <name>", "Preset: blog | media")
   .option("--controllers", "Generate controllers (test)")
   .option("--services", "Generate services (test)")
-  .option("--run", "Run migrate:run:test and db:seed --test for the scenario")
+  .option("--run", "Run migrate:run --test and db:seed --test for the scenario")
   .option("--force", "Overwrite existing scenario files")
   .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate an automated test scenario (models, migrations, factories, seeds)")
@@ -402,7 +402,7 @@ program
         });
         if (!cleanBootstrap) {
           throw new Error(
-            "All-connections seed precheck failed. Run migrate:run/migrate:run:test first, then retry db:seed."
+            "All-connections seed precheck failed. Run migrate:run (with optional --test) first, then retry db:seed."
           );
         }
       }
@@ -648,61 +648,6 @@ program
   });
 
 program
-  .command("migrate:run:test [model]")
-  .description("Run pending test migrations (optionally for one model)")
-  .option("--mysql", "Run test migrations only for the mysql_test connection")
-  .option("--pg", "Run test migrations only for the pg_test connection")
-  .option("--sqlite", "Run test migrations only for the sqlite_test connection")
-  .option("--all-connections", "Run test migrations for mysql_test, pg_test, and sqlite_test")
-  .option("--all-migrations", "Auto-generate migrations for all test models before running")
-  .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all-migrations)")
-  .action(async (
-    model?: string,
-    options?: {
-      mysql?: boolean;
-      pg?: boolean;
-      sqlite?: boolean;
-      allConnections?: boolean;
-      allMigrations?: boolean;
-      pivotSeparate?: boolean;
-    }
-  ) => {
-    try {
-      const connectionNames = resolveSqlConnectionNames(true, {
-        mysql: !!options?.mysql,
-        pg: !!options?.pg,
-        sqlite: !!options?.sqlite,
-        allConnections: !!options?.allConnections,
-      });
-
-      if (options?.allMigrations) {
-        if (connectionNames.length === 0) {
-          await makeMigration("all", {
-            test: true,
-            exit: false,
-            pivotSeparate: !!options?.pivotSeparate,
-          });
-        } else {
-          for (const connectionName of connectionNames) {
-            await makeMigration("all", {
-              test: true,
-              exit: false,
-              pivotSeparate: !!options?.pivotSeparate,
-              connectionName,
-            });
-          }
-        }
-      }
-
-      return migrateRun(true, model, false, true, { connectionNames });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`❌ ${message}`));
-      process.exitCode = 1;
-    }
-  });
-
-program
   .command("migrate:rollback")
   .option("--test", "Rollback migration in test mode")
   .option("--mysql", "Rollback migrations only for the mysql connection")
@@ -901,11 +846,6 @@ program
         Command: "migrate:run [model]",
         Description:
           "--test --mysql --pg --sqlite --all-connections --all-migrations --pivot-separate",
-      },
-      {
-        Command: "migrate:run:test [model]",
-        Description:
-          "--mysql --pg --sqlite --all-connections --all-migrations --pivot-separate",
       },
       {
         Command: "migrate:rollback",

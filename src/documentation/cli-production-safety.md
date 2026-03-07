@@ -41,7 +41,7 @@ When running:
 
 The CLI runs a bootstrap precheck to ensure clean migration state.
 If precheck fails:
-- run migrations first (`migrate:run` or `migrate:run:test`)
+- run migrations first (`migrate:run` or `migrate:run --test`)
 - retry `db:seed`
 
 Manual precheck command:

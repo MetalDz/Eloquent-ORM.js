@@ -54,11 +54,12 @@ describeIfBuiltOnly("CLI integration: migrate:* connection targeting", () => {
     );
   });
 
-  test("migrate:run:test --sqlite --all-migrations --pivot-separate exits cleanly", () => {
+  test("migrate:run --test --sqlite --all-migrations --pivot-separate exits cleanly", () => {
     resetSqliteDatabase("./cli.integration.test.sqlite");
 
     const args = [
-      "migrate:run:test",
+      "migrate:run",
+      "--test",
       "--sqlite",
       "--all-migrations",
       "--pivot-separate",
@@ -254,11 +255,11 @@ describeIfBuiltOnly("CLI integration: migrate:* connection targeting", () => {
   );
 
   (hasTestDbEnv && hasPgTestEnv ? test : test.skip)(
-    "migrate:run:test --all-connections --all-migrations exits cleanly in test mode",
+    "migrate:run --test --all-connections --all-migrations exits cleanly in test mode",
     async () => {
       await resetAllTestDatabases();
 
-      const args = ["migrate:run:test", "--all-connections", "--all-migrations"];
+      const args = ["migrate:run", "--test", "--all-connections", "--all-migrations"];
       const result = runCli(args, 240000, undefined, {
         ...testAllConnectionsEnv(),
       });

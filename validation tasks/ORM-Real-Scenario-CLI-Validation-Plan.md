@@ -53,8 +53,8 @@ npm.cmd run build
 
 ### Phase 3: Test Driver Lifecycle
 - [x] MySQL test flow via `--test --mysql`
-- [x] PostgreSQL test flow via `migrate:run:test --pg`
-- [x] SQLite test flow via `migrate:run:test --sqlite`
+- [x] PostgreSQL test flow via `migrate:run --test --pg`
+- [x] SQLite test flow via `migrate:run --test --sqlite`
 - [x] Seed verification with `db:seed --test --class BlogScenarioSeeder`
 
 ### Phase 4: Rollback + Re-apply
@@ -63,7 +63,7 @@ npm.cmd run build
 
 ### Phase 5: Fresh / Reset / All-Connections
 - [x] App all-connections: `migrate:run`, `db:seed`, `db:seed:fresh`, `migrate:reset`
-- [x] Test all-connections: `migrate:run:test`, `db:seed`, `db:seed:fresh`, `migrate:reset`
+- [x] Test all-connections: `migrate:run --test`, `db:seed`, `db:seed:fresh`, `migrate:reset`
 - [x] SQLite safety path: `migrate:fresh --force`, `db:seed:fresh --force`, `migrate:reset` in app and test modes
 
 ## Progress Log
@@ -111,10 +111,10 @@ npm.cmd run build
 - `mysql_test migrate:run --test --mysql --all-migrations --pivot-separate` -> exit `0`.
 - `mysql_test db:seed --test --mysql --class BlogScenarioSeeder` -> exit `0`.
 - `mysql_test migrate:status --test --mysql --all-migrations` -> exit `0`.
-- `pg_test migrate:run:test --pg --all-migrations --pivot-separate` -> exit `0`.
+- `pg_test migrate:run --test --pg --all-migrations --pivot-separate` -> exit `0`.
 - `pg_test db:seed --test --pg --class BlogScenarioSeeder` -> exit `0`.
 - `pg_test migrate:status --test --pg --all-migrations` -> exit `0`.
-- `sqlite_test migrate:run:test --sqlite --all-migrations --pivot-separate` -> exit `0`.
+- `sqlite_test migrate:run --test --sqlite --all-migrations --pivot-separate` -> exit `0`.
 - `sqlite_test db:seed --test --sqlite --class BlogScenarioSeeder` -> exit `0`.
 - `sqlite_test migrate:status --test --sqlite --all-migrations` -> exit `0`.
 
@@ -123,8 +123,8 @@ npm.cmd run build
 - `app pg`: `migrate:rollback --pg --step 1` -> exit `0`; `migrate:run --pg --all-migrations` -> exit `0`.
 - `app sqlite`: `migrate:rollback --sqlite --step 1` -> exit `0`; `migrate:run --sqlite --all-migrations` -> exit `0`.
 - `test mysql`: `migrate:rollback --test --mysql --step 1` -> exit `0`; `migrate:run --test --mysql --all-migrations` -> exit `0`.
-- `test pg`: `migrate:rollback --test --pg --step 1` -> exit `0`; `migrate:run:test --pg --all-migrations` -> exit `0`.
-- `test sqlite`: `migrate:rollback --test --sqlite --step 1` -> exit `0`; `migrate:run:test --sqlite --all-migrations` -> exit `0`.
+- `test pg`: `migrate:rollback --test --pg --step 1` -> exit `0`; `migrate:run --test --pg --all-migrations` -> exit `0`.
+- `test sqlite`: `migrate:rollback --test --sqlite --step 1` -> exit `0`; `migrate:run --test --sqlite --all-migrations` -> exit `0`.
 - Notes:
   - Legacy orphan warnings still appear for old already-deleted generated files from pre-hardening runs.
   - New append-only behavior prevents creating additional orphaned rows going forward.
@@ -136,7 +136,7 @@ npm.cmd run build
   - `db:seed:fresh --all-connections --class BlogScenarioSeeder --force` -> exit `0`
   - `migrate:reset --all-connections` -> exit `0`
 - `test all-connections`:
-  - `migrate:run:test --all-connections --all-migrations --pivot-separate` -> exit `0`
+  - `migrate:run --test --all-connections --all-migrations --pivot-separate` -> exit `0`
   - `db:seed --test --all-connections --class BlogScenarioSeeder` -> exit `0` (validated after clean bootstrap)
   - `db:seed:fresh --test --all-connections --class BlogScenarioSeeder --force` -> exit `0`
   - `migrate:reset --test --all-connections` -> exit `0`

@@ -16,7 +16,7 @@ Generate migrations:
 
 Apply migrations:
 - app mode: `eloquent migrate:run --all-migrations`
-- test mode: `eloquent migrate:run:test --all-migrations`
+- test mode: `eloquent migrate:run --test --all-migrations`
 
 Inspect status:
 - `eloquent migrate:status`
@@ -50,7 +50,7 @@ Examples:
 - `eloquent db:seed --all-connections --class UserSeeder`
 
 ## 5) Test Mode Workflow
-Use `--test` (or `migrate:run:test`) to isolate test fixtures from app data.
+Use `--test` to isolate test fixtures from app data.
 
 Examples:
 - `eloquent make:model User --test`
@@ -61,7 +61,7 @@ Examples:
 ## 6) Recommended Command Order
 1. `make:*` (if needed)
 2. `make:migration`
-3. `migrate:run` / `migrate:run:test`
+3. `migrate:run` (add `--test` for test mode)
 4. `db:seed` / `db:seed:fresh`
 5. `migrate:status` verification
 

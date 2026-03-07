@@ -1,4 +1,4 @@
-﻿# CLI Test Matrix
+# CLI Test Matrix
 
 This matrix tracks which CLI commands are already validated, which parameters are covered, and what is still missing.
 
@@ -20,7 +20,7 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `make:seed` | app/test count assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `make:service` | app-mode shell assertions plus tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
 | `migrate:run` | app/test single-connection flags, `--all-connections`, `--all-migrations`, and app/test `--pivot-separate` proof paths | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts`, `src/lab_test/migrate.run.logic.test.ts` |
-| `migrate:run:test` | test single/all-connection flags, `--all-migrations`, `--pivot-separate` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
+| `migrate:run --test` | test single/all-connection flags, `--all-migrations`, `--pivot-separate` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `migrate:status` | app and test shell coverage | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `migrate:fresh` | app and test shell coverage with `--force` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `migrate:reset` | app and test shell coverage | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
@@ -48,7 +48,7 @@ This matrix tracks which CLI commands are already validated, which parameters ar
 | `db:seed:fresh` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `demo:scenario` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts`, `scripts/pack-smoke.js` |
 | `migrate:run` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts`, `src/lab_test/migrate.run.logic.test.ts` |
-| `migrate:run:test` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
+| `migrate:run --test` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `migrate:rollback` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `migrate:status` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |
 | `migrate:fresh` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts, src/lab_test/cli.integration.*.targeting.test.ts` |

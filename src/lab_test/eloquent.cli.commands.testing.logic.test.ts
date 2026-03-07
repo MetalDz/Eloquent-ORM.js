@@ -125,17 +125,6 @@ const commandMatrix: CommandSpec[] = [
     ],
   },
   {
-    name: "migrate:run:test",
-    expectedFlags: [
-      "--mysql",
-      "--pg",
-      "--sqlite",
-      "--all-connections",
-      "--all-migrations",
-      "--pivot-separate",
-    ],
-  },
-  {
     name: "migrate:rollback",
     expectedFlags: [
       "--test",
@@ -259,4 +248,5 @@ describe("Eloquent CLI commands + parameters surface", () => {
       expect(listCommand?.block).toContain(command);
     }
   });
+
 });

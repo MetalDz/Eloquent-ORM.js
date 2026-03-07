@@ -34,7 +34,7 @@ Status: Completed
 - `db:seed:fresh`: `--test --mysql --pg --sqlite --all-connections --class <name> --force`
 - `demo:scenario`: `--user <id> --random --test`
 - `migrate:run`: `--test --mysql --pg --sqlite --all-connections --all-migrations --pivot-separate`
-- `migrate:run:test`: `--mysql --pg --sqlite --all-connections --all-migrations --pivot-separate`
+- `migrate:run --test`: `--mysql --pg --sqlite --all-connections --all-migrations --pivot-separate`
 - `migrate:rollback`: `--test --mysql --pg --sqlite --all-connections --all-migrations --step <number>`
 - `migrate:status`: `--test --mysql --pg --sqlite --all-connections --all-migrations`
 - `migrate:fresh`: `--test --mysql --pg --sqlite --all-connections --all-migrations --force`
@@ -69,7 +69,7 @@ Result summary (all exit codes were `0`):
 - db:seed:fresh
 - demo:scenario
 - migrate:run
-- migrate:run:test
+- migrate:run --test
 - migrate:rollback
 - migrate:status
 - migrate:fresh
