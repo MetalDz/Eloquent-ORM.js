@@ -330,9 +330,9 @@ function runGeneralCliSmoke(sample) {
   assertSuccess("migrate:status", statusBeforeRunResult);
   assertOneOf("migrate:status", statusBeforeRunResult.combined, ["Pending", "No migrations table found"]);
 
-  const runTestResult = runCli(sample.dir, ["migrate:run:test", "Demo"], sample.env);
-  assertSuccess("migrate:run:test", runTestResult);
-  assertOneOf("migrate:run:test", runTestResult.combined, [
+  const runTestResult = runCli(sample.dir, ["migrate:run", "--test", "Demo"], sample.env);
+  assertSuccess("migrate:run --test", runTestResult);
+  assertOneOf("migrate:run --test", runTestResult.combined, [
     "migration(s) applied successfully",
     "No new migrations to run",
   ]);
@@ -448,10 +448,10 @@ function runBlogScenarioSmoke(sample) {
 
   const rerunAllResult = runCli(
     sample.dir,
-    ["migrate:run:test", "--all-migrations"],
+    ["migrate:run", "--test", "--all-migrations"],
     sample.env
   );
-  assertSuccess("blog migrate:run:test --all-migrations", rerunAllResult);
+  assertSuccess("blog migrate:run --test --all-migrations", rerunAllResult);
 
   const seedFreshResult = runCli(
     sample.dir,
