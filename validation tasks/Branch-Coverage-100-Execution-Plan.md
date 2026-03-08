@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-08
-Status: IN PROGRESS (Phases 1-2 completed)
+Status: IN PROGRESS (Phases 1-3 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -59,13 +59,19 @@ Status: IN PROGRESS (Phases 1-2 completed)
     - Run status: non-green in this environment due known `spawnSync ... node.exe EPERM` on CLI spawn tests.
 
 ### Phase 3: CLI Command Branch Closure
-- [ ] Deep branch tests for low-covered command files:
+- [x] Deep branch tests for low-covered command files:
   - `src/cli/commands/makeModel.ts`
   - `src/cli/commands/makeMigration.ts`
   - `src/cli/commands/migrateStatus.ts`
   - `src/cli/commands/migrateRollback.ts`
-- [ ] Add:
+- [x] Add:
   - `src/lab_test/branch.coverage.100.phase3.logic.test.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase3.logic.test.ts`
+  - Result: PASS (`8/8`)
+  - Focused command-module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/makeModel.ts --collectCoverageFrom=src/cli/commands/makeMigration.ts --collectCoverageFrom=src/cli/commands/migrateStatus.ts --collectCoverageFrom=src/cli/commands/migrateRollback.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts src/lab_test/make.model.rollback.logic.test.ts src/lab_test/make.migration.append.only.logic.test.ts src/lab_test/make.migration.fk.logic.test.ts src/lab_test/migrate.rollback.logic.test.ts src/lab_test/migrate.rollback.partial.recovery.logic.test.ts src/lab_test/app.migration.path.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts`
+  - Focused command subset branch result: `68.62%` (up from `44.77%` baseline in the same subset).
 
 ### Phase 4: Migration Tracker and Locking Edge Branches
 - [ ] Close remaining branch paths in:

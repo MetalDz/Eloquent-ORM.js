@@ -66,6 +66,9 @@
   - Phase-2 mid-complexity core branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase2.logic.test.ts` (`11/11`)
     - focused module branch snapshot (Phase 2 subset): `81%`
+  - Phase-3 CLI command branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase3.logic.test.ts` (`8/8`)
+    - focused command subset branch snapshot: `68.62%` (was `44.77%` before adding Phase 3 suite)
   - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -105,6 +108,10 @@
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
 - Focused branch-100 phase validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts`: PASS (`16/16`)
+- Focused phase-3 command validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase3.logic.test.ts`: PASS (`8/8`)
+- Focused combined phase validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts`: PASS (`24/24`)
 
 ## Notes
 
