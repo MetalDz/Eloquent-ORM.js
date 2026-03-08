@@ -57,7 +57,7 @@
   - Security/support policy docs.
 - Milestone 6.2 Coverage ratchet.
   - Branch target reached (`>=70%`).
-  - Full local run now also green in the same cycle (`67/67` suites).
+  - Full local run now also green in the same cycle (`69/69` suites).
 - Milestone 6.2+ Coverage escalation to 100% (new track, started 2026-03-08).
   - Plan created: `validation tasks/Branch-Coverage-100-Execution-Plan.md`.
   - Contract test created: `src/lab_test/branch.coverage.100.plan.logic.test.ts`.
@@ -69,6 +69,13 @@
   - Phase-3 CLI command branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase3.logic.test.ts` (`8/8`)
     - focused command subset branch snapshot: `68.62%` (was `44.77%` before adding Phase 3 suite)
+  - Phase-4 migration tracker/locking edge suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase4.logic.test.ts` (`8/8`)
+    - focused migration module closure:
+      - `src/cli/utils/migrations/MigrationLockStrategy.ts`: branches `100%`
+      - `src/cli/utils/migrations/MigrationTracker.ts`: branches `100%`
+    - runtime cleanup aligned with single-table tracker contract:
+      - removed dead legacy `TableBackedMigrationLockStrategy` code path
   - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -89,6 +96,14 @@
 
 - `npm run typecheck`: PASS
 - `npm run build`: PASS
+- Latest all-green `npm run test:coverage` (user report):
+  - Coverage summary:
+    - Statements: `89.36%` (`3472/3885`)
+    - Branches: `75.49%` (`1633/2163`)
+    - Functions: `89.59%` (`551/615`)
+    - Lines: `91.01%` (`3312/3639`)
+  - Test suites: `69 passed`, `69 total`
+  - Tests: `410 passed`, `23 skipped`, `433 total`
 - `npm run test:coverage`: PASS
   - Coverage summary:
     - Statements: `86.02%` (`3342/3885`)
@@ -103,6 +118,12 @@
     - Branches: `72.39%` (`1566/2163`)
     - Functions: `88.13%` (`542/615`)
     - Lines: `88.56%` (`3223/3639`)
+- `npm.cmd run test:coverage` (latest shell snapshot during phase-4 work): non-green due host spawn policy (`spawnSync ... node.exe EPERM` on CLI spawn tests)
+  - Coverage summary still produced:
+    - Statements: `90.71%` (`3508/3867`)
+    - Branches: `77.59%` (`1669/2151`)
+    - Functions: `90.65%` (`553/610`)
+    - Lines: `92.37%` (`3346/3622`)
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -110,6 +131,9 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts`: PASS (`16/16`)
 - Focused phase-3 command validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase3.logic.test.ts`: PASS (`8/8`)
+- Focused phase-4 migration validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase4.logic.test.ts`: PASS (`8/8`)
+  - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/migrations/MigrationLockStrategy.ts --collectCoverageFrom=src/cli/utils/migrations/MigrationTracker.ts src/lab_test/branch.coverage.70.migration-and-schema.logic.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/migration.tracker.single-table.contract.logic.test.ts src/lab_test/branch.coverage.100.phase4.logic.test.ts`: PASS (focused modules at `100%` for statements/branches/functions/lines)
 - Focused combined phase validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts`: PASS (`24/24`)
 

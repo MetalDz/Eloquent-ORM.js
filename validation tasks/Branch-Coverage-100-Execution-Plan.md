@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-08
-Status: IN PROGRESS (Phases 1-3 completed)
+Status: IN PROGRESS (Phases 1-4 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -72,13 +72,33 @@ Status: IN PROGRESS (Phases 1-3 completed)
   - Focused command-module validation:
     - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/makeModel.ts --collectCoverageFrom=src/cli/commands/makeMigration.ts --collectCoverageFrom=src/cli/commands/migrateStatus.ts --collectCoverageFrom=src/cli/commands/migrateRollback.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts src/lab_test/make.model.rollback.logic.test.ts src/lab_test/make.migration.append.only.logic.test.ts src/lab_test/make.migration.fk.logic.test.ts src/lab_test/migrate.rollback.logic.test.ts src/lab_test/migrate.rollback.partial.recovery.logic.test.ts src/lab_test/app.migration.path.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts`
   - Focused command subset branch result: `68.62%` (up from `44.77%` baseline in the same subset).
+  - Latest all-green full-suite run (user report):
+    - `npm run test:coverage`
+    - Coverage:
+      - Statements: `89.36%` (`3472/3885`)
+      - Branches: `75.49%` (`1633/2163`)
+      - Functions: `89.59%` (`551/615`)
+      - Lines: `91.01%` (`3312/3639`)
+    - Result:
+      - Test Suites: `69 passed`, `69 total`
+      - Tests: `410 passed`, `23 skipped`, `433 total`
 
 ### Phase 4: Migration Tracker and Locking Edge Branches
-- [ ] Close remaining branch paths in:
+- [x] Close remaining branch paths in:
   - `src/cli/utils/migrations/MigrationLockStrategy.ts`
   - `src/cli/utils/migrations/MigrationTracker.ts`
-- [ ] Add:
+- [x] Add:
   - `src/lab_test/branch.coverage.100.phase4.logic.test.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase4.logic.test.ts`
+  - Result: PASS (`8/8`)
+  - Focused migration-module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/migrations/MigrationLockStrategy.ts --collectCoverageFrom=src/cli/utils/migrations/MigrationTracker.ts src/lab_test/branch.coverage.70.migration-and-schema.logic.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/migration.tracker.single-table.contract.logic.test.ts src/lab_test/branch.coverage.100.phase4.logic.test.ts`
+  - Focused module result:
+    - `MigrationLockStrategy.ts`: Branches `100%`
+    - `MigrationTracker.ts`: Branches `100%`
+  - Runtime cleanup included:
+    - removed dead legacy `TableBackedMigrationLockStrategy` code path to keep runtime aligned with native single-table lock strategy.
 
 ### Phase 5: Hard-to-Reach/Environment Branches
 - [ ] Address residual branches requiring:

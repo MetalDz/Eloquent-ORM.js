@@ -13,7 +13,6 @@ export interface MigrationLockStrategy {
   ): Promise<void>;
 }
 
-const MIGRATION_LOCK_ID = 1;
 const SQLITE_LOCK_OWNERS = new Map<string, string>();
 
 function resolveDriver(db: DriverAdapter): SqlMigrationDriver {
@@ -43,79 +42,6 @@ function mysqlLockName(connectionName: string): string {
 function isSqliteBusy(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /SQLITE_BUSY|database is locked/i.test(message);
-}
-
-function lockTableSQL(driver: SqlMigrationDriver): string {
-  if (driver === "pg") {
-    return `
-      CREATE TABLE IF NOT EXISTS migration_locks (
-        id INT PRIMARY KEY,
-        owner VARCHAR(255) NOT NULL,
-        acquired_at TIMESTAMP DEFAULT NOW()
-      );`;
-  }
-
-  if (driver === "sqlite") {
-    return `
-      CREATE TABLE IF NOT EXISTS migration_locks (
-        id INTEGER PRIMARY KEY,
-        owner VARCHAR(255) NOT NULL,
-        acquired_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );`;
-  }
-
-  return `
-    CREATE TABLE IF NOT EXISTS migration_locks (
-      id INT PRIMARY KEY,
-      owner VARCHAR(255) NOT NULL,
-      acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );`;
-}
-
-function isLockConflict(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const code = (error as Error & { code?: string }).code;
-  return (
-    code === "ER_DUP_ENTRY" ||
-    code === "23505" ||
-    code === "SQLITE_CONSTRAINT" ||
-    /duplicate|unique constraint|constraint failed/i.test(error.message)
-  );
-}
-
-class TableBackedMigrationLockStrategy implements MigrationLockStrategy {
-  async ensureBootstrap(db: DriverAdapter, driver: SqlMigrationDriver): Promise<void> {
-    await db.execute(lockTableSQL(driver));
-  }
-
-  async acquire(db: DriverAdapter, owner: string): Promise<void> {
-    try {
-      await db.execute(
-        `INSERT INTO ${db.wrapId("migration_locks")} (${db.wrapId("id")}, ${db.wrapId(
-          "owner"
-        )}) VALUES (${db.placeholder(1)}, ${db.placeholder(2)})`,
-        [MIGRATION_LOCK_ID, owner]
-      );
-    } catch (error) {
-      if (isLockConflict(error)) {
-        throw new Error("Another migration process is already running.");
-      }
-      throw error;
-    }
-  }
-
-  async release(db: DriverAdapter, owner: string): Promise<void> {
-    try {
-      await db.execute(
-        `DELETE FROM ${db.wrapId("migration_locks")} WHERE ${db.wrapId("id")} = ${db.placeholder(
-          1
-        )} AND ${db.wrapId("owner")} = ${db.placeholder(2)}`,
-        [MIGRATION_LOCK_ID, owner]
-      );
-    } catch {
-      // Do not mask the real migration error with lock cleanup noise.
-    }
-  }
 }
 
 class NativeSqlMigrationLockStrategy implements MigrationLockStrategy {
