@@ -45,6 +45,40 @@ describe("CLI structured logging + audit trail", () => {
     expect(parsed.timestamp).toContain("T");
   });
 
+  test("StructuredLogger covers normalization and non-string message fallback branches", () => {
+    expect(isJsonLogFormat({ ELOQUENT_LOG_FORMAT: " JSON " })).toBe(true);
+    expect(isJsonLogFormat({})).toBe(false);
+
+    expect(resolveLogLevel({ ELOQUENT_LOG_LEVEL: " DEBUG " })).toBe("debug");
+    expect(resolveLogLevel({})).toBe("info");
+
+    const line = buildStructuredLogLine(
+      "warn",
+      [{ a: 1 }, "tail"],
+      { command: "demo:scenario" }
+    );
+    const parsed = JSON.parse(line) as {
+      level: string;
+      message: string;
+      command: string;
+      timestamp: string;
+    };
+
+    expect(parsed.level).toBe("warn");
+    expect(parsed.command).toBe("demo:scenario");
+    expect(parsed.message).toContain('{"a":1}');
+    expect(parsed.message).toContain("tail");
+    expect(parsed.timestamp).toContain("T");
+  });
+
+  test("buildStructuredLogLine throws on non-serializable args payload", () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(() =>
+      buildStructuredLogLine("error", ["circular", circular], { command: "migrate:run" })
+    ).toThrow("Converting circular structure to JSON");
+  });
+
   test("appendAuditEvent writes required migration/seed audit fields and redacts metadata", () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-audit-"));
     const auditPath = path.join(tempDir, "audit.log");
