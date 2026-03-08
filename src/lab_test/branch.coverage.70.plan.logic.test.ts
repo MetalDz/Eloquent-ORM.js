@@ -27,7 +27,7 @@ describe("Branch coverage 70% plan contract", () => {
     }
   });
 
-  test("coverage summary baseline math still reflects an active gap to 70%", () => {
+  test("coverage summary math is consistent with the 70% target state", () => {
     const summaryPath = path.resolve(rootDir, "coverage/coverage-summary.json");
     const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8")) as {
       total?: { branches?: { total?: number; covered?: number; pct?: number } };
@@ -40,7 +40,11 @@ describe("Branch coverage 70% plan contract", () => {
     const gap = Math.max(0, targetCovered - coveredBranches);
 
     expect(totalBranches).toBeGreaterThan(0);
-    expect(pct).toBeLessThan(70);
-    expect(gap).toBeGreaterThan(0);
+    if (pct < 70) {
+      expect(gap).toBeGreaterThan(0);
+    } else {
+      expect(coveredBranches).toBeGreaterThanOrEqual(targetCovered);
+      expect(gap).toBe(0);
+    }
   });
 });
