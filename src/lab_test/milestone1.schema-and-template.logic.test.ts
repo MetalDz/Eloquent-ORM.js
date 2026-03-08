@@ -16,7 +16,14 @@ jest.mock("../core/connection/ConnectionFactory", () => ({
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 
 describe("Milestone 1: schema rollback + pivot template", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 

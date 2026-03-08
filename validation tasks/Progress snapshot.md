@@ -48,6 +48,18 @@
     - `branch.coverage.70.factory-path-resolver.logic.test.ts`
     - `branch.coverage.70.dbseedfresh.logic.test.ts`
   - Global branch coverage increased from `46.41%` to `70.22%` (`+23.81` points, `+515` covered branches).
+- Milestone 6.2+ coverage escalation progress (2026-03-08, continued).
+  - Phase 6 ORM edge-branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts` (`5/5`)
+  - Phase 7 CLI migration command edge suites added and passing:
+    - `src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts` (`6/6`)
+    - `src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts` (`5/5`)
+    - `src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts` (`5/5`)
+  - Command-branch focused lifts:
+    - `migrateRun.ts`: `67.64%` -> `88.23%`
+    - `makeModel.ts`: `62.13%` -> `81.55%`
+    - `makeMigration.ts`: `68.46%` -> `77.69%`
+  - Latest global branch coverage: `82.17%` (`1770/2154`).
 
 ## In Progress
 
@@ -80,11 +92,17 @@
     - `src/lab_test/branch.coverage.100.phase5.logic.test.ts` (`5/5`)
     - `src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts` (`6/6`)
     - Added spawn-capability gating for CLI integration/help suites so host EPERM policy now skips those suites deterministically.
-    - Latest global coverage snapshot:
-      - Statements: `91.88%` (`3555/3869`)
-      - Branches: `79.29%` (`1708/2154`)
-      - Functions: `91.8%` (`560/610`)
-      - Lines: `93.51%` (`3389/3624`)
+  - Phase-6 ORM branch closure suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts` (`5/5`)
+  - Phase-7 CLI migration edge branch suites created and passing:
+    - `src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts` (`6/6`)
+    - `src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts` (`5/5`)
+    - `src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts` (`5/5`)
+  - Latest global coverage snapshot:
+    - Statements: `94.77%` (`3667/3869`)
+    - Branches: `82.17%` (`1770/2154`)
+    - Functions: `95.08%` (`580/610`)
+    - Lines: `96.3%` (`3490/3624`)
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -107,12 +125,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `91.88%` (`3555/3869`)
-    - Branches: `79.29%` (`1708/2154`)
-    - Functions: `91.8%` (`560/610`)
-    - Lines: `93.51%` (`3389/3624`)
-  - Test suites: `64 passed`, `8 skipped`, `72 total`
-  - Tests: `356 passed`, `96 skipped`, `452 total`
+    - Statements: `94.77%` (`3667/3869`)
+    - Branches: `82.17%` (`1770/2154`)
+    - Functions: `95.08%` (`580/610`)
+    - Lines: `96.3%` (`3490/3624`)
+  - Test suites: `68 passed`, `8 skipped`, `76 total`
+  - Tests: `377 passed`, `96 skipped`, `473 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -127,6 +145,12 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts`: PASS (`6/6`)
 - Focused combined phase validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts`: PASS (`24/24`)
+- Focused phase-6 ORM validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts`: PASS (`5/5`)
+- Focused phase-7 command-edge validations:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts`: PASS (`6/6`)
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts`: PASS (`5/5`)
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts`: PASS (`5/5`)
 
 ## Notes
 

@@ -19,6 +19,12 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
   const originalCwd = process.cwd();
   const originalNodeEnv = process.env.NODE_ENV;
 
+  beforeEach(() => {
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
     jest.resetModules();

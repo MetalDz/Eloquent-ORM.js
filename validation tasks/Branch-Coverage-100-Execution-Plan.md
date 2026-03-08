@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-08
-Status: IN PROGRESS (Phases 1-5 completed)
+Status: IN PROGRESS (Phases 1-7 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -133,6 +133,54 @@ Status: IN PROGRESS (Phases 1-5 completed)
     - Result:
       - Test Suites: `64 passed`, `8 skipped`, `72 total`
       - Tests: `356 passed`, `96 skipped`, `452 total`
+
+### Phase 6: ORM Branch Completion Push
+- [x] Add dedicated ORM edge-branch suite:
+  - `src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/core/orm/Relation.ts`
+  - `src/core/orm/mixins/QueryCacheMixin.ts`
+  - `src/core/orm/mixins/CastsMixin.ts`
+  - `src/core/orm/mixins/EagerLoadingMixin.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts`
+  - Result: PASS (`5/5`)
+  - Focused ORM validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/orm/Relation.ts --collectCoverageFrom=src/core/orm/mixins/QueryCacheMixin.ts --collectCoverageFrom=src/core/orm/mixins/CastsMixin.ts --collectCoverageFrom=src/core/orm/mixins/EagerLoadingMixin.ts src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts src/lab_test/relations.logic.test.ts src/lab_test/coremodel.crud.logic.test.ts src/lab_test/softdeletes.runtime.logic.test.ts src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts`
+  - Focused branch snapshot:
+    - `Relation.ts`: `75%`
+    - `QueryCacheMixin.ts`: `79.24%`
+    - `CastsMixin.ts`: `87.87%`
+    - `EagerLoadingMixin.ts`: `82.22%`
+
+### Phase 7: CLI Migration Command Deep Edge Closure
+- [x] Add focused command-edge suites:
+  - `src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts`
+  - `src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts`
+  - `src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts`
+- [x] Raise branch coverage in highest-gap command files:
+  - `src/cli/commands/migrateRun.ts`
+  - `src/cli/commands/makeModel.ts`
+  - `src/cli/commands/makeMigration.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts`
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts`
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts`
+  - Results: PASS (`6/6`, `5/5`, `5/5`)
+  - Focused command coverage snapshots:
+    - `migrateRun.ts`: branches `88.23%` (up from `67.64%`)
+    - `makeModel.ts`: branches `81.55%` (up from `62.13%`)
+    - `makeMigration.ts`: branches `77.69%` (up from `68.46%`)
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `94.77%` (`3667/3869`)
+      - Branches: `82.17%` (`1770/2154`)
+      - Functions: `95.08%` (`580/610`)
+      - Lines: `96.3%` (`3490/3624`)
+    - Result:
+      - Test Suites: `68 passed`, `8 skipped`, `76 total`
+      - Tests: `377 passed`, `96 skipped`, `473 total`
 
 ## Quality Gates
 - Per phase:
