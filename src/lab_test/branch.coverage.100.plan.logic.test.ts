@@ -13,9 +13,9 @@ describe("Branch coverage 100% plan contract", () => {
 
     const requiredSnippets = [
       "# Branch Coverage 100% Execution Plan",
-      "70.45%",
+      "70.36%",
       "100%",
-      "Remaining uncovered branches: `639`",
+      "Remaining uncovered branches: `641`",
       "Phase 1: Low-Hanging Deterministic Branches",
       "Phase 2: Mid-Complexity Core Branch Trees",
       "Phase 3: CLI Command Branch Closure",

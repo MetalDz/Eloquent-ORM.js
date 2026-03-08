@@ -12,7 +12,7 @@ security by itself
 So: branch coverage is a strong quality signal, but not the whole definition of code quality.
 
 Last updated: 2026-03-08
-Status: TARGET MET (local CLI spawn policy EPERM still affects full green exit)
+Status: TARGET MET (full local coverage run currently green)
 
 ## Goal
 - Raise global branch coverage for all core logic from `46.41%` to `70%`.
@@ -125,7 +125,7 @@ Status: TARGET MET (local CLI spawn policy EPERM still affects full green exit)
 - Target after phase: `>= 67%` branches.
 - Evidence (`2026-03-08`):
   - `src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts`: PASS (`26/26`)
-  - Global branches after full coverage run: `70.22%` (`1519/2163`)
+  - Global branches after full coverage run: `70.36%` (`1522/2163`)
 
 ### Phase 5: Migration/Schema Safety Branches
 - [x] Add branch tests for:
@@ -137,7 +137,7 @@ Status: TARGET MET (local CLI spawn policy EPERM still affects full green exit)
 - Evidence (`2026-03-08`):
   - `src/lab_test/branch.coverage.70.migration-and-schema.logic.test.ts`: PASS
   - `src/lab_test/branch.coverage.70.dbseedfresh.logic.test.ts`: PASS
-  - Global branches: `70.22%` (`1519/2163`)
+  - Global branches: `70.36%` (`1522/2163`)
 
 ## Required Test Files (Execution Backlog)
 - `src/lab_test/branch.coverage.70.utilities.logic.test.ts`
@@ -165,9 +165,9 @@ Status: TARGET MET (local CLI spawn policy EPERM still affects full green exit)
 - [x] All five phase test files exist and are active (not only TODO markers).
 
 ## Current Snapshot (2026-03-08)
-- Global branches: `70.22%` (`1519/2163`)
+- Global branches: `70.36%` (`1522/2163`)
 - Target check:
   - Target covered at 70%: `1515`
-  - Over target: `+4` covered branches
-- Current blocker to full green exit:
-  - Local host policy causes `spawnSync ... node.exe EPERM` in CLI integration suites that shell child `node` processes.
+  - Over target: `+7` covered branches
+- Current stability note:
+  - Latest run reported full green (`67/67` suites) with no failing coverage gate.

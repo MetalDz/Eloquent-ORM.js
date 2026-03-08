@@ -57,12 +57,15 @@
   - Security/support policy docs.
 - Milestone 6.2 Coverage ratchet.
   - Branch target reached (`>=70%`).
-  - Remaining work is environment-level stability of full CLI integration spawn in this local host policy.
+  - Full local run now also green in the same cycle (`67/67` suites).
 - Milestone 6.2+ Coverage escalation to 100% (new track, started 2026-03-08).
   - Plan created: `validation tasks/Branch-Coverage-100-Execution-Plan.md`.
   - Contract test created: `src/lab_test/branch.coverage.100.plan.logic.test.ts`.
   - Phase-1 deterministic branch suite created:
     - `src/lab_test/branch.coverage.100.phase1.logic.test.ts`
+  - Phase-2 mid-complexity core branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase2.logic.test.ts` (`11/11`)
+    - focused module branch snapshot (Phase 2 subset): `81%`
   - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -83,15 +86,25 @@
 
 - `npm run typecheck`: PASS
 - `npm run build`: PASS
-- `npm run test:coverage`: SUMMARY TARGET MET (command exit non-zero in this host due `spawnSync ... node.exe EPERM` in CLI integration spawn tests)
+- `npm run test:coverage`: PASS
   - Coverage summary:
-    - Statements: `86.12%` (`3346/3885`)
-    - Branches: `70.64%` (`1528/2163`)
+    - Statements: `86.02%` (`3342/3885`)
+    - Branches: `70.36%` (`1522/2163`)
+    - Functions: `87.8%` (`540/615`)
+    - Lines: `88.23%` (`3211/3639`)
+  - Test suites: `67 passed`, `67 total`
+  - Tests: `391 passed`, `23 skipped`, `414 total`
+- `npm.cmd run test:coverage` (current shell snapshot): non-green due host spawn policy (`spawnSync ... node.exe EPERM` on CLI spawn tests)
+  - Coverage summary still produced:
+    - Statements: `86.89%` (`3376/3885`)
+    - Branches: `72.39%` (`1566/2163`)
     - Functions: `88.13%` (`542/615`)
-    - Lines: `88.29%` (`3213/3639`)
+    - Lines: `88.56%` (`3223/3639`)
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
+- Focused branch-100 phase validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts`: PASS (`16/16`)
 
 ## Notes
 

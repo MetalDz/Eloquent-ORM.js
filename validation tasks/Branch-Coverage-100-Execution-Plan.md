@@ -1,21 +1,21 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-08
-Status: IN PROGRESS (Phase 1 started)
+Status: IN PROGRESS (Phases 1-2 completed)
 
 ## Goal
-- Raise global branch coverage from `70.45%` to `100%`.
+- Raise global branch coverage from `70.36%` to `100%`.
 - Keep this as real behavioral coverage (no fake assertions).
 - Track progress with explicit task docs and paired test files.
 
 ## Baseline
 - Source of truth: `coverage/coverage-summary.json`
 - Current global branches:
-  - Covered: `1524`
+  - Covered: `1522`
   - Total: `2163`
-  - Percent: `70.45%`
+  - Percent: `70.36%`
 - Gap to 100%:
-  - Remaining uncovered branches: `639`
+  - Remaining uncovered branches: `641`
 
 ## Constraints
 - Local PowerShell/host policy can cause `spawnSync ... node.exe EPERM` in CLI integration tests.
@@ -35,16 +35,28 @@ Status: IN PROGRESS (Phase 1 started)
 - Evidence (`2026-03-08`):
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/cli.audit.trail.logic.test.ts`
   - Result: PASS (`11/11`)
-  - Latest coverage summary: Branches `70.64%` (`1528/2163`)
+  - Latest all-green coverage summary: Branches `70.36%` (`1522/2163`)
+  - All-green validation run:
+    - Test Suites: `67 passed`, `67 total`
+    - Tests: `391 passed`, `23 skipped`, `414 total`
 
 ### Phase 2: Mid-Complexity Core Branch Trees
-- [ ] Increase coverage for:
+- [x] Increase coverage for:
   - `src/core/connection/DriverAdapter.ts`
   - `src/core/connection/ConnectionFactory.ts`
   - `src/core/orm/Relation.ts`
   - relation classes (`BelongsTo`, `HasOne`, `HasMany`, `BelongsToMany`, `Morph*`)
-- [ ] Add:
+- [x] Add:
   - `src/lab_test/branch.coverage.100.phase2.logic.test.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase2.logic.test.ts`
+  - Result: PASS (`11/11`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/connection/DriverAdapter.ts --collectCoverageFrom=src/core/connection/ConnectionFactory.ts --collectCoverageFrom=src/core/orm/Relation.ts --collectCoverageFrom=src/core/orm/relations/BelongsTo.ts --collectCoverageFrom=src/core/orm/relations/HasOne.ts --collectCoverageFrom=src/core/orm/relations/HasMany.ts --collectCoverageFrom=src/core/orm/relations/BelongsToMany.ts --collectCoverageFrom=src/core/orm/relations/MorphTo.ts --collectCoverageFrom=src/core/orm/relations/MorphOne.ts --collectCoverageFrom=src/core/orm/relations/MorphMany.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/driver.adapter.logic.test.ts src/lab_test/connection.factory.race.logic.test.ts src/lab_test/connection.factory.alias.lifecycle.logic.test.ts src/lab_test/relations.logic.test.ts`
+  - Focused branch result (Phase 2 module subset): `81%`
+  - Full-suite snapshot in this shell:
+    - `npm.cmd run test:coverage` -> global branches `72.39%` (`1566/2163`)
+    - Run status: non-green in this environment due known `spawnSync ... node.exe EPERM` on CLI spawn tests.
 
 ### Phase 3: CLI Command Branch Closure
 - [ ] Deep branch tests for low-covered command files:
