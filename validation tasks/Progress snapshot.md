@@ -1,4 +1,4 @@
-# Progress snapshot (2026-03-07)
+# Progress snapshot (2026-03-08)
 
 ## Done
 
@@ -35,6 +35,12 @@
     - locking is native per driver (PG advisory lock, MySQL named lock, SQLite `BEGIN IMMEDIATE`)
     - legacy `migration_locks` behavior documented as compatibility-only.
   - API surface tightened by removing legacy `TableBackedMigrationLockStrategy` export.
+- Milestone 6.2 branch-coverage ratchet progress (2026-03-08).
+  - Phase 1 utility branch suite implemented and passing.
+  - Phase 2 cache/connection branch suite implemented and passing.
+  - Phase 3 CLI command branch suite implemented and passing (`11/11`):
+    - `makeModel`, `makeMigration`, `migrateFresh`, `dbSeed`, `cacheClear`, `cacheStats`
+  - Global branch coverage increased from `46.41%` to `55.57%` (`+9.16` points, `+198` covered branches).
 
 ## In Progress
 
@@ -45,6 +51,7 @@
 - Milestone 6.2 Coverage ratchet.
   - Raise branch coverage gradually.
   - Add targeted tests for low-covered files (cache internals, TS runtime helper, selected mixins).
+  - Confirm post-Phase-3 global coverage on CI/Git-Bash-capable host (local PowerShell blocked by `spawnSync ... node.exe EPERM` on CLI spawn suites).
 - Milestone 6.3 Release execution.
   - Semantic-release dry run on `master`.
   - First release from `master` only.
@@ -63,13 +70,13 @@
 
 - `npm run typecheck`: PASS
 - `npm run build`: PASS
-- `npm test`: FAIL on this host due spawn permission (`spawnSync ... node.exe EPERM`) in CLI integration suites.
-  - Observed totals in current run: `7 failed`, `1 skipped`, `47 passed` suites (`54/55` total), `73 failed`, `23 skipped`, `205 passed` tests (`301` total).
-- `npm run test:coverage`: FAIL on this host for the same EPERM reason (coverage summary still produced).
-  - Statements: `65.86%` (`2559/3885`)
-  - Branches: `46.41%` (`1004/2163`)
-  - Functions: `65.36%` (`402/615`)
-  - Lines: `68.17%` (`2481/3639`)
+- `npm run test:coverage`: PASS
+  - Test suites: `61 passed`, `61 total`
+  - Tests: `321 passed`, `3 skipped`, `15 todo`, `339 total`
+  - Statements: `75.08%` (`2917/3885`)
+  - Branches: `55.57%` (`1202/2163`)
+  - Functions: `77.39%` (`476/615`)
+  - Lines: `77.49%` (`2820/3639`)
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)

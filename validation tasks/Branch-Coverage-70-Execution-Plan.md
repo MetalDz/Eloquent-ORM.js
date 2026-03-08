@@ -40,11 +40,15 @@ Status: OPEN
 ## Ordered Phases
 
 ### Phase 0: Stable Measurement
-- [ ] Keep a single baseline run command:
+- [x] Keep a single baseline run command:
   - `npm run test:coverage`
-- [ ] Record branch total/covered before each phase.
-- [ ] Update this plan with observed delta after each phase.
+- [x] Record branch total/covered before each phase.
+- [x] Update this plan with observed delta after each phase.
 - Target after phase: keep baseline stable and reproducible.
+  - Verified run (`2026-03-08`):
+    - `npm run test:coverage`
+    - Global branches: `50.39%` (`1090/2163`)
+    - Delta vs baseline (`46.41%`, `1004/2163`): `+3.98` points, `+86` covered branches.
 
 ### Phase 1: Utility Branch Closures (High ROI)
 - [x] Add branch tests for:
@@ -54,14 +58,19 @@ Status: OPEN
   - `src/cli/utils/typescript/TypeScriptCompiler.ts`
   - `src/cli/utils/typescript/tsRuntime.ts`
 - [x] Cover error and fallback branches (missing files, disabled TS runtime, invalid paths).
-- [ ] Confirm global target after phase: `>= 52%` branches.
+- [x] Confirm global target after phase: `>= 52%` branches.
   - Phase-1 focused run evidence:
     - `npm.cmd test -- --runInBand --coverage --runTestsByPath src/lab_test/branch.coverage.70.utilities.logic.test.ts`
     - Focused summary: Branches `60.31%` (`76/126`)
-  - Global confirmation remains pending full `test:coverage` run in a shell without local `spawnSync ... node.exe EPERM` constraints.
+  - Global full-run evidence (`2026-03-08`, run #1):
+    - `npm run test:coverage`
+    - Branches: `50.39%` (`1090/2163`)
+  - Global confirmation (`2026-03-08`, run #2):
+    - `npm run test:coverage`
+    - Branches: `55.57%` (`1202/2163`)
 
 ### Phase 2: Cache + Connection Logic
-- [ ] Add branch tests for:
+- [x] Add branch tests for:
   - `src/core/cache/CacheFallbackManager.ts`
   - `src/core/cache/CacheRegistry.ts`
   - `src/core/cache/CacheAnalytics.ts`
@@ -70,19 +79,36 @@ Status: OPEN
   - `src/core/cache/drivers/MemoryCacheDriver.ts`
   - `src/core/cache/drivers/MemcachedCacheDriver.ts` (mocked, no daemon requirement)
   - `src/core/connection/DatabaseConnection.ts`
-- [ ] Cover all fallback, unavailable driver, miss/hit, and error branches.
+- [x] Cover all fallback, unavailable driver, miss/hit, and error branches.
 - Target after phase: `>= 58%` branches.
+- [ ] Confirm global target after phase: `>= 58%` branches.
+  - Full-run evidence (`2026-03-08`):
+    - `npm run test:coverage`
+    - Branches: `55.57%` (`1202/2163`)
+  - Remaining to hit Phase 2 gate (`>=58%`):
+    - Target covered at 58%: `1255`
+    - Additional covered branches needed from current: `53`
 
 ### Phase 3: CLI Command Branch Trees
-- [ ] Add branch tests for:
+- [x] Add branch tests for:
   - `src/cli/commands/makeModel.ts`
   - `src/cli/commands/makeMigration.ts`
   - `src/cli/commands/migrateFresh.ts`
   - `src/cli/commands/dbSeed.ts`
   - `src/cli/commands/cacheClear.ts`
   - `src/cli/commands/cacheStats.ts`
-- [ ] Cover connection flag conflicts, force/non-force, no-op paths, and failure exits.
+- [x] Cover connection flag conflicts, force/non-force, no-op paths, and failure exits.
+- [ ] Confirm global target after phase: `>= 63%` branches.
 - Target after phase: `>= 63%` branches.
+  - Phase-3 focused run evidence (`2026-03-08`):
+    - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`
+    - Result: PASS (`11/11`)
+  - Phase-2+3 combined sanity run evidence (`2026-03-08`):
+    - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.70.cache-and-connection.logic.test.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`
+    - Result: PASS (`20/20`)
+  - Full coverage confirmation note:
+    - `npm run test:coverage` in current PowerShell host failed due environment policy (`spawnSync ... node.exe EPERM`) on CLI spawn-based integration suites.
+    - Global branch delta for Phase 3 must be confirmed on CI/Git Bash-enabled host.
 
 ### Phase 4: ORM Runtime/Mixin Branches
 - [ ] Add branch tests for:
@@ -127,3 +153,9 @@ Status: OPEN
 - [ ] No reduction in statements/lines/functions trends.
 - [ ] CI gate is green with deterministic coverage runs.
 - [ ] All five phase test files exist and are active (not only TODO markers).
+
+## Current Snapshot (2026-03-08)
+- Global branches: `55.57%` (`1202/2163`)
+- Remaining to 70%:
+  - Target covered at 70%: `1515`
+  - Additional covered branches needed: `313`
