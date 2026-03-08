@@ -58,6 +58,13 @@
 - Milestone 6.2 Coverage ratchet.
   - Branch target reached (`>=70%`).
   - Remaining work is environment-level stability of full CLI integration spawn in this local host policy.
+- Milestone 6.2+ Coverage escalation to 100% (new track, started 2026-03-08).
+  - Plan created: `validation tasks/Branch-Coverage-100-Execution-Plan.md`.
+  - Contract test created: `src/lab_test/branch.coverage.100.plan.logic.test.ts`.
+  - Phase-1 deterministic branch suite created:
+    - `src/lab_test/branch.coverage.100.phase1.logic.test.ts`
+  - Structured logger branch hardening expanded in:
+    - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
   - Semantic-release dry run on `master`.
   - First release from `master` only.
@@ -78,10 +85,10 @@
 - `npm run build`: PASS
 - `npm run test:coverage`: SUMMARY TARGET MET (command exit non-zero in this host due `spawnSync ... node.exe EPERM` in CLI integration spawn tests)
   - Coverage summary:
-    - Statements: `85.92%` (`3338/3885`)
-    - Branches: `70.22%` (`1519/2163`)
-    - Functions: `87.64%` (`539/615`)
-    - Lines: `88.15%` (`3208/3639`)
+    - Statements: `86.12%` (`3346/3885`)
+    - Branches: `70.64%` (`1528/2163`)
+    - Functions: `88.13%` (`542/615`)
+    - Lines: `88.29%` (`3213/3639`)
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
