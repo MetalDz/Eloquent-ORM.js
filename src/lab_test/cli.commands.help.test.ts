@@ -9,8 +9,10 @@ type CliRun = SpawnSyncReturns<string> & {
 const rootDir = process.cwd();
 const cliDist = path.resolve(rootDir, "dist/cli/eloquent.js");
 const hasBuiltCli = fs.existsSync(cliDist);
+const spawnProbe = spawnSync(process.execPath, ["-v"], { encoding: "utf8" });
+const canSpawn = !spawnProbe.error;
 
-const describeIfBuilt = hasBuiltCli ? describe : describe.skip;
+const describeIfBuilt = hasBuiltCli && canSpawn ? describe : describe.skip;
 
 const commandHelpMatrix: Array<{ label: string; args: string[] }> = [
   { label: "make:model", args: ["make:model", "--help"] },

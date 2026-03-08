@@ -6,6 +6,7 @@ import {
   appRootDir,
   assertCliSuccess,
   bootstrapAppFixtures,
+  canSpawnCli,
   ensureDir,
   hasAppModels,
   hasAppMysqlEnv,
@@ -20,7 +21,8 @@ import {
   runCli,
 } from "./cli.integration.harness";
 
-export const describeIfBuiltOnly = hasBuiltCli ? describe : describe.skip;
+export const describeIfBuiltOnly =
+  hasBuiltCli && canSpawnCli ? describe : describe.skip;
 
 export function appMysqlEnv(): NodeJS.ProcessEnv {
   return {

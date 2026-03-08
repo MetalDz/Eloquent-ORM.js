@@ -17,6 +17,7 @@ export type CliResult = SpawnSyncReturns<string> & {
 
 export const rootDir = process.cwd();
 export const cliPath = path.resolve(rootDir, "dist/cli/eloquent.js");
+const spawnProbe = spawnSync(process.execPath, ["-v"], { encoding: "utf8" });
 export const appRootDir = path.resolve(rootDir, "src/app");
 export const testRootDir = path.resolve(rootDir, "src/test");
 export const testSeedsDir = path.resolve(rootDir, "src/test/database/seeds");
@@ -27,6 +28,7 @@ export const integrationSeederFile = path.resolve(
   `${integrationSeederClass}.ts`
 );
 export const hasBuiltCli = fs.existsSync(cliPath);
+export const canSpawnCli = !(spawnProbe as SpawnSyncReturns<string> | undefined)?.error;
 export const appModelsDir = path.resolve(rootDir, "src/app/models");
 export const appSeedsDir = path.resolve(rootDir, "src/app/database/seeds");
 export const appFactoriesDir = path.resolve(rootDir, "src/app/database/factories");
@@ -51,7 +53,7 @@ export const hasPgAppEnv = Boolean(
 );
 
 export const describeIfTestDbAndBuild =
-  hasTestDbEnv && hasBuiltCli ? describe : describe.skip;
+  hasTestDbEnv && hasBuiltCli && canSpawnCli ? describe : describe.skip;
 
 export function sanitizePathSegment(segment: string): string {
   return segment.replace(/[^A-Za-z0-9_-]/g, "_");

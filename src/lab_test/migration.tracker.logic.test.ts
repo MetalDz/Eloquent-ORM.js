@@ -38,6 +38,16 @@ function makeAdapter(): MockAdapter {
 }
 
 describe("MigrationTracker logic", () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
+
   test("computeMigrationChecksum is stable for the same file content", () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "migration-checksum-"));
     const filePath = path.join(tempDir, "20260301000000_create_users_table.ts");
@@ -159,6 +169,9 @@ describe("MigrationTracker logic", () => {
       expect.stringContaining("DELETE FROM `migrations` WHERE `name` = ?"),
       [missingName]
     );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Pruned stale migration history entry")
+    );
 
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
@@ -202,6 +215,9 @@ describe("MigrationTracker logic", () => {
     expect(adapter.execute).not.toHaveBeenCalledWith(
       expect.stringContaining("DELETE FROM `migrations` WHERE `name` = ?"),
       [missingName]
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Keeping orphaned applied migration")
     );
 
     fs.rmSync(tempDir, { recursive: true, force: true });

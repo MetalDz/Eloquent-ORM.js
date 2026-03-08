@@ -99,7 +99,8 @@ describe("Branch coverage 70 - CLI support helpers", () => {
     expect(result.combined).toContain("out");
     expect(result.combined).toContain("err");
     expect(result.timeoutMs).toBe(1234);
-    expect(spawnSyncMock).toHaveBeenCalledTimes(1);
+    expect(spawnSyncMock).toHaveBeenCalledTimes(2);
+    expect(spawnSyncMock.mock.calls[1][1]).toEqual(expect.arrayContaining(["--help"]));
 
     expect(() => harness.assertCliSuccess(result, ["--help"])).not.toThrow();
   });
@@ -273,4 +274,3 @@ describe("Branch coverage 70 - CLI support helpers", () => {
     ).toBe(true);
   });
 });
-

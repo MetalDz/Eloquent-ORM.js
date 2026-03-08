@@ -76,7 +76,16 @@
       - `src/cli/utils/migrations/MigrationTracker.ts`: branches `100%`
     - runtime cleanup aligned with single-table tracker contract:
       - removed dead legacy `TableBackedMigrationLockStrategy` code path
-  - Structured logger branch hardening expanded in:
+  - Phase-5 hard-to-reach/environment suite expanded and passing:
+    - `src/lab_test/branch.coverage.100.phase5.logic.test.ts` (`5/5`)
+    - `src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts` (`6/6`)
+    - Added spawn-capability gating for CLI integration/help suites so host EPERM policy now skips those suites deterministically.
+    - Latest global coverage snapshot:
+      - Statements: `91.88%` (`3555/3869`)
+      - Branches: `79.29%` (`1708/2154`)
+      - Functions: `91.8%` (`560/610`)
+      - Lines: `93.51%` (`3389/3624`)
+- Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
   - Semantic-release dry run on `master`.
@@ -94,36 +103,16 @@
 
 ## Latest project check (local)
 
-- `npm run typecheck`: PASS
-- `npm run build`: PASS
-- Latest all-green `npm run test:coverage` (user report):
+- `npm run typecheck`: PASS (last known)
+- `npm run build`: PASS (last known)
+- `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `89.36%` (`3472/3885`)
-    - Branches: `75.49%` (`1633/2163`)
-    - Functions: `89.59%` (`551/615`)
-    - Lines: `91.01%` (`3312/3639`)
-  - Test suites: `69 passed`, `69 total`
-  - Tests: `410 passed`, `23 skipped`, `433 total`
-- `npm run test:coverage`: PASS
-  - Coverage summary:
-    - Statements: `86.02%` (`3342/3885`)
-    - Branches: `70.36%` (`1522/2163`)
-    - Functions: `87.8%` (`540/615`)
-    - Lines: `88.23%` (`3211/3639`)
-  - Test suites: `67 passed`, `67 total`
-  - Tests: `391 passed`, `23 skipped`, `414 total`
-- `npm.cmd run test:coverage` (current shell snapshot): non-green due host spawn policy (`spawnSync ... node.exe EPERM` on CLI spawn tests)
-  - Coverage summary still produced:
-    - Statements: `86.89%` (`3376/3885`)
-    - Branches: `72.39%` (`1566/2163`)
-    - Functions: `88.13%` (`542/615`)
-    - Lines: `88.56%` (`3223/3639`)
-- `npm.cmd run test:coverage` (latest shell snapshot during phase-4 work): non-green due host spawn policy (`spawnSync ... node.exe EPERM` on CLI spawn tests)
-  - Coverage summary still produced:
-    - Statements: `90.71%` (`3508/3867`)
-    - Branches: `77.59%` (`1669/2151`)
-    - Functions: `90.65%` (`553/610`)
-    - Lines: `92.37%` (`3346/3622`)
+    - Statements: `91.88%` (`3555/3869`)
+    - Branches: `79.29%` (`1708/2154`)
+    - Functions: `91.8%` (`560/610`)
+    - Lines: `93.51%` (`3389/3624`)
+  - Test suites: `64 passed`, `8 skipped`, `72 total`
+  - Tests: `356 passed`, `96 skipped`, `452 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -134,6 +123,8 @@
 - Focused phase-4 migration validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase4.logic.test.ts`: PASS (`8/8`)
   - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/migrations/MigrationLockStrategy.ts --collectCoverageFrom=src/cli/utils/migrations/MigrationTracker.ts src/lab_test/branch.coverage.70.migration-and-schema.logic.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/migration.tracker.single-table.contract.logic.test.ts src/lab_test/branch.coverage.100.phase4.logic.test.ts`: PASS (focused modules at `100%` for statements/branches/functions/lines)
+- Focused phase-5 cache/hooks validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts`: PASS (`6/6`)
 - Focused combined phase validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts src/lab_test/branch.coverage.100.phase1.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts`: PASS (`24/24`)
 

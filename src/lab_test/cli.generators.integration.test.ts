@@ -12,6 +12,8 @@ type CliResult = SpawnSyncReturns<string> & {
 const rootDir = process.cwd();
 const cliPath = path.resolve(rootDir, "dist/cli/eloquent.js");
 const hasBuiltCli = fs.existsSync(cliPath);
+const spawnProbe = spawnSync(process.execPath, ["-v"], { encoding: "utf8" });
+const canSpawn = !spawnProbe.error;
 
 const appModelsDir = path.resolve(rootDir, "src/app/models");
 const appControllersDir = path.resolve(rootDir, "src/app/controllers");
@@ -85,7 +87,7 @@ function removeGeneratorArtifacts(): void {
   ].forEach(removeIfExists);
 }
 
-const describeIfBuilt = hasBuiltCli ? describe : describe.skip;
+const describeIfBuilt = hasBuiltCli && canSpawn ? describe : describe.skip;
 
 describeIfBuilt("CLI integration: generators", () => {
   let testRootBackupDir: string | null = null;

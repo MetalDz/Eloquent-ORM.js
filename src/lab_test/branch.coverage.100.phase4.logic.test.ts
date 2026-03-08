@@ -51,12 +51,15 @@ function makeAdapter(name: ConnectionName): MockAdapter {
 
 describe("Branch coverage 100% - phase 4 migration tracker and locking edges", () => {
   let mysqlDriverBefore: string;
+  let warnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     mysqlDriverBefore = dbConfig.connections.mysql.driver;
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
+    warnSpy.mockRestore();
     dbConfig.connections.mysql.driver = mysqlDriverBefore as any;
     resetMigrationLockStrategy();
     jest.restoreAllMocks();
