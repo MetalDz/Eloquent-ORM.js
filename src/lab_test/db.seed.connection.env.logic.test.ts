@@ -166,3 +166,5 @@ describe("db seed connection env routing", () => {
     );
   });
 });
+
+export {};

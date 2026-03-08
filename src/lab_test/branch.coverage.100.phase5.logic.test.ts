@@ -218,3 +218,5 @@ describe("Branch coverage 100% - phase 5 hard-to-reach environment paths", () =>
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("[mysql] clean"));
   });
 });
+
+export {};
