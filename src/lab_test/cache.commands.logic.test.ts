@@ -1,8 +1,9 @@
-﻿import { cacheClear } from "../cli/commands/cacheClear";
+import { cacheClear } from "../cli/commands/cacheClear";
 import { cacheStats } from "../cli/commands/cacheStats";
 import { CacheManager } from "../core/cache/CacheManager";
 import { CacheRegistry } from "../core/cache/CacheRegistry";
 import { CacheAnalytics } from "../core/cache/CacheAnalytics";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
 
 describe("Milestone 1: cache command logic", () => {
   const originalAppEnv = process.env.APP_ENV;
@@ -44,5 +45,42 @@ describe("Milestone 1: cache command logic", () => {
     expect(out).toContain("cache:stats");
     expect(out).toContain("manager driver: MemoryCacheDriver");
     expect(out).toContain("fallback chain: none");
+  });
+
+  test("cache:clear reports fallback clear/shutdown failures from result arrays", async () => {
+    jest.spyOn(CacheFallbackManager, "getDrivers").mockReturnValue([{} as any]);
+    jest.spyOn(CacheFallbackManager, "clearAllDrivers").mockResolvedValue([
+      { driver: "memcached", ok: false, error: "clear-failed" },
+    ]);
+    jest.spyOn(CacheFallbackManager, "shutdownDrivers").mockResolvedValue([
+      { driver: "memcached", closed: false, error: "shutdown-failed" },
+    ]);
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await cacheClear();
+
+    const out = errorSpy.mock.calls.flat().join(" ");
+    expect(out).toContain("warnings:");
+    expect(out).toContain("Fallback memcached clear failed: clear-failed");
+    expect(out).toContain("Fallback memcached shutdown failed: shutdown-failed");
+  });
+
+  test("cache:clear handles registry/fallback thrown errors without throwing", async () => {
+    jest.spyOn(CacheRegistry, "clearAll").mockRejectedValueOnce(new Error("registry-failed"));
+    jest.spyOn(CacheFallbackManager, "getDrivers").mockReturnValue([{} as any]);
+    jest
+      .spyOn(CacheFallbackManager, "clearAllDrivers")
+      .mockRejectedValue(new Error("fallback-clear-failed"));
+    jest
+      .spyOn(CacheFallbackManager, "shutdownDrivers")
+      .mockRejectedValue(new Error("fallback-shutdown-failed"));
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await expect(cacheClear()).resolves.toBeUndefined();
+
+    const out = errorSpy.mock.calls.flat().join(" ");
+    expect(out).toContain("CacheManager clear failed: registry-failed");
+    expect(out).toContain("Fallback clear failed: fallback-clear-failed");
+    expect(out).toContain("Fallback shutdown failed: fallback-shutdown-failed");
   });
 });

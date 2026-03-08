@@ -40,7 +40,14 @@
   - Phase 2 cache/connection branch suite implemented and passing.
   - Phase 3 CLI command branch suite implemented and passing (`11/11`):
     - `makeModel`, `makeMigration`, `migrateFresh`, `dbSeed`, `cacheClear`, `cacheStats`
-  - Global branch coverage increased from `46.41%` to `55.57%` (`+9.16` points, `+198` covered branches).
+  - Phase 4 ORM mixin branch suite implemented and passing.
+  - Phase 5 migration/schema safety branch suite implemented and passing.
+  - Additional support suites added:
+    - `branch.coverage.70.cli-support.logic.test.ts`
+    - `branch.coverage.70.cli-support-shared.logic.test.ts`
+    - `branch.coverage.70.factory-path-resolver.logic.test.ts`
+    - `branch.coverage.70.dbseedfresh.logic.test.ts`
+  - Global branch coverage increased from `46.41%` to `70.22%` (`+23.81` points, `+515` covered branches).
 
 ## In Progress
 
@@ -49,9 +56,8 @@
   - Production configuration and upgrade notes.
   - Security/support policy docs.
 - Milestone 6.2 Coverage ratchet.
-  - Raise branch coverage gradually.
-  - Add targeted tests for low-covered files (cache internals, TS runtime helper, selected mixins).
-  - Confirm post-Phase-3 global coverage on CI/Git-Bash-capable host (local PowerShell blocked by `spawnSync ... node.exe EPERM` on CLI spawn suites).
+  - Branch target reached (`>=70%`).
+  - Remaining work is environment-level stability of full CLI integration spawn in this local host policy.
 - Milestone 6.3 Release execution.
   - Semantic-release dry run on `master`.
   - First release from `master` only.
@@ -70,13 +76,12 @@
 
 - `npm run typecheck`: PASS
 - `npm run build`: PASS
-- `npm run test:coverage`: PASS
-  - Test suites: `61 passed`, `61 total`
-  - Tests: `321 passed`, `3 skipped`, `15 todo`, `339 total`
-  - Statements: `75.08%` (`2917/3885`)
-  - Branches: `55.57%` (`1202/2163`)
-  - Functions: `77.39%` (`476/615`)
-  - Lines: `77.49%` (`2820/3639`)
+- `npm run test:coverage`: SUMMARY TARGET MET (command exit non-zero in this host due `spawnSync ... node.exe EPERM` in CLI integration spawn tests)
+  - Coverage summary:
+    - Statements: `85.92%` (`3338/3885`)
+    - Branches: `70.22%` (`1519/2163`)
+    - Functions: `87.64%` (`539/615`)
+    - Lines: `88.15%` (`3208/3639`)
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)

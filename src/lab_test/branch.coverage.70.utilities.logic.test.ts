@@ -185,6 +185,213 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     expect(Compiler.compile(["a.ts"], true)).toBe(true);
   });
 
+  test("TypeScriptCompiler.compile uses tsconfig fileNames when files arg is empty", () => {
+    jest.resetModules();
+    const createProgram = jest.fn(() => ({}));
+    jest.doMock("typescript", () => ({
+      findConfigFile: jest.fn(() => "tsconfig.json"),
+      sys: { fileExists: jest.fn(), readFile: jest.fn() },
+      readConfigFile: jest.fn(() => ({ config: {}, error: undefined })),
+      parseJsonConfigFileContent: jest.fn(() => ({ options: {}, fileNames: ["cfg.ts"], errors: [] })),
+      createProgram,
+      getPreEmitDiagnostics: jest.fn(() => []),
+      flattenDiagnosticMessageText: jest.fn((m: unknown) => String(m)),
+      ScriptTarget: { ES2020: 7 },
+      ModuleKind: { CommonJS: 1 },
+      ModuleResolutionKind: { NodeJs: 2 },
+    }));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TypeScriptCompiler: Compiler } = require("../cli/utils/typescript/TypeScriptCompiler") as {
+      TypeScriptCompiler: { initialized: boolean; compile(files?: string[], noEmit?: boolean): boolean };
+    };
+    Compiler.initialized = true;
+    expect(Compiler.compile([], true)).toBe(true);
+    expect(createProgram).toHaveBeenCalledWith(
+      expect.objectContaining({ rootNames: ["cfg.ts"] })
+    );
+  });
+
+  test("TypeScriptCompiler.compile prints diagnostic location when diag.file is present", () => {
+    jest.resetModules();
+    jest.doMock("typescript", () => ({
+      findConfigFile: jest.fn(() => "tsconfig.json"),
+      sys: { fileExists: jest.fn(), readFile: jest.fn() },
+      readConfigFile: jest.fn(() => ({ config: {}, error: undefined })),
+      parseJsonConfigFileContent: jest.fn(() => ({ options: {}, fileNames: ["a.ts"], errors: [] })),
+      createProgram: jest.fn(() => ({})),
+      getPreEmitDiagnostics: jest.fn(() => [
+        {
+          messageText: "broken-file",
+          start: 1,
+          file: {
+            fileName: path.join(process.cwd(), "src", "a.ts"),
+            getLineAndCharacterOfPosition: jest.fn(() => ({ line: 2, character: 4 })),
+          },
+        },
+      ]),
+      flattenDiagnosticMessageText: jest.fn((m: unknown) => String(m)),
+      ScriptTarget: { ES2020: 7 },
+      ModuleKind: { CommonJS: 1 },
+      ModuleResolutionKind: { NodeJs: 2 },
+    }));
+    const errSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TypeScriptCompiler: Compiler } = require("../cli/utils/typescript/TypeScriptCompiler") as {
+      TypeScriptCompiler: { initialized: boolean; compile(files?: string[], noEmit?: boolean): boolean };
+    };
+    Compiler.initialized = true;
+    expect(Compiler.compile(["a.ts"], true)).toBe(false);
+    expect(errSpy.mock.calls.flat().join(" ")).toContain("[TS Error] src");
+    expect(errSpy.mock.calls.flat().join(" ")).toContain("(3,5)");
+  });
+
+  test("TypeScriptCompiler.ensureRuntime logs initialization failure when ts-node registration throws", () => {
+    jest.resetModules();
+    const originalTsExt = require.extensions[".ts"];
+    delete require.extensions[".ts"];
+
+    jest.doMock("typescript", () => ({
+      findConfigFile: jest.fn(() => "tsconfig.json"),
+      sys: { fileExists: jest.fn(), readFile: jest.fn() },
+      readConfigFile: jest.fn(() => ({ config: {}, error: undefined })),
+      parseJsonConfigFileContent: jest.fn(() => ({ options: {}, fileNames: ["a.ts"], errors: [] })),
+      createProgram: jest.fn(() => ({})),
+      getPreEmitDiagnostics: jest.fn(() => []),
+      flattenDiagnosticMessageText: jest.fn((m: unknown) => String(m)),
+      ScriptTarget: { ES2020: 7 },
+      ModuleKind: { CommonJS: 1 },
+      ModuleResolutionKind: { NodeJs: 2 },
+    }));
+    jest.doMock("ts-node", () => ({
+      register: () => {
+        throw new Error("register-failed");
+      },
+    }));
+
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TypeScriptCompiler: Compiler } = require("../cli/utils/typescript/TypeScriptCompiler") as {
+      TypeScriptCompiler: { initialized: boolean; ensureRuntime(): void };
+    };
+    Compiler.initialized = false;
+    Compiler.ensureRuntime();
+
+    const combinedErrors = errorSpy.mock.calls.flat().join(" ");
+    expect(combinedErrors).toContain("Failed to initialize ts-node runtime for CLI");
+    expect(errorSpy).toHaveBeenCalledWith(expect.any(Error));
+
+    if (originalTsExt) {
+      require.extensions[".ts"] = originalTsExt;
+    }
+  });
+
+  test("TypeScriptCompiler.ensureRuntime no-ops when already initialized and compileWithDefaults handles diagnostics", () => {
+    jest.resetModules();
+    const registerSpy = jest.fn();
+    jest.doMock("typescript", () => ({
+      findConfigFile: jest.fn(() => undefined),
+      sys: { fileExists: jest.fn(), readFile: jest.fn() },
+      readConfigFile: jest.fn(),
+      parseJsonConfigFileContent: jest.fn(),
+      createProgram: jest.fn(() => ({})),
+      getPreEmitDiagnostics: jest.fn(() => [{ messageText: "fallback-broken" }]),
+      flattenDiagnosticMessageText: jest.fn((m: unknown) => String(m)),
+      ScriptTarget: { ES2020: 7 },
+      ModuleKind: { CommonJS: 1 },
+      ModuleResolutionKind: { NodeJs: 2 },
+    }));
+    jest.doMock("ts-node", () => ({
+      register: registerSpy,
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TypeScriptCompiler: Compiler } = require("../cli/utils/typescript/TypeScriptCompiler") as {
+      TypeScriptCompiler: { initialized: boolean; ensureRuntime(): void; compile(files?: string[], noEmit?: boolean): boolean };
+    };
+
+    Compiler.initialized = true;
+    Compiler.ensureRuntime();
+    expect(registerSpy).not.toHaveBeenCalled();
+
+    Compiler.initialized = true;
+    expect(Compiler.compile(["a.ts"], true)).toBe(false);
+  });
+
+  test("TypeScriptCompiler.ensureRuntime registers ts-node once and emits debug log", () => {
+    jest.resetModules();
+    const originalTsExt = require.extensions[".ts"];
+    delete require.extensions[".ts"];
+    const registerSpy = jest.fn();
+    jest.doMock("typescript", () => ({
+      findConfigFile: jest.fn(() => "tsconfig.json"),
+      sys: { fileExists: jest.fn(), readFile: jest.fn() },
+      readConfigFile: jest.fn(() => ({ config: {}, error: undefined })),
+      parseJsonConfigFileContent: jest.fn(() => ({ options: {}, fileNames: ["a.ts"], errors: [] })),
+      createProgram: jest.fn(() => ({})),
+      getPreEmitDiagnostics: jest.fn(() => []),
+      flattenDiagnosticMessageText: jest.fn((m: unknown) => String(m)),
+      ScriptTarget: { ES2020: 7 },
+      ModuleKind: { CommonJS: 1 },
+      ModuleResolutionKind: { NodeJs: 2 },
+    }));
+    jest.doMock("ts-node", () => ({
+      register: registerSpy,
+    }));
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
+    const prevDebug = process.env.DEBUG;
+    process.env.DEBUG = "true";
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TypeScriptCompiler: Compiler } = require("../cli/utils/typescript/TypeScriptCompiler") as {
+      TypeScriptCompiler: { initialized: boolean; ensureRuntime(): void };
+    };
+    Compiler.initialized = false;
+    Compiler.ensureRuntime();
+    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(logSpy.mock.calls.flat().join(" ")).toContain("ts-node registered");
+
+    if (typeof prevDebug === "undefined") delete process.env.DEBUG;
+    else process.env.DEBUG = prevDebug;
+    if (originalTsExt) require.extensions[".ts"] = originalTsExt;
+  });
+
+  test("TypeScriptCompiler.ensureRuntime stays idempotent when runtime hook already exists", () => {
+    jest.resetModules();
+    const originalTsExt = require.extensions[".ts"];
+    require.extensions[".ts"] = ((module: NodeModule, filename: string) => {
+      // no-op runtime hook for branch coverage
+      module.exports = { filename };
+    }) as NodeJS.RequireExtensions[string];
+    const registerSpy = jest.fn();
+    jest.doMock("typescript", () => ({
+      findConfigFile: jest.fn(() => "tsconfig.json"),
+      sys: { fileExists: jest.fn(), readFile: jest.fn() },
+      readConfigFile: jest.fn(() => ({ config: {}, error: undefined })),
+      parseJsonConfigFileContent: jest.fn(() => ({ options: {}, fileNames: ["a.ts"], errors: [] })),
+      createProgram: jest.fn(() => ({})),
+      getPreEmitDiagnostics: jest.fn(() => []),
+      flattenDiagnosticMessageText: jest.fn((m: unknown) => String(m)),
+      ScriptTarget: { ES2020: 7 },
+      ModuleKind: { CommonJS: 1 },
+      ModuleResolutionKind: { NodeJs: 2 },
+    }));
+    jest.doMock("ts-node", () => ({
+      register: registerSpy,
+    }));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { TypeScriptCompiler: Compiler } = require("../cli/utils/typescript/TypeScriptCompiler") as {
+      TypeScriptCompiler: { initialized: boolean; ensureRuntime(): void };
+    };
+    Compiler.initialized = false;
+    Compiler.ensureRuntime();
+    const firstCallCount = registerSpy.mock.calls.length;
+    Compiler.ensureRuntime();
+    expect(registerSpy).toHaveBeenCalledTimes(firstCallCount);
+
+    if (originalTsExt) require.extensions[".ts"] = originalTsExt;
+    else delete require.extensions[".ts"];
+  });
+
   test("tsRuntime: non-ts modules are loaded directly", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-js-"));
     const jsFile = path.join(root, "mod.js");
