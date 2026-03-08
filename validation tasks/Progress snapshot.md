@@ -1,4 +1,4 @@
-# Progress snapshot (2026-03-05)
+# Progress snapshot (2026-03-07)
 
 ## Done
 
@@ -26,6 +26,15 @@
   - 5.3 API freeze.
   - 5.4 Dialect-aware schema update hardening.
   - 5.5 SQL runtime parity hardening.
+- Milestone 5 follow-up cleanup completed (2026-03-07).
+  - Standardized test migration command usage to `migrate:run --test`.
+  - Removed legacy alias surface usage (`migrate:run:test`) from smoke flow.
+  - Updated pack smoke script to use `migrate:run --test` only.
+  - Migration tracker single-table contract finalized:
+    - tracker bootstrap persists `migrations` only
+    - locking is native per driver (PG advisory lock, MySQL named lock, SQLite `BEGIN IMMEDIATE`)
+    - legacy `migration_locks` behavior documented as compatibility-only.
+  - API surface tightened by removing legacy `TableBackedMigrationLockStrategy` export.
 
 ## In Progress
 
@@ -54,13 +63,16 @@
 
 - `npm run typecheck`: PASS
 - `npm run build`: PASS
-- `npm test`: PASS (`22/22` suites, `159/159` tests)
-- `npm run test:coverage`: PASS
-  - Statements: `65.56%`
-  - Branches: `45.77%`
-  - Functions: `62.70%`
-  - Lines: `68.16%`
+- `npm test`: FAIL on this host due spawn permission (`spawnSync ... node.exe EPERM`) in CLI integration suites.
+  - Observed totals in current run: `7 failed`, `1 skipped`, `47 passed` suites (`54/55` total), `73 failed`, `23 skipped`, `205 passed` tests (`301` total).
+- `npm run test:coverage`: FAIL on this host for the same EPERM reason (coverage summary still produced).
+  - Statements: `65.86%` (`2559/3885`)
+  - Branches: `46.41%` (`1004/2163`)
+  - Functions: `65.36%` (`402/615`)
+  - Lines: `68.17%` (`2481/3639`)
 - `npm run test:pack-smoke`: PASS
+- Focused tracker contract regression:
+  - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
 
 ## Notes
 

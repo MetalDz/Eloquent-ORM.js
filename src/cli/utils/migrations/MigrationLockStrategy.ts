@@ -234,4 +234,4 @@ export function resetMigrationLockStrategy(): void {
   activeLockStrategy = new NativeSqlMigrationLockStrategy();
 }
 
-export { TableBackedMigrationLockStrategy, NativeSqlMigrationLockStrategy };
+export { NativeSqlMigrationLockStrategy };
