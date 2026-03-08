@@ -60,6 +60,39 @@
     - `makeModel.ts`: `62.13%` -> `81.55%`
     - `makeMigration.ts`: `68.46%` -> `77.69%`
   - Latest global branch coverage: `82.17%` (`1770/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-08, phase 8).
+  - Phase 8 support-branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts` (`5/5`)
+  - Focused support branch improvements:
+    - `cacheClear.ts`: `91.66%`
+    - `AuditTrail.ts`: `77.5%`
+    - `CacheAnalytics.ts`: `75%`
+    - `tsRuntime.ts`: `83.33%`
+  - Latest global branch coverage: `82.63%` (`1780/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-08, phase 9 / item 1).
+  - Phase 9 schema-builder branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts` (`5/5`)
+  - Focused module lift:
+    - `SchemaBuilder.ts`: branches `87.54%`
+  - Latest global branch coverage: `84.67%` (`1824/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-08, phase 10 / item 2).
+  - Phase 10 core-model branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts` (`6/6`)
+  - Focused module lift:
+    - `CoreModel.ts`: branches `97.26%`
+  - Latest global branch coverage: `85.6%` (`1844/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-08, phase 11 / item 3).
+  - Phase 11 make-migration branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts` (`4/4`)
+  - Focused module lift:
+    - `makeMigration.ts`: branches `78.46%` (from `68.46%`)
+  - Latest global branch coverage: `85.65%` (`1845/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-08, phase 12 / item 4).
+  - Phase 12 template-engine branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts` (`4/4`)
+  - Focused module lift:
+    - `TemplateEngine.ts`: branches `93.1%` (`54/58`)
+  - Latest global branch coverage: `86.11%` (`1855/2154`).
 
 ## In Progress
 
@@ -98,11 +131,21 @@
     - `src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts` (`6/6`)
     - `src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts` (`5/5`)
     - `src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts` (`5/5`)
+  - Phase-8 cache/audit/runtime support branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts` (`5/5`)
+  - Phase-9 schema-builder branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts` (`5/5`)
+  - Phase-10 core-model branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts` (`6/6`)
+  - Phase-11 make-migration branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts` (`4/4`)
+  - Phase-12 template-engine branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts` (`4/4`)
   - Latest global coverage snapshot:
-    - Statements: `94.77%` (`3667/3869`)
-    - Branches: `82.17%` (`1770/2154`)
-    - Functions: `95.08%` (`580/610`)
-    - Lines: `96.3%` (`3490/3624`)
+    - Statements: `97.02%` (`3754/3869`)
+    - Branches: `86.11%` (`1855/2154`)
+    - Functions: `95.9%` (`585/610`)
+    - Lines: `98.37%` (`3565/3624`)
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -125,12 +168,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `94.77%` (`3667/3869`)
-    - Branches: `82.17%` (`1770/2154`)
-    - Functions: `95.08%` (`580/610`)
-    - Lines: `96.3%` (`3490/3624`)
-  - Test suites: `68 passed`, `8 skipped`, `76 total`
-  - Tests: `377 passed`, `96 skipped`, `473 total`
+    - Statements: `97.02%` (`3754/3869`)
+    - Branches: `86.11%` (`1855/2154`)
+    - Functions: `95.9%` (`585/610`)
+    - Lines: `98.37%` (`3565/3624`)
+  - Test suites: `73 passed`, `8 skipped`, `81 total`
+  - Tests: `401 passed`, `96 skipped`, `497 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -151,6 +194,16 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts`: PASS (`6/6`)
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts`: PASS (`5/5`)
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts`: PASS (`5/5`)
+- Focused phase-8 support validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts`: PASS (`5/5`)
+- Focused phase-9 schema-builder validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts`: PASS (`5/5`)
+- Focused phase-10 core-model validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts`: PASS (`6/6`)
+- Focused phase-11 make-migration validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts`: PASS (`4/4`)
+- Focused phase-12 template-engine validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts`: PASS (`4/4`)
 
 ## Notes
 

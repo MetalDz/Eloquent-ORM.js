@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-08
-Status: IN PROGRESS (Phases 1-7 completed)
+Status: IN PROGRESS (Phases 1-12 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -181,6 +181,127 @@ Status: IN PROGRESS (Phases 1-7 completed)
     - Result:
       - Test Suites: `68 passed`, `8 skipped`, `76 total`
       - Tests: `377 passed`, `96 skipped`, `473 total`
+
+### Phase 8: Cache/Audit/Runtime Support Branch Closure
+- [x] Add focused support-branch suite:
+  - `src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/cli/commands/cacheClear.ts`
+  - `src/cli/utils/AuditTrail.ts`
+  - `src/core/cache/CacheAnalytics.ts`
+  - `src/cli/utils/typescript/tsRuntime.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts`
+  - Result: PASS (`5/5`)
+  - Focused support-module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/cacheClear.ts --collectCoverageFrom=src/cli/utils/AuditTrail.ts --collectCoverageFrom=src/core/cache/CacheAnalytics.ts --collectCoverageFrom=src/cli/utils/typescript/tsRuntime.ts src/lab_test/cache.commands.logic.test.ts src/lab_test/cli.audit.trail.logic.test.ts src/lab_test/branch.coverage.70.utilities.logic.test.ts src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts`
+  - Focused branch snapshot:
+    - `cacheClear.ts`: `91.66%`
+    - `AuditTrail.ts`: `77.5%`
+    - `CacheAnalytics.ts`: `75%`
+    - `tsRuntime.ts`: `83.33%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `94.88%` (`3671/3869`)
+      - Branches: `82.63%` (`1780/2154`)
+      - Functions: `95.08%` (`580/610`)
+      - Lines: `96.35%` (`3492/3624`)
+    - Result:
+      - Test Suites: `69 passed`, `8 skipped`, `77 total`
+      - Tests: `382 passed`, `96 skipped`, `478 total`
+
+### Phase 9: SchemaBuilder Branch Closure (Item 1)
+- [x] Add focused schema-builder edge suite:
+  - `src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/core/schema/SchemaBuilder.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts`
+  - Result: PASS (`5/5`)
+  - Focused schema-builder validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/schema/SchemaBuilder.ts src/lab_test/milestone1.schema-and-template.logic.test.ts src/lab_test/schema.relation.coverage.logic.test.ts src/lab_test/branch.coverage.70.migration-and-schema.logic.test.ts src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts`
+  - Focused module result:
+    - `SchemaBuilder.ts`: branches `87.54%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `96.04%` (`3716/3869`)
+      - Branches: `84.67%` (`1824/2154`)
+      - Functions: `95.57%` (`583/610`)
+      - Lines: `97.54%` (`3535/3624`)
+    - Result:
+      - Test Suites: `70 passed`, `8 skipped`, `78 total`
+      - Tests: `387 passed`, `96 skipped`, `483 total`
+
+### Phase 10: CoreModel Branch Closure (Item 2)
+- [x] Add focused core-model edge suite:
+  - `src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/core/model/CoreModel.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts`
+  - Result: PASS (`6/6`)
+  - Focused core-model validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/model/CoreModel.ts src/lab_test/coremodel.crud.logic.test.ts src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts`
+  - Focused module result:
+    - `CoreModel.ts`: branches `97.26%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `96.84%` (`3747/3869`)
+      - Branches: `85.6%` (`1844/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.26%` (`3561/3624`)
+    - Result:
+      - Test Suites: `71 passed`, `8 skipped`, `79 total`
+      - Tests: `393 passed`, `96 skipped`, `489 total`
+
+### Phase 11: makeMigration Branch Closure (Item 3)
+- [x] Add focused make-migration edge suite:
+  - `src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/cli/commands/makeMigration.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts`
+  - Result: PASS (`4/4`)
+  - Focused make-migration validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/makeMigration.ts src/lab_test/make.migration.append.only.logic.test.ts src/lab_test/make.migration.fk.logic.test.ts src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts`
+  - Focused module result:
+    - `makeMigration.ts`: branches `78.46%` (from `68.46%`)
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `96.87%` (`3748/3869`)
+      - Branches: `85.65%` (`1845/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.28%` (`3562/3624`)
+    - Result:
+      - Test Suites: `72 passed`, `8 skipped`, `80 total`
+      - Tests: `397 passed`, `96 skipped`, `493 total`
+
+### Phase 12: TemplateEngine Branch Closure (Item 4)
+- [x] Add focused template-engine edge suite:
+  - `src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/cli/utils/TemplateEngine.ts`
+- Evidence (`2026-03-08`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts`
+  - Result: PASS (`4/4`)
+  - Focused template-engine validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/TemplateEngine.ts src/lab_test/branch.coverage.70.utilities.logic.test.ts src/lab_test/template.cleanliness.logic.test.ts src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts`
+  - Focused module result:
+    - `TemplateEngine.ts`: branches `93.1%` (`54/58`)
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `97.02%` (`3754/3869`)
+      - Branches: `86.11%` (`1855/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.37%` (`3565/3624`)
+    - Result:
+      - Test Suites: `73 passed`, `8 skipped`, `81 total`
+      - Tests: `401 passed`, `96 skipped`, `497 total`
 
 ## Quality Gates
 - Per phase:
