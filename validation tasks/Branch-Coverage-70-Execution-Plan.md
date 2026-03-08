@@ -11,7 +11,7 @@ performance
 security by itself
 So: branch coverage is a strong quality signal, but not the whole definition of code quality.
 
-Last updated: 2026-03-07
+Last updated: 2026-03-08
 Status: OPEN
 
 ## Goal
@@ -47,14 +47,18 @@ Status: OPEN
 - Target after phase: keep baseline stable and reproducible.
 
 ### Phase 1: Utility Branch Closures (High ROI)
-- [ ] Add branch tests for:
+- [x] Add branch tests for:
   - `src/cli/utils/TemplateEngine.ts`
   - `src/cli/utils/PathMap.ts`
   - `src/cli/utils/ImportResolver.ts`
   - `src/cli/utils/typescript/TypeScriptCompiler.ts`
   - `src/cli/utils/typescript/tsRuntime.ts`
-- [ ] Cover error and fallback branches (missing files, disabled TS runtime, invalid paths).
-- Target after phase: `>= 52%` branches.
+- [x] Cover error and fallback branches (missing files, disabled TS runtime, invalid paths).
+- [ ] Confirm global target after phase: `>= 52%` branches.
+  - Phase-1 focused run evidence:
+    - `npm.cmd test -- --runInBand --coverage --runTestsByPath src/lab_test/branch.coverage.70.utilities.logic.test.ts`
+    - Focused summary: Branches `60.31%` (`76/126`)
+  - Global confirmation remains pending full `test:coverage` run in a shell without local `spawnSync ... node.exe EPERM` constraints.
 
 ### Phase 2: Cache + Connection Logic
 - [ ] Add branch tests for:
