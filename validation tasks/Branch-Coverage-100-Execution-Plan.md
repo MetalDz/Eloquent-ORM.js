@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-09
-Status: IN PROGRESS (Phases 1-20 completed)
+Status: IN PROGRESS (Phases 1-22 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -495,6 +495,56 @@ Status: IN PROGRESS (Phases 1-20 completed)
     - Result:
       - Test Suites: `83 passed`, `8 skipped`, `91 total`
       - Tests: `441 passed`, `96 skipped`, `537 total`
+
+### Phase 21: CLI Support Helpers Deep Closure (Item 13)
+- [x] Add focused CLI-support deep-edge suite:
+  - `src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/lab_test/support/cli.integration.harness.ts`
+  - `src/lab_test/support/cli.integration.connection.shared.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts`
+  - Result: PASS (`4/4`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/lab_test/support/cli.integration.harness.ts --collectCoverageFrom=src/lab_test/support/cli.integration.connection.shared.ts src/lab_test/branch.coverage.70.cli-support.logic.test.ts src/lab_test/branch.coverage.70.cli-support-shared.logic.test.ts src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts`
+  - Focused module result:
+    - `cli.integration.harness.ts`: branches `100%`
+    - `cli.integration.connection.shared.ts`: branches `100%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.21%` (`3800/3869`)
+      - Branches: `92.85%` (`2000/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.06%` (`3590/3624`)
+    - Result:
+      - Test Suites: `84 passed`, `8 skipped`, `92 total`
+      - Tests: `445 passed`, `96 skipped`, `541 total`
+
+### Phase 22: Seed Precheck + Resolver Edge Closure (Item 14)
+- [x] Add focused precheck/resolver edge suite:
+  - `src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/utils/SeedBootstrapPrecheck.ts`
+  - `src/core/connection/resolveConnectionName.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`
+  - Result: PASS (`3/3`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/SeedBootstrapPrecheck.ts --collectCoverageFrom=src/core/connection/resolveConnectionName.ts src/lab_test/cli.bootstrap.precheck.logic.test.ts src/lab_test/resolve.connection.name.logic.test.ts src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`
+  - Focused module result:
+    - `SeedBootstrapPrecheck.ts`: branches `82.75%`
+    - `resolveConnectionName.ts`: branches `92.85%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.21%` (`3800/3869`)
+      - Branches: `92.98%` (`2003/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.06%` (`3590/3624`)
+    - Result:
+      - Test Suites: `85 passed`, `8 skipped`, `93 total`
+      - Tests: `448 passed`, `96 skipped`, `544 total`
 
 ## Quality Gates
 - Per phase:

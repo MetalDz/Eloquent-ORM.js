@@ -149,6 +149,20 @@
     - `dbSeed.ts`: branches `96.42%`
     - `migrateRun.ts`: branches `97.05%`
   - Latest global branch coverage: `91.87%` (`1979/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 21 / item 13).
+  - Phase 21 CLI-support deep branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts` (`4/4`)
+  - Focused module lift:
+    - `src/lab_test/support/cli.integration.harness.ts`: branches `100%`
+    - `src/lab_test/support/cli.integration.connection.shared.ts`: branches `100%`
+  - Latest global branch coverage: `92.85%` (`2000/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 22 / item 14).
+  - Phase 22 precheck/resolver branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts` (`3/3`)
+  - Focused module lift:
+    - `SeedBootstrapPrecheck.ts`: branches `82.75%`
+    - `resolveConnectionName.ts`: branches `92.85%`
+  - Latest global branch coverage: `92.98%` (`2003/2154`).
 
 ## In Progress
 
@@ -212,8 +226,8 @@
   - Phase-19 rollback/query-cache deep branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts` (`2/2`)
   - Latest global coverage snapshot:
-    - Statements: `98.19%` (`3799/3869`)
-    - Branches: `91.87%` (`1979/2154`)
+    - Statements: `98.21%` (`3800/3869`)
+    - Branches: `92.98%` (`2003/2154`)
     - Functions: `95.9%` (`585/610`)
     - Lines: `99.06%` (`3590/3624`)
   - Phase-20 dbSeed/audit/migrate-run branch suites created and passing:
@@ -221,6 +235,12 @@
     - `src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts`
     - `src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`
     - result: `15/15` passing
+  - Phase-21 CLI-support deep branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts`
+    - result: `4/4` passing
+  - Phase-22 precheck/resolver branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`
+    - result: `3/3` passing
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -243,12 +263,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `98.19%` (`3799/3869`)
-    - Branches: `91.87%` (`1979/2154`)
+    - Statements: `98.21%` (`3800/3869`)
+    - Branches: `92.98%` (`2003/2154`)
     - Functions: `95.9%` (`585/610`)
     - Lines: `99.06%` (`3590/3624`)
-  - Test suites: `83 passed`, `8 skipped`, `91 total`
-  - Tests: `441 passed`, `96 skipped`, `537 total`
+  - Test suites: `85 passed`, `8 skipped`, `93 total`
+  - Tests: `448 passed`, `96 skipped`, `544 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -295,6 +315,10 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts`: PASS (`2/2`)
 - Focused phase-20 dbSeed/audit/migrate-run validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`: PASS (`15/15`)
+- Focused phase-21 CLI-support deep validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts`: PASS (`4/4`)
+- Focused phase-22 precheck/resolver validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`: PASS (`3/3`)
 
 ## Notes
 
