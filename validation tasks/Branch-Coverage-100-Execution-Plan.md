@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-09
-Status: IN PROGRESS (Phases 1-15 completed)
+Status: IN PROGRESS (Phases 1-16 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -368,6 +368,29 @@ Status: IN PROGRESS (Phases 1-15 completed)
     - Result:
       - Test Suites: `76 passed`, `8 skipped`, `84 total`
       - Tests: `413 passed`, `96 skipped`, `509 total`
+
+### Phase 16: makeModel Deep Branch Closure (Item 8)
+- [x] Add focused make-model extra-edge suite:
+  - `src/lab_test/branch.coverage.100.phase16.make-model-extra.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/makeModel.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase16.make-model-extra.logic.test.ts`
+  - Result: PASS (`3/3`)
+  - Focused make-model validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/makeModel.ts src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts src/lab_test/make.model.rollback.logic.test.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts src/lab_test/branch.coverage.100.phase16.make-model-extra.logic.test.ts`
+  - Focused module result:
+    - `makeModel.ts`: branches `96.11%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `97.59%` (`3776/3869`)
+      - Branches: `89.55%` (`1929/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.53%` (`3571/3624`)
+    - Result:
+      - Test Suites: `77 passed`, `8 skipped`, `85 total`
+      - Tests: `416 passed`, `96 skipped`, `512 total`
 
 ## Quality Gates
 - Per phase:
