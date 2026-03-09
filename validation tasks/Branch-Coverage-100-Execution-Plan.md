@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-09
-Status: IN PROGRESS (Phases 1-16 completed)
+Status: IN PROGRESS (Phases 1-19 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -389,8 +389,83 @@ Status: IN PROGRESS (Phases 1-16 completed)
       - Functions: `95.9%` (`585/610`)
       - Lines: `98.53%` (`3571/3624`)
     - Result:
-      - Test Suites: `77 passed`, `8 skipped`, `85 total`
-      - Tests: `416 passed`, `96 skipped`, `512 total`
+    - Test Suites: `77 passed`, `8 skipped`, `85 total`
+    - Tests: `416 passed`, `96 skipped`, `512 total`
+
+### Phase 17: Rollback + Adapter Edge Branch Closure (Item 9)
+- [x] Add focused rollback/adapter edge suite:
+  - `src/lab_test/branch.coverage.100.phase17.rollback-and-adapter.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/migrateRollback.ts`
+  - `src/core/connection/DriverAdapter.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase17.rollback-and-adapter.logic.test.ts`
+  - Result: PASS (`5/5`)
+  - Focused rollback/adapter validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/migrateRollback.ts --collectCoverageFrom=src/core/connection/DriverAdapter.ts src/lab_test/migrate.rollback.logic.test.ts src/lab_test/migrate.rollback.partial.recovery.logic.test.ts src/lab_test/driver.adapter.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts src/lab_test/branch.coverage.100.phase17.rollback-and-adapter.logic.test.ts`
+  - Focused module result:
+    - `migrateRollback.ts`: branches `84.61%`
+    - `DriverAdapter.ts`: unsupported-driver guard branch explicitly covered.
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98%` (`3792/3869`)
+      - Branches: `89.78%` (`1934/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.97%` (`3587/3624`)
+    - Result:
+      - Test Suites: `78 passed`, `8 skipped`, `86 total`
+      - Tests: `421 passed`, `96 skipped`, `517 total`
+
+### Phase 18: Driver + QueryCache Branch Closure (Item 10)
+- [x] Add focused driver/query-cache edge suite:
+  - `src/lab_test/branch.coverage.100.phase18.driver-and-querycache.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/core/connection/DriverAdapter.ts`
+  - `src/core/orm/mixins/QueryCacheMixin.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase18.driver-and-querycache.logic.test.ts`
+  - Result: PASS (`3/3`)
+  - Focused driver/query-cache validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/connection/DriverAdapter.ts --collectCoverageFrom=src/core/orm/mixins/QueryCacheMixin.ts src/lab_test/driver.adapter.logic.test.ts src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts src/lab_test/coremodel.crud.logic.test.ts src/lab_test/branch.coverage.100.phase18.driver-and-querycache.logic.test.ts`
+  - Focused module result:
+    - `DriverAdapter.ts`: branches `96.29%`
+    - `QueryCacheMixin.ts`: branches `86.79%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.03%` (`3793/3869`)
+      - Branches: `90.52%` (`1950/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.97%` (`3587/3624`)
+    - Result:
+      - Test Suites: `79 passed`, `8 skipped`, `87 total`
+      - Tests: `424 passed`, `96 skipped`, `520 total`
+
+### Phase 19: Rollback + QueryCache Deep Closure (Item 11)
+- [x] Add focused rollback/query-cache deep-edge suite:
+  - `src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/migrateRollback.ts`
+  - `src/core/orm/mixins/QueryCacheMixin.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts`
+  - Result: PASS (`2/2`)
+  - Focused phase behavior covered:
+    - rollback on `pg` uses `CASCADE` fallback drop path
+    - rollback ordering covers batch and nullable-id sort branches
+    - default connection resolution path (`connectionNames` omitted)
+    - QueryCache model-name fallback + `hasModelDefaults` permutations
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.06%` (`3794/3869`)
+      - Branches: `90.94%` (`1959/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.97%` (`3587/3624`)
+    - Result:
+      - Test Suites: `80 passed`, `8 skipped`, `88 total`
+      - Tests: `426 passed`, `96 skipped`, `522 total`
 
 ## Quality Gates
 - Per phase:
