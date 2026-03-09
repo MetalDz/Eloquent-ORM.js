@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-09
-Status: IN PROGRESS (Phases 1-22 completed)
+Status: IN PROGRESS (Phases 1-25 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -545,6 +545,72 @@ Status: IN PROGRESS (Phases 1-22 completed)
     - Result:
       - Test Suites: `85 passed`, `8 skipped`, `93 total`
       - Tests: `448 passed`, `96 skipped`, `544 total`
+
+### Phase 23: ORM Mixins Deep Edge Closure (Item 15)
+- [x] Add focused ORM-mixin deep-edge suite:
+  - `src/lab_test/branch.coverage.100.phase23.orm-mixins-extra.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/core/orm/mixins/EagerLoadingMixin.ts`
+  - `src/core/orm/mixins/SoftDeletesMixin.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase23.orm-mixins-extra.logic.test.ts`
+  - Result: PASS (`3/3`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/orm/mixins/EagerLoadingMixin.ts --collectCoverageFrom=src/core/orm/mixins/SoftDeletesMixin.ts src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts src/lab_test/softdeletes.runtime.logic.test.ts src/lab_test/branch.coverage.100.phase23.orm-mixins-extra.logic.test.ts`
+  - Focused module result:
+    - `EagerLoadingMixin.ts`: branches `100%`
+    - `SoftDeletesMixin.ts`: branches `100%`
+
+### Phase 24: Utilities + Env Deep Edge Closure (Item 16)
+- [x] Add focused utility/env deep-edge suite:
+  - `src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/utils/factories/Factory.ts`
+  - `src/config/dbRoleEnv.ts`
+  - `src/cli/utils/SeedBootstrapPrecheck.ts`
+  - `src/core/schema/SchemaValidator.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts`
+  - Result: PASS (`4/4`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/factories/Factory.ts --collectCoverageFrom=src/config/dbRoleEnv.ts --collectCoverageFrom=src/cli/utils/SeedBootstrapPrecheck.ts --collectCoverageFrom=src/core/schema/SchemaValidator.ts src/lab_test/branch.coverage.70.factory-path-resolver.logic.test.ts src/lab_test/factory.createMany.concurrency.logic.test.ts src/lab_test/db.user.role.separation.logic.test.ts src/lab_test/cli.bootstrap.precheck.logic.test.ts src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts src/lab_test/branch.coverage.70.migration-and-schema.logic.test.ts src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts`
+  - Focused module result:
+    - `Factory.ts`: branches `100%`
+    - `dbRoleEnv.ts`: branches `100%`
+    - `SeedBootstrapPrecheck.ts`: branches `100%`
+    - `SchemaValidator.ts`: branches `100%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.44%` (`3809/3869`)
+      - Branches: `94.52%` (`2036/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.22%` (`3596/3624`)
+    - Result:
+      - Test Suites: `87 passed`, `8 skipped`, `95 total`
+      - Tests: `455 passed`, `96 skipped`, `551 total`
+
+### Phase 25: SchemaBuilder Invariant Closure (Item 17)
+- [x] Add focused SchemaBuilder invariant suite:
+  - `src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts`
+- [x] Target additional branch closure in:
+  - `src/core/schema/SchemaBuilder.ts`
+- [x] Apply behavior-preserving invariant refactor:
+  - collapse unreachable `else if (dialectName === "sqlite")` into final `else` branch
+  - simplify `keyB` derivation in `belongsToMany` flow (`tableB` is already normalized to end with `"s"`)
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts`
+  - Result: PASS (`3/3`)
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.47%` (`3809/3868`)
+      - Branches: `94.79%` (`2038/2150`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.22%` (`3595/3623`)
+    - Result:
+      - Test Suites: `88 passed`, `8 skipped`, `96 total`
+      - Tests: `458 passed`, `96 skipped`, `554 total`
 
 ## Quality Gates
 - Per phase:

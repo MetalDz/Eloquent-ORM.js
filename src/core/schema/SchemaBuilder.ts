@@ -221,7 +221,8 @@ export class SchemaBuilder {
         for (const constraint of constraints) {
           existingConstraintsByKey.set(constraint.key, constraint);
         }
-      } else if (dialectName === "sqlite") {
+      } else {
+        // mysql/pg were handled above; with validated dialects, the remaining branch is sqlite.
         const rows = await adapter.query<{
           name: string;
           type: string;
@@ -529,7 +530,8 @@ export class SchemaBuilder {
         : `${r.model.toLowerCase()}s`;
 
       const keyA = tableA.endsWith("s") ? tableA.slice(0, -1) : tableA;
-      const keyB = tableB.endsWith("s") ? tableB.slice(0, -1) : tableB;
+      // tableB is normalized above to always end with "s".
+      const keyB = tableB.slice(0, -1);
 
       const pivotTable = [keyA, keyB].sort().join("_") + "_pivot";
       const pivotSides = [

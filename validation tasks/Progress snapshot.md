@@ -163,6 +163,28 @@
     - `SeedBootstrapPrecheck.ts`: branches `82.75%`
     - `resolveConnectionName.ts`: branches `92.85%`
   - Latest global branch coverage: `92.98%` (`2003/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 23 / item 15).
+  - Phase 23 ORM mixin deep-edge suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase23.orm-mixins-extra.logic.test.ts` (`3/3`)
+  - Focused module lift:
+    - `EagerLoadingMixin.ts`: branches `100%`
+    - `SoftDeletesMixin.ts`: branches `100%`
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 24 / item 16).
+  - Phase 24 utility/env deep-edge suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts` (`4/4`)
+  - Focused module lift:
+    - `Factory.ts`: branches `100%`
+    - `dbRoleEnv.ts`: branches `100%`
+    - `SeedBootstrapPrecheck.ts`: branches `100%`
+    - `SchemaValidator.ts`: branches `100%`
+  - Latest global branch coverage: `94.52%` (`2036/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 25 / item 17).
+  - Phase 25 SchemaBuilder invariant suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts` (`3/3`)
+  - Runtime invariant cleanup applied in `SchemaBuilder.ts`:
+    - replaced unreachable sqlite `else if` with final `else`
+    - simplified `keyB` derivation in `belongsToMany` path
+  - Latest global branch coverage: `94.79%` (`2038/2150`).
 
 ## In Progress
 
@@ -226,10 +248,10 @@
   - Phase-19 rollback/query-cache deep branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts` (`2/2`)
   - Latest global coverage snapshot:
-    - Statements: `98.21%` (`3800/3869`)
-    - Branches: `92.98%` (`2003/2154`)
+    - Statements: `98.47%` (`3809/3868`)
+    - Branches: `94.79%` (`2038/2150`)
     - Functions: `95.9%` (`585/610`)
-    - Lines: `99.06%` (`3590/3624`)
+    - Lines: `99.22%` (`3595/3623`)
   - Phase-20 dbSeed/audit/migrate-run branch suites created and passing:
     - `src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts`
     - `src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts`
@@ -240,6 +262,15 @@
     - result: `4/4` passing
   - Phase-22 precheck/resolver branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`
+    - result: `3/3` passing
+  - Phase-23 ORM-mixin deep-edge branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase23.orm-mixins-extra.logic.test.ts`
+    - result: `3/3` passing
+  - Phase-24 utility/env deep-edge branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts`
+    - result: `4/4` passing
+  - Phase-25 SchemaBuilder invariant branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts`
     - result: `3/3` passing
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
@@ -263,12 +294,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `98.21%` (`3800/3869`)
-    - Branches: `92.98%` (`2003/2154`)
+    - Statements: `98.47%` (`3809/3868`)
+    - Branches: `94.79%` (`2038/2150`)
     - Functions: `95.9%` (`585/610`)
-    - Lines: `99.06%` (`3590/3624`)
-  - Test suites: `85 passed`, `8 skipped`, `93 total`
-  - Tests: `448 passed`, `96 skipped`, `544 total`
+    - Lines: `99.22%` (`3595/3623`)
+  - Test suites: `88 passed`, `8 skipped`, `96 total`
+  - Tests: `458 passed`, `96 skipped`, `554 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -319,6 +350,12 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase21.cli-support-deep.logic.test.ts`: PASS (`4/4`)
 - Focused phase-22 precheck/resolver validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase22.precheck-and-resolver.logic.test.ts`: PASS (`3/3`)
+- Focused phase-23 ORM-mixin deep-edge validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase23.orm-mixins-extra.logic.test.ts`: PASS (`3/3`)
+- Focused phase-24 utility/env deep-edge validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts`: PASS (`4/4`)
+- Focused phase-25 SchemaBuilder invariant validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts`: PASS (`3/3`)
 
 ## Notes
 
