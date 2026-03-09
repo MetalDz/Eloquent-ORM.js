@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-09
-Status: IN PROGRESS (Phases 1-19 completed)
+Status: IN PROGRESS (Phases 1-20 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -466,6 +466,35 @@ Status: IN PROGRESS (Phases 1-19 completed)
     - Result:
       - Test Suites: `80 passed`, `8 skipped`, `88 total`
       - Tests: `426 passed`, `96 skipped`, `522 total`
+
+### Phase 20: dbSeed/AuditTrail/migrateRun Edge Closure (Item 12)
+- [x] Add focused edge suites:
+  - `src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts`
+  - `src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts`
+  - `src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/dbSeed.ts`
+  - `src/cli/utils/AuditTrail.ts`
+  - `src/cli/commands/migrateRun.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`
+  - Result: PASS (`15/15`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/AuditTrail.ts --collectCoverageFrom=src/cli/commands/dbSeed.ts --collectCoverageFrom=src/cli/commands/migrateRun.ts src/lab_test/cli.audit.trail.logic.test.ts src/lab_test/branch.coverage.100.phase8.cache-audit-runtime.logic.test.ts src/lab_test/db.seed.connection.env.logic.test.ts src/lab_test/branch.coverage.70.dbseedfresh.logic.test.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts src/lab_test/migrate.run.logic.test.ts src/lab_test/migrate.run.empty.detection.logic.test.ts src/lab_test/branch.coverage.100.phase7.migrate-run.logic.test.ts src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`
+  - Focused module result:
+    - `AuditTrail.ts`: branches `100%`
+    - `dbSeed.ts`: branches `96.42%`
+    - `migrateRun.ts`: branches `97.05%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.19%` (`3799/3869`)
+      - Branches: `91.87%` (`1979/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.06%` (`3590/3624`)
+    - Result:
+      - Test Suites: `83 passed`, `8 skipped`, `91 total`
+      - Tests: `441 passed`, `96 skipped`, `537 total`
 
 ## Quality Gates
 - Per phase:

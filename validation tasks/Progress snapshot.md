@@ -138,6 +138,17 @@
     - `migrateRollback.ts`: `pg` CASCADE fallback + sort/id-nullish + default connection resolution branches covered
     - `QueryCacheMixin.ts`: model-name fallback + hasModelDefaults permutation branches expanded
   - Latest global branch coverage: `90.94%` (`1959/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 20 / item 12).
+  - Phase 20 dbSeed/audit/migrate-run branch suites added and passing:
+    - `src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts`
+    - `src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts`
+    - `src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`
+    - Focused phase result: `15/15` tests passing
+  - Focused module lift:
+    - `AuditTrail.ts`: branches `100%`
+    - `dbSeed.ts`: branches `96.42%`
+    - `migrateRun.ts`: branches `97.05%`
+  - Latest global branch coverage: `91.87%` (`1979/2154`).
 
 ## In Progress
 
@@ -201,10 +212,15 @@
   - Phase-19 rollback/query-cache deep branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts` (`2/2`)
   - Latest global coverage snapshot:
-    - Statements: `98.06%` (`3794/3869`)
-    - Branches: `90.94%` (`1959/2154`)
+    - Statements: `98.19%` (`3799/3869`)
+    - Branches: `91.87%` (`1979/2154`)
     - Functions: `95.9%` (`585/610`)
-    - Lines: `98.97%` (`3587/3624`)
+    - Lines: `99.06%` (`3590/3624`)
+  - Phase-20 dbSeed/audit/migrate-run branch suites created and passing:
+    - `src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts`
+    - `src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts`
+    - `src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`
+    - result: `15/15` passing
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -227,12 +243,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `98.06%` (`3794/3869`)
-    - Branches: `90.94%` (`1959/2154`)
+    - Statements: `98.19%` (`3799/3869`)
+    - Branches: `91.87%` (`1979/2154`)
     - Functions: `95.9%` (`585/610`)
-    - Lines: `98.97%` (`3587/3624`)
-  - Test suites: `80 passed`, `8 skipped`, `88 total`
-  - Tests: `426 passed`, `96 skipped`, `522 total`
+    - Lines: `99.06%` (`3590/3624`)
+  - Test suites: `83 passed`, `8 skipped`, `91 total`
+  - Tests: `441 passed`, `96 skipped`, `537 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -277,6 +293,8 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase18.driver-and-querycache.logic.test.ts`: PASS (`3/3`)
 - Focused phase-19 rollback/query-cache deep validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts`: PASS (`2/2`)
+- Focused phase-20 dbSeed/audit/migrate-run validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts src/lab_test/branch.coverage.100.phase20.migrate-run.logic.test.ts`: PASS (`15/15`)
 
 ## Notes
 
