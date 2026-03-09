@@ -85,6 +85,21 @@ describe("Branch coverage 70 - dbSeedFresh", () => {
     expect(process.env.DB_CONNECTION).toBe(originalEnv.DB_CONNECTION);
   });
 
+  test("handles non-Error failures without printing an Error message line", async () => {
+    jest.spyOn(migrateFreshCommand, "migrateFresh").mockRejectedValue("string-failure");
+    jest.spyOn(dbSeedCommand, "dbSeed").mockImplementation(async () => undefined);
+
+    await dbSeedFresh({
+      test: false,
+      connectionNames: ["mysql"],
+      silent: false,
+    });
+
+    expect(console.error).toHaveBeenCalledWith("db:seed:fresh failed.");
+    expect(console.error).not.toHaveBeenCalledWith("string-failure");
+    expect(process.exitCode).toBe(1);
+  });
+
   test("CLI mode schedules process.exit with final exit code", async () => {
     process.env.ELOQUENT_CLI = "true";
     process.exitCode = 0;
@@ -114,5 +129,24 @@ describe("Branch coverage 70 - dbSeedFresh", () => {
       })
     );
   });
-});
 
+  test("CLI mode falls back to 0 when process.exitCode is undefined", async () => {
+    process.env.ELOQUENT_CLI = "true";
+    process.exitCode = undefined;
+    jest.spyOn(migrateFreshCommand, "migrateFresh").mockImplementation(async () => undefined);
+    jest.spyOn(dbSeedCommand, "dbSeed").mockImplementation(async () => undefined);
+    const exitSpy = jest.fn() as any;
+    process.exit = exitSpy;
+    global.setImmediate = ((cb: (...args: any[]) => void, ...args: any[]) => {
+      cb(...args);
+      return 0 as any;
+    }) as typeof setImmediate;
+
+    await dbSeedFresh({
+      test: false,
+      connectionNames: ["mysql"],
+    });
+
+    expect(exitSpy).toHaveBeenCalledWith(0);
+  });
+});

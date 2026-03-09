@@ -36,8 +36,8 @@ export const resolveMigrationConnectionNames = resolveSqlConnectionNames;
 async function runMigrationsForConnection(
   connectionName: ConnectionName,
   isTest: boolean,
-  modelName?: string,
-  dryRun: boolean = false
+  modelName: string | undefined,
+  dryRun: boolean
 ): Promise<boolean> {
   console.log(
     chalk.cyan(

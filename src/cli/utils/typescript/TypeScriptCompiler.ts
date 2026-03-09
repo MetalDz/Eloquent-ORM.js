@@ -20,22 +20,19 @@ export class TypeScriptCompiler {
     this.initialized = true;
 
     try {
-      // Register ts-node once for runtime imports
-      if (!require.extensions[".ts"]) {
-        require("ts-node").register({
-          transpileOnly: true,
-          compilerOptions: {
-            module: "commonjs",
-            target: "es2020",
-            downlevelIteration: true,
-            moduleResolution: "node",
-            skipLibCheck: true,
-          },
-        });
+      require("ts-node").register({
+        transpileOnly: true,
+        compilerOptions: {
+          module: "commonjs",
+          target: "es2020",
+          downlevelIteration: true,
+          moduleResolution: "node",
+          skipLibCheck: true,
+        },
+      });
 
-        if (process.env.DEBUG === "true") {
-          console.log(chalk.gray("⚙️ ts-node registered for runtime TypeScript imports"));
-        }
+      if (process.env.DEBUG === "true") {
+        console.log(chalk.gray("⚙️ ts-node registered for runtime TypeScript imports"));
       }
     } catch (err) {
       console.error(chalk.red("❌ Failed to initialize ts-node runtime for CLI"));

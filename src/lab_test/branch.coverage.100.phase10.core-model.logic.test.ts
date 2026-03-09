@@ -1,6 +1,7 @@
 import { CoreModel, MongoModel } from "../core/model/CoreModel";
 import type { DriverAdapter } from "../core/connection/DriverAdapter";
 import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
+import { SchemaValidator } from "../core/schema/SchemaValidator";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
@@ -199,5 +200,47 @@ describe("Branch coverage 100% - phase 10 CoreModel branches", () => {
     expect(afterCreate).toHaveBeenCalledTimes(1);
     expect(adapter.insert).toHaveBeenCalledTimes(1);
   });
-});
 
+  test("CoreModel default connection and non-column schema fields are handled correctly", async () => {
+    const adapter = makeSqlAdapter();
+    adapter.insert.mockResolvedValue({ id: 42, row: { id: 42, name: "ok" } });
+    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+    const validateSpy = jest.spyOn(SchemaValidator, "validateData").mockResolvedValue([]);
+
+    class DefaultConnModel extends CoreModel {
+      static schema = {
+        comments: {
+          kind: "relation",
+          relation: "hasMany",
+          model: "Comment",
+          options: {},
+        },
+        name: {
+          kind: "column",
+          type: "string",
+          options: {},
+          validate: { required: true },
+        },
+      } as never;
+
+      constructor() {
+        super("users");
+      }
+    }
+
+    try {
+      const model = new DefaultConnModel();
+      await expect(model.create({ name: "ok" })).resolves.toBeInstanceOf(DefaultConnModel);
+
+      expect(model.connectionName).toBe("mysql");
+      expect(validateSpy).toHaveBeenCalledWith(
+        { name: "ok" },
+        { name: expect.any(Object) },
+        expect.any(Object)
+      );
+    } finally {
+      validateSpy.mockRestore();
+    }
+  });
+});

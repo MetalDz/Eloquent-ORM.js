@@ -83,7 +83,7 @@ export async function dbSeed(options: {
             test: isTest,
             result: "failure",
             metadata: {
-              className: options.class ?? null,
+              className: options.class,
               reason: "seeder_not_found",
             },
           });
@@ -105,7 +105,7 @@ export async function dbSeed(options: {
             test: isTest,
             result: connectionFailed ? "failure" : "success",
             metadata: {
-              className: options.class ?? null,
+              className: options.class,
             },
           });
         }

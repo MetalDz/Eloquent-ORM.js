@@ -213,4 +213,27 @@ describe("Branch coverage 100% - phase 20 migrateRun default/empty SQL branches"
       expect.objectContaining({ success: true })
     );
   });
+
+  test("model-targeted run continues when files match model filter", async () => {
+    const connection = "sqlite";
+    (dbConfig.connections as Record<string, { driver?: string }>)[connection] = {
+      driver: "sqlite",
+    };
+    mockMigrationDirectory(connection, ["20260309001_create_posts_table.ts"]);
+    mockedLoadModule.mockReturnValue({
+      up: jest.fn(async (db: { query(sql: string, params?: unknown[]): Promise<void> }) => {
+        await db.query("CREATE TABLE posts(id INTEGER)", []);
+      }),
+    } as never);
+
+    await migrateRun(false, "Post", false, false, {
+      connectionNames: [connection as never],
+    });
+
+    expect(mockedLoadModule).toHaveBeenCalledTimes(1);
+    expect(mockedRecordAppliedMigration).toHaveBeenCalledTimes(1);
+    expect(mockedAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ result: "success", connectionName: connection })
+    );
+  });
 });

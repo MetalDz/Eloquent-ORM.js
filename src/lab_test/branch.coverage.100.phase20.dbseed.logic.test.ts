@@ -133,6 +133,34 @@ describe("Branch coverage 100% - phase 20 dbSeed edge branches", () => {
     );
   });
 
+  test("class mode records not-found failure and restores existing hook env value", async () => {
+    mockSeedDirectory(["UserSeeder.ts"], true);
+    process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "persisted";
+    process.exitCode = 0;
+
+    await dbSeed({
+      test: true,
+      class: "MissingSeeder",
+      noHooks: true,
+      connectionNames: ["sqlite_test" as never],
+      close: false,
+      exit: false,
+    });
+
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Seeder 'MissingSeeder' not found."));
+    expect(mockedAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: "failure",
+        metadata: expect.objectContaining({
+          className: "MissingSeeder",
+          reason: "seeder_not_found",
+        }),
+      })
+    );
+    expect(process.env.ELOQUENT_DISABLE_MODEL_HOOKS).toBe("persisted");
+    expect(process.exitCode).toBe(1);
+  });
+
   test("all-seeders mode failure marks failure with className null", async () => {
     mockSeedDirectory(["PostSeeder.ts"], true);
     mockedLoadModule.mockReturnValue({

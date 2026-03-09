@@ -1,5 +1,22 @@
 # Progress snapshot (2026-03-09)
 
+## Latest update (2026-03-09)
+
+- Branch-coverage escalation track reached target:
+  - Branches: `100%` (`2134/2134`)
+  - Statements: `99.56%` (`3851/3868`)
+  - Functions: `97.38%` (`596/612`)
+  - Lines: `99.64%` (`3612/3625`)
+- Validation:
+  - `npm.cmd run typecheck`: PASS
+  - `npm.cmd run test:coverage`: PASS
+- Closure wave included:
+  - focused edge tests in phase 10/20/35/36 suites
+  - dead-branch cleanup in:
+    - `src/cli/commands/migrateRun.ts`
+    - `src/cli/commands/dbSeed.ts`
+    - `src/core/connection/BetterSqliteConnection.ts`
+
 ## Done
 
 - Milestone 1: Release blockers completed.
@@ -249,7 +266,7 @@
 - Milestone 6.2 Coverage ratchet.
   - Branch target reached (`>=70%`).
   - Full local run now also green in the same cycle (`69/69` suites).
-- Milestone 6.2+ Coverage escalation to 100% (new track, started 2026-03-08).
+- Milestone 6.2+ Coverage escalation to 100%: COMPLETED (2026-03-09).
   - Plan created: `validation tasks/Branch-Coverage-100-Execution-Plan.md`.
   - Contract test created: `src/lab_test/branch.coverage.100.plan.logic.test.ts`.
   - Phase-1 deterministic branch suite created:

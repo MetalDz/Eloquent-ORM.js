@@ -30,7 +30,7 @@ export interface SQLiteConnectionLike {
   close(): Promise<void>;
 }
 
-function normalizeParams(params: unknown[] = []): unknown[] {
+function normalizeParams(params: unknown[] | unknown): unknown[] {
   return Array.isArray(params) ? params : [params];
 }
 
