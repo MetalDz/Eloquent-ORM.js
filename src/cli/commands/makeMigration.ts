@@ -88,11 +88,9 @@ function pascalCase(name: string): string {
 }
 
 function getBelongsToDependencies(
-  schema: Record<string, unknown> | undefined,
+  schema: Record<string, unknown>,
   knownModels: Set<string>
 ): string[] {
-  if (!schema) return [];
-
   const deps = new Set<string>();
   for (const value of Object.values(schema)) {
     if (!value || typeof value !== "object") continue;
@@ -118,17 +116,15 @@ function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
     if (visiting.has(modelName)) return;
 
     visiting.add(modelName);
-    const model = byName.get(modelName);
-    if (model) {
-      const dependencies = getBelongsToDependencies(
-        model.ModelClass.schema,
-        modelNames
-      );
-      for (const dependency of dependencies) {
-        visit(dependency);
-      }
-      ordered.push(model);
+    const model = byName.get(modelName)!;
+    const dependencies = getBelongsToDependencies(
+      model.ModelClass.schema,
+      modelNames
+    );
+    for (const dependency of dependencies) {
+      visit(dependency);
     }
+    ordered.push(model);
     visiting.delete(modelName);
     visited.add(modelName);
   };

@@ -72,8 +72,13 @@ function columnBaseType(column: ColumnDefinition): string {
 }
 
 function addNullable(type: string): string {
-  if (type.includes("null")) return type;
-  return `${type} | null`;
+  const parts = type
+    .split("|")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  const unique = new Set(parts);
+  unique.add("null");
+  return Array.from(unique).join(" | ");
 }
 
 function isOptional(column: ColumnDefinition): boolean {
@@ -138,8 +143,11 @@ function hasSoftDeletesSchema(schema: Record<string, SchemaField>): boolean {
   return false;
 }
 
-function normalizedSchemaForMigration(modelClass: LoadedModelClass): Record<string, SchemaField> {
-  const schema = { ...(modelClass.schema ?? {}) } as Record<string, SchemaField>;
+function normalizedSchemaForMigration(modelClass: {
+  schema: Record<string, SchemaField>;
+  softDeletes?: boolean;
+}): Record<string, SchemaField> {
+  const schema: Record<string, SchemaField> = { ...modelClass.schema };
   if (modelClass.softDeletes && !hasSoftDeletesSchema(schema)) {
     schema.deleted_at = { kind: "mixin", name: "SoftDeletes" };
   }
@@ -280,7 +288,12 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       return;
     }
 
-    const connectionName = resolveConnectionName(ModelClass, { test: isTest });
+    const resolvedModelClass = ModelClass as LoadedModelClass & {
+      schema: Record<string, SchemaField>;
+      tableName: string;
+    };
+
+    const connectionName = resolveConnectionName(resolvedModelClass, { test: isTest });
     const connectionMigrationsDir = PathMap.migrations(isTest, connectionName);
     if (!fs.existsSync(connectionMigrationsDir)) {
       fs.mkdirSync(connectionMigrationsDir, { recursive: true });
@@ -290,9 +303,9 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     const driver =
       (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
       connectionName;
-    const normalizedSchema = normalizedSchemaForMigration(ModelClass);
+    const normalizedSchema = normalizedSchemaForMigration(resolvedModelClass);
     const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
-      ModelClass.tableName,
+      resolvedModelClass.tableName,
       normalizedSchema,
       driver,
       true, // smart update detection
@@ -302,14 +315,14 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     const isCreate = mainSQL.trim().toUpperCase().startsWith("CREATE TABLE");
     const prefix = isCreate ? "create" : "update";
     const timestamp = new Date().toISOString().replace(/[-:TZ]/g, "").slice(0, 14);
-    const migrationFile = `${timestamp}_${prefix}_${ModelClass.tableName}_table.ts`;
+    const migrationFile = `${timestamp}_${prefix}_${resolvedModelClass.tableName}_table.ts`;
     const migrationPath = path.join(connectionMigrationsDir, migrationFile);
 
     // 🧹 Clean old opposite migration
     const opposite = isCreate ? "update" : "create";
     const oldFile = fs
       .readdirSync(connectionMigrationsDir)
-      .find((f) => f.includes(`${opposite}_${ModelClass.tableName}_table.ts`));
+      .find((f) => f.includes(`${opposite}_${resolvedModelClass.tableName}_table.ts`));
 
     if (oldFile) {
       fs.unlinkSync(path.join(connectionMigrationsDir, oldFile));
@@ -319,7 +332,7 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     // 🧩 Prevent duplicates
     const existing = fs
       .readdirSync(connectionMigrationsDir)
-      .find((f) => f.includes(`${prefix}_${ModelClass.tableName}_table.ts`));
+      .find((f) => f.includes(`${prefix}_${resolvedModelClass.tableName}_table.ts`));
 
     if (existing && !force) {
       console.log(chalk.yellow(`⚠️  Migration already exists: ${existing}`));

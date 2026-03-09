@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
 Last updated: 2026-03-09
-Status: IN PROGRESS (Phases 1-25 completed)
+Status: IN PROGRESS (Phases 1-31 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -611,6 +611,172 @@ Status: IN PROGRESS (Phases 1-25 completed)
     - Result:
       - Test Suites: `88 passed`, `8 skipped`, `96 total`
       - Tests: `458 passed`, `96 skipped`, `554 total`
+
+### Phase 26: Utilities + Relation Closure (Item 18)
+- [x] Add focused utility/relation closure suite:
+  - `src/lab_test/branch.coverage.100.phase26.utilities-relations.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/utils/TemplateEngine.ts`
+  - `src/cli/utils/typescript/TypeScriptCompiler.ts`
+  - `src/core/orm/mixins/CastsMixin.ts`
+  - `src/core/orm/relations/BelongsToMany.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase26.utilities-relations.logic.test.ts`
+  - Result: PASS (`4/4`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/utils/typescript/TypeScriptCompiler.ts --collectCoverageFrom=src/cli/utils/TemplateEngine.ts --collectCoverageFrom=src/core/orm/mixins/CastsMixin.ts --collectCoverageFrom=src/core/orm/relations/BelongsToMany.ts src/lab_test/branch.coverage.70.utilities.logic.test.ts src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts src/lab_test/branch.coverage.100.phase6.orm-branches.logic.test.ts src/lab_test/relations.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/branch.coverage.100.phase26.utilities-relations.logic.test.ts`
+  - Focused module result:
+    - `TemplateEngine.ts`: branches `100%`
+    - `CastsMixin.ts`: branches `100%`
+    - `BelongsToMany.ts`: branches `100%`
+    - `TypeScriptCompiler.ts`: branches `95%` (remaining branch on runtime-hook detection path)
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.65%` (`3816/3868`)
+      - Branches: `95.48%` (`2053/2150`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.3%` (`3598/3623`)
+    - Result:
+      - Test Suites: `89 passed`, `8 skipped`, `97 total`
+      - Tests: `462 passed`, `96 skipped`, `558 total`
+
+### Phase 27: ConnectionFactory Edge Closure (Item 19)
+- [x] Add focused ConnectionFactory edge suite:
+  - `src/lab_test/branch.coverage.100.phase27.connection-factory.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/core/connection/ConnectionFactory.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase27.connection-factory.logic.test.ts`
+  - Result: PASS (`2/2`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/connection/ConnectionFactory.ts src/lab_test/connection.factory.race.logic.test.ts src/lab_test/connection.factory.alias.lifecycle.logic.test.ts src/lab_test/mongo.connection.lifecycle.logic.test.ts src/lab_test/sqlite.driver.replacement.logic.test.ts src/lab_test/branch.coverage.100.phase2.logic.test.ts src/lab_test/branch.coverage.100.phase27.connection-factory.logic.test.ts`
+  - Focused module result:
+    - `ConnectionFactory.ts`: branches `100%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.68%` (`3817/3868`)
+      - Branches: `95.67%` (`2057/2150`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `99.3%` (`3598/3623`)
+    - Result:
+      - Test Suites: `90 passed`, `8 skipped`, `98 total`
+      - Tests: `464 passed`, `96 skipped`, `560 total`
+
+### Phase 28: BaseModel Default-Arg Closure (Item 20)
+- [x] Add focused BaseModel helper-branch suite:
+  - `src/lab_test/branch.coverage.100.phase28.base-model.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/core/model/BaseModel.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase28.base-model.logic.test.ts`
+  - Result: PASS (`1/1`)
+  - Focused module validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/model/BaseModel.ts --collectCoverageFrom=src/core/model/CoreModel.ts src/lab_test/coremodel.crud.logic.test.ts src/lab_test/branch.coverage.100.phase10.core-model.logic.test.ts src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts src/lab_test/branch.coverage.100.phase28.base-model.logic.test.ts`
+  - Focused module result:
+    - `BaseModel.ts`: branches `100%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.75%` (`3820/3868`)
+      - Branches: `95.81%` (`2060/2150`)
+      - Functions: `96.39%` (`588/610`)
+      - Lines: `99.39%` (`3601/3623`)
+    - Result:
+      - Test Suites: `91 passed`, `8 skipped`, `99 total`
+      - Tests: `465 passed`, `96 skipped`, `561 total`
+
+### Phase 29: Utility + migrateStatus Edge Closure (Item 21)
+- [x] Add focused utility/status edge suite:
+  - `src/lab_test/branch.coverage.100.phase29.cli-utils-status.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/migrateStatus.ts`
+  - `src/cli/utils/StructuredLogger.ts`
+  - `src/cli/utils/resolveSqlConnectionFlags.ts`
+  - `src/cli/utils/ProductionSafety.ts`
+  - `src/cli/utils/ImportResolver.ts`
+- [x] Stabilize coverage-plan contract for both `<100` and `100` states:
+  - `src/lab_test/branch.coverage.100.plan.logic.test.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase29.cli-utils-status.logic.test.ts`
+  - Result: PASS (`6/6`)
+  - Focused module validation:
+    - `node node_modules/jest/bin/jest.js --runInBand --coverage --coverageReporters=text --coverageReporters=json-summary --collectCoverageFrom=src/cli/utils/StructuredLogger.ts --collectCoverageFrom=src/cli/utils/resolveSqlConnectionFlags.ts --collectCoverageFrom=src/cli/utils/ProductionSafety.ts --collectCoverageFrom=src/cli/utils/ImportResolver.ts --collectCoverageFrom=src/cli/commands/migrateStatus.ts src/lab_test/cli.audit.trail.logic.test.ts src/lab_test/cli.production.safety.logic.test.ts src/lab_test/branch.coverage.70.utilities.logic.test.ts src/lab_test/package.surface.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts src/lab_test/branch.coverage.100.phase29.cli-utils-status.logic.test.ts`
+  - Focused module result:
+    - `migrateStatus.ts`: branches `100%`
+    - `StructuredLogger.ts`: branches `100%`
+    - `resolveSqlConnectionFlags.ts`: branches `100%`
+    - `ProductionSafety.ts`: branches `100%`
+    - `ImportResolver.ts`: branches `100%`
+  - Plan contract validation:
+    - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.plan.logic.test.ts` -> PASS
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `98.86%` (`3824/3868`)
+      - Branches: `96.37%` (`2072/2150`)
+      - Functions: `96.88%` (`591/610`)
+      - Lines: `99.47%` (`3604/3623`)
+    - Result:
+      - Test Suites: `92 passed`, `8 skipped`, `100 total`
+      - Tests: `471 passed`, `96 skipped`, `567 total`
+
+### Phase 30: migrateFresh + migrateRollback Edge Closure (Item 22)
+- [x] Add focused fresh/rollback edge suite:
+  - `src/lab_test/branch.coverage.100.phase30.fresh-rollback.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/migrateFresh.ts`
+  - `src/cli/commands/migrateRollback.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase30.fresh-rollback.logic.test.ts`
+  - Result: PASS (`2/2`)
+  - Focused module validation:
+    - `node node_modules/jest/bin/jest.js --runInBand --coverage --coverageReporters=text --coverageReporters=json-summary --coverageReporters=json --collectCoverageFrom=src/cli/commands/migrateFresh.ts --collectCoverageFrom=src/cli/commands/migrateRollback.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts src/lab_test/branch.coverage.100.phase17.rollback-and-adapter.logic.test.ts src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts src/lab_test/migrate.rollback.logic.test.ts src/lab_test/migrate.rollback.partial.recovery.logic.test.ts src/lab_test/branch.coverage.100.phase30.fresh-rollback.logic.test.ts`
+  - Focused module result:
+    - `migrateFresh.ts`: branches `100%`
+    - `migrateRollback.ts`: branches `100%`
+  - Full validation:
+    - `npm.cmd run typecheck` -> PASS
+    - `npm.cmd run test:coverage` -> PASS
+  - Latest full coverage run:
+    - Coverage:
+      - Statements: `98.91%` (`3826/3868`)
+      - Branches: `96.65%` (`2078/2150`)
+      - Functions: `96.88%` (`591/610`)
+      - Lines: `99.53%` (`3606/3623`)
+    - Result:
+      - Test Suites: `93 passed`, `8 skipped`, `101 total`
+      - Tests: `473 passed`, `96 skipped`, `569 total`
+
+### Phase 31: makeModel/makeMigration Helper Invariant Closure (Item 23)
+- [x] Add focused helper-edge suite:
+  - `src/lab_test/branch.coverage.100.phase31.make-model-migration.helpers.logic.test.ts`
+- [x] Apply behavior-preserving helper cleanup:
+  - `src/cli/commands/makeModel.ts`
+  - `src/cli/commands/makeMigration.ts`
+- [x] Cover cyclic dependency traversal + soft-delete helper paths:
+  - cyclic `belongsTo` graph traversal for `makeMigration("all")`
+  - `softDeletes` schema detection with non-column relation fields
+- Evidence (`2026-03-09`):
+  - Focused phase validation:
+    - `node node_modules/jest/bin/jest.js --runInBand src/lab_test/branch.coverage.100.phase31.make-model-migration.helpers.logic.test.ts src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts src/lab_test/make.model.rollback.logic.test.ts src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts`
+    - Result: PASS (`4 suites`, `14 tests`)
+  - Focused module coverage check:
+    - `node node_modules/jest/bin/jest.js --runInBand --coverage --coverageReporters=text --coverageReporters=json-summary --coverageReporters=json --collectCoverageFrom=src/cli/commands/makeMigration.ts --collectCoverageFrom=src/cli/commands/makeModel.ts src/lab_test/branch.coverage.100.phase3.logic.test.ts src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts src/lab_test/branch.coverage.100.phase7.make-model.logic.test.ts src/lab_test/make.model.rollback.logic.test.ts src/lab_test/make.migration.fk.logic.test.ts src/lab_test/make.migration.append.only.logic.test.ts src/lab_test/branch.coverage.100.phase31.make-model-migration.helpers.logic.test.ts`
+    - Result: PASS
+  - Full validation:
+    - `npm run typecheck` -> PASS
+    - `npm run test:coverage` -> PASS
+  - Latest full coverage run:
+    - Coverage:
+      - Statements: `99.01%` (`3831/3869`)
+      - Branches: `97.01%` (`2078/2142`)
+      - Functions: `96.89%` (`593/612`)
+      - Lines: `99.53%` (`3609/3626`)
+    - Result:
+      - Test Suites: `102 passed`, `102 total`
+      - Tests: `568 passed`, `3 skipped`, `571 total`
 
 ## Quality Gates
 - Per phase:

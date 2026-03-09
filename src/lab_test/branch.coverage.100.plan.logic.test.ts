@@ -29,7 +29,7 @@ describe("Branch coverage 100% plan contract", () => {
     }
   });
 
-  test("coverage summary is below 100 and still has remaining branches", () => {
+  test("coverage summary has valid branch totals and percentage math", () => {
     const summaryPath = path.resolve(rootDir, "coverage/coverage-summary.json");
     const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8")) as {
       total?: { branches?: { total?: number; covered?: number; pct?: number } };
@@ -41,7 +41,16 @@ describe("Branch coverage 100% plan contract", () => {
     const remaining = Math.max(0, totalBranches - coveredBranches);
 
     expect(totalBranches).toBeGreaterThan(0);
-    expect(pct).toBeLessThan(100);
-    expect(remaining).toBeGreaterThan(0);
+    expect(coveredBranches).toBeGreaterThanOrEqual(0);
+    expect(coveredBranches).toBeLessThanOrEqual(totalBranches);
+    expect(pct).toBeGreaterThanOrEqual(0);
+    expect(pct).toBeLessThanOrEqual(100);
+    expect(remaining).toBe(totalBranches - coveredBranches);
+
+    if (pct === 100) {
+      expect(remaining).toBe(0);
+    } else {
+      expect(remaining).toBeGreaterThan(0);
+    }
   });
 });

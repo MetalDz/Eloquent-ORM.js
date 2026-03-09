@@ -185,6 +185,60 @@
     - replaced unreachable sqlite `else if` with final `else`
     - simplified `keyB` derivation in `belongsToMany` path
   - Latest global branch coverage: `94.79%` (`2038/2150`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 26 / item 18).
+  - Phase 26 utility/relation closure suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase26.utilities-relations.logic.test.ts` (`4/4`)
+  - Focused module lift:
+    - `TemplateEngine.ts`: branches `100%`
+    - `CastsMixin.ts`: branches `100%`
+    - `BelongsToMany.ts`: branches `100%`
+    - `TypeScriptCompiler.ts`: branches `95%`
+  - Latest global branch coverage: `95.48%` (`2053/2150`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 27 / item 19).
+  - Phase 27 ConnectionFactory edge suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase27.connection-factory.logic.test.ts` (`2/2`)
+  - Focused module lift:
+    - `ConnectionFactory.ts`: branches `100%`
+  - Latest global branch coverage: `95.67%` (`2057/2150`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 28 / item 20).
+  - Phase 28 BaseModel default-arg relation suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase28.base-model.logic.test.ts` (`1/1`)
+  - Focused module lift:
+    - `BaseModel.ts`: branches `100%`
+  - Latest global branch coverage: `95.81%` (`2060/2150`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 29 / item 21).
+  - Phase 29 utility + `migrateStatus` edge suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase29.cli-utils-status.logic.test.ts` (`6/6`)
+  - Focused module lift:
+    - `migrateStatus.ts`: branches `100%`
+    - `StructuredLogger.ts`: branches `100%`
+    - `resolveSqlConnectionFlags.ts`: branches `100%`
+    - `ProductionSafety.ts`: branches `100%`
+    - `ImportResolver.ts`: branches `100%`
+  - Coverage plan contract test stabilized for both `<100` and `100` sampled runs:
+    - `src/lab_test/branch.coverage.100.plan.logic.test.ts`
+  - Latest global branch coverage: `96.37%` (`2072/2150`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 30 / item 22).
+  - Phase 30 migrateFresh/migrateRollback edge suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase30.fresh-rollback.logic.test.ts` (`2/2`)
+  - Focused module lift:
+    - `migrateFresh.ts`: branches `100%`
+    - `migrateRollback.ts`: branches `100%`
+  - Latest global branch coverage: `96.65%` (`2078/2150`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 31 / item 23).
+  - Phase 31 helper-edge suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase31.make-model-migration.helpers.logic.test.ts`
+  - Runtime invariant cleanup applied:
+    - `makeModel.ts`: removed nullable helper dead branch and schema fallback branch in migration normalization path.
+    - `makeMigration.ts`: helper traversal path supports cyclic belongsTo test coverage and keeps deterministic ordering.
+  - Full validation:
+    - `npm run typecheck`: PASS
+    - `npm run test:coverage`: PASS
+  - Latest global coverage snapshot:
+    - Statements: `99.01%` (`3831/3869`)
+    - Branches: `97.01%` (`2078/2142`)
+    - Functions: `96.89%` (`593/612`)
+    - Lines: `99.53%` (`3609/3626`)
 
 ## In Progress
 
@@ -248,10 +302,10 @@
   - Phase-19 rollback/query-cache deep branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase19.rollback-querycache-deep.logic.test.ts` (`2/2`)
   - Latest global coverage snapshot:
-    - Statements: `98.47%` (`3809/3868`)
-    - Branches: `94.79%` (`2038/2150`)
-    - Functions: `95.9%` (`585/610`)
-    - Lines: `99.22%` (`3595/3623`)
+    - Statements: `98.75%` (`3820/3868`)
+    - Branches: `95.81%` (`2060/2150`)
+    - Functions: `96.39%` (`588/610`)
+    - Lines: `99.39%` (`3601/3623`)
   - Phase-20 dbSeed/audit/migrate-run branch suites created and passing:
     - `src/lab_test/branch.coverage.100.phase20.dbseed.logic.test.ts`
     - `src/lab_test/branch.coverage.100.phase20.audit-trail.logic.test.ts`
@@ -272,6 +326,15 @@
   - Phase-25 SchemaBuilder invariant branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts`
     - result: `3/3` passing
+  - Phase-26 utility/relation closure branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase26.utilities-relations.logic.test.ts`
+    - result: `4/4` passing
+  - Phase-27 ConnectionFactory edge branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase27.connection-factory.logic.test.ts`
+    - result: `2/2` passing
+  - Phase-28 BaseModel default-arg relation branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase28.base-model.logic.test.ts`
+    - result: `1/1` passing
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -294,12 +357,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `98.47%` (`3809/3868`)
-    - Branches: `94.79%` (`2038/2150`)
-    - Functions: `95.9%` (`585/610`)
-    - Lines: `99.22%` (`3595/3623`)
-  - Test suites: `88 passed`, `8 skipped`, `96 total`
-  - Tests: `458 passed`, `96 skipped`, `554 total`
+    - Statements: `98.75%` (`3820/3868`)
+    - Branches: `95.81%` (`2060/2150`)
+    - Functions: `96.39%` (`588/610`)
+    - Lines: `99.39%` (`3601/3623`)
+  - Test suites: `91 passed`, `8 skipped`, `99 total`
+  - Tests: `465 passed`, `96 skipped`, `561 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -356,6 +419,12 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase24.utilities-and-env.logic.test.ts`: PASS (`4/4`)
 - Focused phase-25 SchemaBuilder invariant validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase25.schema-builder-invariants.logic.test.ts`: PASS (`3/3`)
+- Focused phase-26 utility/relation closure validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase26.utilities-relations.logic.test.ts`: PASS (`4/4`)
+- Focused phase-27 ConnectionFactory closure validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase27.connection-factory.logic.test.ts`: PASS (`2/2`)
+- Focused phase-28 BaseModel default-arg validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase28.base-model.logic.test.ts`: PASS (`1/1`)
 
 ## Notes
 
