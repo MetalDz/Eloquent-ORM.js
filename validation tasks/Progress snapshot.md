@@ -1,4 +1,4 @@
-# Progress snapshot (2026-03-08)
+# Progress snapshot (2026-03-09)
 
 ## Done
 
@@ -93,6 +93,24 @@
   - Focused module lift:
     - `TemplateEngine.ts`: branches `93.1%` (`54/58`)
   - Latest global branch coverage: `86.11%` (`1855/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 13 / item 5).
+  - Phase 13 schema-blueprint branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase13.schema-blueprint.logic.test.ts` (`3/3`)
+  - Focused module lift:
+    - `SchemaBlueprint.ts`: branches `100%`
+  - Global branch coverage after phase 13: `86.53%` (`1864/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 14 / item 6).
+  - Phase 14 schema-builder deep-edge branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase14.schema-builder-deep.logic.test.ts` (`5/5`)
+  - Focused module lift:
+    - `SchemaBuilder.ts`: branches `97.66%`
+  - Latest global branch coverage: `87.74%` (`1890/2154`).
+- Milestone 6.2+ coverage escalation progress (2026-03-09, phase 15 / item 7).
+  - Phase 15 make-migration deep-edge branch suite added and passing:
+    - `src/lab_test/branch.coverage.100.phase15.make-migration-extra.logic.test.ts` (`4/4`)
+  - Focused module lift:
+    - `makeMigration.ts`: branches `96.92%`
+  - Latest global branch coverage: `88.85%` (`1914/2154`).
 
 ## In Progress
 
@@ -141,11 +159,17 @@
     - `src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts` (`4/4`)
   - Phase-12 template-engine branch suite created and passing:
     - `src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts` (`4/4`)
+  - Phase-13 schema-blueprint branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase13.schema-blueprint.logic.test.ts` (`3/3`)
+  - Phase-14 schema-builder deep-edge branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase14.schema-builder-deep.logic.test.ts` (`5/5`)
+  - Phase-15 make-migration deep-edge branch suite created and passing:
+    - `src/lab_test/branch.coverage.100.phase15.make-migration-extra.logic.test.ts` (`4/4`)
   - Latest global coverage snapshot:
-    - Statements: `97.02%` (`3754/3869`)
-    - Branches: `86.11%` (`1855/2154`)
+    - Statements: `97.46%` (`3771/3869`)
+    - Branches: `88.85%` (`1914/2154`)
     - Functions: `95.9%` (`585/610`)
-    - Lines: `98.37%` (`3565/3624`)
+    - Lines: `98.53%` (`3571/3624`)
 - Structured logger branch hardening expanded in:
     - `src/lab_test/cli.audit.trail.logic.test.ts`.
 - Milestone 6.3 Release execution.
@@ -168,12 +192,12 @@
 - `npm run build`: PASS (last known)
 - `npm.cmd run test:coverage`: PASS (latest shell snapshot)
   - Coverage summary:
-    - Statements: `97.02%` (`3754/3869`)
-    - Branches: `86.11%` (`1855/2154`)
+    - Statements: `97.46%` (`3771/3869`)
+    - Branches: `88.85%` (`1914/2154`)
     - Functions: `95.9%` (`585/610`)
-    - Lines: `98.37%` (`3565/3624`)
-  - Test suites: `73 passed`, `8 skipped`, `81 total`
-  - Tests: `401 passed`, `96 skipped`, `497 total`
+    - Lines: `98.53%` (`3571/3624`)
+  - Test suites: `76 passed`, `8 skipped`, `84 total`
+  - Tests: `413 passed`, `96 skipped`, `509 total`
 - `npm run test:pack-smoke`: PASS
 - Focused tracker contract regression:
   - `npm test -- --runInBand --runTestsByPath src/lab_test/migration.tracker.single-table.contract.logic.test.ts`: PASS (`6/6`)
@@ -204,6 +228,12 @@
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts`: PASS (`4/4`)
 - Focused phase-12 template-engine validation:
   - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase12.template-engine.logic.test.ts`: PASS (`4/4`)
+- Focused phase-13 schema-blueprint validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase13.schema-blueprint.logic.test.ts`: PASS (`3/3`)
+- Focused phase-14 schema-builder deep-edge validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase14.schema-builder-deep.logic.test.ts`: PASS (`5/5`)
+- Focused phase-15 make-migration deep-edge validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase15.make-migration-extra.logic.test.ts`: PASS (`4/4`)
 
 ## Notes
 

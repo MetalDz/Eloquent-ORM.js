@@ -1,7 +1,7 @@
 # Branch Coverage 100% Execution Plan
 
-Last updated: 2026-03-08
-Status: IN PROGRESS (Phases 1-12 completed)
+Last updated: 2026-03-09
+Status: IN PROGRESS (Phases 1-15 completed)
 
 ## Goal
 - Raise global branch coverage from `70.36%` to `100%`.
@@ -302,6 +302,72 @@ Status: IN PROGRESS (Phases 1-12 completed)
     - Result:
       - Test Suites: `73 passed`, `8 skipped`, `81 total`
       - Tests: `401 passed`, `96 skipped`, `497 total`
+
+### Phase 13: SchemaBlueprint Branch Closure (Item 5)
+- [x] Add focused schema-blueprint edge suite:
+  - `src/lab_test/branch.coverage.100.phase13.schema-blueprint.logic.test.ts`
+- [x] Target branch closures in:
+  - `src/core/schema/SchemaBlueprint.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase13.schema-blueprint.logic.test.ts`
+  - Result: PASS (`3/3`)
+  - Focused schema-blueprint validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/schema/SchemaBlueprint.ts src/lab_test/branch.coverage.100.phase13.schema-blueprint.logic.test.ts`
+  - Focused module result:
+    - `SchemaBlueprint.ts`: branches `100%`
+  - Full-suite snapshot after phase:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `97.18%` (`3760/3869`)
+      - Branches: `86.53%` (`1864/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.53%` (`3571/3624`)
+
+### Phase 14: SchemaBuilder Deep Edge Branch Closure (Item 6)
+- [x] Add focused schema-builder deep edge suite:
+  - `src/lab_test/branch.coverage.100.phase14.schema-builder-deep.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/core/schema/SchemaBuilder.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase14.schema-builder-deep.logic.test.ts`
+  - Result: PASS (`5/5`)
+  - Focused schema-builder validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/core/schema/SchemaBuilder.ts src/lab_test/milestone1.schema-and-template.logic.test.ts src/lab_test/schema.relation.coverage.logic.test.ts src/lab_test/branch.coverage.100.phase9.schema-builder.logic.test.ts src/lab_test/branch.coverage.100.phase14.schema-builder-deep.logic.test.ts`
+  - Focused module result:
+    - `SchemaBuilder.ts`: branches `97.66%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `97.36%` (`3767/3869`)
+      - Branches: `87.74%` (`1890/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.53%` (`3571/3624`)
+    - Result:
+      - Test Suites: `75 passed`, `8 skipped`, `83 total`
+      - Tests: `409 passed`, `96 skipped`, `505 total`
+
+### Phase 15: makeMigration Deep Branch Closure (Item 7)
+- [x] Add focused make-migration extra-edge suite:
+  - `src/lab_test/branch.coverage.100.phase15.make-migration-extra.logic.test.ts`
+- [x] Target additional branch closures in:
+  - `src/cli/commands/makeMigration.ts`
+- Evidence (`2026-03-09`):
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/branch.coverage.100.phase15.make-migration-extra.logic.test.ts`
+  - Result: PASS (`4/4`)
+  - Focused make-migration validation:
+    - `npm.cmd test -- --runInBand --coverage --coverageReporters=text --collectCoverageFrom=src/cli/commands/makeMigration.ts src/lab_test/branch.coverage.100.phase7.make-migration.logic.test.ts src/lab_test/branch.coverage.100.phase11.make-migration.logic.test.ts src/lab_test/branch.coverage.100.phase15.make-migration-extra.logic.test.ts src/lab_test/make.migration.append.only.logic.test.ts src/lab_test/make.migration.fk.logic.test.ts src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`
+  - Focused module result:
+    - `makeMigration.ts`: branches `96.92%`
+  - Latest full coverage run:
+    - `npm.cmd run test:coverage`: PASS
+    - Coverage:
+      - Statements: `97.46%` (`3771/3869`)
+      - Branches: `88.85%` (`1914/2154`)
+      - Functions: `95.9%` (`585/610`)
+      - Lines: `98.53%` (`3571/3624`)
+    - Result:
+      - Test Suites: `76 passed`, `8 skipped`, `84 total`
+      - Tests: `413 passed`, `96 skipped`, `509 total`
 
 ## Quality Gates
 - Per phase:
