@@ -18,6 +18,7 @@ import { loadFactories } from "./utils/factories/FactoryLoader";
 import { checkProductionDestructiveCommand } from "./utils/ProductionSafety";
 import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
 import { redactSecretsInArgs } from "../core/security/SecretRedactor";
+import { dbConfig } from "../config/database";
 import {
   buildStructuredLogLine,
   isJsonLogFormat,
@@ -201,7 +202,7 @@ import { makeMigration } from "./commands/makeMigration";
 import {
   migrateRun,
 } from "./commands/migrateRun";
-import { resolveSqlConnectionNames } from "./utils/resolveSqlConnectionFlags";
+import { resolveConnectionNamesFromFlags } from "./utils/resolveConnectionFlags";
 import { migrateRollback } from "./commands/migrateRollback";
 import { cacheClear } from "./commands/cacheClear";
 import { cacheStats } from "./commands/cacheStats";
@@ -372,6 +373,7 @@ program
   .option("--mysql", "Run seeders only for the mysql connection")
   .option("--pg", "Run seeders only for the pg connection")
   .option("--sqlite", "Run seeders only for the sqlite connection")
+  .option("--mongo", "Run seeders only for the mongo connection")
   .option("--all-connections", "Run seeders for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder by class name")
   .option("--silent", "Suppress non-error output during seeding")
@@ -383,15 +385,17 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
     silent?: boolean;
     noHooks?: boolean;
   }) => {
     try {
-      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
         mysql: !!options.mysql,
         pg: !!options.pg,
         sqlite: !!options.sqlite,
+        mongo: !!options.mongo,
         allConnections: !!options.allConnections,
       });
 
@@ -427,6 +431,7 @@ program
   .option("--mysql", "Check only the mysql connection")
   .option("--pg", "Check only the pg connection")
   .option("--sqlite", "Check only the sqlite connection")
+  .option("--mongo", "Check only the mongo connection")
   .option("--all-connections", "Check mysql, pg, and sqlite")
   .description("Validate migration bootstrap state before running db:seed")
   .action(async (options: {
@@ -434,13 +439,15 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
   }) => {
     try {
-      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
         mysql: !!options.mysql,
         pg: !!options.pg,
         sqlite: !!options.sqlite,
+        mongo: !!options.mongo,
         allConnections: !!options.allConnections,
       });
       await dbSeedBootstrapPrecheck({
@@ -460,6 +467,7 @@ program
   .option("--mysql", "Run fresh seed only for the mysql connection")
   .option("--pg", "Run fresh seed only for the pg connection")
   .option("--sqlite", "Run fresh seed only for the sqlite connection")
+  .option("--mongo", "Run fresh seed only for the mongo connection")
   .option("--all-connections", "Run fresh seed for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder after migration refresh")
   .option("--silent", "Suppress non-error output during refresh+seed")
@@ -475,6 +483,7 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
     silent?: boolean;
     noHooks?: boolean;
@@ -483,10 +492,11 @@ program
       if (!ensureProductionOverride("db:seed:fresh", { force: !!options.force, yes: !!options.yes })) {
         return;
       }
-      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
         mysql: !!options.mysql,
         pg: !!options.pg,
         sqlite: !!options.sqlite,
+        mongo: !!options.mongo,
         allConnections: !!options.allConnections,
       });
 
@@ -530,6 +540,7 @@ program
   .option("--mysql", "Generate migrations only for the mysql connection")
   .option("--pg", "Generate migrations only for the pg connection")
   .option("--sqlite", "Generate migrations only for the sqlite connection")
+  .option("--mongo", "Target mongo connection (skipped for SQL migration generation)")
   .option("--all-connections", "Generate migrations for mysql, pg, and sqlite")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
   .option("--force", "Required override flag in production mode")
@@ -543,6 +554,7 @@ program
       mysql?: boolean;
       pg?: boolean;
       sqlite?: boolean;
+      mongo?: boolean;
       allConnections?: boolean;
       pivotSeparate?: boolean;
       force?: boolean;
@@ -559,10 +571,11 @@ program
       return;
     }
     try {
-      const connectionNames = resolveSqlConnectionNames(!!options.test, {
+      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
         mysql: !!options.mysql,
         pg: !!options.pg,
         sqlite: !!options.sqlite,
+        mongo: !!options.mongo,
         allConnections: !!options.allConnections,
       });
 
@@ -576,6 +589,17 @@ program
       }
 
       for (const connectionName of connectionNames) {
+        const resolvedDriver =
+          dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
+          connectionName;
+        if (resolvedDriver === "mongo") {
+          console.warn(
+            chalk.yellow(
+              `Skipping make:migration for "${connectionName}": mongo is non-SQL.`
+            )
+          );
+          continue;
+        }
         await makeMigration(target, {
           test: !!options.test,
           pivotSeparate: !!options.pivotSeparate,
@@ -597,6 +621,7 @@ program
   .option("--mysql", "Run migrations only for the mysql connection")
   .option("--pg", "Run migrations only for the pg connection")
   .option("--sqlite", "Run migrations only for the sqlite connection")
+  .option("--mongo", "Run migrations targeting mongo connection (skipped as non-SQL)")
   .option("--all-connections", "Run migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Auto-generate migrations for all models before running")
   .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all-migrations)")
@@ -607,16 +632,18 @@ program
       mysql?: boolean;
       pg?: boolean;
       sqlite?: boolean;
+      mongo?: boolean;
       allConnections?: boolean;
       allMigrations?: boolean;
       pivotSeparate?: boolean;
     }
   ) => {
     try {
-      const connectionNames = resolveSqlConnectionNames(!!options?.test, {
+      const connectionNames = resolveConnectionNamesFromFlags(!!options?.test, {
         mysql: !!options?.mysql,
         pg: !!options?.pg,
         sqlite: !!options?.sqlite,
+        mongo: !!options?.mongo,
         allConnections: !!options?.allConnections,
       });
 
@@ -629,6 +656,17 @@ program
           });
         } else {
           for (const connectionName of connectionNames) {
+            const resolvedDriver =
+              dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
+              connectionName;
+            if (resolvedDriver === "mongo") {
+              console.warn(
+                chalk.yellow(
+                  `Skipping --all-migrations generation for "${connectionName}": mongo is non-SQL.`
+                )
+              );
+              continue;
+            }
             await makeMigration("all", {
               test: !!options.test,
               exit: false,
@@ -653,6 +691,7 @@ program
   .option("--mysql", "Rollback migrations only for the mysql connection")
   .option("--pg", "Rollback migrations only for the pg connection")
   .option("--sqlite", "Rollback migrations only for the sqlite connection")
+  .option("--mongo", "Rollback migrations targeting mongo connection (skipped as non-SQL)")
   .option("--all-connections", "Rollback migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Rollback all applied migration batches")
   .option("--step <number>", "Number of migrations to rollback", "1")
@@ -663,14 +702,16 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
     allMigrations?: boolean;
   }) => {
     const stepNumber = Number(options.step ?? 1);
-    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
       mysql: !!options.mysql,
       pg: !!options.pg,
       sqlite: !!options.sqlite,
+      mongo: !!options.mongo,
       allConnections: !!options.allConnections,
     });
     await migrateRollback({
@@ -688,6 +729,7 @@ program
   .option("--mysql", "Show status only for the mysql connection")
   .option("--pg", "Show status only for the pg connection")
   .option("--sqlite", "Show status only for the sqlite connection")
+  .option("--mongo", "Show status targeting mongo connection (skipped as non-SQL)")
   .option("--all-connections", "Show status for mysql, pg, and sqlite")
   .option("--all-migrations", "Accepted for parity; status already covers all migration files")
   .action((options: {
@@ -695,13 +737,15 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
     allMigrations?: boolean;
   }) => {
-    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
       mysql: !!options.mysql,
       pg: !!options.pg,
       sqlite: !!options.sqlite,
+      mongo: !!options.mongo,
       allConnections: !!options.allConnections,
     });
     return migrateStatus({
@@ -718,6 +762,7 @@ program
   .option("--mysql", "Run fresh migration only for the mysql connection")
   .option("--pg", "Run fresh migration only for the pg connection")
   .option("--sqlite", "Run fresh migration only for the sqlite connection")
+  .option("--mongo", "Run fresh migration targeting mongo connection (skipped as non-SQL)")
   .option("--all-connections", "Run fresh migration for mysql, pg, and sqlite")
   .option("--all-migrations", "Auto-generate migrations for all models before running")
   .option("--force", "Skip confirmation prompt")
@@ -729,16 +774,18 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
     allMigrations?: boolean;
   }) => {
     if (!ensureProductionOverride("migrate:fresh", { force: !!options.force, yes: !!options.yes })) {
       return;
     }
-    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
       mysql: !!options.mysql,
       pg: !!options.pg,
       sqlite: !!options.sqlite,
+      mongo: !!options.mongo,
       allConnections: !!options.allConnections,
     });
     return migrateFresh({
@@ -756,6 +803,7 @@ program
   .option("--mysql", "Reset migrations only for the mysql connection")
   .option("--pg", "Reset migrations only for the pg connection")
   .option("--sqlite", "Reset migrations only for the sqlite connection")
+  .option("--mongo", "Reset migrations targeting mongo connection (skipped as non-SQL)")
   .option("--all-connections", "Reset migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Accepted for parity; reset already rolls back all batches")
   .option("--force", "Required override flag in production mode")
@@ -765,6 +813,7 @@ program
     mysql?: boolean;
     pg?: boolean;
     sqlite?: boolean;
+    mongo?: boolean;
     allConnections?: boolean;
     allMigrations?: boolean;
     force?: boolean;
@@ -773,10 +822,11 @@ program
     if (!ensureProductionOverride("migrate:reset", { force: !!options.force, yes: !!options.yes })) {
       return;
     }
-    const connectionNames = resolveSqlConnectionNames(!!options.test, {
+    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
       mysql: !!options.mysql,
       pg: !!options.pg,
       sqlite: !!options.sqlite,
+      mongo: !!options.mongo,
       allConnections: !!options.allConnections,
     });
     return migrateReset({
@@ -824,48 +874,48 @@ program
       {
         Command: "make:migration [model]",
         Description:
-          "--test --all --mysql --pg --sqlite --all-connections --pivot-separate --force --yes",
+          "--test --all --mysql --pg --sqlite --mongo --all-connections --pivot-separate --force --yes",
       },
       { Command: "factory:status", Description: "--test --details --graph" },
       {
         Command: "db:seed",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --class <name> --silent --no-hooks",
+          "--test --mysql --pg --sqlite --mongo --all-connections --class <name> --silent --no-hooks",
       },
       {
         Command: "db:seed:precheck",
-        Description: "--test --mysql --pg --sqlite --all-connections",
+        Description: "--test --mysql --pg --sqlite --mongo --all-connections",
       },
       {
         Command: "db:seed:fresh",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --class <name> --silent --no-hooks --force --yes",
+          "--test --mysql --pg --sqlite --mongo --all-connections --class <name> --silent --no-hooks --force --yes",
       },
       { Command: "demo:scenario", Description: "--user <id> --random --test" },
       {
         Command: "migrate:run [model]",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations --pivot-separate",
+          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --pivot-separate",
       },
       {
         Command: "migrate:rollback",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations --step <number>",
+          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --step <number>",
       },
       {
         Command: "migrate:status",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations",
+          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations",
       },
       {
         Command: "migrate:fresh",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations --force --yes",
+          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --force --yes",
       },
       {
         Command: "migrate:reset",
         Description:
-          "--test --mysql --pg --sqlite --all-connections --all-migrations --force --yes",
+          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --force --yes",
       },
       { Command: "cache:clear", Description: "(no options)" },
       { Command: "cache:stats", Description: "(no options)" },

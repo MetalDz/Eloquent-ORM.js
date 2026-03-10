@@ -211,3 +211,44 @@ export function resolveSqlitePath(
   );
 }
 
+export function resolveMongoEnv(
+  env: NodeJS.ProcessEnv = process.env,
+  options: { test?: boolean } = {}
+): {
+  uri: string;
+  database: string;
+} {
+  const role = resolveDbExecutionRole(env);
+  const isTest = !!options.test;
+  const roleKey = role === "migration" ? "MIGRATION" : "RUNTIME";
+  const prefix = isTest ? "MONGO_TEST" : "MONGO";
+
+  const uri = pickFirstDefined(
+    env,
+    [
+      `${prefix}_${roleKey}_URI`,
+      `${prefix}_URI`,
+      `MONGO_${roleKey}_URI`,
+      "MONGO_URI",
+    ],
+    "mongodb://localhost:27017"
+  );
+
+  const database = pickFirstDefined(
+    env,
+    [
+      `${prefix}_${roleKey}_DB`,
+      `${prefix}_${roleKey}_DATABASE`,
+      `${prefix}_DB`,
+      `${prefix}_DATABASE`,
+      `MONGO_${roleKey}_DB`,
+      `MONGO_${roleKey}_DATABASE`,
+      "MONGO_DB",
+      "MONGO_DATABASE",
+    ],
+    isTest ? "eloquentjs_db_test" : "eloquentjs_db"
+  );
+
+  return { uri, database };
+}
+

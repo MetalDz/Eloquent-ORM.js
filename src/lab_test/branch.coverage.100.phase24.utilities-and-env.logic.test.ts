@@ -15,6 +15,7 @@ import {
 import { dbConfig } from "../config/database";
 import {
   closeAllConnections,
+  getConnection,
   getAdapter,
 } from "../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../core/connection/resolveConnectionName";
@@ -36,6 +37,7 @@ jest.mock("chalk", () => ({
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   closeAllConnections: jest.fn(),
+  getConnection: jest.fn(),
   getAdapter: jest.fn(),
 }));
 
@@ -47,6 +49,8 @@ const { Factory } = require("../cli/utils/factories/Factory") as typeof import("
 
 const mockedCloseAllConnections =
   closeAllConnections as jest.MockedFunction<typeof closeAllConnections>;
+const mockedGetConnection =
+  getConnection as jest.MockedFunction<typeof getConnection>;
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 const mockedResolveConnectionName =
   resolveConnectionName as jest.MockedFunction<typeof resolveConnectionName>;
@@ -68,6 +72,7 @@ describe("Branch coverage 100% - phase 24 utilities/env deep edge closure", () =
     dirFixtures.clear();
 
     mockedCloseAllConnections.mockResolvedValue(undefined);
+    mockedGetConnection.mockResolvedValue({} as never);
     mockedResolveConnectionName.mockReturnValue("mysql" as never);
     mockedGetAdapter.mockResolvedValue({
       query: jest.fn(async () => []),

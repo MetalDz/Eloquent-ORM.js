@@ -9,6 +9,7 @@ import {
 } from "../cli/utils/SeedBootstrapPrecheck";
 import {
   closeAllConnections,
+  getConnection,
   getAdapter,
 } from "../core/connection/ConnectionFactory";
 import { resolveConnectionName as resolveSeedConnectionName } from "../core/connection/resolveConnectionName";
@@ -27,6 +28,7 @@ jest.mock("chalk", () => ({
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   closeAllConnections: jest.fn(),
+  getConnection: jest.fn(),
   getAdapter: jest.fn(),
 }));
 
@@ -36,6 +38,8 @@ jest.mock("../core/connection/resolveConnectionName", () => ({
 
 const mockedCloseAllConnections =
   closeAllConnections as jest.MockedFunction<typeof closeAllConnections>;
+const mockedGetConnection =
+  getConnection as jest.MockedFunction<typeof getConnection>;
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 const mockedResolveSeedConnectionName =
   resolveSeedConnectionName as jest.MockedFunction<typeof resolveSeedConnectionName>;
@@ -59,6 +63,7 @@ describe("Branch coverage 100% - phase 22 seed precheck and resolver branches", 
     dirFixtures.clear();
 
     mockedCloseAllConnections.mockResolvedValue(undefined);
+    mockedGetConnection.mockResolvedValue({} as never);
     mockedGetAdapter.mockResolvedValue(adapter as never);
     mockedResolveSeedConnectionName.mockReturnValue("mysql" as never);
     adapter.query.mockResolvedValue([]);
@@ -132,8 +137,8 @@ describe("Branch coverage 100% - phase 22 seed precheck and resolver branches", 
     );
   });
 
-  test("seed precheck covers no-files + non-sql branches and assert clean=true path", async () => {
-    setMigrationsDir("mongo", [], true);
+  test("seed precheck treats mongo connection as non-SQL N/A while still validating connection reachability", async () => {
+    setMigrationsDir("mongo", [], false);
     (dbConfig.connections as Record<string, { driver?: string }>).mongo = {
       driver: "mongo",
     };
@@ -143,13 +148,10 @@ describe("Branch coverage 100% - phase 22 seed precheck and resolver branches", 
       connectionNames: ["mongo" as never],
     });
 
-    expect(report.clean).toBe(false);
-    expect(report.checks[0].reasons).toEqual(
-      expect.arrayContaining([
-        "No migration files found on disk.",
-        'Connection "mongo" is not a SQL driver.',
-      ])
-    );
+    expect(report.clean).toBe(true);
+    expect(report.checks[0].clean).toBe(true);
+    expect(report.checks[0].reasons).toEqual([]);
+    expect(mockedGetConnection).toHaveBeenCalledWith("mongo");
 
     setMigrationsDir("mysql", ["20260301000001_create_users_table.ts"], true);
     adapter.query.mockResolvedValue([{ name: "20260301000001_create_users_table.ts" }]);

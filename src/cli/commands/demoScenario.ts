@@ -1,8 +1,12 @@
 import chalk from "chalk";
-import { getAdapter } from "../../core/connection/ConnectionFactory";
-import { closeAllConnections } from "../../core/connection/ConnectionFactory";
+import {
+  closeAllConnections,
+  getAdapter,
+  getConnection,
+} from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
+import type { Collection, Db, Document, Filter } from "mongodb";
 
 type Row = Record<string, unknown>;
 
@@ -23,6 +27,11 @@ export async function demoScenario(options?: {
     connectionName;
 
   try {
+    if (driver === "mongo") {
+      await runMongoDemoScenario(connectionName, options);
+      return;
+    }
+
     const adapter = await getAdapter(connectionName);
     const usersTable = adapter.wrapId("users");
     const postsTable = adapter.wrapId("posts");
@@ -154,4 +163,94 @@ export async function demoScenario(options?: {
       setImmediate(() => process.exit(0));
     }
   }
+}
+
+async function runMongoDemoScenario(
+  connectionName: string,
+  options?: { user?: number; random?: boolean }
+): Promise<void> {
+  const db = (await getConnection(connectionName as never)) as Db;
+
+  const usersCollection = db.collection("users");
+  const postsCollection = db.collection("posts");
+  const commentsCollection = db.collection("comments");
+  const pivotCollection = db.collection("post_user_pivot");
+
+  const [usersCount, postsCount, commentsCount, pivotCount] = await Promise.all([
+    usersCollection.countDocuments({}),
+    postsCollection.countDocuments({}),
+    commentsCollection.countDocuments({}),
+    pivotCollection.countDocuments({}),
+  ]);
+
+  console.log(chalk.cyanBright("\nScenario check: counts"));
+  console.log(chalk.gray("users:"), usersCount);
+  console.log(chalk.gray("posts:"), postsCount);
+  console.log(chalk.gray("comments:"), commentsCount);
+  console.log(chalk.gray("post_user_pivot:"), pivotCount);
+
+  let user: Document | null = null;
+  if (options?.user && Number.isFinite(options.user)) {
+    user = await usersCollection.findOne({ id: options.user } as Filter<Document>);
+  } else if (options?.random) {
+    user = await pickRandomMongoUser(usersCollection);
+  } else {
+    user = await usersCollection.findOne({});
+  }
+
+  if (!user) {
+    console.log(chalk.yellow("\nNo users found to demonstrate relations."));
+    return;
+  }
+
+  const userId = user.id ?? user._id;
+  console.log(chalk.cyanBright("\nScenario check: relations"));
+  console.log(chalk.gray("user:"), user);
+
+  const posts = await postsCollection
+    .find({ user_id: userId } as Filter<Document>)
+    .limit(3)
+    .toArray();
+  console.log(chalk.gray("posts for user:"), posts.length);
+
+  const userComments = await commentsCollection.countDocuments({
+    commentable_id: userId,
+    commentable_type: "users",
+  } as Filter<Document>);
+  console.log(chalk.gray("comments on user:"), userComments);
+
+  const postIds = posts
+    .map((post) => post.id ?? post._id)
+    .filter((id) => id !== undefined);
+  if (postIds.length > 0) {
+    const postComments = await commentsCollection.countDocuments({
+      commentable_id: { $in: postIds },
+      commentable_type: "posts",
+    } as Filter<Document>);
+    console.log(chalk.gray("comments on posts:"), postComments);
+  } else {
+    console.log(chalk.gray("comments on posts:"), 0);
+  }
+
+  const favoriteLinks = await pivotCollection
+    .find({ user_id: userId } as Filter<Document>)
+    .limit(20)
+    .toArray();
+  const favoritePostIds = favoriteLinks
+    .map((entry) => entry.post_id ?? entry.postId)
+    .filter((id) => id !== undefined);
+  const favoritesCount =
+    favoritePostIds.length > 0
+      ? await postsCollection.countDocuments({
+          id: { $in: favoritePostIds },
+        } as Filter<Document>)
+      : 0;
+  console.log(chalk.gray("favorite posts:"), favoritesCount);
+}
+
+async function pickRandomMongoUser(
+  collection: Collection<Document>
+): Promise<Document | null> {
+  const sampled = await collection.aggregate([{ $sample: { size: 1 } }]).toArray();
+  return sampled[0] ?? null;
 }

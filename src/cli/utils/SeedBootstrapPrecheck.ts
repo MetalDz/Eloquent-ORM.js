@@ -2,6 +2,7 @@ import fs from "fs";
 import chalk from "chalk";
 import {
   closeAllConnections,
+  getConnection,
   getAdapter,
   type ConnectionName,
 } from "../../core/connection/ConnectionFactory";
@@ -41,6 +42,24 @@ async function inspectConnection(
   const migrationsDir = PathMap.migrations(isTest, connectionName);
   const reasons: string[] = [];
   let pendingMigrations: string[] = [];
+  const driver = dbConfig.connections[connectionName]?.driver;
+
+  if (driver === "mongo") {
+    try {
+      await getConnection(connectionName);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      reasons.push(`Unable to connect to MongoDB: ${message}`);
+    }
+
+    return {
+      connectionName,
+      migrationsDir,
+      clean: reasons.length === 0,
+      reasons,
+      pendingMigrations,
+    };
+  }
 
   if (!fs.existsSync(migrationsDir)) {
     reasons.push(`Missing migrations directory: ${migrationsDir}`);
@@ -58,7 +77,6 @@ async function inspectConnection(
     reasons.push("No migration files found on disk.");
   }
 
-  const driver = dbConfig.connections[connectionName]?.driver;
   if (driver !== "mysql" && driver !== "pg" && driver !== "sqlite") {
     reasons.push(`Connection "${connectionName}" is not a SQL driver.`);
     return {

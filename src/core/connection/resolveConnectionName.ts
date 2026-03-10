@@ -23,7 +23,7 @@ export function resolveConnectionName(
       return explicitTest as ConnectionName;
     }
 
-    for (const fallback of ["mysql_test", "pg_test", "sqlite_test"]) {
+    for (const fallback of ["mysql_test", "pg_test", "sqlite_test", "mongo_test", "mongo"]) {
       if (Object.prototype.hasOwnProperty.call(dbConfig.connections, fallback)) {
         return fallback as ConnectionName;
       }

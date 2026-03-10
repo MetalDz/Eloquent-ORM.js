@@ -9,6 +9,7 @@ jest.mock("chalk", () => {
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   closeAllConnections: jest.fn(),
+  getConnection: jest.fn(),
   getAdapter: jest.fn(),
 }));
 
@@ -172,7 +173,7 @@ describe("Branch coverage 100% - phase 5 hard-to-reach environment paths", () =>
     expect(exitSpy).toHaveBeenCalledWith(0);
   });
 
-  test("seed bootstrap precheck covers missing dir, empty dir/non-sql driver, and clean print path", async () => {
+  test("seed bootstrap precheck covers missing dir, mongo connectivity branch, and clean print path", async () => {
     const migrationsPath = "virtual-migrations";
     jest.spyOn(PathMap, "migrations").mockReturnValue(migrationsPath);
 
@@ -192,15 +193,18 @@ describe("Branch coverage 100% - phase 5 hard-to-reach environment paths", () =>
     existsSpy.mockReturnValueOnce(true);
     readDirSpy.mockReturnValueOnce([] as unknown as ReturnType<typeof fs.readdirSync>);
     const mongoDriverBefore = dbConfig.connections.mongo.driver;
+    const getConnectionSpy = jest
+      .spyOn(connectionFactory, "getConnection")
+      .mockResolvedValue({} as never);
     dbConfig.connections.mongo.driver = "mongo";
     const nonSqlReport = await seedPrecheck.runSeedBootstrapPrecheck({
       connectionNames: ["mongo" as never],
     });
     dbConfig.connections.mongo.driver = mongoDriverBefore;
 
-    expect(nonSqlReport.clean).toBe(false);
-    expect(nonSqlReport.checks[0].reasons).toContain("No migration files found on disk.");
-    expect(nonSqlReport.checks[0].reasons).toContain('Connection "mongo" is not a SQL driver.');
+    expect(nonSqlReport.clean).toBe(true);
+    expect(nonSqlReport.checks[0].reasons).toEqual([]);
+    expect(getConnectionSpy).toHaveBeenCalledWith("mongo");
     expect(getAdapterSpy).not.toHaveBeenCalled();
 
     seedPrecheck.printSeedBootstrapPrecheck({

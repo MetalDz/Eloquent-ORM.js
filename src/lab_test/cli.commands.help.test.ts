@@ -74,6 +74,7 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--mysql");
     expect(res.combined).toContain("--pg");
     expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--mongo");
     expect(res.combined).toContain("--all-connections");
     expect(res.combined).toContain("--all-migrations");
   });
@@ -89,6 +90,7 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--mysql");
     expect(res.combined).toContain("--pg");
     expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--mongo");
     expect(res.combined).toContain("--all-connections");
     expect(res.combined).toContain("--all-migrations");
   });
@@ -99,6 +101,7 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--mysql");
     expect(res.combined).toContain("--pg");
     expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--mongo");
     expect(res.combined).toContain("--all-connections");
   });
 
@@ -108,6 +111,7 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--mysql");
     expect(res.combined).toContain("--pg");
     expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--mongo");
     expect(res.combined).toContain("--all-connections");
     expect(res.combined).toContain("--silent");
     expect(res.combined).toContain("--no-hooks");

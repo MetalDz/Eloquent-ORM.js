@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { getAdapter, closeAllConnections, ConnectionName } from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import { dbConfig } from "../../config/database";
 
 export type MigrateStatusOptions = {
   test?: boolean;
@@ -14,6 +15,12 @@ async function showStatusForConnection(
   connectionName: ConnectionName,
   isTest: boolean
 ): Promise<boolean> {
+  const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
+  if (!["mysql", "pg", "sqlite"].includes(driver)) {
+    console.warn(chalk.yellow(`Status skipped: "${connectionName}" is not SQL-based.`));
+    return true;
+  }
+
   const migrationsDir = PathMap.migrations(isTest, connectionName);
 
   if (!fs.existsSync(migrationsDir)) {
