@@ -5,6 +5,7 @@ import { dbConfig } from "../config/database";
 import { migrateRun } from "../cli/commands/migrateRun";
 import {
   closeAllConnections,
+  getConnection,
   getAdapter,
 } from "../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../core/connection/resolveConnectionName";
@@ -19,6 +20,14 @@ import {
 } from "../cli/utils/migrations/MigrationTracker";
 import { appendAuditEvent } from "../cli/utils/AuditTrail";
 import { loadModule } from "../cli/utils/typescript/tsRuntime";
+import {
+  acquireMigrationLock as acquireMongoMigrationLock,
+  ensureMigrationCollection,
+  readLastBatch as readLastMongoBatch,
+  recordAppliedMigration as recordMongoAppliedMigration,
+  releaseMigrationLock as releaseMongoMigrationLock,
+  validateMigrationHistory as validateMongoMigrationHistory,
+} from "../cli/utils/migrations/MongoMigrationTracker";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -34,6 +43,7 @@ jest.mock("chalk", () => ({
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
+  getConnection: jest.fn(),
   closeAllConnections: jest.fn(),
 }));
 
@@ -59,7 +69,17 @@ jest.mock("../cli/utils/typescript/tsRuntime", () => ({
   loadModule: jest.fn(),
 }));
 
+jest.mock("../cli/utils/migrations/MongoMigrationTracker", () => ({
+  acquireMigrationLock: jest.fn(),
+  ensureMigrationCollection: jest.fn(),
+  readLastBatch: jest.fn(),
+  recordAppliedMigration: jest.fn(),
+  releaseMigrationLock: jest.fn(),
+  validateMigrationHistory: jest.fn(),
+}));
+
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
+const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
 const mockedCloseAllConnections =
   closeAllConnections as jest.MockedFunction<typeof closeAllConnections>;
 const mockedResolveConnectionName =
@@ -79,6 +99,18 @@ const mockedValidateMigrationHistory =
   validateMigrationHistory as jest.MockedFunction<typeof validateMigrationHistory>;
 const mockedAppendAuditEvent = appendAuditEvent as jest.MockedFunction<typeof appendAuditEvent>;
 const mockedLoadModule = loadModule as jest.MockedFunction<typeof loadModule>;
+const mockedAcquireMongoMigrationLock =
+  acquireMongoMigrationLock as jest.MockedFunction<typeof acquireMongoMigrationLock>;
+const mockedEnsureMigrationCollection =
+  ensureMigrationCollection as jest.MockedFunction<typeof ensureMigrationCollection>;
+const mockedReadLastMongoBatch =
+  readLastMongoBatch as jest.MockedFunction<typeof readLastMongoBatch>;
+const mockedRecordMongoAppliedMigration =
+  recordMongoAppliedMigration as jest.MockedFunction<typeof recordMongoAppliedMigration>;
+const mockedReleaseMongoMigrationLock =
+  releaseMongoMigrationLock as jest.MockedFunction<typeof releaseMongoMigrationLock>;
+const mockedValidateMongoMigrationHistory =
+  validateMongoMigrationHistory as jest.MockedFunction<typeof validateMongoMigrationHistory>;
 
 describe("Branch coverage 100% - phase 7 migrateRun edge paths", () => {
   const adapter = {
@@ -100,6 +132,7 @@ describe("Branch coverage 100% - phase 7 migrateRun edge paths", () => {
 
     mockedResolveConnectionName.mockReturnValue("sqlite" as never);
     mockedGetAdapter.mockResolvedValue(adapter as never);
+    mockedGetConnection.mockResolvedValue({} as never);
     mockedCloseAllConnections.mockResolvedValue(undefined);
     mockedEnsureMigrationTables.mockResolvedValue("sqlite");
     mockedAcquireMigrationLock.mockResolvedValue(undefined);
@@ -109,6 +142,12 @@ describe("Branch coverage 100% - phase 7 migrateRun edge paths", () => {
     mockedRecordAppliedMigration.mockResolvedValue(undefined);
     mockedComputeMigrationChecksum.mockReturnValue("checksum");
     mockedAppendAuditEvent.mockImplementation(() => undefined);
+    mockedEnsureMigrationCollection.mockResolvedValue(undefined);
+    mockedAcquireMongoMigrationLock.mockResolvedValue(undefined);
+    mockedReleaseMongoMigrationLock.mockResolvedValue(undefined);
+    mockedValidateMongoMigrationHistory.mockResolvedValue([]);
+    mockedReadLastMongoBatch.mockResolvedValue(0);
+    mockedRecordMongoAppliedMigration.mockResolvedValue(undefined);
     mockedLoadModule.mockReturnValue({
       up: jest.fn(async (db: { query(sql: string): Promise<void> }) => {
         await db.query("CREATE TABLE users (id INT);");
@@ -172,21 +211,23 @@ describe("Branch coverage 100% - phase 7 migrateRun edge paths", () => {
     );
   });
 
-  test("skips non-SQL connections without opening an adapter", async () => {
+  test("runs mongo migrations via mongo tracker path without SQL adapter", async () => {
     const connection = "mongo_sidecar";
     (dbConfig.connections as Record<string, { driver?: string }>)[connection] = {
       driver: "mongo",
     };
     mockMigrationsDir(connection, { files: ["20260308001_create_users_table.ts"] });
+    mockedLoadModule.mockReturnValue({
+      up: jest.fn(async () => undefined),
+    } as never);
 
     await migrateRun(false, undefined, false, false, {
       connectionNames: [connection as never],
     });
 
-    expect(mockedGetAdapter).not.toHaveBeenCalled();
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining(`"${connection}" is not SQL-based`)
-    );
+    expect(mockedGetConnection).toHaveBeenCalledWith(connection);
+    expect(mockedEnsureMigrationCollection).toHaveBeenCalled();
+    expect(mockedGetAdapter).not.toHaveBeenCalledWith(connection);
   });
 
   test("handles model-targeted run with no matching files", async () => {

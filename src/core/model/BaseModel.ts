@@ -213,6 +213,7 @@ export abstract class SqlModel<
  */
 
 export { MorphableMixin, MorphableBaseModel, MorphRegistry };
+export { MongoModel } from "./CoreModel";
 
 // Attribute typing for models (ModelInstance adds only typed attrs to avoid merge conflicts).
 export type ModelAttrs<TAttrs extends Record<string, unknown>> = {

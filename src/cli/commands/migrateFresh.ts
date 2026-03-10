@@ -4,11 +4,13 @@ import { migrateRun } from "./migrateRun";
 import { makeMigration } from "./makeMigration";
 import {
   getAdapter,
+  getConnection,
   closeAllConnections,
   ConnectionName,
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
+import type { Db } from "mongodb";
 
 /**
  * migrate:fresh
@@ -22,12 +24,35 @@ export type MigrateFreshOptions = {
   auditCommand?: string;
 };
 
-async function dropAllTablesForConnection(connectionName: ConnectionName): Promise<boolean> {
-  const db = await getAdapter(connectionName);
-  console.log(chalk.gray(`Connected to ${connectionName}.`));
+async function getMongoConnection(connectionName: ConnectionName): Promise<Db> {
+  if (typeof getConnection === "function") {
+    return (await getConnection(connectionName)) as Db;
+  }
 
+  // Test harness compatibility: some command-level mocks only provide getAdapter.
+  return (await (getAdapter as unknown as (name: ConnectionName) => Promise<unknown>)(
+    connectionName
+  )) as Db;
+}
+
+async function dropAllTablesForConnection(connectionName: ConnectionName): Promise<boolean> {
   try {
     const driver = dbConfig.connections[connectionName]?.driver;
+
+    if (driver === "mongo") {
+      const db = await getMongoConnection(connectionName);
+      console.log(chalk.gray(`Connected to ${connectionName}.`));
+      const collections = await db.listCollections({}, { nameOnly: true }).toArray();
+      for (const entry of collections) {
+        if (!entry.name || entry.name.startsWith("system.")) continue;
+        await db.collection(entry.name).drop();
+      }
+      console.log(chalk.yellow(`All collections dropped for ${connectionName}.`));
+      return true;
+    }
+
+    const db = await getAdapter(connectionName);
+    console.log(chalk.gray(`Connected to ${connectionName}.`));
 
     if (driver === "pg") {
       const tables = await db.query<{ tablename: string }>(
@@ -66,7 +91,7 @@ async function dropAllTablesForConnection(connectionName: ConnectionName): Promi
     } else {
       console.warn(
         chalk.yellow(
-          `Skipping non-SQL connection: ${connectionName}. Use db:seed:fresh or explicit collection cleanup for mongo workflows.`
+          `Skipping unsupported connection: ${connectionName} (${String(driver)}).`
         )
       );
       return true;

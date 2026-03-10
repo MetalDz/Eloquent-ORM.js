@@ -606,35 +606,33 @@ function runNoSqlRuntimeSmoke(sample) {
     sample.env
   );
   assertSuccess("nosql make:migration --mongo", makeMigrationMongo);
-  assertContains(
-    "nosql make:migration --mongo",
-    makeMigrationMongo.combined,
-    'Skipping make:migration for "mongo_test"'
-  );
+  assertOneOf("nosql make:migration --mongo", makeMigrationMongo.combined, [
+    "Migration generation complete",
+    "Migration (CREATE) saved",
+    "Migration unchanged",
+  ]);
 
-  const statusMongo = runCli(
-    sample.dir,
-    ["migrate:status", "--test", "--mongo"],
-    sample.env
-  );
+  const liveMongoRuntimeEnabled = process.env.ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME === "1";
+  if (!liveMongoRuntimeEnabled) {
+    const statusHelp = runCli(sample.dir, ["migrate:status", "--help"], sample.env);
+    assertSuccess("nosql migrate:status --help", statusHelp);
+    assertContains("nosql migrate:status --help", statusHelp.combined, "--mongo");
+    console.log(
+      "NoSQL runtime smoke skipped: set ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME=1 to enable live mongo migrate:* checks."
+    );
+    return;
+  }
+
+  const statusMongo = runCli(sample.dir, ["migrate:status", "--test", "--mongo"], sample.env);
   assertSuccess("nosql migrate:status --mongo", statusMongo);
-  assertContains(
-    "nosql migrate:status --mongo",
-    statusMongo.combined,
-    'Status skipped: "mongo_test" is not SQL-based'
-  );
+  assertContains("nosql migrate:status --mongo", statusMongo.combined, "Migration Status");
 
-  const runMongo = runCli(
-    sample.dir,
-    ["migrate:run", "--test", "--mongo"],
-    sample.env
-  );
+  const runMongo = runCli(sample.dir, ["migrate:run", "--test", "--mongo"], sample.env);
   assertSuccess("nosql migrate:run --mongo", runMongo);
-  assertContains(
-    "nosql migrate:run --mongo",
-    runMongo.combined,
-    'Skipping migrations: "mongo_test" is not SQL-based'
-  );
+  assertOneOf("nosql migrate:run --mongo", runMongo.combined, [
+    "migration(s) applied successfully",
+    "No new migrations to run",
+  ]);
 
   const rollbackMongo = runCli(
     sample.dir,
@@ -642,11 +640,10 @@ function runNoSqlRuntimeSmoke(sample) {
     sample.env
   );
   assertSuccess("nosql migrate:rollback --mongo", rollbackMongo);
-  assertContains(
-    "nosql migrate:rollback --mongo",
-    rollbackMongo.combined,
-    'Rollback skipped: "mongo_test" is not SQL-based'
-  );
+  assertOneOf("nosql migrate:rollback --mongo", rollbackMongo.combined, [
+    "rolled back successfully",
+    "No migrations found to roll back",
+  ]);
 }
 
 let tarballPath = "";

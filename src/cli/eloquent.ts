@@ -18,7 +18,6 @@ import { loadFactories } from "./utils/factories/FactoryLoader";
 import { checkProductionDestructiveCommand } from "./utils/ProductionSafety";
 import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
 import { redactSecretsInArgs } from "../core/security/SecretRedactor";
-import { dbConfig } from "../config/database";
 import {
   buildStructuredLogLine,
   isJsonLogFormat,
@@ -240,6 +239,7 @@ program
 program
   .command("make:model <name>")
   .option("--test", "Generate model inside test directory")
+  .option("--mongo", "Generate a MongoModel-based model scaffold")
   .option("--with-migration", "Automatically generate a migration for this model")
   .option("--attrs-from-schema", "Infer model attrs type from schema fields")
   .option("--force", "Overwrite existing migration if it exists")
@@ -254,7 +254,11 @@ program
     ) {
       return;
     }
-    await makeModel(name, { ...options, test: !!(options as { test?: boolean }).test });
+    await makeModel(name, {
+      ...options,
+      test: !!(options as { test?: boolean }).test,
+      mongo: !!(options as { mongo?: boolean }).mongo,
+    });
   });
 
 program
@@ -328,6 +332,7 @@ program
 program
   .command("make:scenario <name>")
   .option("--test", "Generate scenario in test folders")
+  .option("--mongo", "Generate scenario models/migrations for mongo connection")
   .option("--preset <name>", "Preset: blog | media")
   .option("--controllers", "Generate controllers (test)")
   .option("--services", "Generate services (test)")
@@ -337,6 +342,7 @@ program
   .description("Generate an automated test scenario (models, migrations, factories, seeds)")
   .action(async (name: string, options: {
     test?: boolean;
+    mongo?: boolean;
     preset?: string;
     controllers?: boolean;
     services?: boolean;
@@ -350,6 +356,7 @@ program
       }
       await makeScenario(name, {
         test: !!options.test,
+        mongo: !!options.mongo,
         preset: options.preset,
         controllers: !!options.controllers,
         services: !!options.services,
@@ -540,7 +547,7 @@ program
   .option("--mysql", "Generate migrations only for the mysql connection")
   .option("--pg", "Generate migrations only for the pg connection")
   .option("--sqlite", "Generate migrations only for the sqlite connection")
-  .option("--mongo", "Target mongo connection (skipped for SQL migration generation)")
+  .option("--mongo", "Generate migrations only for the mongo connection")
   .option("--all-connections", "Generate migrations for mysql, pg, and sqlite")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
   .option("--force", "Required override flag in production mode")
@@ -589,17 +596,6 @@ program
       }
 
       for (const connectionName of connectionNames) {
-        const resolvedDriver =
-          dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
-          connectionName;
-        if (resolvedDriver === "mongo") {
-          console.warn(
-            chalk.yellow(
-              `Skipping make:migration for "${connectionName}": mongo is non-SQL.`
-            )
-          );
-          continue;
-        }
         await makeMigration(target, {
           test: !!options.test,
           pivotSeparate: !!options.pivotSeparate,
@@ -621,7 +617,7 @@ program
   .option("--mysql", "Run migrations only for the mysql connection")
   .option("--pg", "Run migrations only for the pg connection")
   .option("--sqlite", "Run migrations only for the sqlite connection")
-  .option("--mongo", "Run migrations targeting mongo connection (skipped as non-SQL)")
+  .option("--mongo", "Run migrations only for the mongo connection")
   .option("--all-connections", "Run migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Auto-generate migrations for all models before running")
   .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all-migrations)")
@@ -656,17 +652,6 @@ program
           });
         } else {
           for (const connectionName of connectionNames) {
-            const resolvedDriver =
-              dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
-              connectionName;
-            if (resolvedDriver === "mongo") {
-              console.warn(
-                chalk.yellow(
-                  `Skipping --all-migrations generation for "${connectionName}": mongo is non-SQL.`
-                )
-              );
-              continue;
-            }
             await makeMigration("all", {
               test: !!options.test,
               exit: false,
@@ -691,7 +676,7 @@ program
   .option("--mysql", "Rollback migrations only for the mysql connection")
   .option("--pg", "Rollback migrations only for the pg connection")
   .option("--sqlite", "Rollback migrations only for the sqlite connection")
-  .option("--mongo", "Rollback migrations targeting mongo connection (skipped as non-SQL)")
+  .option("--mongo", "Rollback migrations only for the mongo connection")
   .option("--all-connections", "Rollback migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Rollback all applied migration batches")
   .option("--step <number>", "Number of migrations to rollback", "1")
@@ -729,7 +714,7 @@ program
   .option("--mysql", "Show status only for the mysql connection")
   .option("--pg", "Show status only for the pg connection")
   .option("--sqlite", "Show status only for the sqlite connection")
-  .option("--mongo", "Show status targeting mongo connection (skipped as non-SQL)")
+  .option("--mongo", "Show status only for the mongo connection")
   .option("--all-connections", "Show status for mysql, pg, and sqlite")
   .option("--all-migrations", "Accepted for parity; status already covers all migration files")
   .action((options: {
@@ -762,7 +747,7 @@ program
   .option("--mysql", "Run fresh migration only for the mysql connection")
   .option("--pg", "Run fresh migration only for the pg connection")
   .option("--sqlite", "Run fresh migration only for the sqlite connection")
-  .option("--mongo", "Run fresh migration targeting mongo connection (skipped as non-SQL)")
+  .option("--mongo", "Run fresh migration only for the mongo connection")
   .option("--all-connections", "Run fresh migration for mysql, pg, and sqlite")
   .option("--all-migrations", "Auto-generate migrations for all models before running")
   .option("--force", "Skip confirmation prompt")
@@ -803,7 +788,7 @@ program
   .option("--mysql", "Reset migrations only for the mysql connection")
   .option("--pg", "Reset migrations only for the pg connection")
   .option("--sqlite", "Reset migrations only for the sqlite connection")
-  .option("--mongo", "Reset migrations targeting mongo connection (skipped as non-SQL)")
+  .option("--mongo", "Reset migrations only for the mongo connection")
   .option("--all-connections", "Reset migrations for mysql, pg, and sqlite")
   .option("--all-migrations", "Accepted for parity; reset already rolls back all batches")
   .option("--force", "Required override flag in production mode")
@@ -865,11 +850,11 @@ program
     console.log(chalk.green("\n📜 Available Commands:\n"));
     console.log(chalk.gray("Tip: use --test to run supported commands in test mode.\n"));
     console.table([
-      { Command: "make:model <name>", Description: "--test --with-migration --attrs-from-schema --force --yes" },
+      { Command: "make:model <name>", Description: "--test --mongo --with-migration --attrs-from-schema --force --yes" },
       { Command: "make:controller <name>", Description: "--soft --test --force --yes" },
       { Command: "make:service <name>", Description: "--test --force --yes" },
       { Command: "make:seed <model>", Description: "--count <number> --test --force --yes" },
-      { Command: "make:scenario <name>", Description: "--test --preset <blog|media> --controllers --services --run --force --yes" },
+      { Command: "make:scenario <name>", Description: "--test --mongo --preset <blog|media> --controllers --services --run --force --yes" },
       { Command: "make:factory <name>", Description: "--model <model> --test --force --yes" },
       {
         Command: "make:migration [model]",

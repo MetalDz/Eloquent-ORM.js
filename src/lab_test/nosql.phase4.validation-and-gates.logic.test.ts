@@ -149,10 +149,10 @@ describe("NoSQL phase 4 validation and quality gates", () => {
       '["migrate:status", "--test", "--mongo"]',
       '["migrate:run", "--test", "--mongo"]',
       '["migrate:rollback", "--test", "--mongo"]',
-      'Skipping make:migration for "mongo_test"',
-      'Status skipped: "mongo_test" is not SQL-based',
-      'Skipping migrations: "mongo_test" is not SQL-based',
-      'Rollback skipped: "mongo_test" is not SQL-based',
+      "ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME",
+      "NoSQL runtime smoke skipped",
+      "Migration Status",
+      "migration(s) applied successfully",
       "runNoSqlRuntimeSmoke(blogSample);",
     ];
 
@@ -163,4 +163,3 @@ describe("NoSQL phase 4 validation and quality gates", () => {
 });
 
 export {};
-

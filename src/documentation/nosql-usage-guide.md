@@ -38,25 +38,27 @@ Primary key resolution on Mongo paths:
 ## Command Compatibility Matrix
 
 ### Supported
+- `make:model --mongo` (app) and `make:model --test --mongo` (test).
+- `make:migration` for mongo targets (`--mongo`, `--mongo --test`).
+- `migrate:status` for mongo targets.
+- `migrate:run` for mongo targets.
+- `migrate:rollback` for mongo targets.
+- `migrate:fresh` for mongo targets.
+- `migrate:reset` for mongo targets.
 - `db:seed` with explicit mongo target.
 - `db:seed:fresh` with explicit mongo target.
 - `db:seed:precheck` mongo connectivity/bootstrap checks.
 - `demo:scenario` mongo document workflow path.
+- `make:scenario --test --mongo` with mongo-targeted generated model/migration/run routing.
 
 ### Partial
-- `make:scenario` output remains SQL-first templates; mongo compatibility depends on user model/factory implementation.
+- `make:scenario` remains test-only by contract (`--test` required).
 - Mixed SQL + NoSQL workflows are deterministic, but automatic cross-driver parity is not implied.
+- Mongo migration execution requires reachable mongo runtime (`MONGO_URI` / `MONGO_TEST_URI`).
+- `test:pack-smoke` keeps live mongo migrate checks optional unless `ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME=1`.
 
 ### Unsupported (by design)
-- SQL migration generation/execution semantics on mongo:
-  - `make:migration` SQL generation
-  - `migrate:run`
-  - `migrate:rollback`
-  - `migrate:status`
-  - `migrate:fresh`
-  - `migrate:reset`
-
-Unsupported SQL-only commands on mongo targets are skipped with actionable warnings.
+- SQL adapter API surface on mongo (`getAdapter("mongo")`, SQL query paths).
 
 ## Recommended Mongo Flow
 1. Validate connectivity/bootstrap:
@@ -72,4 +74,3 @@ Unsupported SQL-only commands on mongo targets are skipped with actionable warni
 ## Release Safety Checks
 - `nosql-regression` CI gate validates NoSQL contract and parity suites.
 - `test:pack-smoke` includes explicit `--mongo` runtime wiring checks for packaged CLI.
-

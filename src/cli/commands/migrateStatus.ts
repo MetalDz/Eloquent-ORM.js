@@ -1,9 +1,19 @@
 import fs from "fs";
 import chalk from "chalk";
-import { getAdapter, closeAllConnections, ConnectionName } from "../../core/connection/ConnectionFactory";
+import {
+  getAdapter,
+  getConnection,
+  closeAllConnections,
+  ConnectionName,
+} from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
+import {
+  ensureMigrationCollection,
+  readAppliedMigrations as readMongoAppliedMigrations,
+} from "../utils/migrations/MongoMigrationTracker";
+import type { Db } from "mongodb";
 
 export type MigrateStatusOptions = {
   test?: boolean;
@@ -11,15 +21,65 @@ export type MigrateStatusOptions = {
   allMigrations?: boolean;
 };
 
+async function getMongoConnection(connectionName: ConnectionName): Promise<Db> {
+  if (typeof getConnection === "function") {
+    return (await getConnection(connectionName)) as Db;
+  }
+
+  // Test harness compatibility: some command-level mocks only provide getAdapter.
+  return (await (getAdapter as unknown as (name: ConnectionName) => Promise<unknown>)(
+    connectionName
+  )) as Db;
+}
+
 async function showStatusForConnection(
   connectionName: ConnectionName,
   isTest: boolean
 ): Promise<boolean> {
   const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
+  if (driver === "mongo") {
+    const migrationsDir = PathMap.migrations(isTest, connectionName);
+    if (!fs.existsSync(migrationsDir)) {
+      console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
+      return true;
+    }
+
+    try {
+      const db = await getMongoConnection(connectionName);
+      console.log(chalk.gray(`Connected to ${connectionName}.`));
+      await ensureMigrationCollection(db);
+
+      const files = fs
+        .readdirSync(migrationsDir)
+        .filter((f) => f.endsWith(".ts") || f.endsWith(".js"))
+        .sort();
+      const applied = await readMongoAppliedMigrations(db);
+      const appliedNames = applied.map((row) => row.name);
+
+      console.log(chalk.cyan(`\nMigration Status (${connectionName}):\n`));
+      console.table(
+        files.map((file) => ({
+          Migration: file,
+          Status: appliedNames.includes(file) ? "Applied" : "Pending",
+          Batch: applied.find((row) => row.name === file)?.batch ?? "-",
+          RunAt: applied.find((row) => row.name === file)?.run_at ?? "-",
+        }))
+      );
+
+      return true;
+    } catch (error) {
+      console.error(chalk.red(`Failed to fetch migration status for "${connectionName}".`));
+      console.error(error);
+      return false;
+    } finally {
+      await closeAllConnections();
+    }
+  }
+
   if (!["mysql", "pg", "sqlite"].includes(driver)) {
     console.warn(
       chalk.yellow(
-        `Status skipped: "${connectionName}" is not SQL-based. Use db:seed:precheck for mongo connectivity/bootstrap checks.`
+        `Status skipped: "${connectionName}" has unsupported driver "${driver}".`
       )
     );
     return true;

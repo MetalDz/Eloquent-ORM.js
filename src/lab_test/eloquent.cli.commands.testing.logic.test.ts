@@ -22,6 +22,7 @@ const commandMatrix: CommandSpec[] = [
     name: "make:model",
     expectedFlags: [
       "--test",
+      "--mongo",
       "--with-migration",
       "--attrs-from-schema",
       "--force",
@@ -48,6 +49,7 @@ const commandMatrix: CommandSpec[] = [
     name: "make:scenario",
     expectedFlags: [
       "--test",
+      "--mongo",
       "--preset <name>",
       "--controllers",
       "--services",

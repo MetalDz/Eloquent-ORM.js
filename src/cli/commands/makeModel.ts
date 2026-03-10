@@ -11,6 +11,7 @@ import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
 import { closeAllConnections } from "../../core/connection/ConnectionFactory";
 import { dbConfig } from "../../config/database";
 import { loadModule } from "../utils/typescript/tsRuntime";
+import { makeMigration } from "./makeMigration";
 import type {
   SchemaField,
   ColumnDefinition,
@@ -21,6 +22,7 @@ interface ModelOptions {
   withMigration?: boolean;
   force?: boolean;
   attrsFromSchema?: boolean;
+  mongo?: boolean;
 }
 
 type LoadedModelClass = {
@@ -169,9 +171,20 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
   const withMigration = options.withMigration === true;
   const force = options.force === true;
   const attrsFromSchema = options.attrsFromSchema === true;
+  const useMongoModel = options.mongo === true;
   const modelName = pascalCase(name);
   const tableName = pluralize(name);
   const mode = isTest ? "TEST" : "DEVELOPMENT";
+  const modelBaseClass = useMongoModel ? "MongoModel" : "SqlModel";
+  const defaultConnectionName = useMongoModel
+    ? (isTest ? "mongo_test" : "mongo")
+    : "mysql";
+  const connectionExpression = useMongoModel
+    ? `"${defaultConnectionName}"`
+    : `process.env.DB_CONNECTION ?? "${defaultConnectionName}"`;
+  const connectionDescription = useMongoModel
+    ? defaultConnectionName
+    : `process.env.DB_CONNECTION ?? "${defaultConnectionName}"`;
   let wroteModel = false;
 
   PathMap.ensureDirs();
@@ -196,6 +209,9 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
       coreImportPath,
       schemaImportPath,
       attrsTypeBody: defaultAttrsTypeBody(),
+      modelBaseClass,
+      connectionExpression,
+      connectionDescription,
     });
 
     const header = `/**
@@ -244,6 +260,9 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
             coreImportPath,
             schemaImportPath,
             attrsTypeBody,
+            modelBaseClass,
+            connectionExpression,
+            connectionDescription,
           });
 
           const header = `/**
@@ -267,7 +286,8 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
   if (!withMigration) {
     console.log(chalk.cyanBright(`💡 Next step:`));
     console.log(chalk.cyan(`   1️⃣ Define your schema inside ${modelName}.ts`));
-    console.log(chalk.cyan(`   2️⃣ Run: eloquent make:migration ${modelName}`));
+    const mongoHint = useMongoModel ? " --mongo" : "";
+    console.log(chalk.cyan(`   2️⃣ Run: eloquent make:migration ${modelName}${mongoHint}`));
     return;
   }
 
@@ -303,6 +323,14 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
     const driver =
       (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
       connectionName;
+    if (driver === "mongo") {
+      await makeMigration(modelName, {
+        test: isTest,
+        connectionName,
+        exit: false,
+      });
+      return;
+    }
     const normalizedSchema = normalizedSchemaForMigration(resolvedModelClass);
     const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
       resolvedModelClass.tableName,

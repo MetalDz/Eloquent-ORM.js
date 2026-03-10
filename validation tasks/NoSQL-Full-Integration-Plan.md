@@ -1,193 +1,130 @@
 # NoSQL Full Integration Plan
 
-Last updated: 2026-03-10
-Status: DONE (Phase 5 Complete)
+Last updated: 2026-03-10  
+Status: DONE (Phase 6 Complete)
 
 ## Goal
-- Fully integrate NoSQL support into ORM runtime and CLI workflows with predictable behavior and production-safe defaults.
-- Keep SQL behavior stable while expanding parity for NoSQL use cases.
+- Keep `mongo` as a first-class ORM runtime target with explicit CLI parity.
+- Preserve SQL correctness while enabling mongo migration generation and execution paths.
 
 ## Scope
 - Target driver family:
   - `mongo`
 - Coverage target:
-  - runtime path parity where feasible
-  - explicit documented differences where parity is not technically valid
+  - runtime model parity
+  - CLI parity (including migrations)
+  - deterministic release validation
 
 ## Current State
-- Core connection and model paths already include `mongo` branches.
-- Some tests validate lifecycle and selected behavior.
-- Full parity is not complete yet across CLI, migrations contract, and scenario tooling.
+- Core runtime already supports mongo CRUD and relation paths.
+- CLI now supports explicit mongo migration workflows.
+- CI/pack-smoke gates include NoSQL regressions and migration-surface checks.
 
-## Non-Goals (This Task)
-- No breaking API change in this task.
-- No immediate migration-system redesign for document databases in this task.
-- No attempt to force SQL migration semantics onto NoSQL.
+## Non-Goals
+- No SQL adapter API support on mongo (`getAdapter("mongo")` stays unsupported).
+- No hidden cross-driver abstraction that weakens SQL correctness.
 
 ## Target End State
-- Clear NoSQL contract for:
-  - model CRUD
-  - relation behavior
-  - factory and seeding workflows
-  - CLI targeting and environment routing
-- Stable production readiness gates for mixed SQL + NoSQL projects.
-- Documented compatibility matrix: supported, partial, and intentionally unsupported features.
+- Clear mongo contract for:
+  - model CRUD + hooks
+  - factory/seed/scenario workflows
+  - migration generation and execution commands
+- Clear separation:
+  - SQL adapters for SQL drivers
+  - mongo-native migration context for mongo targets
 
 ## Ordered Plan
 
 ### Phase 1: Contract Definition
-- [x] Define ORM feature matrix for `mongo`:
-  - supported
-  - partial
-  - unsupported
-- [x] Freeze naming/targeting rules for NoSQL CLI usage:
-  - `--connection`
-  - `--test`
-  - all-connections semantics
-
-### Phase 1 Output: Mongo Feature Matrix (Contract Baseline)
-
-#### Supported
-- Connection lifecycle:
-  - `getConnection("mongo")`
-  - tracked close through `closeAllConnections()`
-- Runtime model CRUD on Mongo paths:
-  - `find`, `all`, `create`, `update`, `delete`, `soft_delete`, `restore`
-- CLI explicit mongo targeting (`--mongo`) for connection-targeted command families.
-
-#### Partial
-- `demo:scenario` for mongo is collection-convention based (`users`, `posts`, `comments`, `post_user_pivot`).
-- `db:seed*` mongo behavior depends on user model/factory implementation (SQL-first generated models are not auto-converted).
-- Mixed-driver all-connections flows are backward-compatible first, not full automatic parity.
-
-#### Unsupported (by contract)
-- SQL migration engine semantics on mongo:
-  - `make:migration` SQL generation
-  - SQL migration tracker/history table semantics
-- SQL adapter API usage on mongo (`getAdapter("mongo")` / SQL query paths).
-
-### Phase 1 Output: CLI Targeting Rules (Frozen)
-- Explicit driver targeting:
-  - `--mongo` maps to `mongo` in runtime mode.
-  - `--mongo --test` maps to `mongo_test` when configured.
-- `--all-connections` semantics:
-  - remains SQL set by default (`mysql`, `pg`, `sqlite`) for deterministic backward compatibility.
-  - mongo is opt-in via explicit `--mongo`.
-- SQL-only command behavior with mongo target:
-  - command must skip safely with explicit warning, not crash or silently misapply SQL semantics.
+- [x] Define mongo feature matrix.
+- [x] Freeze CLI targeting behavior (`--mongo`, `--test`, `--all-connections` semantics).
 
 ### Phase 2: Runtime Parity Baseline
-- [x] Validate CRUD behavior parity expectations for NoSQL models.
-- [x] Validate relation mixin behavior and edge-case handling in NoSQL paths.
-- [x] Define transaction/session behavior policy for NoSQL operations.
-
-### Phase 2 Output: Runtime Parity Baseline
-- Mongo primary-key resolution parity:
-  - `CoreModel` Mongo paths now resolve id lookups with explicit handling for:
-    - `_id` primary key mode
-    - `id` primary key mode with `id/_id` fallback filter
-    - custom primary key names
-- Mongo connection routing parity:
-  - `MongoModel` now accepts explicit mongo connection names (`mongo`, `mongo_test`) and routes `getDB()` through `this.connectionName`.
-  - Invalid non-mongo connection names are rejected early with a clear error.
-- Relation mixin edge-case parity:
-  - `PivotHelperMixin.attach()` now safely no-ops on empty related ID lists, including Mongo paths.
-- Transaction/session policy (current contract):
-  - Runtime provides single-operation writes per model call on Mongo.
-  - No implicit multi-document transaction/session orchestration is introduced at this phase.
-  - Explicit cross-operation transactional/session orchestration remains out of scope until a dedicated design phase.
+- [x] Validate mongo model CRUD and primary-key behavior.
+- [x] Validate relation mixin mongo branches.
+- [x] Freeze transaction/session policy (no implicit multi-doc transaction orchestration).
 
 ### Phase 3: CLI Integration Parity
-- [x] Add NoSQL-aware coverage for command families:
-  - `make:*`
-  - `db:seed*`
-  - `demo:scenario`
-  - status/precheck flows
-- [x] Ensure unsupported SQL-only commands fail clearly for NoSQL with actionable messages.
-
-### Phase 3 Output: CLI Integration Parity
-- Added focused NoSQL CLI parity regression coverage:
-  - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`
-- Command-family parity coverage now includes:
-  - `make:*`:
-    - `make:migration` explicitly skips non-SQL mongo targets with actionable guidance.
-  - `db:seed*`:
-    - explicit mongo connection routing is validated through `db:seed` and `db:seed:fresh`.
-  - `demo:scenario`:
-    - mongo path is validated to use `getConnection` document workflow (not SQL adapter).
-  - status/precheck:
-    - mongo `migrate:status` skip guidance and `db:seed:precheck` mongo connectivity path are covered.
-- SQL-only command guidance for mongo targets is now explicit and actionable in:
-  - `migrate:run`
-  - `migrate:rollback`
-  - `migrate:status`
-  - `migrate:fresh`
-  - `make:migration`
+- [x] Validate `make:*`, `db:seed*`, `demo:scenario`, precheck/status command families.
+- [x] Keep explicit mongo routing deterministic in app/test mode.
 
 ### Phase 4: Validation and Quality Gates
-- [x] Add focused NoSQL integration tests for app + test environments.
-- [x] Add release gates to ensure NoSQL regressions fail CI.
-- [x] Confirm tarball smoke path does not regress NoSQL runtime wiring.
-
-### Phase 4 Output: Validation and Quality Gates
-- Added focused NoSQL app/test integration + gate assertions:
-  - `src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts`
-  - covers:
-    - `db:seed` mongo app/test env routing
-    - `demo:scenario` mongo app/test connection resolution without SQL adapter
-    - tarball smoke NoSQL runtime check presence in `scripts/pack-smoke.js`
-- Added CI release gate for NoSQL regressions:
-  - `.github/workflows/ci.yml`
-  - new job: `nosql-regression` (`NoSQL Regression Gate`)
-  - runs focused NoSQL suites to fail CI on NoSQL regression
-- Updated release qualification hard-gate documentation:
-  - `src/documentation/release-qualification-checklist.md`
-  - added explicit `NoSQL Regression Gate` pass/fail criteria
-- Extended tarball smoke flow with explicit NoSQL runtime wiring checks:
-  - `scripts/pack-smoke.js`
-  - verifies `--mongo` CLI behavior for:
-    - `make:migration`
-    - `migrate:status`
-    - `migrate:run`
-    - `migrate:rollback`
+- [x] Add focused NoSQL parity tests.
+- [x] Add `nosql-regression` CI job.
+- [x] Ensure tarball smoke includes NoSQL command-surface checks.
 
 ### Phase 5: Documentation and Release Closure
-- [x] Publish NoSQL usage guide and limitation matrix.
-- [x] Add upgrade notes for projects enabling NoSQL after SQL-first setup.
-- [x] Close this plan only after CI and pack-smoke validation are green.
+- [x] Publish NoSQL usage matrix.
+- [x] Publish SQL-first to NoSQL upgrade notes.
+- [x] Wire release checklist to NoSQL docs + CI gate.
 
-### Phase 5 Output: Documentation and Release Closure
-- Published NoSQL usage and limitation docs:
-  - `src/documentation/nosql-usage-guide.md`
-  - `src/documentation/usage-guides.md` (NoSQL workflow section)
-- Published SQL-first to NoSQL upgrade notes:
-  - `src/documentation/upgrade-guide.md`
-- Linked NoSQL runtime contract from API docs:
-  - `src/documentation/api-reference.md`
-- Extended release qualification checklist with NoSQL documentation closure gate:
-  - `src/documentation/release-qualification-checklist.md`
-- Closure validation:
-  - focused NoSQL contract/gate/doc tests pass locally
-  - `npm run test:pack-smoke` passes locally with NoSQL runtime smoke assertions
-  - CI contains explicit NoSQL regression gate (`nosql-regression`)
+### Phase 6: Mongo Migration Parity
+- [x] Add mongo migration tracker utility:
+  - ledger bootstrap
+  - checksum validation/backfill
+  - stale-entry prune/relink
+  - lock acquire/release
+- [x] Enable mongo execution path in:
+  - `migrate:status`
+  - `migrate:run`
+  - `migrate:rollback`
+  - `migrate:fresh`
+  - `migrate:reset` (through rollback path)
+- [x] Enable mongo generation path in:
+  - `make:migration`
+- [x] Keep pack-smoke deterministic:
+  - live mongo migrate execution is opt-in via `ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME=1`
+
+## Phase Outputs
+
+### Phase 1 Output: Mongo Feature Matrix
+
+#### Supported
+- `make:model --mongo` and `make:model --test --mongo`
+- `make:migration --mongo`
+- `migrate:status --mongo`
+- `migrate:run --mongo`
+- `migrate:rollback --mongo`
+- `migrate:fresh --mongo`
+- `migrate:reset --mongo`
+- `db:seed* --mongo`
+- `demo:scenario` mongo path
+- `make:scenario --test --mongo` with mongo-targeted model/migration routing
+
+#### Partial
+- `make:scenario` remains test-only by contract.
+- `--all-connections` remains SQL-only by default; mongo is explicit opt-in with `--mongo`.
+
+#### Unsupported
+- SQL adapter query APIs on mongo (`getAdapter("mongo")`, SQL query runner paths).
+
+### Phase 6 Output: Mongo Migration Components
+- `src/cli/utils/migrations/MongoMigrationTracker.ts`
+- `src/cli/commands/makeMigration.ts` (mongo generator branch)
+- `src/cli/commands/migrateRun.ts` (mongo execution branch)
+- `src/cli/commands/migrateRollback.ts` (mongo rollback branch)
+- `src/cli/commands/migrateStatus.ts` (mongo status branch)
+- `src/cli/commands/migrateFresh.ts` (mongo drop-all branch)
+- `scripts/pack-smoke.js` (mongo runtime gate switch)
 
 ## Acceptance Criteria
-- NoSQL driver is treated as a first-class documented runtime target.
-- CLI behavior for NoSQL is deterministic and tested.
-- Unsupported SQL-only operations on NoSQL produce explicit, safe errors.
+- NoSQL driver is a first-class documented runtime target.
+- `make:migration --mongo` generates migration files.
+- `migrate:status/run/rollback/fresh --mongo` execute via mongo path.
+- Migration checksum/history validation works for mongo migration ledger.
+- SQL adapter APIs remain blocked on mongo.
 - CI includes NoSQL-focused regression coverage.
-- Documentation reflects actual runtime behavior and limits.
 
 ## Risks
-- Feature parity assumptions can hide meaningful SQL/NoSQL semantic differences.
-- Over-generalized abstractions may reduce correctness for either driver family.
-- Mixed-connection projects can introduce ambiguous defaults if routing is unclear.
+- Mongo migration execution requires reachable mongo runtime (`MONGO_URI` / `MONGO_TEST_URI`).
+- SQL/mongo parity can diverge semantically if contracts are not kept explicit.
+- Over-broad abstraction could weaken SQL safety guarantees.
 
 ## Validation Strategy
-- Use focused logic/integration tests first, then broader CLI scenario runs.
-- Keep SQL regressions blocked while enabling NoSQL parity work.
-- Track deltas in `validation tasks/Progress snapshot.md` during implementation phases.
+- Focused logic tests for mongo migration tracker and command routing.
+- NoSQL regression suite in CI.
+- Pack-smoke command-surface validation with optional live mongo execution gate.
 
 ## Notes
-- All phases (1 to 5) are complete and locked.
+- All phases (1 to 6) are complete and locked.
 - Plan is closed.

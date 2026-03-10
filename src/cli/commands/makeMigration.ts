@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import { SchemaBuilder } from "../../core/schema/SchemaBuilder";
-import { SchemaField } from "../../core/schema/SchemaBlueprint";
+import { RelationDefinition, SchemaField } from "../../core/schema/SchemaBlueprint";
 import { PathMap } from "../utils/PathMap";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
@@ -83,6 +83,17 @@ type PendingPivotMigration = {
   content: string;
 };
 
+type MongoIndexDefinition = {
+  keys: Record<string, 1 | -1>;
+  options?: Record<string, unknown>;
+};
+
+type MongoPivotDefinition = {
+  collectionName: string;
+  leftKey: string;
+  rightKey: string;
+};
+
 function pascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
@@ -134,6 +145,90 @@ function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
   }
 
   return ordered;
+}
+
+function singularizeTableName(name: string): string {
+  const normalized = name.toLowerCase();
+  return normalized.endsWith("s") ? normalized.slice(0, -1) : normalized;
+}
+
+function buildMongoIndexDefinitions(
+  schema: Record<string, SchemaField>
+): MongoIndexDefinition[] {
+  const indexes: MongoIndexDefinition[] = [];
+  const seen = new Set<string>();
+
+  const push = (
+    keys: Record<string, 1 | -1>,
+    options?: Record<string, unknown>
+  ): void => {
+    const signature = JSON.stringify({ keys, options: options ?? {} });
+    if (seen.has(signature)) return;
+    seen.add(signature);
+    indexes.push({ keys, options });
+  };
+
+  for (const [name, field] of Object.entries(schema)) {
+    if (field.kind === "column") {
+      if (field.options?.primary || field.type === "increments") {
+        push({ [name]: 1 }, { unique: true, name: `${name}_pk_unique` });
+      }
+      if (field.options?.unique) {
+        push({ [name]: 1 }, { unique: true, name: `${name}_unique` });
+      } else if (field.options?.index) {
+        push({ [name]: 1 }, { name: `${name}_idx` });
+      }
+      if (field.type === "softDeletes" || name === "deleted_at") {
+        push({ deleted_at: 1 }, { name: "deleted_at_idx" });
+      }
+      continue;
+    }
+
+    if (field.kind === "relation" && field.relation === "belongsTo") {
+      const relation = field as RelationDefinition;
+      const fk = relation.options?.foreignKey;
+      if (fk) {
+        push({ [fk]: 1 }, { name: `${fk}_idx` });
+      }
+      continue;
+    }
+
+    if (field.kind === "mixin" && field.name === "SoftDeletes") {
+      push({ deleted_at: 1 }, { name: "deleted_at_idx" });
+    }
+  }
+
+  return indexes;
+}
+
+function buildMongoPivotDefinitions(
+  currentTableName: string,
+  schema: Record<string, SchemaField>
+): MongoPivotDefinition[] {
+  const pivots = new Map<string, MongoPivotDefinition>();
+  const sourceTable = currentTableName.toLowerCase();
+  const sourceKey = singularizeTableName(sourceTable);
+
+  for (const field of Object.values(schema)) {
+    if (field.kind !== "relation" || field.relation !== "belongsToMany" || !field.model) {
+      continue;
+    }
+
+    const targetTable = field.model.toLowerCase().endsWith("s")
+      ? field.model.toLowerCase()
+      : `${field.model.toLowerCase()}s`;
+    const targetKey = singularizeTableName(targetTable);
+    const sorted = [sourceKey, targetKey].sort();
+    const collectionName = `${sorted[0]}_${sorted[1]}_pivot`;
+
+    pivots.set(collectionName, {
+      collectionName,
+      leftKey: `${sorted[0]}_id`,
+      rightKey: `${sorted[1]}_id`,
+    });
+  }
+
+  return [...pivots.values()];
 }
 
 /**
@@ -262,19 +357,169 @@ export async function makeMigration(
       console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
       console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
 
-      // ًں§  Generate SQL
       const driver =
         (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
         connectionName;
+      const normalizedSchema = normalizedSchemaForMigration(ModelClass);
+
+      if (driver === "mongo") {
+        const mongoIndexes = buildMongoIndexDefinitions(normalizedSchema);
+        const mongoPivots = buildMongoPivotDefinitions(
+          ModelClass.tableName,
+          normalizedSchema
+        );
+        const hasMongoWork =
+          needsBaselineCreate || mongoIndexes.length > 0 || mongoPivots.length > 0;
+        if (!hasMongoWork) {
+          console.log(chalk.gray(`ℹ️ No new columns or schema changes — skipping.`));
+          continue;
+        }
+
+        const timestampBase = nextTimestamp();
+        const prefix = needsBaselineCreate ? "create" : "update";
+        const migrationFile = `${timestampBase}_${prefix}_${ModelClass.tableName}_table.ts`;
+        const migrationPath = path.join(migrationsDir, migrationFile);
+        const stringify = (value: unknown): string => JSON.stringify(value);
+
+        const upStatements: string[] = [
+          `await db.ensureCollection(${stringify(ModelClass.tableName)});`,
+          ...mongoIndexes.map((index) => {
+            if (index.options && Object.keys(index.options).length > 0) {
+              return `await db.createIndex(${stringify(ModelClass.tableName)}, ${stringify(
+                index.keys
+              )}, ${stringify(index.options)});`;
+            }
+            return `await db.createIndex(${stringify(ModelClass.tableName)}, ${stringify(
+              index.keys
+            )});`;
+          }),
+        ];
+
+        if (!pivotSeparate) {
+          for (const pivot of mongoPivots) {
+            upStatements.push(
+              `await db.ensureCollection(${stringify(pivot.collectionName)});`
+            );
+            upStatements.push(
+              `await db.createIndex(${stringify(pivot.collectionName)}, ${stringify(
+                { [pivot.leftKey]: 1, [pivot.rightKey]: 1 }
+              )}, ${stringify({
+                unique: true,
+                name: `${pivot.collectionName}_pair_unique`,
+              })});`
+            );
+          }
+        }
+
+        const downStatements: string[] = [];
+        if (prefix === "create") {
+          if (!pivotSeparate) {
+            downStatements.push(
+              ...mongoPivots.map(
+                (pivot) =>
+                  `await db.dropCollection(${stringify(pivot.collectionName)});`
+              )
+            );
+          }
+          downStatements.push(`await db.dropCollection(${stringify(ModelClass.tableName)});`);
+        }
+
+        const header = `/**
+ * ✅ Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
+ * Connection: ${connectionName}
+ * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
+ * Generated at ${new Date().toISOString()}
+ */`;
+
+        const migrationContent = `${header}
+export async function up(db: {
+  ensureCollection(name: string): Promise<void>;
+  createIndex(collectionName: string, keys: Record<string, 1 | -1>, options?: Record<string, unknown>): Promise<void>;
+}) {
+  ${
+    upStatements.length > 0
+      ? upStatements.join("\n  ")
+      : "// (no Mongo changes detected)"
+  }
+}
+
+export async function down(db: { dropCollection(name: string): Promise<void> }) {
+  ${
+    downStatements.length > 0
+      ? downStatements.join("\n  ")
+      : "// (no rollback operations generated)"
+  }
+}`;
+
+        if (prefix === "create" && createFiles.length > 0) {
+          console.log(
+            chalk.gray(
+              `ℹ️ Baseline CREATE already exists for "${ModelClass.tableName}" — skipping CREATE regeneration.`
+            )
+          );
+        } else {
+          const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
+          const unchangedFile =
+            samePrefixFiles.find((fileName) =>
+              hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
+            ) ?? null;
+
+          if (unchangedFile) {
+            console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
+          } else {
+            fs.writeFileSync(migrationPath, migrationContent, "utf8");
+            const label = prefix === "create" ? "CREATE" : "UPDATE";
+            console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
+          }
+        }
+
+        if (pivotSeparate && mongoPivots.length > 0) {
+          for (const pivot of mongoPivots) {
+            const pivotHeader = `/**
+ * ✅ Auto-generated CREATE migration for ${pivot.collectionName}
+ * Connection: ${connectionName}
+ * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
+ * Generated at ${new Date().toISOString()}
+ */`;
+            const pivotContent = `${pivotHeader}
+export async function up(db: {
+  ensureCollection(name: string): Promise<void>;
+  createIndex(collectionName: string, keys: Record<string, 1 | -1>, options?: Record<string, unknown>): Promise<void>;
+}) {
+  await db.ensureCollection(${stringify(pivot.collectionName)});
+  await db.createIndex(${stringify(pivot.collectionName)}, ${stringify({
+              [pivot.leftKey]: 1,
+              [pivot.rightKey]: 1,
+            })}, ${stringify({
+              unique: true,
+              name: `${pivot.collectionName}_pair_unique`,
+            })});
+}
+
+export async function down(db: { dropCollection(name: string): Promise<void> }) {
+  await db.dropCollection(${stringify(pivot.collectionName)});
+}`;
+            pendingPivotMigrations.set(`${connectionName}:${pivot.collectionName}`, {
+              connectionName,
+              migrationsDir,
+              pivotTable: pivot.collectionName,
+              content: pivotContent,
+            });
+          }
+        }
+
+        continue;
+      }
+
       if (!["mysql", "pg", "sqlite"].includes(driver)) {
         console.warn(
           chalk.yellow(
-            `Skipping make:migration for "${connectionName}": "${driver}" is non-SQL. Use make:model/make:factory + db:seed for mongo workflows.`
+            `Skipping make:migration for "${connectionName}": unsupported driver "${driver}".`
           )
         );
         continue;
       }
-      const normalizedSchema = normalizedSchemaForMigration(ModelClass);
+
       const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
         ModelClass.tableName,
         normalizedSchema,
@@ -360,20 +605,20 @@ export async function down(db: { query(sql: string): Promise<void> }) {
             )
           );
         } else {
-        const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
-        const unchangedFile =
-          samePrefixFiles.find((fileName) =>
-            hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
-          ) ?? null;
+          const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
+          const unchangedFile =
+            samePrefixFiles.find((fileName) =>
+              hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
+            ) ?? null;
 
-        if (unchangedFile) {
-          console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
-        } else {
-          fs.writeFileSync(migrationPath, migrationContent, "utf8");
+          if (unchangedFile) {
+            console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
+          } else {
+            fs.writeFileSync(migrationPath, migrationContent, "utf8");
 
-          const label = prefix === "create" ? "CREATE" : "UPDATE";
-          console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
-        }
+            const label = prefix === "create" ? "CREATE" : "UPDATE";
+            console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
+          }
         }
       }
 

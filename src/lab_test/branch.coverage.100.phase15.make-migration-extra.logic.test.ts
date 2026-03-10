@@ -1,7 +1,6 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { dbConfig } from "../config/database";
 import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
 
 describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
@@ -21,15 +20,10 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     },
   };
 
-  const originalConnections = { ...dbConfig.connections };
-
   afterEach(() => {
     jest.restoreAllMocks();
     jest.resetModules();
     jest.clearAllMocks();
-    (dbConfig as { connections: typeof dbConfig.connections }).connections = {
-      ...originalConnections,
-    };
   });
 
   function setupContext() {
@@ -91,6 +85,14 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     jest.doMock("../core/schema/SchemaBuilder", () => ({
       SchemaBuilder: { toCreateSQL },
     }));
+    jest.doMock("../config/database", () => ({
+      dbConfig: {
+        default: "mysql",
+        connections: {
+          custom_conn: { driver: "sqlite" },
+        },
+      },
+    }));
 
     return {
       root,
@@ -131,8 +133,6 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
       rollbackMainSQL: "   ",
       rollbackExtraTables: [],
     });
-
-    (dbConfig.connections as Record<string, { driver?: string }>).custom_conn = {};
 
     const { makeMigration } = await import("../cli/commands/makeMigration");
     await makeMigration("User", {

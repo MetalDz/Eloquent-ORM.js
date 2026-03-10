@@ -16,9 +16,12 @@ describe("NoSQL phase 5 documentation and release closure", () => {
       "### Supported",
       "### Partial",
       "### Unsupported (by design)",
+      "make:migration",
+      "migrate:run",
+      "migrate:rollback",
       "--mongo --test",
       "--all-connections",
-      "Unsupported SQL-only commands on mongo targets are skipped with actionable warnings.",
+      "SQL adapter API surface on mongo",
       "nosql-regression",
       "test:pack-smoke",
     ];

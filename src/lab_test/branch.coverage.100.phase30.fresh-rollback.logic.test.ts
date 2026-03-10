@@ -23,16 +23,21 @@ describe("Branch coverage 100% - phase 30 migrateFresh + migrateRollback edge cl
     process.exitCode = 0;
   });
 
-  test("migrateFresh default options path resolves connection and skips non-SQL driver", async () => {
+  test("migrateFresh default options path resolves mongo connection and runs mongo drop flow", async () => {
     jest.resetModules();
 
-    const db = {
-      execute: jest.fn(async () => undefined),
-      query: jest.fn(async () => []),
-      wrapId: jest.fn((id: string) => `\`${id}\``),
+    const drop = jest.fn(async () => undefined);
+    const mongoDb = {
+      listCollections: jest.fn(() => ({
+        toArray: async () => [{ name: "users" }, { name: "migrations" }],
+      })),
+      collection: jest.fn(() => ({
+        drop,
+      })),
     };
 
-    const getAdapter = jest.fn(async () => db);
+    const getAdapter = jest.fn(async () => ({}));
+    const getConnection = jest.fn(async () => mongoDb);
     const closeAllConnections = jest.fn(async () => undefined);
     const migrateRun = jest.fn(async () => undefined);
     const makeMigration = jest.fn(async () => undefined);
@@ -47,6 +52,7 @@ describe("Branch coverage 100% - phase 30 migrateFresh + migrateRollback edge cl
     }));
     jest.doMock("../core/connection/ConnectionFactory", () => ({
       getAdapter,
+      getConnection,
       closeAllConnections,
     }));
     jest.doMock("../core/connection/resolveConnectionName", () => ({
@@ -66,15 +72,14 @@ describe("Branch coverage 100% - phase 30 migrateFresh + migrateRollback edge cl
       makeMigration,
     }));
 
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const { migrateFresh } = await import("../cli/commands/migrateFresh");
     await migrateFresh();
 
     expect(resolveConnectionName).toHaveBeenCalledWith(undefined, { test: false });
-    expect(getAdapter).toHaveBeenCalledWith("mongo");
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Skipping non-SQL connection: mongo")
-    );
+    expect(getConnection).toHaveBeenCalledWith("mongo");
+    expect(getAdapter).not.toHaveBeenCalledWith("mongo");
+    expect(drop).toHaveBeenCalledTimes(2);
     expect(makeMigration).not.toHaveBeenCalled();
     expect(migrateRun).toHaveBeenCalledWith(false, undefined, false, false, {
       connectionNames: ["mongo"],

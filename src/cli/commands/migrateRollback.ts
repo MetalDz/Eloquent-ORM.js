@@ -1,7 +1,12 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { getAdapter, closeAllConnections, ConnectionName } from "../../core/connection/ConnectionFactory";
+import {
+  getAdapter,
+  getConnection,
+  closeAllConnections,
+  ConnectionName,
+} from "../../core/connection/ConnectionFactory";
 import { PathMap } from "../utils/PathMap";
 import { dbConfig } from "../../config/database";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
@@ -14,8 +19,18 @@ import {
   releaseMigrationLock,
   validateMigrationHistory,
 } from "../utils/migrations/MigrationTracker";
+import {
+  acquireMigrationLock as acquireMongoMigrationLock,
+  deleteAppliedMigration as deleteMongoAppliedMigration,
+  doesCollectionExist,
+  ensureMigrationCollection,
+  readAppliedMigrations as readMongoAppliedMigrations,
+  releaseMigrationLock as releaseMongoMigrationLock,
+  validateMigrationHistory as validateMongoMigrationHistory,
+} from "../utils/migrations/MongoMigrationTracker";
 import { loadModule } from "../utils/typescript/tsRuntime";
 import { appendAuditEvent } from "../utils/AuditTrail";
+import type { Db } from "mongodb";
 
 export type MigrateRollbackOptions = {
   test?: boolean;
@@ -24,6 +39,65 @@ export type MigrateRollbackOptions = {
   allMigrations?: boolean;
   auditCommand?: string;
 };
+
+type MongoMigrationContext = {
+  ensureCollection: (name: string) => Promise<void>;
+  dropCollection: (name: string) => Promise<void>;
+  createIndex: (
+    collectionName: string,
+    keys: Record<string, 1 | -1>,
+    options?: Record<string, unknown>
+  ) => Promise<void>;
+  dropIndex: (collectionName: string, indexName: string) => Promise<void>;
+  collection: (name: string) => ReturnType<Db["collection"]>;
+  db: Db;
+  query: (sql: string) => Promise<void>;
+};
+
+function createMongoMigrationContext(db: Db): MongoMigrationContext {
+  const collectionExists = async (name: string): Promise<boolean> => {
+    const rows = await db
+      .listCollections({ name }, { nameOnly: true })
+      .toArray();
+    return rows.length > 0;
+  };
+
+  return {
+    ensureCollection: async (name: string) => {
+      if (await collectionExists(name)) return;
+      await db.createCollection(name);
+    },
+    dropCollection: async (name: string) => {
+      if (!(await collectionExists(name))) return;
+      await db.collection(name).drop();
+    },
+    createIndex: async (collectionName, keys, options) => {
+      await db.collection(collectionName).createIndex(keys, options ?? {});
+    },
+    dropIndex: async (collectionName, indexName) => {
+      await db.collection(collectionName).dropIndex(indexName);
+    },
+    collection: (name: string) => db.collection(name),
+    db,
+    query: async (sql: string) => {
+      if (!sql || sql.trim() === "") return;
+      throw new Error(
+        "Mongo migrations do not support SQL query() calls. Use ensureCollection/createIndex/dropCollection or collection()."
+      );
+    },
+  };
+}
+
+async function getMongoConnection(connectionName: ConnectionName): Promise<Db> {
+  if (typeof getConnection === "function") {
+    return (await getConnection(connectionName)) as Db;
+  }
+
+  // Test harness compatibility: some command-level mocks only provide getAdapter.
+  return (await (getAdapter as unknown as (name: ConnectionName) => Promise<unknown>)(
+    connectionName
+  )) as Db;
+}
 
 async function rollbackConnection(
   connectionName: ConnectionName,
@@ -45,10 +119,128 @@ async function rollbackConnection(
   }
 
   const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
-  if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
+  if (driver === "mongo") {
+    const db = await getMongoConnection(connectionName);
+    console.log(chalk.gray(`Connected to ${connectionName}.`));
+    const lockOwner = `migrate:rollback:${connectionName}:${process.pid}:${Date.now()}`;
+    let lockAcquired = false;
+    let completedWithoutError = false;
+
+    try {
+      await ensureMigrationCollection(db);
+      await acquireMongoMigrationLock(db, lockOwner);
+      lockAcquired = true;
+
+      const rows = (await validateMongoMigrationHistory(db, migrationsDir))
+        .map((row) => ({ id: row.id, name: row.name, batch: row.batch }))
+        .sort((a, b) => {
+          if (b.batch !== a.batch) return b.batch - a.batch;
+          return String(b.id ?? "").localeCompare(String(a.id ?? ""));
+        });
+
+      if (rows.length === 0) {
+        console.log(chalk.yellow("No migrations found to roll back."));
+        completedWithoutError = true;
+        return true;
+      }
+
+      const targetBatches = Array.from(new Set(rows.map((r) => r.batch))).slice(0, step);
+      const toRollback = rows.filter((r) => targetBatches.includes(r.batch));
+
+      if (toRollback.length === 0) {
+        console.log(chalk.yellow("Nothing to roll back."));
+        completedWithoutError = true;
+        return true;
+      }
+
+      console.log(chalk.gray(`Rolling back ${toRollback.length} migration(s)...`));
+
+      let rolledBack = 0;
+      let hadRollbackError = false;
+      for (const entry of toRollback) {
+        const migrationFile = entry.name;
+        const filePath = path.join(migrationsDir, migrationFile);
+
+        if (!fs.existsSync(filePath)) {
+          const fallbackCollection = getAutoGeneratedCreateTableName(migrationFile);
+          if (fallbackCollection) {
+            try {
+              const exists = await doesCollectionExist(db, fallbackCollection);
+              if (exists) {
+                await db.collection(fallbackCollection).drop();
+                console.log(
+                  chalk.yellow(
+                    `Fallback rollback: dropped collection "${fallbackCollection}" for missing migration file "${migrationFile}".`
+                  )
+                );
+              } else {
+                console.log(
+                  chalk.yellow(
+                    `Fallback rollback: collection "${fallbackCollection}" already absent for missing migration file "${migrationFile}".`
+                  )
+                );
+              }
+              await deleteMongoAppliedMigration(db, migrationFile);
+              rolledBack++;
+              continue;
+            } catch (fallbackError) {
+              console.error(chalk.red(`Fallback rollback failed for ${migrationFile}:`));
+              console.error(fallbackError);
+              hadRollbackError = true;
+              break;
+            }
+          }
+
+          console.error(chalk.red(`Missing file: ${migrationFile}`));
+          hadRollbackError = true;
+          break;
+        }
+
+        try {
+          const migrationModule = loadModule(path.resolve(filePath)) as {
+            down?: (db: MongoMigrationContext) => Promise<void>;
+          };
+
+          if (typeof migrationModule.down !== "function") {
+            console.log(chalk.gray(`No down() method: ${migrationFile}`));
+            continue;
+          }
+
+          console.log(chalk.gray(`Reverting: ${migrationFile}`));
+          const context = createMongoMigrationContext(db);
+          await migrationModule.down(context);
+
+          await deleteMongoAppliedMigration(db, migrationFile);
+          console.log(chalk.green(`Rolled back: ${migrationFile}`));
+          rolledBack++;
+        } catch (err) {
+          console.error(chalk.red(`Error rolling back ${migrationFile}:`));
+          console.error(err);
+          hadRollbackError = true;
+          break;
+        }
+      }
+
+      console.log(chalk.greenBright(`\n${rolledBack} migration(s) rolled back successfully.\n`));
+      completedWithoutError = !hadRollbackError;
+      return !hadRollbackError;
+    } catch (err) {
+      console.error(chalk.red("Unable to read or validate migrations collection."));
+      console.error(err);
+      return false;
+    } finally {
+      if (lockAcquired) {
+        await releaseMongoMigrationLock(db, lockOwner);
+      }
+      await closeAllConnections();
+      console.log(chalk.gray("All database connections closed.\n"));
+    }
+  }
+
+  if (!["mysql", "pg", "sqlite"].includes(driver)) {
     console.warn(
       chalk.yellow(
-        `Rollback skipped: "${connectionName}" is not SQL-based. Use db:seed:fresh or collection-level cleanup for mongo workflows.`
+        `Rollback skipped: "${connectionName}" has unsupported driver "${driver}".`
       )
     );
     return true;

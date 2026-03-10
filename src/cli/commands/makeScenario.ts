@@ -9,9 +9,12 @@ import { makeMigration } from "./makeMigration";
 import { migrateFresh } from "./migrateFresh";
 import { dbSeed } from "./dbSeed";
 import { ImportResolver } from "../utils/ImportResolver";
+import { resolveConnectionNamesFromFlags } from "../utils/resolveConnectionFlags";
+import type { ConnectionName } from "../../core/connection/ConnectionFactory";
 
 type ScenarioOptions = {
   test?: boolean;
+  mongo?: boolean;
   controllers?: boolean;
   services?: boolean;
   run?: boolean;
@@ -41,11 +44,18 @@ type ScenarioManifest = {
   seedName: string;
 };
 
-function renderModel(spec: ModelSpec): string {
+function renderModel(
+  spec: ModelSpec,
+  options: { isTest: boolean; useMongo: boolean; defaultConnectionName: string }
+): string {
   const attrs = spec.attrs.map((line) => `  ${line}`).join("\n");
   const schema = spec.schemaLines.map((line) => `    ${line}`).join("\n");
-  const coreImportPath = ImportResolver.coreImportPath(true);
-  const schemaImportPath = ImportResolver.schemaImportPath(true);
+  const coreImportPath = ImportResolver.coreImportPath(options.isTest);
+  const schemaImportPath = ImportResolver.schemaImportPath(options.isTest);
+  const modelBaseClass = options.useMongo ? "MongoModel" : "SqlModel";
+  const connectionExpr = options.useMongo
+    ? `"${options.defaultConnectionName}"`
+    : `process.env.DB_CONNECTION ?? "${options.defaultConnectionName}"`;
 
   return `/**
  * Auto-generated Test Model
@@ -53,16 +63,16 @@ function renderModel(spec: ModelSpec): string {
  * Table: ${spec.table}
  */
 
-import { SqlModel, ModelInstance } from "${coreImportPath}";
+import { ${modelBaseClass}, ModelInstance } from "${coreImportPath}";
 import { column, validate } from "${schemaImportPath}";
 
 type ${spec.name}Attrs = {
 ${attrs}
 };
 
-export class ${spec.name} extends SqlModel<${spec.name}Attrs> {
+export class ${spec.name} extends ${modelBaseClass}<${spec.name}Attrs> {
   static tableName = "${spec.table}";
-  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static connectionName = ${connectionExpr};
   static morphAlias = "${spec.table}";
 
   static schema = {
@@ -70,7 +80,7 @@ ${schema}
   };
 
   constructor() {
-    super("${spec.table}", process.env.DB_CONNECTION ?? "mysql");
+    super("${spec.table}", ${connectionExpr});
   }
 }
 
@@ -78,13 +88,18 @@ export interface ${spec.name} extends ModelInstance<${spec.name}Attrs> {}
 `;
 }
 
-function writeModelFile(modelDir: string, spec: ModelSpec, force: boolean): void {
+function writeModelFile(
+  modelDir: string,
+  spec: ModelSpec,
+  force: boolean,
+  renderOptions: { isTest: boolean; useMongo: boolean; defaultConnectionName: string }
+): void {
   const filePath = path.join(modelDir, `${spec.name}.ts`);
   if (fs.existsSync(filePath) && !force) {
     console.log(chalk.yellow(`Model exists (skipped): ${filePath}`));
     return;
   }
-  fs.writeFileSync(filePath, renderModel(spec), "utf8");
+  fs.writeFileSync(filePath, renderModel(spec, renderOptions), "utf8");
   console.log(chalk.green(`Model created: ${filePath}`));
 }
 
@@ -526,9 +541,25 @@ export async function makeScenario(
   options: ScenarioOptions = {}
 ): Promise<void> {
   const isTest = options.test === true;
+  const useMongo = options.mongo === true;
   if (!isTest) {
     throw new Error("make:scenario is test-only. Use --test to generate scenarios.");
   }
+  const connectionNames = resolveConnectionNamesFromFlags(isTest, {
+    mongo: useMongo,
+  }) as ConnectionName[];
+  if (useMongo && connectionNames.length === 0) {
+    throw new Error(
+      "No mongo test connection configured. Set DB_TEST_CONNECTION=mongo_test or configure mongo_test in dbConfig."
+    );
+  }
+  const scenarioConnectionName =
+    connectionNames[0] ?? (useMongo ? "mongo_test" : "mysql_test");
+  const renderOptions = {
+    isTest,
+    useMongo,
+    defaultConnectionName: scenarioConnectionName,
+  };
 
   const preset = selectPreset(options.preset ?? name);
   console.log(chalk.cyanBright(`\nScenario preset: ${preset.id}`));
@@ -565,7 +596,7 @@ export async function makeScenario(
 
   // 1) Models
   for (const model of preset.models) {
-    writeModelFile(modelsDir, model, options.force === true);
+    writeModelFile(modelsDir, model, options.force === true, renderOptions);
   }
 
   // 2) Factories
@@ -647,15 +678,29 @@ export async function ${preset.seedName}() {
   writeScenarioManifest(preset);
 
   // 4) Migrations
-  await makeMigration("all", { test: true, exit: false });
+  await makeMigration("all", {
+    test: true,
+    exit: false,
+    connectionName: scenarioConnectionName,
+  });
 
   if (options.run) {
-    await migrateFresh({ test: true, force: true });
-    await dbSeed({ test: true, class: preset.seedName, close: true, exit: false });
+    await migrateFresh({
+      test: true,
+      force: true,
+      connectionNames: [scenarioConnectionName],
+    });
+    await dbSeed({
+      test: true,
+      class: preset.seedName,
+      close: true,
+      exit: false,
+      connectionNames: [scenarioConnectionName],
+    });
   } else if (presetChanged) {
     console.log(
       chalk.yellow(
-        "Scenario preset changed. Run `eloquent migrate:fresh --test --force` before `migrate:run` to reset old scenario tables and history."
+        `Scenario preset changed. Run \`eloquent migrate:fresh --test ${useMongo ? "--mongo " : ""}--force\` before \`migrate:run\` to reset old scenario tables and history.`
       )
     );
   }

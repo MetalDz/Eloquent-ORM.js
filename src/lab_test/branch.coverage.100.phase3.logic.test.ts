@@ -405,7 +405,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       fs.rmSync(root, { recursive: true, force: true });
     });
 
-    test("migrateRollback covers missing-dir, non-sql, and empty-history branches", async () => {
+    test("migrateRollback covers missing-dir, mongo, and empty-history branches", async () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-phase3-rollback-"));
       const sqliteMigrationsDir = path.join(root, "sqlite");
       const mongoMigrationsDir = path.join(root, "mongo");
@@ -418,12 +418,19 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
         wrapId: (id: string) => `"${id}"`,
       };
       const getAdapter = jest.fn(async () => adapter);
+      const getConnection = jest.fn(async () => ({}));
       const closeAllConnections = jest.fn(async () => undefined);
       const resolveConnectionName = jest.fn(() => "sqlite");
       const ensureMigrationTables = jest.fn(async () => undefined);
       const acquireMigrationLock = jest.fn(async () => undefined);
       const releaseMigrationLock = jest.fn(async () => undefined);
       const validateMigrationHistory = jest.fn(async () => []);
+      const ensureMongoMigrationCollection = jest.fn(async () => undefined);
+      const acquireMongoMigrationLock = jest.fn(async () => undefined);
+      const releaseMongoMigrationLock = jest.fn(async () => undefined);
+      const validateMongoMigrationHistory = jest.fn(async () => []);
+      const deleteMongoAppliedMigration = jest.fn(async () => undefined);
+      const doesCollectionExist = jest.fn(async () => false);
 
       jest.doMock("chalk", () => passthroughChalk);
       jest.doMock("../cli/utils/PathMap", () => ({
@@ -437,6 +444,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       }));
       jest.doMock("../core/connection/ConnectionFactory", () => ({
         getAdapter,
+        getConnection,
         closeAllConnections,
       }));
       jest.doMock("../core/connection/resolveConnectionName", () => ({
@@ -454,6 +462,17 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       jest.doMock("../cli/utils/typescript/tsRuntime", () => ({
         loadModule: jest.fn(() => ({})),
       }));
+      jest.doMock("../cli/utils/migrations/MongoMigrationTracker", () => ({
+        ensureMigrationCollection: ensureMongoMigrationCollection,
+        acquireMigrationLock: acquireMongoMigrationLock,
+        releaseMigrationLock: releaseMongoMigrationLock,
+        validateMigrationHistory: validateMongoMigrationHistory,
+        readAppliedMigrations: jest.fn(async () => []),
+        readLastBatch: jest.fn(async () => 0),
+        recordAppliedMigration: jest.fn(async () => undefined),
+        deleteAppliedMigration: deleteMongoAppliedMigration,
+        doesCollectionExist,
+      }));
 
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -464,8 +483,9 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("No migrations directory found"));
 
       await migrateRollback({ connectionNames: ["mongo" as never] });
-      expect(getAdapter).not.toHaveBeenCalled();
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("is not SQL-based"));
+      expect(getConnection).toHaveBeenCalledWith("mongo");
+      expect(ensureMongoMigrationCollection).toHaveBeenCalled();
+      expect(validateMongoMigrationHistory).toHaveBeenCalledTimes(1);
 
       await migrateRollback({ connectionNames: ["sqlite" as never], allMigrations: true });
       expect(getAdapter).toHaveBeenCalledWith("sqlite");
