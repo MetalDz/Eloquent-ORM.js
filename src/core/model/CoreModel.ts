@@ -108,6 +108,19 @@ export abstract class CoreModel<
     return value === "1" || value === "true";
   }
 
+  private buildMongoPrimaryFilter(
+    pk: string,
+    id: number | string
+  ): Record<string, unknown> {
+    if (pk === "_id") {
+      return { _id: id };
+    }
+    if (pk === "id") {
+      return { $or: [{ id }, { _id: id }] };
+    }
+    return { [pk]: id };
+  }
+
   /**
    * Validate incoming data using schema + hooks + custom rules
    */
@@ -192,7 +205,9 @@ export abstract class CoreModel<
 
       case "mongo":
         {
-          const row = await (db as any).collection(this.tableName).findOne({ [pk]: id });
+          const row = await (db as any)
+            .collection(this.tableName)
+            .findOne(this.buildMongoPrimaryFilter(pk, id));
           const Model = this.constructor as typeof CoreModel;
           return Model.hydrateRow(row as Record<string, unknown> | null) as this | null;
         }
@@ -336,7 +351,9 @@ export abstract class CoreModel<
       }
 
       case "mongo": {
-        await (db as any).collection(this.tableName).updateOne({ [pk]: id }, { $set: data });
+        await (db as any)
+          .collection(this.tableName)
+          .updateOne(this.buildMongoPrimaryFilter(pk, id), { $set: data });
         break;
       }
 
@@ -373,7 +390,9 @@ export abstract class CoreModel<
       }
 
       case "mongo":
-        await (db as any).collection(this.tableName).deleteOne({ [pk]: id });
+        await (db as any)
+          .collection(this.tableName)
+          .deleteOne(this.buildMongoPrimaryFilter(pk, id));
         break;
 
       default:
@@ -392,11 +411,17 @@ export abstract class CoreModel<
 export abstract class MongoModel<
   TAttrs extends Record<string, unknown> = Record<string, unknown>
 > extends CoreModel<TAttrs> {
-  constructor(tableName: string) {
-    super(tableName, "mongo");
+  constructor(tableName: string, connectionName: ConnectionName = "mongo") {
+    super(tableName, connectionName);
+    const driver = dbConfig.connections[this.connectionName]?.driver ?? this.connectionName;
+    if (driver !== "mongo") {
+      throw new Error(
+        `MongoModel requires a mongo driver connection. Received: ${this.connectionName}`
+      );
+    }
   }
 
   public override async getDB(): Promise<Db> {
-    return (await getConnection("mongo")) as Db;
+    return (await getConnection(this.connectionName)) as Db;
   }
 }

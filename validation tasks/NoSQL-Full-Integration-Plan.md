@@ -1,7 +1,7 @@
 # NoSQL Full Integration Plan
 
-Last updated: 2026-03-09
-Status: IN PROGRESS (Phase 1 Complete)
+Last updated: 2026-03-10
+Status: IN PROGRESS (Phase 3 Complete)
 
 ## Goal
 - Fully integrate NoSQL support into ORM runtime and CLI workflows with predictable behavior and production-safe defaults.
@@ -20,9 +20,9 @@ Status: IN PROGRESS (Phase 1 Complete)
 - Full parity is not complete yet across CLI, migrations contract, and scenario tooling.
 
 ## Non-Goals (This Task)
-- No runtime refactor in this planning task.
-- No breaking API change in this planning task.
-- No immediate migration-system redesign for document databases in this planning task.
+- No breaking API change in this task.
+- No immediate migration-system redesign for document databases in this task.
+- No attempt to force SQL migration semantics onto NoSQL.
 
 ## Target End State
 - Clear NoSQL contract for:
@@ -52,7 +52,7 @@ Status: IN PROGRESS (Phase 1 Complete)
   - `getConnection("mongo")`
   - tracked close through `closeAllConnections()`
 - Runtime model CRUD on Mongo paths:
-  - `find`, `all`, `create`, `update`, `delete`
+  - `find`, `all`, `create`, `update`, `delete`, `soft_delete`, `restore`
 - CLI explicit mongo targeting (`--mongo`) for connection-targeted command families.
 
 #### Partial
@@ -77,17 +77,52 @@ Status: IN PROGRESS (Phase 1 Complete)
   - command must skip safely with explicit warning, not crash or silently misapply SQL semantics.
 
 ### Phase 2: Runtime Parity Baseline
-- [ ] Validate CRUD behavior parity expectations for NoSQL models.
-- [ ] Validate relation mixin behavior and edge-case handling in NoSQL paths.
-- [ ] Define transaction/session behavior policy for NoSQL operations.
+- [x] Validate CRUD behavior parity expectations for NoSQL models.
+- [x] Validate relation mixin behavior and edge-case handling in NoSQL paths.
+- [x] Define transaction/session behavior policy for NoSQL operations.
+
+### Phase 2 Output: Runtime Parity Baseline
+- Mongo primary-key resolution parity:
+  - `CoreModel` Mongo paths now resolve id lookups with explicit handling for:
+    - `_id` primary key mode
+    - `id` primary key mode with `id/_id` fallback filter
+    - custom primary key names
+- Mongo connection routing parity:
+  - `MongoModel` now accepts explicit mongo connection names (`mongo`, `mongo_test`) and routes `getDB()` through `this.connectionName`.
+  - Invalid non-mongo connection names are rejected early with a clear error.
+- Relation mixin edge-case parity:
+  - `PivotHelperMixin.attach()` now safely no-ops on empty related ID lists, including Mongo paths.
+- Transaction/session policy (current contract):
+  - Runtime provides single-operation writes per model call on Mongo.
+  - No implicit multi-document transaction/session orchestration is introduced at this phase.
+  - Explicit cross-operation transactional/session orchestration remains out of scope until a dedicated design phase.
 
 ### Phase 3: CLI Integration Parity
-- [ ] Add NoSQL-aware coverage for command families:
+- [x] Add NoSQL-aware coverage for command families:
   - `make:*`
   - `db:seed*`
   - `demo:scenario`
   - status/precheck flows
-- [ ] Ensure unsupported SQL-only commands fail clearly for NoSQL with actionable messages.
+- [x] Ensure unsupported SQL-only commands fail clearly for NoSQL with actionable messages.
+
+### Phase 3 Output: CLI Integration Parity
+- Added focused NoSQL CLI parity regression coverage:
+  - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`
+- Command-family parity coverage now includes:
+  - `make:*`:
+    - `make:migration` explicitly skips non-SQL mongo targets with actionable guidance.
+  - `db:seed*`:
+    - explicit mongo connection routing is validated through `db:seed` and `db:seed:fresh`.
+  - `demo:scenario`:
+    - mongo path is validated to use `getConnection` document workflow (not SQL adapter).
+  - status/precheck:
+    - mongo `migrate:status` skip guidance and `db:seed:precheck` mongo connectivity path are covered.
+- SQL-only command guidance for mongo targets is now explicit and actionable in:
+  - `migrate:run`
+  - `migrate:rollback`
+  - `migrate:status`
+  - `migrate:fresh`
+  - `make:migration`
 
 ### Phase 4: Validation and Quality Gates
 - [ ] Add focused NoSQL integration tests for app + test environments.
@@ -117,5 +152,5 @@ Status: IN PROGRESS (Phase 1 Complete)
 - Track deltas in `validation tasks/Progress snapshot.md` during implementation phases.
 
 ## Notes
-- Phase 1 is complete and locked.
-- Runtime implementation proceeds phase-by-phase after explicit authorization.
+- Phase 1, Phase 2, and Phase 3 are complete and locked.
+- Next active implementation target is Phase 4 (validation and quality gates).

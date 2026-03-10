@@ -64,7 +64,11 @@ async function dropAllTablesForConnection(connectionName: ConnectionName): Promi
 
       await db.execute("SET FOREIGN_KEY_CHECKS = 1;");
     } else {
-      console.warn(chalk.yellow(`Skipping non-SQL connection: ${connectionName}`));
+      console.warn(
+        chalk.yellow(
+          `Skipping non-SQL connection: ${connectionName}. Use db:seed:fresh or explicit collection cleanup for mongo workflows.`
+        )
+      );
       return true;
     }
 

@@ -46,7 +46,11 @@ async function rollbackConnection(
 
   const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
   if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
-    console.warn(chalk.yellow(`Rollback skipped: "${connectionName}" is not SQL-based.`));
+    console.warn(
+      chalk.yellow(
+        `Rollback skipped: "${connectionName}" is not SQL-based. Use db:seed:fresh or collection-level cleanup for mongo workflows.`
+      )
+    );
     return true;
   }
 

@@ -8,16 +8,16 @@ describe("NoSQL full integration contract plan", () => {
     "validation tasks/NoSQL-Full-Integration-Plan.md"
   );
 
-  test("plan doc exists and captures planning-only scope", () => {
+  test("plan doc exists and captures current scope/status", () => {
     const plan = fs.readFileSync(planPath, "utf8");
 
     const requiredSnippets = [
       "# NoSQL Full Integration Plan",
-      "Status: IN PROGRESS (Phase 1 Complete)",
+      "Status: IN PROGRESS (Phase 3 Complete)",
       "Target driver family:",
       "`mongo`",
-      "No runtime refactor in this planning task.",
-      "Runtime implementation proceeds phase-by-phase after explicit authorization.",
+      "No attempt to force SQL migration semantics onto NoSQL.",
+      "Next active implementation target is Phase 4 (validation and quality gates).",
     ];
 
     for (const snippet of requiredSnippets) {
@@ -65,8 +65,48 @@ describe("NoSQL full integration contract plan", () => {
     }
   });
 
-  test.todo("implement phase 2: runtime parity baseline for model and relation paths");
-  test.todo("implement phase 3: CLI integration parity for make/seed/demo/status flows");
+  test("phase 2 is marked done with runtime parity output documented", () => {
+    const plan = fs.readFileSync(planPath, "utf8");
+
+    const requiredSnippets = [
+      "### Phase 2: Runtime Parity Baseline",
+      "- [x] Validate CRUD behavior parity expectations for NoSQL models.",
+      "- [x] Validate relation mixin behavior and edge-case handling in NoSQL paths.",
+      "- [x] Define transaction/session behavior policy for NoSQL operations.",
+      "### Phase 2 Output: Runtime Parity Baseline",
+      "Mongo primary-key resolution parity:",
+      "Mongo connection routing parity:",
+      "Relation mixin edge-case parity:",
+      "Transaction/session policy (current contract):",
+    ];
+
+    for (const snippet of requiredSnippets) {
+      expect(plan).toContain(snippet);
+    }
+  });
+
+  test("phase 3 is marked done with CLI integration parity output documented", () => {
+    const plan = fs.readFileSync(planPath, "utf8");
+
+    const requiredSnippets = [
+      "### Phase 3: CLI Integration Parity",
+      "- [x] Add NoSQL-aware coverage for command families:",
+      "- [x] Ensure unsupported SQL-only commands fail clearly for NoSQL with actionable messages.",
+      "### Phase 3 Output: CLI Integration Parity",
+      "src/lab_test/nosql.cli.phase3.parity.logic.test.ts",
+      "`make:*`:",
+      "`db:seed*`:",
+      "`demo:scenario`:",
+      "status/precheck:",
+      "`migrate:run`",
+      "`make:migration`",
+    ];
+
+    for (const snippet of requiredSnippets) {
+      expect(plan).toContain(snippet);
+    }
+  });
+
   test.todo("implement phase 4: CI regression gates and pack-smoke NoSQL checks");
   test.todo("implement phase 5: documentation and release closure");
 });

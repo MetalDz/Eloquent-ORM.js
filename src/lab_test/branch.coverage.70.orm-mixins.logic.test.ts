@@ -585,9 +585,13 @@ describe("Branch coverage 70% - Phase 4 ORM mixins", () => {
 
       const insertMany = jest.fn(async () => undefined);
       const deleteMany = jest.fn(async () => undefined);
+      const collection = jest.fn(() => ({ insertMany, deleteMany }));
       model.db = {
-        collection: () => ({ insertMany, deleteMany }),
+        collection,
       };
+
+      await model.attach("pivot", "user_id", "post_id", 1, []);
+      expect(collection).not.toHaveBeenCalled();
 
       await model.attach("pivot", "user_id", "post_id", 1, [2, 3]);
       expect(insertMany).toHaveBeenCalledWith([

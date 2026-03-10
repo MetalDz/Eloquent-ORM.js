@@ -266,6 +266,14 @@ export async function makeMigration(
       const driver =
         (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
         connectionName;
+      if (!["mysql", "pg", "sqlite"].includes(driver)) {
+        console.warn(
+          chalk.yellow(
+            `Skipping make:migration for "${connectionName}": "${driver}" is non-SQL. Use make:model/make:factory + db:seed for mongo workflows.`
+          )
+        );
+        continue;
+      }
       const normalizedSchema = normalizedSchemaForMigration(ModelClass);
       const { mainSQL, extraTables, rollbackMainSQL, rollbackExtraTables } = await SchemaBuilder.toCreateSQL(
         ModelClass.tableName,

@@ -17,7 +17,11 @@ async function showStatusForConnection(
 ): Promise<boolean> {
   const driver = dbConfig.connections[connectionName]?.driver ?? connectionName;
   if (!["mysql", "pg", "sqlite"].includes(driver)) {
-    console.warn(chalk.yellow(`Status skipped: "${connectionName}" is not SQL-based.`));
+    console.warn(
+      chalk.yellow(
+        `Status skipped: "${connectionName}" is not SQL-based. Use db:seed:precheck for mongo connectivity/bootstrap checks.`
+      )
+    );
     return true;
   }
 

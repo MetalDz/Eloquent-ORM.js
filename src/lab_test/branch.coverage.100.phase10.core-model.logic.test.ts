@@ -58,6 +58,12 @@ class ExplicitMongoModel extends MongoModel {
   }
 }
 
+class ExplicitMongoTestModel extends MongoModel {
+  constructor() {
+    super("users", "mongo_test" as any);
+  }
+}
+
 describe("Branch coverage 100% - phase 10 CoreModel branches", () => {
   const previousDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
 
@@ -91,7 +97,7 @@ describe("Branch coverage 100% - phase 10 CoreModel branches", () => {
     expect(many[0]).toBeInstanceOf(HydratedModel);
   });
 
-  test("uses mongo connection path in CoreModel.getDB and MongoModel.getDB", async () => {
+  test("uses mongo connection path in CoreModel.getDB and MongoModel.getDB (mongo + mongo_test)", async () => {
     const mongoDb = {
       collection: jest.fn(),
     };
@@ -99,10 +105,14 @@ describe("Branch coverage 100% - phase 10 CoreModel branches", () => {
 
     const baseMongo = new CoreMongoModel();
     const explicitMongo = new ExplicitMongoModel();
+    const explicitMongoTest = new ExplicitMongoTestModel();
 
     await expect(baseMongo.getDB()).resolves.toBe(mongoDb);
     await expect(explicitMongo.getDB()).resolves.toBe(mongoDb);
-    expect(mockedGetConnection).toHaveBeenCalledWith("mongo");
+    await expect(explicitMongoTest.getDB()).resolves.toBe(mongoDb);
+    expect(mockedGetConnection).toHaveBeenNthCalledWith(1, "mongo");
+    expect(mockedGetConnection).toHaveBeenNthCalledWith(2, "mongo");
+    expect(mockedGetConnection).toHaveBeenNthCalledWith(3, "mongo_test");
   });
 
   test("model events can cancel create/update/delete and block SQL execution", async () => {
@@ -130,7 +140,7 @@ describe("Branch coverage 100% - phase 10 CoreModel branches", () => {
     expect(adapter.execute).not.toHaveBeenCalled();
   });
 
-  test("runs mongo CRUD branches for find/all/create/update/delete", async () => {
+  test("runs mongo CRUD branches for find/all/create/update/delete with id/_id fallback filter", async () => {
     const collection = {
       findOne: jest.fn(async () => ({ id: 7, name: "Mona" })),
       find: jest.fn(() => ({ toArray: jest.fn(async () => [{ id: 7 }, { id: 8 }]) })),
@@ -150,14 +160,44 @@ describe("Branch coverage 100% - phase 10 CoreModel branches", () => {
     const created = await model.create({ name: "Mona" });
     await model.update(7, { name: "Updated" });
     await model.delete(7);
+    await model.find("mongo-id", "_id");
+    await model.update("mongo-id", { name: "ByObjectId" }, "_id");
+    await model.delete("mongo-id", "_id");
 
     expect(found).toBeInstanceOf(CoreMongoModel);
     expect(allRows).toHaveLength(2);
     expect(created).toBeInstanceOf(CoreMongoModel);
-    expect(collection.findOne).toHaveBeenCalledWith({ id: 7 });
+    expect(collection.findOne).toHaveBeenNthCalledWith(1, {
+      $or: [{ id: 7 }, { _id: 7 }],
+    });
+    expect(collection.findOne).toHaveBeenNthCalledWith(2, { _id: "mongo-id" });
     expect(collection.insertOne).toHaveBeenCalledWith({ name: "Mona" });
-    expect(collection.updateOne).toHaveBeenCalledWith({ id: 7 }, { $set: { name: "Updated" } });
-    expect(collection.deleteOne).toHaveBeenCalledWith({ id: 7 });
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      1,
+      { $or: [{ id: 7 }, { _id: 7 }] },
+      { $set: { name: "Updated" } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      2,
+      { _id: "mongo-id" },
+      { $set: { name: "ByObjectId" } }
+    );
+    expect(collection.deleteOne).toHaveBeenNthCalledWith(1, {
+      $or: [{ id: 7 }, { _id: 7 }],
+    });
+    expect(collection.deleteOne).toHaveBeenNthCalledWith(2, { _id: "mongo-id" });
+  });
+
+  test("MongoModel rejects non-mongo connection names", () => {
+    class InvalidMongoModel extends MongoModel {
+      constructor() {
+        super("users", "mysql" as any);
+      }
+    }
+
+    expect(() => new InvalidMongoModel()).toThrow(
+      "MongoModel requires a mongo driver connection. Received: mysql"
+    );
   });
 
   test("throws unsupported-driver errors across CRUD operations", async () => {

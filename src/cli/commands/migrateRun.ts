@@ -58,7 +58,11 @@ async function runMigrationsForConnection(
 
   const driver = dbConfig.connections[connectionName]?.driver;
   if (!driver || !["mysql", "pg", "sqlite"].includes(driver)) {
-    console.warn(chalk.yellow(`Skipping migrations: "${connectionName}" is not SQL-based.`));
+    console.warn(
+      chalk.yellow(
+        `Skipping migrations: "${connectionName}" is not SQL-based. Use db:seed, db:seed:fresh, or demo:scenario for mongo workflows.`
+      )
+    );
     return true;
   }
 

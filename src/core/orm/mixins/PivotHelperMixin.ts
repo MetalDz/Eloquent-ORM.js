@@ -52,6 +52,7 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
     ): Promise<void> {
       const db = await (this as unknown as PivotCapableModel).getDB();
       const rows = relatedIds.map((rid) => ({ [foreignKey]: id, [relatedKey]: rid }));
+      if (rows.length === 0) return;
 
       const conn = (this as unknown as PivotCapableModel).connectionName;
       const key = conn as keyof typeof dbConfig.connections;
