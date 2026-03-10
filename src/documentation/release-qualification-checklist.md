@@ -1,6 +1,6 @@
 # Release Qualification Checklist
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 Use this checklist before creating a release tag or publishing a package.
 
@@ -66,6 +66,35 @@ Use this checklist before creating a release tag or publishing a package.
   - Missing lockfile.
   - Lockfile install fails.
   - Production dependency audit reports high/critical vulnerabilities.
+
+### 6) NoSQL Regression Gate
+- Command source:
+  - CI job: `nosql-regression`
+  - Focused suites:
+    - `src/lab_test/nosql.full.integration.contract.logic.test.ts`
+    - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`
+    - `src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts`
+- Pass Criteria:
+  - NoSQL contract and CLI parity suites pass in CI.
+  - NoSQL app/test routing checks pass.
+  - NoSQL tarball smoke wiring checks pass.
+- Fail Criteria:
+  - Any NoSQL focused suite fails.
+  - NoSQL command-surface/behavior contracts regress.
+  - Tarball NoSQL runtime smoke assertions regress.
+
+### 7) NoSQL Documentation Closure
+- Required documents:
+  - `src/documentation/nosql-usage-guide.md`
+  - `src/documentation/usage-guides.md` (NoSQL workflow section)
+  - `src/documentation/upgrade-guide.md` (SQL-first to Mongo upgrade notes)
+- Pass Criteria:
+  - NoSQL support matrix is documented.
+  - SQL-only unsupported behavior on mongo is explicitly documented.
+  - SQL-first enabling steps for mongo are documented for app and test environments.
+- Fail Criteria:
+  - Missing NoSQL usage/limitation documentation.
+  - Missing upgrade guidance for SQL-first projects enabling mongo.
 
 ## Release Decision
 - Release is allowed only when all hard gates pass in the same commit/PR.

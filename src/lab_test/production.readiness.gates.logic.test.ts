@@ -22,6 +22,8 @@ describe("production readiness gates", () => {
       "src/lab_test/ci.release.qualification.logic.test.ts",
       "src/lab_test/dependency.audit.tracking.logic.test.ts",
       "src/lab_test/sqlite.driver.replacement.logic.test.ts",
+      "src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts",
+      "src/lab_test/nosql.phase5.docs-release.logic.test.ts",
     ];
 
     const missing = requiredTests.filter((relPath) =>
@@ -46,6 +48,7 @@ describe("production readiness gates", () => {
       "src/documentation/db-least-privilege-env-contract.md",
       "validation tasks/Observability-Audit-Trail-Plan.md",
       "validation tasks/Security-API-Documentation-Plan.md",
+      "validation tasks/NoSQL-Full-Integration-Plan.md",
       "validation tasks/CI-Release-Qualification-Plan.md",
       "validation tasks/Dependency-Security-Audit-Tracking-Plan.md",
       "SECURITY.md",
@@ -54,6 +57,7 @@ describe("production readiness gates", () => {
       "src/documentation/usage-guides.md",
       "src/documentation/upgrade-guide.md",
       "src/documentation/release-qualification-checklist.md",
+      "src/documentation/nosql-usage-guide.md",
     ];
 
     const missing = requiredDocs.filter((relPath) =>

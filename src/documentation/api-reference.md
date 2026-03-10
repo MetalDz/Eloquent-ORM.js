@@ -1,6 +1,6 @@
 # EloquentJS Public API Reference
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 ## Stability Contract
 - Only exports from `src/index.ts` are public and semver-tracked.
@@ -88,4 +88,6 @@ Last updated: 2026-03-06
 ## Notes
 - CLI command functions are not exported as public package API.
 - New public exports must be added through `src/index.ts` and documented here.
+- For mongo runtime/CLI behavior and limits, see:
+  - `src/documentation/nosql-usage-guide.md`
 

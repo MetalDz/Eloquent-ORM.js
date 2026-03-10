@@ -13,11 +13,11 @@ describe("NoSQL full integration contract plan", () => {
 
     const requiredSnippets = [
       "# NoSQL Full Integration Plan",
-      "Status: IN PROGRESS (Phase 3 Complete)",
+      "Status: DONE (Phase 5 Complete)",
       "Target driver family:",
       "`mongo`",
       "No attempt to force SQL migration semantics onto NoSQL.",
-      "Next active implementation target is Phase 4 (validation and quality gates).",
+      "Plan is closed.",
     ];
 
     for (const snippet of requiredSnippets) {
@@ -107,6 +107,47 @@ describe("NoSQL full integration contract plan", () => {
     }
   });
 
-  test.todo("implement phase 4: CI regression gates and pack-smoke NoSQL checks");
-  test.todo("implement phase 5: documentation and release closure");
+  test("phase 4 is marked done with validation and quality gate output documented", () => {
+    const plan = fs.readFileSync(planPath, "utf8");
+
+    const requiredSnippets = [
+      "### Phase 4: Validation and Quality Gates",
+      "- [x] Add focused NoSQL integration tests for app + test environments.",
+      "- [x] Add release gates to ensure NoSQL regressions fail CI.",
+      "- [x] Confirm tarball smoke path does not regress NoSQL runtime wiring.",
+      "### Phase 4 Output: Validation and Quality Gates",
+      "src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts",
+      "new job: `nosql-regression` (`NoSQL Regression Gate`)",
+      "scripts/pack-smoke.js",
+      "`migrate:status`",
+      "`migrate:rollback`",
+    ];
+
+    for (const snippet of requiredSnippets) {
+      expect(plan).toContain(snippet);
+    }
+  });
+
+  test("phase 5 is marked done with documentation and release closure output documented", () => {
+    const plan = fs.readFileSync(planPath, "utf8");
+
+    const requiredSnippets = [
+      "### Phase 5: Documentation and Release Closure",
+      "- [x] Publish NoSQL usage guide and limitation matrix.",
+      "- [x] Add upgrade notes for projects enabling NoSQL after SQL-first setup.",
+      "- [x] Close this plan only after CI and pack-smoke validation are green.",
+      "### Phase 5 Output: Documentation and Release Closure",
+      "src/documentation/nosql-usage-guide.md",
+      "src/documentation/usage-guides.md",
+      "src/documentation/upgrade-guide.md",
+      "src/documentation/release-qualification-checklist.md",
+      "npm run test:pack-smoke",
+      "All phases (1 to 5) are complete and locked.",
+      "Plan is closed.",
+    ];
+
+    for (const snippet of requiredSnippets) {
+      expect(plan).toContain(snippet);
+    }
+  });
 });

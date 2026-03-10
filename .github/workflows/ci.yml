@@ -183,6 +183,35 @@ jobs:
       - name: Run tarball smoke
         run: npm run test:pack-smoke
 
+  nosql-regression:
+    name: NoSQL Regression Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run NoSQL focused regressions
+        run: >
+          npm test -- --runInBand --runTestsByPath
+          src/lab_test/nosql.full.integration.contract.logic.test.ts
+          src/lab_test/nosql.cli.phase3.parity.logic.test.ts
+          src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts
+          src/lab_test/nosql.phase5.docs-release.logic.test.ts
+
   dependency-security:
     name: Dependency Security and Lockfile Policy
     runs-on: ubuntu-latest

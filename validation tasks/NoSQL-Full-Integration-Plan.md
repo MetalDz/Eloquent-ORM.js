@@ -1,7 +1,7 @@
 # NoSQL Full Integration Plan
 
 Last updated: 2026-03-10
-Status: IN PROGRESS (Phase 3 Complete)
+Status: DONE (Phase 5 Complete)
 
 ## Goal
 - Fully integrate NoSQL support into ORM runtime and CLI workflows with predictable behavior and production-safe defaults.
@@ -125,14 +125,51 @@ Status: IN PROGRESS (Phase 3 Complete)
   - `make:migration`
 
 ### Phase 4: Validation and Quality Gates
-- [ ] Add focused NoSQL integration tests for app + test environments.
-- [ ] Add release gates to ensure NoSQL regressions fail CI.
-- [ ] Confirm tarball smoke path does not regress NoSQL runtime wiring.
+- [x] Add focused NoSQL integration tests for app + test environments.
+- [x] Add release gates to ensure NoSQL regressions fail CI.
+- [x] Confirm tarball smoke path does not regress NoSQL runtime wiring.
+
+### Phase 4 Output: Validation and Quality Gates
+- Added focused NoSQL app/test integration + gate assertions:
+  - `src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts`
+  - covers:
+    - `db:seed` mongo app/test env routing
+    - `demo:scenario` mongo app/test connection resolution without SQL adapter
+    - tarball smoke NoSQL runtime check presence in `scripts/pack-smoke.js`
+- Added CI release gate for NoSQL regressions:
+  - `.github/workflows/ci.yml`
+  - new job: `nosql-regression` (`NoSQL Regression Gate`)
+  - runs focused NoSQL suites to fail CI on NoSQL regression
+- Updated release qualification hard-gate documentation:
+  - `src/documentation/release-qualification-checklist.md`
+  - added explicit `NoSQL Regression Gate` pass/fail criteria
+- Extended tarball smoke flow with explicit NoSQL runtime wiring checks:
+  - `scripts/pack-smoke.js`
+  - verifies `--mongo` CLI behavior for:
+    - `make:migration`
+    - `migrate:status`
+    - `migrate:run`
+    - `migrate:rollback`
 
 ### Phase 5: Documentation and Release Closure
-- [ ] Publish NoSQL usage guide and limitation matrix.
-- [ ] Add upgrade notes for projects enabling NoSQL after SQL-first setup.
-- [ ] Close this plan only after CI and pack-smoke validation are green.
+- [x] Publish NoSQL usage guide and limitation matrix.
+- [x] Add upgrade notes for projects enabling NoSQL after SQL-first setup.
+- [x] Close this plan only after CI and pack-smoke validation are green.
+
+### Phase 5 Output: Documentation and Release Closure
+- Published NoSQL usage and limitation docs:
+  - `src/documentation/nosql-usage-guide.md`
+  - `src/documentation/usage-guides.md` (NoSQL workflow section)
+- Published SQL-first to NoSQL upgrade notes:
+  - `src/documentation/upgrade-guide.md`
+- Linked NoSQL runtime contract from API docs:
+  - `src/documentation/api-reference.md`
+- Extended release qualification checklist with NoSQL documentation closure gate:
+  - `src/documentation/release-qualification-checklist.md`
+- Closure validation:
+  - focused NoSQL contract/gate/doc tests pass locally
+  - `npm run test:pack-smoke` passes locally with NoSQL runtime smoke assertions
+  - CI contains explicit NoSQL regression gate (`nosql-regression`)
 
 ## Acceptance Criteria
 - NoSQL driver is treated as a first-class documented runtime target.
@@ -152,5 +189,5 @@ Status: IN PROGRESS (Phase 3 Complete)
 - Track deltas in `validation tasks/Progress snapshot.md` during implementation phases.
 
 ## Notes
-- Phase 1, Phase 2, and Phase 3 are complete and locked.
-- Next active implementation target is Phase 4 (validation and quality gates).
+- All phases (1 to 5) are complete and locked.
+- Plan is closed.

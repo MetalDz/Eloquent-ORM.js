@@ -589,6 +589,66 @@ function runScenarioAutoSmoke(sample) {
   assertContains("blog auto demo:scenario", demoResult.combined, "favorite posts: 2");
 }
 
+function runNoSqlRuntimeSmoke(sample) {
+  const mongoMigrationsDir = path.join(
+    sample.dir,
+    "src",
+    "test",
+    "database",
+    "migrations",
+    "mongo_test"
+  );
+  fs.mkdirSync(mongoMigrationsDir, { recursive: true });
+
+  const makeMigrationMongo = runCli(
+    sample.dir,
+    ["make:migration", "--all", "--test", "--mongo"],
+    sample.env
+  );
+  assertSuccess("nosql make:migration --mongo", makeMigrationMongo);
+  assertContains(
+    "nosql make:migration --mongo",
+    makeMigrationMongo.combined,
+    'Skipping make:migration for "mongo_test"'
+  );
+
+  const statusMongo = runCli(
+    sample.dir,
+    ["migrate:status", "--test", "--mongo"],
+    sample.env
+  );
+  assertSuccess("nosql migrate:status --mongo", statusMongo);
+  assertContains(
+    "nosql migrate:status --mongo",
+    statusMongo.combined,
+    'Status skipped: "mongo_test" is not SQL-based'
+  );
+
+  const runMongo = runCli(
+    sample.dir,
+    ["migrate:run", "--test", "--mongo"],
+    sample.env
+  );
+  assertSuccess("nosql migrate:run --mongo", runMongo);
+  assertContains(
+    "nosql migrate:run --mongo",
+    runMongo.combined,
+    'Skipping migrations: "mongo_test" is not SQL-based'
+  );
+
+  const rollbackMongo = runCli(
+    sample.dir,
+    ["migrate:rollback", "--test", "--mongo"],
+    sample.env
+  );
+  assertSuccess("nosql migrate:rollback --mongo", rollbackMongo);
+  assertContains(
+    "nosql migrate:rollback --mongo",
+    rollbackMongo.combined,
+    'Rollback skipped: "mongo_test" is not SQL-based'
+  );
+}
+
 let tarballPath = "";
 let tarballName = "";
 const sampleDirs = [];
@@ -611,6 +671,7 @@ try {
   const blogSample = createSampleApp(tarballName, "blog");
   sampleDirs.push(blogSample.dir);
   runBlogScenarioSmoke(blogSample);
+  runNoSqlRuntimeSmoke(blogSample);
 
   const mediaSample = createSampleApp(tarballName, "media");
   sampleDirs.push(mediaSample.dir);

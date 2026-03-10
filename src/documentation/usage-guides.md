@@ -1,6 +1,6 @@
 # Usage Guides
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 ## 1) Runtime Setup
 1. Configure environment variables in `.env`.
@@ -64,4 +64,20 @@ Examples:
 3. `migrate:run` (add `--test` for test mode)
 4. `db:seed` / `db:seed:fresh`
 5. `migrate:status` verification
+
+## 7) NoSQL Workflow (Mongo)
+Use explicit mongo targeting when running NoSQL paths:
+- app mode: `--mongo`
+- test mode: `--mongo --test` (targets `mongo_test` when configured)
+
+Key notes:
+- `--all-connections` remains SQL-only (`mysql`, `pg`, `sqlite`) by design.
+- SQL migration commands on mongo targets are skipped with actionable guidance.
+- Preferred mongo verification path:
+  - `eloquent db:seed:precheck --mongo [--test]`
+  - `eloquent db:seed --mongo [--test] --class <Seeder>`
+  - `eloquent demo:scenario [--test]`
+
+Detailed matrix and contract:
+- `src/documentation/nosql-usage-guide.md`
 
