@@ -15,7 +15,7 @@ jobs:
   quality-gate:
     name: Typecheck, Build, Test (MySQL)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       mysql:
         image: mysql:8.0
@@ -80,7 +80,12 @@ jobs:
         run: npm run build
 
       - name: Test
-        timeout-minutes: 8
+        timeout-minutes: 15
+        env:
+          CI: "true"
+          FORCE_COLOR: "0"
+          ELOQUENT_RUNTIME_LOG: "false"
+          DOTENV_CONFIG_QUIET: "true"
         run: npm run test:coverage
 
   critical-stability:

@@ -11,6 +11,7 @@ import { dbSeed } from "./dbSeed";
 import { ImportResolver } from "../utils/ImportResolver";
 import { resolveConnectionNamesFromFlags } from "../utils/resolveConnectionFlags";
 import type { ConnectionName } from "../../core/connection/ConnectionFactory";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 
 type ScenarioOptions = {
   test?: boolean;
@@ -554,7 +555,7 @@ export async function makeScenario(
     );
   }
   const scenarioConnectionName =
-    connectionNames[0] ?? (useMongo ? "mongo_test" : "mysql_test");
+    connectionNames[0] ?? resolveConnectionName(undefined, { test: true });
   const renderOptions = {
     isTest,
     useMongo,

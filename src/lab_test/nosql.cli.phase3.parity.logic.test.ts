@@ -240,6 +240,86 @@ describe("NoSQL Phase 3 CLI parity", () => {
     });
   });
 
+  test("make:scenario --test (without --mongo) uses resolved DB_TEST_CONNECTION target", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-nosql-phase3-scenario-sql-"));
+    const modelsDir = path.join(root, "models");
+    const factoriesDir = path.join(root, "factories");
+    const seedsDir = path.join(root, "seeds");
+    const migrationsRoot = path.join(root, "migrations");
+    fs.mkdirSync(modelsDir, { recursive: true });
+    fs.mkdirSync(factoriesDir, { recursive: true });
+    fs.mkdirSync(seedsDir, { recursive: true });
+    fs.mkdirSync(migrationsRoot, { recursive: true });
+
+    jest.spyOn(PathMap, "ensureDirs").mockImplementation(() => undefined);
+    jest.spyOn(PathMap, "models").mockReturnValue(modelsDir);
+    jest.spyOn(PathMap, "factories").mockReturnValue(factoriesDir);
+    jest.spyOn(PathMap, "seeds").mockReturnValue(seedsDir);
+    jest.spyOn(PathMap, "appMigrations").mockReturnValue(migrationsRoot);
+    jest.spyOn(PathMap, "testMigrations").mockReturnValue(migrationsRoot);
+    jest
+      .spyOn(PathMap, "migrations")
+      .mockImplementation((_isTest?: boolean, connectionName?: string) => {
+        const dir = path.join(migrationsRoot, String(connectionName ?? "default"));
+        fs.mkdirSync(dir, { recursive: true });
+        return dir;
+      });
+
+    jest
+      .spyOn(resolveConnectionModule, "resolveConnectionName")
+      .mockReturnValue("sqlite_test" as never);
+    jest
+      .spyOn(makeFactoryCommand, "makeFactory")
+      .mockImplementation(async () => undefined);
+    const makeMigrationSpy = jest
+      .spyOn(makeMigrationCommand, "makeMigration")
+      .mockImplementation(async () => undefined);
+    const migrateFreshSpy = jest
+      .spyOn(migrateFreshCommand, "migrateFresh")
+      .mockImplementation(async () => undefined);
+    const dbSeedSpy = jest
+      .spyOn(dbSeedCommand, "dbSeed")
+      .mockImplementation(async () => undefined);
+
+    await makeScenario("blog", {
+      test: true,
+      run: true,
+      force: true,
+    });
+
+    expect(makeMigrationSpy).toHaveBeenCalledWith(
+      "all",
+      expect.objectContaining({
+        test: true,
+        exit: false,
+        connectionName: "sqlite_test",
+      })
+    );
+    expect(migrateFreshSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        test: true,
+        force: true,
+        connectionNames: ["sqlite_test"],
+      })
+    );
+    expect(dbSeedSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        test: true,
+        class: "BlogScenarioSeeder",
+        connectionNames: ["sqlite_test"],
+      })
+    );
+
+    const userModel = fs.readFileSync(path.join(modelsDir, "User.ts"), "utf8");
+    expect(userModel).toContain("extends SqlModel");
+    expect(userModel).toContain('process.env.DB_CONNECTION ?? "sqlite_test"');
+
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(path.resolve(process.cwd(), "src/test/.eloquent-scenario.json"), {
+      force: true,
+    });
+  });
+
   test("db:seed and db:seed:fresh keep explicit mongo connection routing", async () => {
     const seen: string[] = [];
 
