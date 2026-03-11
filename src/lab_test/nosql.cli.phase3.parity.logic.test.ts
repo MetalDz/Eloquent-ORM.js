@@ -127,7 +127,7 @@ describe("NoSQL Phase 3 CLI parity", () => {
     expect(generatedFile).toBeDefined();
     const content = fs.readFileSync(path.join(generatedDir, generatedFile!), "utf8");
     expect(content).toContain("db.ensureCollection");
-    expect(content).toContain("db.createIndex");
+    expect(content).not.toContain("id_pk_unique");
 
     fs.rmSync(root, { recursive: true, force: true });
   });

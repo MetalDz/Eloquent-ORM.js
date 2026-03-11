@@ -66,11 +66,13 @@ export const dbConfig = {
       driver: "mongo",
       uri: mongoRuntime.uri,
       database: mongoRuntime.database,
+      dnsServers: mongoRuntime.dnsServers,
     },
     mongo_test: {
       driver: "mongo",
       uri: mongoTest.uri,
       database: mongoTest.database,
+      dnsServers: mongoTest.dnsServers,
     },
   },
 };

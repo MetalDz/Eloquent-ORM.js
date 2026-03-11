@@ -1,6 +1,7 @@
 import { Pool } from "mysql2/promise";
 import { Client as PgClient } from "pg";
 import { MongoClient, Db } from "mongodb";
+import dns from "dns";
 import { dbConfig } from "../../config/database";
 import {
   BetterSqliteConnection,
@@ -48,6 +49,7 @@ export interface MongoConfig {
   driver: "mongo";
   uri: string;
   database: string;
+  dnsServers?: string[];
 }
 
 /** Union type for all connection configs */
@@ -59,6 +61,60 @@ export type ConnectionInstance = Pool | PgClient | SQLiteConnectionLike | Db;
 /** Supported connection names */
 export type ConnectionName = keyof typeof dbConfig.connections;
 const mongoClientByDb = new WeakMap<Db, MongoClient>();
+
+function applyMongoDnsServers(uri: string, dnsServers?: string[]): void {
+  if (!uri.startsWith("mongodb+srv://")) return;
+
+  const normalizedServers = (dnsServers ?? [])
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  if (normalizedServers.length === 0) return;
+
+  const currentServers = dns.getServers();
+  if (
+    currentServers.length === normalizedServers.length &&
+    currentServers.every((value, index) => value === normalizedServers[index])
+  ) {
+    return;
+  }
+
+  dns.setServers(normalizedServers);
+  console.log(
+    `Using custom DNS servers for MongoDB SRV resolution: ${normalizedServers.join(", ")}`
+  );
+}
+
+function normalizeMongoConnectionError(
+  connectionName: string,
+  error: unknown
+): Error {
+  const code = String((error as { code?: unknown })?.code ?? "");
+  const codeName = String((error as { codeName?: unknown })?.codeName ?? "");
+  const message =
+    error instanceof Error ? error.message : String(error);
+
+  if (code === "ECONNREFUSED" && message.includes("querySrv")) {
+    const normalized = new Error(
+      `MongoDB SRV lookup failed for "${connectionName}". ` +
+        `If system DNS works but Node fails, set MONGO_DNS_SERVERS ` +
+        `or switch to a non-SRV mongodb:// URI.`
+    );
+    (normalized as Error & { cause?: unknown }).cause = error;
+    return normalized;
+  }
+
+  if ((code === "8000" || codeName === "AtlasError") && /auth/i.test(message)) {
+    const normalized = new Error(
+      `MongoDB authentication failed for "${connectionName}". ` +
+        `Verify MONGO_URI credentials, Atlas DB user roles, and authSource.`
+    );
+    (normalized as Error & { cause?: unknown }).cause = error;
+    return normalized;
+  }
+
+  return error instanceof Error ? error : new Error(String(error));
+}
 
 /* ----------------------------------------------------------
  * ⚙️ 2. Connect Function (Multi-Driver)
@@ -102,12 +158,22 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
 
     /* ---------- MongoDB ---------- */
     case "mongo": {
+      applyMongoDnsServers(config.uri, config.dnsServers);
       const client = new MongoClient(config.uri);
-      await client.connect();
-      const db = client.db(config.database);
-      mongoClientByDb.set(db, client);
-      console.log(`🧩 Connected to MongoDB: ${config.database}`);
-      return db;
+      try {
+        await client.connect();
+        const db = client.db(config.database);
+        mongoClientByDb.set(db, client);
+        console.log(`🧩 Connected to MongoDB: ${config.database}`);
+        return db;
+      } catch (error) {
+        try {
+          await client.close();
+        } catch {
+          // no-op
+        }
+        throw normalizeMongoConnectionError(name, error);
+      }
     }
 
     /* ---------- Unknown ---------- */

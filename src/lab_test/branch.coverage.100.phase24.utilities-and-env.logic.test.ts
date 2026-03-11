@@ -9,6 +9,7 @@ import {
 import {
   resolveDbExecutionRole,
   resolveMysqlEnv,
+  resolveMongoEnv,
   resolvePgEnv,
   resolveSqlitePath,
 } from "../config/dbRoleEnv";
@@ -313,5 +314,44 @@ describe("Branch coverage 100% - phase 24 utilities/env deep edge closure", () =
         { field: "title", message: "must be less than 3 characters" },
       ])
     );
+  });
+
+  test("resolveMongoEnv covers runtime/test dns server parsing and fallback chain", () => {
+    const runtime = resolveMongoEnv({
+      ELOQUENT_DB_ROLE: "runtime",
+      MONGO_RUNTIME_URI: "mongodb+srv://runtime.example/mongo",
+      MONGO_RUNTIME_DB: "runtime_db",
+      MONGO_RUNTIME_DNS_SERVERS: "8.8.8.8, 1.1.1.1",
+    });
+
+    const testConfig = resolveMongoEnv(
+      {
+        ELOQUENT_DB_ROLE: "migration",
+        MONGO_TEST_URI: "mongodb+srv://test.example/mongo",
+        MONGO_TEST_DATABASE: "test_db",
+        MONGO_TEST_DNS_SERVERS: "9.9.9.9, 208.67.222.222",
+      },
+      { test: true }
+    );
+
+    const fallback = resolveMongoEnv({});
+
+    expect(runtime).toEqual({
+      uri: "mongodb+srv://runtime.example/mongo",
+      database: "runtime_db",
+      dnsServers: ["8.8.8.8", "1.1.1.1"],
+    });
+
+    expect(testConfig).toEqual({
+      uri: "mongodb+srv://test.example/mongo",
+      database: "test_db",
+      dnsServers: ["9.9.9.9", "208.67.222.222"],
+    });
+
+    expect(fallback).toEqual({
+      uri: "mongodb://localhost:27017",
+      database: "eloquentjs_db",
+      dnsServers: [],
+    });
   });
 });

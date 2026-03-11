@@ -2,6 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
 
 const repoRoot = path.resolve(__dirname, "..");
 const nodeCmd = process.execPath;
@@ -122,6 +123,14 @@ function assertNonEmptyMigration(dir, needle) {
     if (content.includes("await db.query(`") && !content.includes("// (no SQL changes detected)")) {
       return filePath;
     }
+    if (
+      (content.includes("db.ensureCollection(") ||
+        content.includes("db.createIndex(") ||
+        content.includes("db.dropCollection(")) &&
+      !content.includes("// (no Mongo changes detected)")
+    ) {
+      return filePath;
+    }
   }
 
   throw new Error(`Expected non-empty migration matching "${needle}" in ${dir}`);
@@ -211,6 +220,9 @@ function createSampleApp(tarballName, label) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `eloquent-pack-smoke-${label}-`));
   const localTarballPath = path.join(dir, tarballName);
   fs.copyFileSync(path.join(repoRoot, tarballName), localTarballPath);
+  const uniqueMongoTestDb = `eloquent_pack_smoke_${sanitizePathSegment(label)}_${Date.now()}_${Math.floor(
+    Math.random() * 10000
+  )}`;
 
   assertSuccess("npm init", runNpm(["init", "-y"], { cwd: dir }));
   assertSuccess("npm install tarball", runNpm(["install", `./${tarballName}`], { cwd: dir }));
@@ -221,6 +233,7 @@ function createSampleApp(tarballName, label) {
       ...process.env,
       DB_TEST_CONNECTION: "sqlite_test",
       SQLITE_TEST_PATH: path.join(dir, "data.test.sqlite"),
+      MONGO_TEST_DB: uniqueMongoTestDb,
     },
   };
 }
@@ -600,6 +613,44 @@ function runNoSqlRuntimeSmoke(sample) {
   );
   fs.mkdirSync(mongoMigrationsDir, { recursive: true });
 
+  const modelMongo = runCli(
+    sample.dir,
+    ["make:model", "GeoLocation", "--test", "--mongo", "--with-migration", "--force"],
+    sample.env
+  );
+  assertSuccess("nosql make:model --mongo", modelMongo);
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "models", "GeoLocation.ts"),
+    'import { MongoModel, ModelInstance } from "eloquentjs";'
+  );
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "models", "GeoLocation.ts"),
+    'static connectionName = "mongo_test"'
+  );
+  const geoMigrationPath = assertNonEmptyMigration(mongoMigrationsDir, "_geolocations_table");
+  assertFileContains(geoMigrationPath, "db.ensureCollection");
+
+  const factoryMongo = runCli(
+    sample.dir,
+    ["make:factory", "GeoLocation", "--test", "--force"],
+    sample.env
+  );
+  assertSuccess("nosql make:factory --mongo model", factoryMongo);
+  assertFileContains(
+    path.join(sample.dir, "src", "test", "database", "factories", "GeoLocationFactory.ts"),
+    'import { Factory } from "eloquentjs";'
+  );
+
+  const seedMongo = runCli(
+    sample.dir,
+    ["make:seed", "GeoLocation", "--test", "--count", "2"],
+    sample.env
+  );
+  assertSuccess("nosql make:seed --mongo model", seedMongo);
+  assertFileExists(
+    path.join(sample.dir, "src", "test", "database", "seeds", "GeoLocationSeeder.ts")
+  );
+
   const makeMigrationMongo = runCli(
     sample.dir,
     ["make:migration", "--all", "--test", "--mongo"],
@@ -641,6 +692,68 @@ function runNoSqlRuntimeSmoke(sample) {
   );
   assertSuccess("nosql migrate:rollback --mongo", rollbackMongo);
   assertOneOf("nosql migrate:rollback --mongo", rollbackMongo.combined, [
+    "rolled back successfully",
+    "No migrations found to roll back",
+  ]);
+
+  const freshMongo = runCli(
+    sample.dir,
+    ["migrate:fresh", "--test", "--mongo", "--force"],
+    sample.env
+  );
+  assertSuccess("nosql migrate:fresh --mongo", freshMongo);
+  assertOneOf("nosql migrate:fresh --mongo", freshMongo.combined, [
+    "migration(s) applied successfully",
+    "No new migrations to run",
+  ]);
+
+  const seedMongoRuntime = runCli(
+    sample.dir,
+    ["db:seed", "--test", "--mongo", "--class", "GeoLocationSeeder"],
+    sample.env
+  );
+  assertSuccess("nosql db:seed --mongo", seedMongoRuntime);
+  assertContains("nosql db:seed --mongo", seedMongoRuntime.combined, "Completed: GeoLocationSeeder");
+
+  const mongoSeedCheck = runNodeScript(
+    sample.dir,
+    "mongo-seed-check.cjs",
+    [
+      'const { MongoClient } = require("mongodb");',
+      "",
+      "(async () => {",
+      '  const uri = process.env.MONGO_TEST_URI || process.env.MONGO_URI;',
+      '  const databaseName = process.env.MONGO_TEST_DB || process.env.MONGO_DB || "eloquentjs_db";',
+      "  if (!uri) {",
+      '    throw new Error("Missing MONGO_TEST_URI/MONGO_URI for mongo seed smoke.");',
+      "  }",
+      "",
+      "  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 10000 });",
+      "  try {",
+      "    await client.connect();",
+      "    const db = client.db(databaseName);",
+      '    const count = await db.collection("geolocations").countDocuments();',
+      "    if (count !== 2) {",
+      '      throw new Error(`Unexpected geolocations count: ${count}`);',
+      "    }",
+      '    console.log(`geo-count:${count}`);',
+      "  } finally {",
+      "    await client.close();",
+      "  }",
+      "})().catch((error) => {",
+      "  console.error(error instanceof Error ? error.message : String(error));",
+      "  process.exit(1);",
+      "});",
+      "",
+    ].join("\n"),
+    sample.env,
+    "mongo-seed-check"
+  );
+  assertContains("mongo-seed-check", mongoSeedCheck.combined, "geo-count:2");
+
+  const resetMongo = runCli(sample.dir, ["migrate:reset", "--test", "--mongo"], sample.env);
+  assertSuccess("nosql migrate:reset --mongo", resetMongo);
+  assertOneOf("nosql migrate:reset --mongo", resetMongo.combined, [
     "rolled back successfully",
     "No migrations found to roll back",
   ]);

@@ -170,7 +170,7 @@ function buildMongoIndexDefinitions(
 
   for (const [name, field] of Object.entries(schema)) {
     if (field.kind === "column") {
-      if (field.options?.primary || field.type === "increments") {
+      if (field.options?.primary && field.type !== "increments") {
         push({ [name]: 1 }, { unique: true, name: `${name}_pk_unique` });
       }
       if (field.options?.unique) {

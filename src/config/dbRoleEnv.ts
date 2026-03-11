@@ -24,6 +24,19 @@ function pickFirstNumber(
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function pickFirstList(
+  env: NodeJS.ProcessEnv,
+  keys: string[]
+): string[] {
+  const raw = pickFirstDefined(env, keys, "");
+  if (!raw) return [];
+
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
 export function resolveDbExecutionRole(
   env: NodeJS.ProcessEnv = process.env
 ): DbExecutionRole {
@@ -217,6 +230,7 @@ export function resolveMongoEnv(
 ): {
   uri: string;
   database: string;
+  dnsServers: string[];
 } {
   const role = resolveDbExecutionRole(env);
   const isTest = !!options.test;
@@ -249,6 +263,13 @@ export function resolveMongoEnv(
     isTest ? "eloquentjs_db_test" : "eloquentjs_db"
   );
 
-  return { uri, database };
+  const dnsServers = pickFirstList(env, [
+    `${prefix}_${roleKey}_DNS_SERVERS`,
+    `${prefix}_DNS_SERVERS`,
+    `MONGO_${roleKey}_DNS_SERVERS`,
+    "MONGO_DNS_SERVERS",
+  ]);
+
+  return { uri, database, dnsServers };
 }
 
