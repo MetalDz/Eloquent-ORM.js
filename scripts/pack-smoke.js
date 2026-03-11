@@ -68,6 +68,12 @@ function assertContains(step, text, expected) {
   }
 }
 
+function assertNotContains(step, text, unexpected) {
+  if (text.includes(unexpected)) {
+    throw new Error(`[${step}] expected output to exclude "${unexpected}"\n${text}`);
+  }
+}
+
 function assertOneOf(step, text, options) {
   if (!options.some((value) => text.includes(value))) {
     throw new Error(`[${step}] expected one of ${options.join(" | ")}\n${text}`);
@@ -714,6 +720,40 @@ function runNoSqlRuntimeSmoke(sample) {
   );
   assertSuccess("nosql db:seed --mongo", seedMongoRuntime);
   assertContains("nosql db:seed --mongo", seedMongoRuntime.combined, "Completed: GeoLocationSeeder");
+
+  const factoryStatusMongo = runCli(
+    sample.dir,
+    ["factory:status", "--test", "--mongo", "--details"],
+    sample.env
+  );
+  assertSuccess("nosql factory:status --mongo", factoryStatusMongo);
+  assertContains(
+    "nosql factory:status --mongo",
+    factoryStatusMongo.combined,
+    "GeoLocationFactory"
+  );
+  assertNotContains(
+    "nosql factory:status --mongo",
+    factoryStatusMongo.combined,
+    "UserFactory"
+  );
+
+  const demoMongo = runCli(
+    sample.dir,
+    ["demo:scenario", "--test", "--mongo", "--random"],
+    sample.env
+  );
+  assertSuccess("nosql demo:scenario --mongo", demoMongo);
+  assertContains(
+    "nosql demo:scenario --mongo",
+    demoMongo.combined,
+    "No users found to demonstrate relations."
+  );
+  assertNotContains(
+    "nosql demo:scenario --mongo",
+    demoMongo.combined,
+    "Mongo driver does not support SQL adapter APIs."
+  );
 
   const mongoSeedCheck = runNodeScript(
     sample.dir,
