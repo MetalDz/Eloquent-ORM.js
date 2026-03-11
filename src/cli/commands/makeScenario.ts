@@ -404,10 +404,12 @@ const mediaPreset: ScenarioPreset = {
 
 const presets: ScenarioPreset[] = [blogPreset, mediaPreset];
 
-const scenarioManifestPath = path.resolve(
-  PathMap.root,
-  "src/test/.eloquent-scenario.json"
-);
+function scenarioManifestPath(isTest: boolean): string {
+  return path.resolve(
+    PathMap.root,
+    isTest ? "src/test/.eloquent-scenario.json" : "src/app/.eloquent-scenario.json"
+  );
+}
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -446,20 +448,21 @@ function removeFileIfExists(filePath: string): boolean {
   return true;
 }
 
-function readScenarioManifest(): ScenarioManifest | null {
-  if (!fs.existsSync(scenarioManifestPath)) {
+function readScenarioManifest(isTest: boolean): ScenarioManifest | null {
+  const manifestPath = scenarioManifestPath(isTest);
+  if (!fs.existsSync(manifestPath)) {
     return null;
   }
 
   try {
-    const content = fs.readFileSync(scenarioManifestPath, "utf8");
+    const content = fs.readFileSync(manifestPath, "utf8");
     return JSON.parse(content) as ScenarioManifest;
   } catch {
     return null;
   }
 }
 
-function writeScenarioManifest(preset: ScenarioPreset): void {
+function writeScenarioManifest(isTest: boolean, preset: ScenarioPreset): void {
   const payload: ScenarioManifest = {
     presetId: preset.id,
     generatedAt: new Date().toISOString(),
@@ -467,11 +470,12 @@ function writeScenarioManifest(preset: ScenarioPreset): void {
     seedName: preset.seedName,
   };
 
-  fs.mkdirSync(path.dirname(scenarioManifestPath), { recursive: true });
-  fs.writeFileSync(scenarioManifestPath, JSON.stringify(payload, null, 2), "utf8");
+  const manifestPath = scenarioManifestPath(isTest);
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+  fs.writeFileSync(manifestPath, JSON.stringify(payload, null, 2), "utf8");
 }
 
-function cleanupScenarioArtifacts(): number {
+function cleanupScenarioArtifacts(isTest: boolean): number {
   let removedCount = 0;
   const modelNames = scenarioManagedModelNames();
   const seederNames = scenarioManagedSeeders();
@@ -480,12 +484,19 @@ function cleanupScenarioArtifacts(): number {
     `^\\d+_(create|update)_(${tableNames.map(escapeRegex).join("|")})_table\\.(ts|js)$`
   );
 
-  const modelsDir = PathMap.models(true);
-  const factoriesDir = PathMap.factories(true);
-  const seedsDir = PathMap.seeds(true);
-  const controllersDir = path.resolve(PathMap.root, "src/test/controllers");
-  const servicesDir = path.resolve(PathMap.root, "src/test/services");
-  const migrationsRoot = PathMap.migrations(true);
+  const manifestPath = scenarioManifestPath(isTest);
+  const modelsDir = PathMap.models(isTest);
+  const factoriesDir = PathMap.factories(isTest);
+  const seedsDir = PathMap.seeds(isTest);
+  const controllersDir = path.resolve(
+    PathMap.root,
+    isTest ? "src/test/controllers" : "src/app/controllers"
+  );
+  const servicesDir = path.resolve(
+    PathMap.root,
+    isTest ? "src/test/services" : "src/app/services"
+  );
+  const migrationsRoot = PathMap.migrations(isTest);
 
   for (const modelName of modelNames) {
     removedCount += Number(removeFileIfExists(path.join(modelsDir, `${modelName}.ts`)));
@@ -502,7 +513,7 @@ function cleanupScenarioArtifacts(): number {
     removedCount += Number(removeFileIfExists(path.join(seedsDir, `${seedName}.ts`)));
   }
 
-  removedCount += Number(removeFileIfExists(scenarioManifestPath));
+  removedCount += Number(removeFileIfExists(manifestPath));
 
   const migrationDirs = [migrationsRoot];
   if (fs.existsSync(migrationsRoot)) {
@@ -543,9 +554,6 @@ export async function makeScenario(
 ): Promise<void> {
   const isTest = options.test === true;
   const useMongo = options.mongo === true;
-  if (!isTest) {
-    throw new Error("make:scenario is test-only. Use --test to generate scenarios.");
-  }
   const connectionNames = resolveConnectionNamesFromFlags(isTest, {
     mongo: useMongo,
   }) as ConnectionName[];
@@ -555,7 +563,7 @@ export async function makeScenario(
     );
   }
   const scenarioConnectionName =
-    connectionNames[0] ?? resolveConnectionName(undefined, { test: true });
+    connectionNames[0] ?? resolveConnectionName(undefined, { test: isTest });
   const renderOptions = {
     isTest,
     useMongo,
@@ -566,33 +574,39 @@ export async function makeScenario(
   console.log(chalk.cyanBright(`\nScenario preset: ${preset.id}`));
   console.log(chalk.gray(preset.description));
 
-  const existingManifest = readScenarioManifest();
+  const existingManifest = readScenarioManifest(isTest);
   const presetChanged = existingManifest?.presetId !== undefined && existingManifest.presetId !== preset.id;
   if (presetChanged && options.force !== true) {
     throw new Error(
-      `Existing test scenario "${existingManifest?.presetId}" is active. Re-run with --force to replace it.`
+      `Existing ${isTest ? "test" : "app"} scenario "${existingManifest?.presetId}" is active. Re-run with --force to replace it.`
     );
   }
 
   if (options.force === true) {
-    const removedArtifacts = cleanupScenarioArtifacts();
+    const removedArtifacts = cleanupScenarioArtifacts(isTest);
     if (removedArtifacts > 0) {
       console.log(chalk.yellow(`Force cleanup removed ${removedArtifacts} stale scenario artifact(s).`));
     }
   }
 
   PathMap.ensureDirs();
-  const modelsDir = PathMap.models(true);
-  const factoriesDir = PathMap.factories(true);
-  const seedsDir = PathMap.seeds(true);
-  const testControllersDir = path.resolve(PathMap.root, "src/test/controllers");
-  const testServicesDir = path.resolve(PathMap.root, "src/test/services");
+  const modelsDir = PathMap.models(isTest);
+  const factoriesDir = PathMap.factories(isTest);
+  const seedsDir = PathMap.seeds(isTest);
+  const controllersDir = path.resolve(
+    PathMap.root,
+    isTest ? "src/test/controllers" : "src/app/controllers"
+  );
+  const servicesDir = path.resolve(
+    PathMap.root,
+    isTest ? "src/test/services" : "src/app/services"
+  );
 
-  if (!fs.existsSync(testControllersDir)) {
-    fs.mkdirSync(testControllersDir, { recursive: true });
+  if (!fs.existsSync(controllersDir)) {
+    fs.mkdirSync(controllersDir, { recursive: true });
   }
-  if (!fs.existsSync(testServicesDir)) {
-    fs.mkdirSync(testServicesDir, { recursive: true });
+  if (!fs.existsSync(servicesDir)) {
+    fs.mkdirSync(servicesDir, { recursive: true });
   }
 
   // 1) Models
@@ -602,18 +616,18 @@ export async function makeScenario(
 
   // 2) Factories
   for (const model of preset.models) {
-    await makeFactory(model.name, { test: true, force: true });
+    await makeFactory(model.name, { test: isTest, force: true, mongo: useMongo });
   }
 
   if (options.controllers) {
     for (const model of preset.models) {
-      await makeController(model.name, { test: true });
+      await makeController(model.name, { test: isTest });
     }
   }
 
   if (options.services) {
     for (const model of preset.models) {
-      await makeService(model.name, { test: true });
+      await makeService(model.name, { test: isTest });
     }
   }
 
@@ -676,23 +690,23 @@ export async function ${preset.seedName}() {
   fs.writeFileSync(seederPath, seedContent, "utf8");
   console.log(chalk.green(`Seeder created: ${seederPath}`));
 
-  writeScenarioManifest(preset);
+  writeScenarioManifest(isTest, preset);
 
   // 4) Migrations
   await makeMigration("all", {
-    test: true,
+    test: isTest,
     exit: false,
     connectionName: scenarioConnectionName,
   });
 
   if (options.run) {
     await migrateFresh({
-      test: true,
+      test: isTest,
       force: true,
       connectionNames: [scenarioConnectionName],
     });
     await dbSeed({
-      test: true,
+      test: isTest,
       class: preset.seedName,
       close: true,
       exit: false,
@@ -701,7 +715,7 @@ export async function ${preset.seedName}() {
   } else if (presetChanged) {
     console.log(
       chalk.yellow(
-        `Scenario preset changed. Run \`eloquent migrate:fresh --test ${useMongo ? "--mongo " : ""}--force\` before \`migrate:run\` to reset old scenario tables and history.`
+        `Scenario preset changed. Run \`eloquent migrate:fresh ${isTest ? "--test " : ""}${useMongo ? "--mongo " : ""}--force\` before \`migrate:run\` to reset old scenario tables and history.`
       )
     );
   }

@@ -332,7 +332,7 @@ const describeIfRunnable = hasBuiltCli && canSpawn ? describe : describe.skip;
 
 describeIfRunnable("ORM real-situation validation via CLI phases", () => {
   phaseDescribe(1, "Scenario scaffolding + migration generation", () => {
-    test("make:scenario without --test fails closed", () => {
+    test("make:scenario without --test is blocked in production", () => {
       const args = [
         "make:scenario",
         "BlogRuntime",
@@ -342,8 +342,11 @@ describeIfRunnable("ORM real-situation validation via CLI phases", () => {
         "--services",
         "--force",
       ];
-      const result = runCli(args, 300000, appSqliteEnv());
-      assertCliFailure(result, args, /test-only/i);
+      const result = runCli(args, 300000, {
+        ...appSqliteEnv(),
+        APP_ENV: "production",
+      });
+      assertCliFailure(result, args, /restricted to --test in production/i);
     });
 
     test("build test scenario fixtures with full scenario options", () => {

@@ -11,6 +11,7 @@ type MakeFactoryOptions = {
   overwrite?: boolean;
   test?: boolean;
   force?: boolean;
+  mongo?: boolean;
 };
 
 type IntrospectedField = {

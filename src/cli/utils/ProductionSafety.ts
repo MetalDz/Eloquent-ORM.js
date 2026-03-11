@@ -25,6 +25,12 @@ export type ProductionSafetyCheckResult = {
   reason?: string;
 };
 
+export type ProductionTestOnlyCheckInput = {
+  command: string;
+  test?: boolean;
+  env?: NodeJS.ProcessEnv;
+};
+
 /**
  * Blocks destructive CLI actions in production unless the operator explicitly
  * opts in using an environment allow flag plus --force --yes.
@@ -60,5 +66,24 @@ export function checkProductionDestructiveCommand(
   }
 
   return { allowed: true };
+}
+
+export function checkProductionTestOnlyCommand(
+  input: ProductionTestOnlyCheckInput
+): ProductionSafetyCheckResult {
+  const env = input.env ?? process.env;
+
+  if (!isProductionRuntime(env)) {
+    return { allowed: true };
+  }
+
+  if (input.test === true) {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    reason: `${input.command} is restricted to --test in production.`,
+  };
 }
 

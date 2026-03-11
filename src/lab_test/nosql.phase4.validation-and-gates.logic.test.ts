@@ -6,6 +6,9 @@ import { demoScenario } from "../cli/commands/demoScenario";
 import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
 import * as connectionFactory from "../core/connection/ConnectionFactory";
 import * as resolveConnectionModule from "../core/connection/resolveConnectionName";
+import * as artifactStorage from "../cli/utils/ArtifactStorage";
+import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry";
+import { MongoModel, SqlModel } from "../core/model/BaseModel";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -28,6 +31,9 @@ describe("NoSQL phase 4 validation and quality gates", () => {
     process.env.DB_CONNECTION = "mysql";
     process.env.DB_TEST_CONNECTION = "mysql_test";
     delete process.env.ELOQUENT_CLI;
+    jest
+      .spyOn(artifactStorage, "resolveSeederStorageKindFromFile")
+      .mockReturnValue("unknown");
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -43,6 +49,32 @@ describe("NoSQL phase 4 validation and quality gates", () => {
       process.env.ELOQUENT_CLI = originalCli;
     }
   });
+
+  class SqlArtifactModel extends SqlModel<Record<string, never>> {
+    constructor() {
+      super("sql_artifacts", "mysql");
+    }
+  }
+
+  class MongoArtifactModel extends MongoModel<Record<string, never>> {
+    constructor() {
+      super("mongo_artifacts", "mongo");
+    }
+  }
+
+  class SqlArtifactFactory {
+    model = SqlArtifactModel;
+    definition(): Record<string, never> {
+      return {};
+    }
+  }
+
+  class MongoArtifactFactory {
+    model = MongoArtifactModel;
+    definition(): Record<string, never> {
+      return {};
+    }
+  }
 
   test("db:seed routes mongo app/test connections with expected env binding", async () => {
     const seenEnv: string[] = [];
@@ -78,6 +110,29 @@ describe("NoSQL phase 4 validation and quality gates", () => {
     expect(seenEnv).toEqual(["mongo|mysql_test", "mongo_test|mongo_test"]);
     expect(process.env.DB_CONNECTION).toBe("mysql");
     expect(process.env.DB_TEST_CONNECTION).toBe("mysql_test");
+  });
+
+  test("factory auto-discovery filters SQL factories when mongo storage is requested", async () => {
+    FactoryRegistry.clear();
+
+    jest.spyOn(PathMap, "factories").mockReturnValue("virtual-factories");
+    jest.spyOn(fs, "existsSync").mockReturnValue(true);
+    jest
+      .spyOn(fs, "readdirSync")
+      .mockReturnValue([
+        "SqlArtifactFactory.ts",
+        "MongoArtifactFactory.ts",
+      ] as unknown as ReturnType<typeof fs.readdirSync>);
+    jest.spyOn(tsRuntime, "loadModule").mockImplementation((filePath: string) => {
+      if (filePath.includes("MongoArtifactFactory")) {
+        return { MongoArtifactFactory };
+      }
+      return { SqlArtifactFactory };
+    });
+
+    await FactoryRegistry.autoDiscover(true, { storageKind: "mongo" });
+
+    expect(FactoryRegistry.list()).toEqual(["MongoArtifactFactory"]);
   });
 
   test("demo:scenario uses mongo connection routing for app and test without SQL adapter", async () => {

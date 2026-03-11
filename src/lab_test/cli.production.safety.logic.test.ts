@@ -1,6 +1,7 @@
 import {
   PROD_DESTRUCTIVE_ALLOW_ENV,
   checkProductionDestructiveCommand,
+  checkProductionTestOnlyCommand,
   isProductionRuntime,
 } from "../cli/utils/ProductionSafety";
 
@@ -70,6 +71,28 @@ describe("CLI production safety guard", () => {
         NODE_ENV: "production",
         [PROD_DESTRUCTIVE_ALLOW_ENV]: "yes",
       },
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(result.reason).toBeUndefined();
+  });
+
+  test("production test-only guard blocks app-mode command in production", () => {
+    const result = checkProductionTestOnlyCommand({
+      command: "db:seed",
+      test: false,
+      env: { NODE_ENV: "production" },
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain("--test");
+  });
+
+  test("production test-only guard allows test-mode command in production", () => {
+    const result = checkProductionTestOnlyCommand({
+      command: "db:seed",
+      test: true,
+      env: { APP_ENV: "production" },
     });
 
     expect(result.allowed).toBe(true);

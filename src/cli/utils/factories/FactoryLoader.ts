@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { FactoryRegistry } from "./FactoryRegistry";
+import type { StorageKind } from "../ArtifactStorage";
 
 /**
  *  FactoryLoader
@@ -13,11 +14,15 @@ import { FactoryRegistry } from "./FactoryRegistry";
  *   const user = await userFactory.create();
  */
 
-export async function loadFactories(isTest = false): Promise<void> {
+export async function loadFactories(
+  isTest = false,
+  options: { storageKind?: Exclude<StorageKind, "unknown"> } = {}
+): Promise<void> {
   console.log(chalk.cyanBright("Initializing FactoryRegistry..."));
 
   try {
-    await FactoryRegistry.autoDiscover(isTest);
+    FactoryRegistry.clear();
+    await FactoryRegistry.autoDiscover(isTest, options);
 
     const count = FactoryRegistry.list().length;
     console.log(chalk.greenBright(`Loaded ${count} factories.`));

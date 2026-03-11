@@ -23,6 +23,7 @@ import { resolveConnectionNamesFromFlags } from "../cli/utils/resolveConnectionF
 import { migrateStatus } from "../cli/commands/migrateStatus";
 import { migrateRun } from "../cli/commands/migrateRun";
 import * as mongoMigrationTracker from "../cli/utils/migrations/MongoMigrationTracker";
+import * as artifactStorage from "../cli/utils/ArtifactStorage";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -46,6 +47,9 @@ describe("NoSQL Phase 3 CLI parity", () => {
     process.exitCode = 0;
     delete process.env.ELOQUENT_CLI;
     dbConfig.connections = { ...originalConnections };
+    jest
+      .spyOn(artifactStorage, "resolveSeederStorageKindFromFile")
+      .mockReturnValue("unknown");
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -318,6 +322,81 @@ describe("NoSQL Phase 3 CLI parity", () => {
     fs.rmSync(path.resolve(process.cwd(), "src/test/.eloquent-scenario.json"), {
       force: true,
     });
+  });
+
+  test("make:scenario --mongo supports app mode routing in development", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-nosql-phase3-scenario-app-"));
+    const modelsDir = path.join(root, "app-models");
+    const factoriesDir = path.join(root, "app-factories");
+    const seedsDir = path.join(root, "app-seeds");
+    const migrationsRoot = path.join(root, "app-migrations");
+    fs.mkdirSync(modelsDir, { recursive: true });
+    fs.mkdirSync(factoriesDir, { recursive: true });
+    fs.mkdirSync(seedsDir, { recursive: true });
+    fs.mkdirSync(migrationsRoot, { recursive: true });
+
+    jest.spyOn(PathMap, "ensureDirs").mockImplementation(() => undefined);
+    jest.spyOn(PathMap, "root", "get").mockReturnValue(root);
+    jest.spyOn(PathMap, "models").mockReturnValue(modelsDir);
+    jest.spyOn(PathMap, "factories").mockReturnValue(factoriesDir);
+    jest.spyOn(PathMap, "seeds").mockReturnValue(seedsDir);
+    jest.spyOn(PathMap, "appMigrations").mockReturnValue(migrationsRoot);
+    jest.spyOn(PathMap, "testMigrations").mockReturnValue(migrationsRoot);
+    jest
+      .spyOn(PathMap, "migrations")
+      .mockImplementation((_isTest?: boolean, connectionName?: string) => {
+        const dir = path.join(migrationsRoot, String(connectionName ?? "default"));
+        fs.mkdirSync(dir, { recursive: true });
+        return dir;
+      });
+
+    jest
+      .spyOn(makeFactoryCommand, "makeFactory")
+      .mockImplementation(async () => undefined);
+    const makeMigrationSpy = jest
+      .spyOn(makeMigrationCommand, "makeMigration")
+      .mockImplementation(async () => undefined);
+    const migrateFreshSpy = jest
+      .spyOn(migrateFreshCommand, "migrateFresh")
+      .mockImplementation(async () => undefined);
+    const dbSeedSpy = jest
+      .spyOn(dbSeedCommand, "dbSeed")
+      .mockImplementation(async () => undefined);
+
+    await makeScenario("blog", {
+      mongo: true,
+      run: true,
+      force: true,
+    });
+
+    expect(makeMigrationSpy).toHaveBeenCalledWith(
+      "all",
+      expect.objectContaining({
+        test: false,
+        exit: false,
+        connectionName: "mongo",
+      })
+    );
+    expect(migrateFreshSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        test: false,
+        force: true,
+        connectionNames: ["mongo"],
+      })
+    );
+    expect(dbSeedSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        test: false,
+        class: "BlogScenarioSeeder",
+        connectionNames: ["mongo"],
+      })
+    );
+
+    const userModel = fs.readFileSync(path.join(modelsDir, "User.ts"), "utf8");
+    expect(userModel).toContain("extends MongoModel");
+    expect(userModel).toContain('static connectionName = "mongo"');
+
+    fs.rmSync(root, { recursive: true, force: true });
   });
 
   test("db:seed and db:seed:fresh keep explicit mongo connection routing", async () => {

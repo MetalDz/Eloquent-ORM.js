@@ -15,7 +15,10 @@ import path from "path";
 import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler";
 import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";
 import { loadFactories } from "./utils/factories/FactoryLoader";
-import { checkProductionDestructiveCommand } from "./utils/ProductionSafety";
+import {
+  checkProductionDestructiveCommand,
+  checkProductionTestOnlyCommand,
+} from "./utils/ProductionSafety";
 import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
 import { redactSecretsInArgs } from "../core/security/SecretRedactor";
 import {
@@ -25,6 +28,7 @@ import {
   shouldLogAtLevel,
   type StructuredLogLevel,
 } from "./utils/StructuredLogger";
+import type { StorageKind } from "./utils/ArtifactStorage";
 
 if (process.env.ELOQUENT_DEBUG === "true") {
   console.log("[cli] start", { argv: process.argv.slice(2) });
@@ -55,6 +59,56 @@ function ensureProductionOverride(
   console.error(chalk.red(`❌ ${reason}`));
   process.exitCode = 1;
   return false;
+}
+
+function ensureProductionTestOnly(
+  commandName: string,
+  options: { test?: boolean }
+): boolean {
+  const verdict = checkProductionTestOnlyCommand({
+    command: commandName,
+    test: options.test === true,
+  });
+
+  if (verdict.allowed) {
+    return true;
+  }
+
+  const reason = verdict.reason ?? `${commandName} requires --test in production.`;
+  console.error(chalk.red(`â‌Œ ${reason}`));
+  process.exitCode = 1;
+  return false;
+}
+
+function resolveRequestedStorageKind(argv: string[]): Exclude<StorageKind, "unknown"> | undefined {
+  const hasMongo = argv.includes("--mongo");
+  const hasSql =
+    argv.includes("--mysql") ||
+    argv.includes("--pg") ||
+    argv.includes("--sqlite") ||
+    argv.includes("--all-connections");
+
+  if (hasMongo && !hasSql) {
+    return "mongo";
+  }
+
+  if (hasSql && !hasMongo) {
+    return "sql";
+  }
+
+  const defaultConnection = argv.includes("--test")
+    ? process.env.DB_TEST_CONNECTION || process.env.DB_CONNECTION
+    : process.env.DB_CONNECTION;
+
+  if (defaultConnection === "mongo" || defaultConnection === "mongo_test") {
+    return "mongo";
+  }
+
+  if (defaultConnection) {
+    return "sql";
+  }
+
+  return undefined;
 }
 
 // -------------------------------------------------------------------------
@@ -182,7 +236,9 @@ function shouldLoadFactories(argv: string[]): boolean {
   }
   if (!shouldLoadFactories(process.argv)) return;
   try {
-    await loadFactories(process.argv.includes("--test"));
+    await loadFactories(process.argv.includes("--test"), {
+      storageKind: resolveRequestedStorageKind(process.argv),
+    });
     if (process.env.DEBUG === "true") console.log(chalk.gray("🏭 Factories loaded successfully."));
   } catch (error) {
     console.error(chalk.red("❌ Failed to auto-load factories during CLI startup."));
@@ -296,10 +352,14 @@ program
   .command("make:seed <model>")
   .option("--count <number>", "Number of records to seed", "10")
   .option("--test", "Generate seed in test environment")
+  .option("--mongo", "Target a Mongo-backed model")
   .option("--force", "Overwrite existing seeder file if it exists")
   .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate a seeder file linked to a model factory")
-  .action(async (model: string, options: { count: string; test?: boolean; force?: boolean; yes?: boolean }) => {
+  .action(async (model: string, options: { count: string; test?: boolean; mongo?: boolean; force?: boolean; yes?: boolean }) => {
+    if (!ensureProductionTestOnly("make:seed", { test: !!options.test })) {
+      return;
+    }
     if (!ensureProductionOverride("make:seed", { force: !!options.force, yes: !!options.yes })) {
       return;
     }
@@ -307,6 +367,7 @@ program
       count: Number(options.count),
       test: !!options.test,
       force: !!options.force,
+      mongo: !!options.mongo,
     });
   });
 
@@ -314,10 +375,14 @@ program
   .command("make:factory <name>")
   .option("--model <model>", "Specify the model this factory belongs to")
   .option("--test", "Generate in test environment")
+  .option("--mongo", "Target a Mongo-backed model")
   .option("--force", "Overwrite existing file")
   .option("--yes", "Acknowledge production override for this destructive command")
   .description("Generate a factory for a model")
-  .action(async (name: string, options: { model?: string; test?: boolean; force?: boolean; yes?: boolean }) => {
+  .action(async (name: string, options: { model?: string; test?: boolean; mongo?: boolean; force?: boolean; yes?: boolean }) => {
+    if (!ensureProductionTestOnly("make:factory", { test: !!options.test })) {
+      return;
+    }
     if (!ensureProductionOverride("make:factory", { force: !!options.force, yes: !!options.yes })) {
       return;
     }
@@ -326,20 +391,21 @@ program
     await makeFactory(modelName, {
       test: !!options.test,
       force: !!options.force,
+      mongo: !!options.mongo,
     });
   });
 
 program
   .command("make:scenario <name>")
-  .option("--test", "Generate scenario in test folders")
+  .option("--test", "Generate scenario in test folders (default is app folders)")
   .option("--mongo", "Generate scenario models/migrations for mongo connection")
   .option("--preset <name>", "Preset: blog | media")
-  .option("--controllers", "Generate controllers (test)")
-  .option("--services", "Generate services (test)")
-  .option("--run", "Run migrate:run --test and db:seed --test for the scenario")
+  .option("--controllers", "Generate controllers for the target environment")
+  .option("--services", "Generate services for the target environment")
+  .option("--run", "Run migrate:fresh and db:seed for the target environment")
   .option("--force", "Overwrite existing scenario files")
   .option("--yes", "Acknowledge production override for this destructive command")
-  .description("Generate an automated test scenario (models, migrations, factories, seeds)")
+  .description("Generate an automated scenario (models, migrations, factories, seeds)")
   .action(async (name: string, options: {
     test?: boolean;
     mongo?: boolean;
@@ -351,6 +417,9 @@ program
     yes?: boolean;
   }) => {
     try {
+      if (!ensureProductionTestOnly("make:scenario", { test: !!options.test })) {
+        return;
+      }
       if (!ensureProductionOverride("make:scenario", { force: !!options.force, yes: !!options.yes })) {
         return;
       }
@@ -398,6 +467,9 @@ program
     noHooks?: boolean;
   }) => {
     try {
+      if (!ensureProductionTestOnly("db:seed", { test: !!options.test })) {
+        return;
+      }
       const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
         mysql: !!options.mysql,
         pg: !!options.pg,
@@ -496,6 +568,9 @@ program
     noHooks?: boolean;
   }) => {
     try {
+      if (!ensureProductionTestOnly("db:seed:fresh", { test: !!options.test })) {
+        return;
+      }
       if (!ensureProductionOverride("db:seed:fresh", { force: !!options.force, yes: !!options.yes })) {
         return;
       }
@@ -853,9 +928,9 @@ program
       { Command: "make:model <name>", Description: "--test --mongo --with-migration --attrs-from-schema --force --yes" },
       { Command: "make:controller <name>", Description: "--soft --test --force --yes" },
       { Command: "make:service <name>", Description: "--test --force --yes" },
-      { Command: "make:seed <model>", Description: "--count <number> --test --force --yes" },
+      { Command: "make:seed <model>", Description: "--count <number> --test --mongo --force --yes" },
       { Command: "make:scenario <name>", Description: "--test --mongo --preset <blog|media> --controllers --services --run --force --yes" },
-      { Command: "make:factory <name>", Description: "--model <model> --test --force --yes" },
+      { Command: "make:factory <name>", Description: "--model <model> --test --mongo --force --yes" },
       {
         Command: "make:migration [model]",
         Description:

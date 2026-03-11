@@ -10,6 +10,11 @@ import {
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { appendAuditEvent } from "../utils/AuditTrail";
 import { silenceConsoleOutput } from "../utils/ConsoleSilencer";
+import {
+  matchesTargetStorageKind,
+  resolveSeederStorageKindFromFile,
+  targetStorageKindForConnection,
+} from "../utils/ArtifactStorage";
 
 /**
  * db:seed
@@ -45,11 +50,11 @@ export async function dbSeed(options: {
       return;
     }
 
-    const seedFiles = fs
+    const allSeedFiles = fs
       .readdirSync(seedsDir)
       .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
 
-    if (seedFiles.length === 0) {
+    if (allSeedFiles.length === 0) {
       console.log(chalk.yellow("No seeder files found.\n"));
       return;
     }
@@ -69,14 +74,32 @@ export async function dbSeed(options: {
       }
       console.log(chalk.gray(`Seeding connection: ${connectionName}`));
       let connectionFailed = false;
+      const targetStorageKind = targetStorageKindForConnection(connectionName);
+      const seedFiles = allSeedFiles.filter((file) =>
+        matchesTargetStorageKind(
+          resolveSeederStorageKindFromFile(path.join(seedsDir, file), isTest),
+          targetStorageKind
+        )
+      );
 
       // Run a specific seeder if requested
       const className = options?.class?.toLowerCase();
       if (className) {
         const target = seedFiles.find((f) => f.toLowerCase().includes(className));
+        const incompatibleTarget = allSeedFiles.find((f) =>
+          f.toLowerCase().includes(className)
+        );
 
         if (!target) {
-          console.log(chalk.red(`Seeder '${options.class}' not found.`));
+          if (incompatibleTarget) {
+            console.log(
+              chalk.red(
+                `Seeder '${options.class}' is not compatible with ${targetStorageKind} connection '${connectionName}'.`
+              )
+            );
+          } else {
+            console.log(chalk.red(`Seeder '${options.class}' not found.`));
+          }
           appendAuditEvent({
             command: options.auditCommand ?? "db:seed",
             connectionName,
@@ -112,6 +135,14 @@ export async function dbSeed(options: {
       } else {
         // Otherwise, run all seeders in alphabetical order
         try {
+          if (seedFiles.length === 0) {
+            console.log(
+              chalk.yellow(
+                `No compatible seeder files found for ${connectionName}.`
+              )
+            );
+            continue;
+          }
           for (const file of seedFiles) {
             await runSeederFile(path.join(seedsDir, file));
           }

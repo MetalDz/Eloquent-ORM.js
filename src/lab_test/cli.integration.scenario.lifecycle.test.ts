@@ -179,12 +179,12 @@ describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => 
     );
   });
 
-  test("make:scenario without --test fails closed", () => {
+  test("make:scenario without --test is blocked in production", () => {
     const args = ["make:scenario", "media"];
-    const result = runCli(args);
+    const result = runCli(args, 120000, undefined, { APP_ENV: "production" });
 
     expect(result.status).toBe(1);
-    expect(result.combined).toContain("make:scenario is test-only. Use --test to generate scenarios.");
+    expect(result.combined).toContain("make:scenario is restricted to --test in production.");
   });
 });
 
