@@ -5,6 +5,7 @@ import { loadModule } from "../cli/utils/typescript/tsRuntime";
 import { closeAllConnections } from "../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../core/connection/resolveConnectionName";
 import { appendAuditEvent } from "../cli/utils/AuditTrail";
+import * as artifactStorage from "../cli/utils/ArtifactStorage";
 
 jest.mock("chalk", () => {
   const passthrough = (value: unknown): string => String(value ?? "");
@@ -54,6 +55,9 @@ describe("Branch coverage 100% - phase 20 dbSeed edge branches", () => {
     delete process.env.ELOQUENT_CLI;
     mockedCloseAllConnections.mockResolvedValue(undefined);
     mockedResolveConnectionName.mockReturnValue("sqlite_test" as never);
+    jest
+      .spyOn(artifactStorage, "resolveSeederStorageKindFromFile")
+      .mockReturnValue("unknown");
 
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);

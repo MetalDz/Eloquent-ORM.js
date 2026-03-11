@@ -1,4 +1,23 @@
-# Progress snapshot (2026-03-09)
+# Progress snapshot (2026-03-11)
+
+## Latest update (2026-03-11)
+
+- Mongo CLI parity expanded beyond smoke contracts:
+  - explicit `--mongo` targeting added for `demo:scenario` and `factory:status`
+  - mixed SQL/Mongo artifact filtering validated in pack smoke
+  - live built-CLI Mongo integration gate added for:
+    - `make:model --test --mongo --with-migration`
+    - `make:factory --test`
+    - `make:seed --test`
+    - `migrate:fresh --test --mongo`
+    - `db:seed --test --mongo`
+    - `factory:status --test --mongo`
+    - `demo:scenario --test --mongo`
+- Latest focused validation:
+  - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/nosql.phase9.runtime-demo-factory-status.logic.test.ts src/lab_test/nosql.phase8.demo-and-factory-status.logic.test.ts src/lab_test/nosql.phase7.seed-smoke.logic.test.ts`: PASS
+  - `npm.cmd run test:pack-smoke`: PASS
+  - `$env:ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME='1'; npm.cmd run test:pack-smoke`: PASS
+  - live built-CLI Mongo targeting integration added and awaiting focused validation in the current cycle
 
 ## Latest update (2026-03-09)
 

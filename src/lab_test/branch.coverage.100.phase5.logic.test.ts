@@ -26,6 +26,7 @@ jest.mock("../cli/utils/AuditTrail", () => ({
 }));
 
 const fs = require("fs") as typeof import("fs");
+const artifactStorage = require("../cli/utils/ArtifactStorage") as typeof import("../cli/utils/ArtifactStorage");
 const { PathMap } = require("../cli/utils/PathMap") as typeof import("../cli/utils/PathMap");
 const { dbSeed } = require("../cli/commands/dbSeed") as typeof import("../cli/commands/dbSeed");
 const seedPrecheck = require("../cli/utils/SeedBootstrapPrecheck") as typeof import("../cli/utils/SeedBootstrapPrecheck");
@@ -55,6 +56,9 @@ describe("Branch coverage 100% - phase 5 hard-to-reach environment paths", () =>
     jest
       .spyOn(resolveConnection, "resolveConnectionName")
       .mockReturnValue("sqlite_test" as never);
+    jest
+      .spyOn(artifactStorage, "resolveSeederStorageKindFromFile")
+      .mockReturnValue("unknown");
   });
 
   afterEach(() => {

@@ -52,3 +52,5 @@ Last updated: 2026-03-06
 - Hooks must remain isolated per model constructor (no cross-model leakage).
 - Update migration rollback should be non-destructive.
 - createMany() rejects on first worker failure in concurrent mode.
+- Live Mongo CLI integration tests use env-provided mongo runtime and an isolated per-run database name.
+- `demo:scenario --mongo` must exit cleanly even when the target Mongo database does not contain the blog scenario collections/data.
