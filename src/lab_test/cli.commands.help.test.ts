@@ -124,6 +124,25 @@ describeIfBuilt("CLI command help validation", () => {
     expect(res.combined).toContain("--no-hooks");
   });
 
+  test("demo:scenario help exposes explicit driver targeting flags", () => {
+    const res = runCli(["demo:scenario", "--help"]);
+    assertOk(res, ["demo:scenario", "--help"]);
+    expect(res.combined).toContain("--mysql");
+    expect(res.combined).toContain("--pg");
+    expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--mongo");
+  });
+
+  test("factory:status help exposes explicit driver targeting flags", () => {
+    const res = runCli(["factory:status", "--help"]);
+    assertOk(res, ["factory:status", "--help"]);
+    expect(res.combined).toContain("--mysql");
+    expect(res.combined).toContain("--pg");
+    expect(res.combined).toContain("--sqlite");
+    expect(res.combined).toContain("--mongo");
+    expect(res.combined).toContain("--all-connections");
+  });
+
   test("all registered command --help entries exit cleanly", () => {
     const failures: string[] = [];
 

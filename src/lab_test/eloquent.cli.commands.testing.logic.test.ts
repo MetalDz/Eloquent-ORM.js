@@ -39,11 +39,11 @@ const commandMatrix: CommandSpec[] = [
   },
   {
     name: "make:seed",
-    expectedFlags: ["--count <number>", "--test", "--force", "--yes"],
+    expectedFlags: ["--count <number>", "--test", "--mongo", "--force", "--yes"],
   },
   {
     name: "make:factory",
-    expectedFlags: ["--model <model>", "--test", "--force", "--yes"],
+    expectedFlags: ["--model <model>", "--test", "--mongo", "--force", "--yes"],
   },
   {
     name: "make:scenario",
@@ -116,7 +116,15 @@ const commandMatrix: CommandSpec[] = [
   },
   {
     name: "demo:scenario",
-    expectedFlags: ["--user <id>", "--random", "--test"],
+    expectedFlags: [
+      "--user <id>",
+      "--random",
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--mongo",
+    ],
   },
   {
     name: "migrate:run",
@@ -194,7 +202,16 @@ const commandMatrix: CommandSpec[] = [
   },
   {
     name: "factory:status",
-    expectedFlags: ["--test", "--details", "--graph"],
+    expectedFlags: [
+      "--test",
+      "--mysql",
+      "--pg",
+      "--sqlite",
+      "--mongo",
+      "--all-connections",
+      "--details",
+      "--graph",
+    ],
   },
   {
     name: "list",

@@ -603,12 +603,31 @@ program
   .option("--user <id>", "Run the scenario for a specific user id")
   .option("--random", "Pick a random user id")
   .option("--test", "Run scenario against test database")
-  .action(async (options: { user?: string; random?: boolean; test?: boolean }) => {
+  .option("--mysql", "Run scenario only for the mysql connection")
+  .option("--pg", "Run scenario only for the pg connection")
+  .option("--sqlite", "Run scenario only for the sqlite connection")
+  .option("--mongo", "Run scenario only for the mongo connection")
+  .action(async (options: {
+    user?: string;
+    random?: boolean;
+    test?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    mongo?: boolean;
+  }) => {
     const userId = options.user ? Number(options.user) : undefined;
+    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
+      mysql: !!options.mysql,
+      pg: !!options.pg,
+      sqlite: !!options.sqlite,
+      mongo: !!options.mongo,
+    });
     await demoScenario({
       user: Number.isFinite(userId) ? userId : undefined,
       random: !!options.random,
       test: !!options.test,
+      connectionName: connectionNames[0],
     });
   });
 
@@ -908,10 +927,24 @@ program.command("cache:stats").description("Show current cache performance analy
 program
   .command("factory:status")
   .option("--test", "Inspect factories from test environment")
+  .option("--mysql", "Inspect SQL-backed factories for mysql/sql storage")
+  .option("--pg", "Inspect SQL-backed factories for pg/sql storage")
+  .option("--sqlite", "Inspect SQL-backed factories for sqlite/sql storage")
+  .option("--mongo", "Inspect Mongo-backed factories only")
+  .option("--all-connections", "Inspect SQL-backed factories across all SQL connections")
   .option("--details", "Show detailed factory metadata including relations")
   .option("--graph", "Display an ASCII diagram of model relationships")
   .description("Show all registered factories (model + pivot + relations)")
-  .action(async (options: { test?: boolean; details?: boolean; graph?: boolean }) => {
+  .action(async (options: {
+    test?: boolean;
+    mysql?: boolean;
+    pg?: boolean;
+    sqlite?: boolean;
+    mongo?: boolean;
+    allConnections?: boolean;
+    details?: boolean;
+    graph?: boolean;
+  }) => {
     await factoryStatus(options as { details?: boolean; graph?: boolean });
   });
 
@@ -936,7 +969,11 @@ program
         Description:
           "--test --all --mysql --pg --sqlite --mongo --all-connections --pivot-separate --force --yes",
       },
-      { Command: "factory:status", Description: "--test --details --graph" },
+      {
+        Command: "factory:status",
+        Description:
+          "--test --mysql --pg --sqlite --mongo --all-connections --details --graph",
+      },
       {
         Command: "db:seed",
         Description:
@@ -951,7 +988,10 @@ program
         Description:
           "--test --mysql --pg --sqlite --mongo --all-connections --class <name> --silent --no-hooks --force --yes",
       },
-      { Command: "demo:scenario", Description: "--user <id> --random --test" },
+      {
+        Command: "demo:scenario",
+        Description: "--user <id> --random --test --mysql --pg --sqlite --mongo",
+      },
       {
         Command: "migrate:run [model]",
         Description:

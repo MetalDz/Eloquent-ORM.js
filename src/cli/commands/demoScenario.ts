@@ -3,6 +3,7 @@ import {
   closeAllConnections,
   getAdapter,
   getConnection,
+  type ConnectionName,
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
@@ -10,18 +11,24 @@ import type { Collection, Db, Document, Filter } from "mongodb";
 
 type Row = Record<string, unknown>;
 
+type DemoScenarioOptions = {
+  user?: number;
+  random?: boolean;
+  test?: boolean;
+  connectionName?: string;
+};
+
 function toNumber(value: unknown): number {
   if (typeof value === "number") return value;
   if (typeof value === "string") return Number(value);
   return 0;
 }
 
-export async function demoScenario(options?: {
-  user?: number;
-  random?: boolean;
-  test?: boolean;
-}): Promise<void> {
-  const connectionName = resolveConnectionName(undefined, { test: !!options?.test });
+export async function demoScenario(options?: DemoScenarioOptions): Promise<void> {
+  const connectionName =
+    options?.connectionName ??
+    resolveConnectionName(undefined, { test: !!options?.test });
+  const resolvedConnectionName = connectionName as ConnectionName;
   const driver =
     dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver ??
     connectionName;
@@ -32,7 +39,7 @@ export async function demoScenario(options?: {
       return;
     }
 
-    const adapter = await getAdapter(connectionName);
+    const adapter = await getAdapter(resolvedConnectionName);
     const usersTable = adapter.wrapId("users");
     const postsTable = adapter.wrapId("posts");
     const commentsTable = adapter.wrapId("comments");
@@ -167,7 +174,7 @@ export async function demoScenario(options?: {
 
 async function runMongoDemoScenario(
   connectionName: string,
-  options?: { user?: number; random?: boolean }
+  options?: Pick<DemoScenarioOptions, "user" | "random">
 ): Promise<void> {
   const db = (await getConnection(connectionName as never)) as Db;
 
