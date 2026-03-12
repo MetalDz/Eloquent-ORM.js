@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { AppSmoke } from "../app/models/AppSmoke";
+import { loadModule } from "../cli/utils/typescript/tsRuntime";
 import { getAdapter } from "../core/connection/ConnectionFactory";
 import type { DriverAdapter } from "../core/connection/DriverAdapter";
 
@@ -11,6 +11,30 @@ jest.mock("../core/connection/ConnectionFactory", () => ({
 }));
 
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
+
+function loadAppSmokeModel() {
+  const filePath = path.resolve(process.cwd(), "src/app/models/AppSmoke.ts");
+  try {
+    delete require.cache[require.resolve(filePath)];
+  } catch {
+    // ignore cache misses
+  }
+
+  return loadModule(filePath).AppSmoke as {
+    new (): {
+      tableName: string;
+      connectionName: string;
+    };
+    where(field: string, value: unknown): {
+      orderBy(field: string, direction?: "asc" | "desc"): {
+        limit(count: number): {
+          get(): Promise<unknown[]>;
+        };
+      };
+    };
+    findOneBy(field: string, value: unknown): Promise<unknown>;
+  };
+}
 
 function makePgAdapter(): DriverAdapter & {
   query: jest.Mock;
@@ -66,6 +90,7 @@ describe("AppSmoke safe finder integration", () => {
   });
 
   test("real app model inherits safe finder methods for schema-backed fields", async () => {
+    const AppSmoke = loadAppSmokeModel();
     const adapter = makePgAdapter();
     adapter.query.mockResolvedValue([{ id: 1, name: "Smoke" }]);
     adapter.queryOne.mockResolvedValue({ id: 2, name: "Smoke" });

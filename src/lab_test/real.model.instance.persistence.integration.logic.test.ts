@@ -1,4 +1,7 @@
+import path from "path";
+
 import type { DriverAdapter } from "../core/connection/DriverAdapter";
+import { loadModule } from "../cli/utils/typescript/tsRuntime";
 import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
@@ -6,11 +9,42 @@ jest.mock("../core/connection/ConnectionFactory", () => ({
   getConnection: jest.fn(),
 }));
 
-import { AppSmoke } from "../app/models/AppSmoke";
-import { GeoLocalisation } from "../app/models/GeoLocalisation";
-
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
+
+function loadAppSmokeModel() {
+  const filePath = path.resolve(process.cwd(), "src/app/models/AppSmoke.ts");
+  try {
+    delete require.cache[require.resolve(filePath)];
+  } catch {
+    // ignore cache misses
+  }
+
+  return loadModule(filePath).AppSmoke as {
+    new (): Record<string, unknown> & {
+      fill(data: Record<string, unknown>): unknown;
+      save(): Promise<void>;
+      patch(data: Record<string, unknown>): Promise<void>;
+    };
+  };
+}
+
+function loadGeoLocalisationModel() {
+  const filePath = path.resolve(process.cwd(), "src/app/models/GeoLocalisation.ts");
+  try {
+    delete require.cache[require.resolve(filePath)];
+  } catch {
+    // ignore cache misses
+  }
+
+  return loadModule(filePath).GeoLocalisation as {
+    new (): Record<string, unknown> & {
+      fill(data: Record<string, unknown>): unknown;
+      save(): Promise<void>;
+      patch(data: Record<string, unknown>): Promise<void>;
+    };
+  };
+}
 
 function makeSqlAdapter(): DriverAdapter & {
   query: jest.Mock;
@@ -66,6 +100,7 @@ describe("Real model instance persistence integration", () => {
   });
 
   test("AppSmoke supports fill().save().patch() through the SQL runtime path", async () => {
+    const AppSmoke = loadAppSmokeModel();
     const adapter = makeSqlAdapter();
     adapter.insert.mockResolvedValue({
       id: 21,
@@ -76,7 +111,7 @@ describe("Real model instance persistence integration", () => {
     });
     mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
 
-    const model = new AppSmoke() as AppSmoke & Record<string, unknown>;
+    const model = new AppSmoke();
 
     model.fill({ name: "Smoke Alpha" });
     await model.save();
@@ -110,6 +145,7 @@ describe("Real model instance persistence integration", () => {
   });
 
   test("GeoLocalisation supports fill().save().patch() through the Mongo runtime path", async () => {
+    const GeoLocalisation = loadGeoLocalisationModel();
     const collection = {
       insertOne: jest.fn(async () => ({ insertedId: "mongo-geo-21" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
@@ -119,7 +155,7 @@ describe("Real model instance persistence integration", () => {
     };
     mockedGetConnection.mockResolvedValue(mongoDb as never);
 
-    const model = new GeoLocalisation() as GeoLocalisation & Record<string, unknown>;
+    const model = new GeoLocalisation();
 
     model.fill({ name: "Geo Alpha" });
     await model.save();
