@@ -17,6 +17,8 @@ export interface SafeFinderModelStatic<TModel extends SafeFinderModelInstance = 
   hydrateRow(row: Record<string, unknown> | null): TModel | null;
   hydrateMany(rows: Record<string, unknown>[]): TModel[];
   scopeActive?(query: SafeFinderQuery<TModel>, ...args: unknown[]): SafeFinderQuery<TModel> | void;
+  scopeInactive?(query: SafeFinderQuery<TModel>, ...args: unknown[]): SafeFinderQuery<TModel> | void;
+  scopePublished?(query: SafeFinderQuery<TModel>, ...args: unknown[]): SafeFinderQuery<TModel> | void;
 }
 
 type FilterEntry = {
@@ -48,22 +50,62 @@ export class SafeFinderQuery<TModel extends SafeFinderModelInstance = SafeFinder
   }
 
   active(...args: unknown[]): this {
-    const scope = this.modelClass.scopeActive;
-    if (typeof scope === "function") {
-      const result = scope.call(this.modelClass, this, ...args);
-      return (result as this | void) ?? this;
-    }
+    return this.applyNamedScope(
+      "active",
+      this.modelClass.scopeActive,
+      () => {
+        if (this.hasColumnField("status")) {
+          return this.where("status", "active");
+        }
 
-    if (this.hasColumnField("status")) {
-      return this.where("status", "active");
-    }
+        if (this.hasColumnField("active")) {
+          return this.where("active", true);
+        }
 
-    if (this.hasColumnField("active")) {
-      return this.where("active", true);
-    }
+        return undefined;
+      },
+      args,
+      "Define static scopeActive(query) or add a 'status'/'active' column."
+    );
+  }
 
-    throw new Error(
-      `No active scope available on ${this.modelClass.name}. Define static scopeActive(query) or add a 'status'/'active' column.`
+  inactive(...args: unknown[]): this {
+    return this.applyNamedScope(
+      "inactive",
+      this.modelClass.scopeInactive,
+      () => {
+        if (this.hasColumnField("status")) {
+          return this.where("status", "inactive");
+        }
+
+        if (this.hasColumnField("active")) {
+          return this.where("active", false);
+        }
+
+        return undefined;
+      },
+      args,
+      "Define static scopeInactive(query) or add a 'status'/'active' column."
+    );
+  }
+
+  published(...args: unknown[]): this {
+    return this.applyNamedScope(
+      "published",
+      this.modelClass.scopePublished,
+      () => {
+        if (this.hasColumnField("published")) {
+          return this.where("published", true);
+        }
+
+        if (this.hasColumnField("status")) {
+          return this.where("status", "published");
+        }
+
+        return undefined;
+      },
+      args,
+      "Define static scopePublished(query) or add a 'published'/'status' column."
     );
   }
 
@@ -197,6 +239,28 @@ export class SafeFinderQuery<TModel extends SafeFinderModelInstance = SafeFinder
 
     loader["eagerRelations"] = [...this.eagerRelations];
     return (await eagerLoadRelations.call(this.model, records)) as TModel[];
+  }
+
+  private applyNamedScope(
+    name: "active" | "inactive" | "published",
+    scope:
+      | ((query: SafeFinderQuery<TModel>, ...args: unknown[]) => SafeFinderQuery<TModel> | void)
+      | undefined,
+    fallback: (...args: unknown[]) => this | undefined,
+    args: unknown[],
+    guidance: string
+  ): this {
+    if (typeof scope === "function") {
+      const result = scope.call(this.modelClass, this, ...args);
+      return (result as this | void) ?? this;
+    }
+
+    const fallbackResult = fallback(...args);
+    if (fallbackResult) {
+      return fallbackResult;
+    }
+
+    throw new Error(`No ${name} scope available on ${this.modelClass.name}. ${guidance}`);
   }
 
   private buildSqlSelect(adapter: DriverAdapter, forcedLimit?: number): {

@@ -23,6 +23,9 @@ export type ModelBaseContract = new (...args: any[]) => {
   delete(id: number | string, pk?: string): Promise<void>;
   find(id: number | string, pk?: string): Promise<unknown>;
   all(): Promise<unknown[]>;
+  fill(data: Record<string, unknown>): unknown;
+  save(pk?: string): Promise<void>;
+  patch(data: Record<string, unknown>, pk?: string): Promise<void>;
 };
 
 /**
@@ -45,6 +48,8 @@ export abstract class CoreModel<
 > {
   public tableName: string;
   public connectionName: ConnectionName;
+  protected _exists = false;
+  protected _originalAttributes: Record<string, unknown> = {};
 
   /** Optional schema definition (set by subclass) */
   static schema?: Record<string, SchemaField>;
@@ -82,6 +87,7 @@ export abstract class CoreModel<
     if (!row) return null;
     const instance = this.newInstance();
     Object.assign(instance, row);
+    (instance as unknown as CoreModel).syncPersistedState(row);
     return instance;
   }
 
@@ -140,6 +146,20 @@ export abstract class CoreModel<
     ...args: unknown[]
   ): SafeFinderQuery<InstanceType<T>> {
     return this.safeFinder().active(...args);
+  }
+
+  static inactive<T extends typeof CoreModel>(
+    this: T,
+    ...args: unknown[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().inactive(...args);
+  }
+
+  static published<T extends typeof CoreModel>(
+    this: T,
+    ...args: unknown[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().published(...args);
   }
 
   static get<T extends typeof CoreModel>(this: T): Promise<InstanceType<T>[]> {
@@ -218,6 +238,243 @@ export abstract class CoreModel<
       return { $or: [{ id }, { _id: id }] };
     }
     return { [pk]: id };
+  }
+
+  private getPersistenceSchema(): Record<string, SchemaField> {
+    const schema = (this.constructor as typeof CoreModel).schema;
+    if (!schema) {
+      throw new Error(
+        `${this.constructor.name} must define a schema to use fill(), save(), or patch().`
+      );
+    }
+    return schema;
+  }
+
+  private getColumnFieldNames(): string[] {
+    const schema = this.getPersistenceSchema();
+    return Object.entries(schema)
+      .filter(([, field]) => field.kind === "column")
+      .map(([fieldName]) => fieldName);
+  }
+
+  private resolvePrimaryKey(): string {
+    const schema = (this.constructor as typeof CoreModel).schema;
+    if (schema) {
+      for (const [fieldName, field] of Object.entries(schema)) {
+        if (field.kind === "column" && field.options.primary) {
+          return fieldName;
+        }
+      }
+      if (schema._id?.kind === "column") return "_id";
+      if (schema.id?.kind === "column") return "id";
+    }
+
+    return "id";
+  }
+
+  private getPrimaryKeyValue(pk: string): unknown {
+    const record = this as Record<string, unknown>;
+    if (pk === "_id") {
+      return record._id ?? record.id;
+    }
+    if (pk === "id") {
+      return record.id ?? record._id;
+    }
+    return record[pk];
+  }
+
+  private getOriginalPrimaryKeyValue(pk: string): unknown {
+    if (Object.prototype.hasOwnProperty.call(this._originalAttributes, pk)) {
+      return this._originalAttributes[pk];
+    }
+    if (pk === "_id" && Object.prototype.hasOwnProperty.call(this._originalAttributes, "id")) {
+      return this._originalAttributes.id;
+    }
+    if (pk === "id" && Object.prototype.hasOwnProperty.call(this._originalAttributes, "_id")) {
+      return this._originalAttributes._id;
+    }
+    return undefined;
+  }
+
+  private createSnapshot(source?: Record<string, unknown>): Record<string, unknown> {
+    const snapshotSource =
+      source ?? (Object.assign({}, this) as Record<string, unknown>);
+    const schema = (this.constructor as typeof CoreModel).schema;
+
+    if (!schema) {
+      return Object.fromEntries(
+        Object.entries(snapshotSource).filter(([field]) => !field.startsWith("_"))
+      );
+    }
+
+    const snapshot: Record<string, unknown> = {};
+    for (const [fieldName, field] of Object.entries(schema)) {
+      if (field.kind !== "column") continue;
+      if (Object.prototype.hasOwnProperty.call(snapshotSource, fieldName)) {
+        snapshot[fieldName] = snapshotSource[fieldName];
+      }
+    }
+
+    const primaryKey = this.resolvePrimaryKey();
+    if (!Object.prototype.hasOwnProperty.call(snapshot, primaryKey)) {
+      const record = snapshotSource as Record<string, unknown>;
+      if (primaryKey === "_id" && record.id !== undefined) {
+        snapshot._id = record.id;
+      } else if (primaryKey === "id" && record._id !== undefined) {
+        snapshot.id = record._id;
+      }
+    }
+
+    return snapshot;
+  }
+
+  private syncPersistedState(source?: Record<string, unknown>): void {
+    this._exists = true;
+    this._originalAttributes = this.createSnapshot(source);
+  }
+
+  private assertAssignableField(field: string, usage: "fill" | "patch"): void {
+    const schema = this.getPersistenceSchema();
+    const definition = schema[field];
+
+    if (!definition || definition.kind !== "column") {
+      throw new Error(`Unknown ${usage} field '${field}' on ${this.constructor.name}.`);
+    }
+  }
+
+  private sanitizeAssignableData(
+    data: Record<string, unknown>,
+    usage: "fill" | "patch"
+  ): Record<string, unknown> {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error(`${usage}() expects a plain object payload.`);
+    }
+
+    const sanitized: Record<string, unknown> = {};
+    for (const [field, value] of Object.entries(data)) {
+      this.assertAssignableField(field, usage);
+      sanitized[field] = value;
+    }
+
+    return sanitized;
+  }
+
+  private extractPersistableAttributes(): Record<string, unknown> {
+    const record = this as Record<string, unknown>;
+    const attributes: Record<string, unknown> = {};
+
+    for (const fieldName of this.getColumnFieldNames()) {
+      if (Object.prototype.hasOwnProperty.call(record, fieldName)) {
+        attributes[fieldName] = record[fieldName];
+      }
+    }
+
+    return attributes;
+  }
+
+  private assertPrimaryKeyNotMutated(primaryKey: string): void {
+    if (!this._exists) return;
+
+    const currentPrimaryKey = this.getPrimaryKeyValue(primaryKey);
+    const originalPrimaryKey = this.getOriginalPrimaryKeyValue(primaryKey);
+
+    if (!Object.is(currentPrimaryKey, originalPrimaryKey)) {
+      throw new Error(
+        `Cannot change persisted primary key '${primaryKey}' on ${this.constructor.name}.`
+      );
+    }
+  }
+
+  private getDirtyAttributes(primaryKey: string): Record<string, unknown> {
+    const currentAttributes = this.extractPersistableAttributes();
+    const dirtyAttributes: Record<string, unknown> = {};
+
+    for (const [field, value] of Object.entries(currentAttributes)) {
+      if (field === primaryKey) continue;
+      if (!Object.is(this._originalAttributes[field], value)) {
+        dirtyAttributes[field] = value;
+      }
+    }
+
+    return dirtyAttributes;
+  }
+
+  fill(data: Record<string, unknown>): this {
+    const assignable = this.sanitizeAssignableData(data, "fill");
+    Object.assign(this as Record<string, unknown>, assignable);
+    return this;
+  }
+
+  async save(pk?: string): Promise<void> {
+    const primaryKey = pk ?? this.resolvePrimaryKey();
+    const persistedPrimaryKey = this.getOriginalPrimaryKeyValue(primaryKey);
+
+    if (!this._exists) {
+      const created = await this.create(this.extractPersistableAttributes());
+      if (!created) return;
+
+      Object.assign(
+        this as Record<string, unknown>,
+        created as unknown as Record<string, unknown>
+      );
+      this.syncPersistedState();
+      return;
+    }
+
+    this.assertPrimaryKeyNotMutated(primaryKey);
+
+    if (persistedPrimaryKey === undefined || persistedPrimaryKey === null) {
+      throw new Error(
+        `Cannot save persisted ${this.constructor.name} without primary key '${primaryKey}'.`
+      );
+    }
+
+    const dirtyAttributes = this.getDirtyAttributes(primaryKey);
+    if (Object.keys(dirtyAttributes).length === 0) return;
+
+    await this.update(persistedPrimaryKey as string | number, dirtyAttributes, primaryKey);
+    this.syncPersistedState();
+  }
+
+  async patch(data: Record<string, unknown>, pk?: string): Promise<void> {
+    if (!this._exists) {
+      throw new Error(`patch() requires a persisted model instance for ${this.constructor.name}.`);
+    }
+
+    const primaryKey = pk ?? this.resolvePrimaryKey();
+    this.assertPrimaryKeyNotMutated(primaryKey);
+
+    const assignable = this.sanitizeAssignableData(data, "patch");
+    const originalPrimaryKey = this.getOriginalPrimaryKeyValue(primaryKey);
+
+    if (originalPrimaryKey === undefined || originalPrimaryKey === null) {
+      throw new Error(
+        `Cannot patch persisted ${this.constructor.name} without primary key '${primaryKey}'.`
+      );
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(assignable, primaryKey) &&
+      !Object.is(assignable[primaryKey], originalPrimaryKey)
+    ) {
+      throw new Error(
+        `Cannot change persisted primary key '${primaryKey}' on ${this.constructor.name}.`
+      );
+    }
+
+    const patchPayload: Record<string, unknown> = {};
+    for (const [field, value] of Object.entries(assignable)) {
+      if (field === primaryKey) continue;
+      if (!Object.is(this._originalAttributes[field], value)) {
+        patchPayload[field] = value;
+      }
+    }
+
+    if (Object.keys(patchPayload).length === 0) return;
+
+    await this.update(originalPrimaryKey as string | number, patchPayload, primaryKey);
+    Object.assign(this as Record<string, unknown>, patchPayload);
+    this.syncPersistedState();
   }
 
   /**

@@ -15,6 +15,8 @@ describe("Safe finder API plan contract", () => {
       "`where(field, value)`",
       "`with(...relations)`",
       "`active()`",
+      "`inactive()`",
+      "`published()`",
       "`first()`",
       "`get()`",
       "`limit(count)`",
@@ -62,7 +64,7 @@ describe("Safe finder API plan contract", () => {
       "`first()` returns one model or `null`",
       "`get()` returns hydrated model arrays",
       "`with(...relations)` on finder results",
-      "`.active()` local-scope behavior",
+      "`.active()` / `.inactive()` / `.published()` local-scope behavior",
       "`findOneBy`",
       "`existsBy`",
     ];

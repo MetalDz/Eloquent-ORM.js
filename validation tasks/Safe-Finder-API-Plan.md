@@ -13,6 +13,8 @@ Status: PLANNED
   - `where(field, value)`
   - `with(...relations)`
   - `active()`
+  - `inactive()`
+  - `published()`
   - `first()`
   - `get()`
   - `limit(count)`
@@ -34,6 +36,9 @@ const author = await User.where("id", 7)
   .with("posts")
   .active()
   .first();
+
+const archived = await User.inactive().get();
+const publishedPosts = await Post.published().limit(20).get();
 
 const admin = await User.findOneBy("email", "admin@example.com");
 const exists = await User.existsBy({ status: "active", role: "admin" });
@@ -58,7 +63,7 @@ const exists = await User.existsBy({ status: "active", role: "admin" });
 - Mongo native filter translation
 - Deterministic ordering and limit semantics
 - Safe eager loading on finder results
-- Narrow local-scope support through `.active()`
+- Narrow local-scope support through `.active()`, `.inactive()`, and `.published()`
 
 ## Non-Goals
 - No raw SQL builder API.
@@ -73,6 +78,8 @@ const exists = await User.existsBy({ status: "active", role: "admin" });
   - `where`
   - `with`
   - `active`
+  - `inactive`
+  - `published`
   - `first`
   - `get`
   - `limit`
@@ -119,7 +126,7 @@ const exists = await User.existsBy({ status: "active", role: "admin" });
   - Mongo filter translation
   - `first`, `get`, `limit`, `orderBy`
   - `with(...relations)` on finder results
-  - `.active()` local-scope behavior
+  - `.active()` / `.inactive()` / `.published()` local-scope behavior
   - helper methods (`findBy`, `findOneBy`, `findAllBy`, `existsBy`)
 - [ ] Document this as a safe finder layer, not a raw query builder.
 
@@ -128,7 +135,7 @@ const exists = await User.existsBy({ status: "active", role: "admin" });
 - Unknown filter fields are rejected before execution.
 - SQL execution always uses adapter-safe placeholders and wrapped identifiers.
 - Mongo execution uses native filter objects.
-- `first`, `get`, `limit`, `orderBy`, `with`, and `active` work through the safe finder path.
+- `first`, `get`, `limit`, `orderBy`, `with`, `active`, `inactive`, and `published` work through the safe finder path.
 - `findBy`, `findOneBy`, `findAllBy`, and `existsBy` work through schema-validated filtering.
 - Existing `find()` and `all()` behavior remains intact.
 

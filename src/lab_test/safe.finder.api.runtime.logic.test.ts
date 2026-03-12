@@ -126,17 +126,22 @@ describe("Safe finder API runtime", () => {
     expect(() => SqlFinderModel.limit(0)).toThrow("limit() expects a positive integer.");
   });
 
-  test("safe finder supports eager loading via with() and active scope fallback/custom scope", async () => {
+  test("safe finder supports eager loading plus active/inactive/published scope fallback and custom scope methods", async () => {
     class ScopeAwareModel extends BaseModel {
       static schema = {
         id: column("increments", undefined, { primary: true }),
         status: validate(column("string", 255), { required: true }),
+        published: column("boolean"),
         created_at: column("timestamp"),
         posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
       };
 
       static scopeActive(query: any) {
         return query.where("status", "active");
+      }
+
+      static scopePublished(query: any) {
+        return query.where("published", true);
       }
 
       constructor() {
@@ -160,6 +165,7 @@ describe("Safe finder API runtime", () => {
       static schema = {
         id: column("increments", undefined, { primary: true }),
         active: column("boolean"),
+        published: column("boolean"),
       };
 
       constructor() {
@@ -168,8 +174,12 @@ describe("Safe finder API runtime", () => {
     }
 
     const adapter = makePgAdapter();
-    adapter.query.mockResolvedValue([{ id: 8, status: "active" }]);
-    adapter.queryOne.mockResolvedValue({ id: 7, status: "active" });
+    adapter.query.mockResolvedValueOnce([{ id: 8, status: "active" }]);
+    adapter.query.mockResolvedValueOnce([{ id: 9, active: true }]);
+    adapter.query.mockResolvedValueOnce([{ id: 10, active: false }]);
+    adapter.query.mockResolvedValueOnce([{ id: 11, published: true }]);
+    adapter.queryOne.mockResolvedValueOnce({ id: 7, status: "active", published: true });
+    adapter.queryOne.mockResolvedValueOnce({ id: 12, published: true });
     mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
 
     const record = await ScopeAwareModel.where("id", 7).with("posts").active().first();
@@ -204,6 +214,28 @@ describe("Safe finder API runtime", () => {
       [true]
     );
 
+    await FallbackActiveModel.inactive().get();
+    expect(adapter.query).toHaveBeenNthCalledWith(
+      3,
+      'SELECT * FROM "users" WHERE "active" = $1',
+      [false]
+    );
+
+    await FallbackActiveModel.published().get();
+    expect(adapter.query).toHaveBeenNthCalledWith(
+      4,
+      'SELECT * FROM "users" WHERE "published" = $1',
+      [true]
+    );
+
+    const published = await ScopeAwareModel.published().first();
+    expect(published).toBeInstanceOf(ScopeAwareModel);
+    expect(adapter.queryOne).toHaveBeenNthCalledWith(
+      2,
+      'SELECT * FROM "users" WHERE "published" = $1 LIMIT 1',
+      [true]
+    );
+
     class NoActiveScopeModel extends BaseModel {
       static schema = {
         id: column("increments", undefined, { primary: true }),
@@ -216,6 +248,12 @@ describe("Safe finder API runtime", () => {
 
     expect(() => NoActiveScopeModel.active()).toThrow(
       "No active scope available on NoActiveScopeModel"
+    );
+    expect(() => NoActiveScopeModel.inactive()).toThrow(
+      "No inactive scope available on NoActiveScopeModel"
+    );
+    expect(() => NoActiveScopeModel.published()).toThrow(
+      "No published scope available on NoActiveScopeModel"
     );
   });
 

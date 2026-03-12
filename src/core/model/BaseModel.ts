@@ -45,6 +45,9 @@ export interface ORMCoreContract {
   connectionName: string;
   getDB(): Promise<unknown>;
 
+  fill(data: ORMRecord): this;
+  save(pk?: string): Promise<void>;
+  patch(data: ORMRecord, pk?: string): Promise<void>;
   create(data: ORMRecord): Promise<unknown | null>;
   update(id: string | number, data: ORMRecord, pk?: string): Promise<void>;
   delete(id: string | number, pk?: string): Promise<void>;
@@ -108,6 +111,20 @@ export abstract class BaseModel<
     ...args: unknown[]
   ): SafeFinderQuery<InstanceType<T>> {
     return (CoreModel.active as any).call(this, ...args);
+  }
+
+  static inactive<T extends typeof BaseModel>(
+    this: T,
+    ...args: unknown[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.inactive as any).call(this, ...args);
+  }
+
+  static published<T extends typeof BaseModel>(
+    this: T,
+    ...args: unknown[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.published as any).call(this, ...args);
   }
 
   static orderBy<T extends typeof BaseModel>(
