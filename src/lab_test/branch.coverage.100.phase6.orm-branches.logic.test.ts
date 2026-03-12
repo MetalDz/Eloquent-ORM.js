@@ -253,7 +253,11 @@ describe("Branch coverage 100% - phase 6 ORM branch closures", () => {
 
     const found = await eager.find(1);
     expect((found as any).comments).toEqual([{ id: 10 }]);
-    expect(typeof eager.getRelation("comments")).toBe("function");
+    const relation = eager.getRelation("comments");
+    expect(typeof relation).toBe("object");
+    expect(relation?.name).toBe("comments");
+    expect(typeof relation?.getResults).toBe("function");
+    expect(typeof relation?.match).toBe("function");
 
     process.env.NODE_ENV = "production";
     class NoBaseModel extends EagerLoadingMixin(

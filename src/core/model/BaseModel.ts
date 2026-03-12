@@ -8,8 +8,10 @@ import { HooksMixin } from "../orm/mixins/HooksMixin";
 import { QueryCacheMixin } from "../orm/mixins/QueryCacheMixin";
 import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin";
 import { SerializeMixin } from "../orm/mixins/SerializeMixin";
-import { getAdapter, ConnectionName } from "../connection/ConnectionFactory";
+import { getAdapter, getConnection, ConnectionName } from "../connection/ConnectionFactory";
 import type { DriverAdapter } from "../connection/DriverAdapter";
+import type { Db } from "mongodb";
+import { dbConfig } from "../../config/database";
 import { BelongsTo } from "../orm/relations/BelongsTo";
 import { HasOne } from "../orm/relations/HasOne";
 import { HasMany } from "../orm/relations/HasMany";
@@ -184,6 +186,9 @@ export abstract class BaseModel<
    * Instance-level morph alias lookup (like Laravel's getMorphClass)
    */
   getMorphClass(): string {
+    const ctor = this.constructor as typeof BaseModel & { morphAlias?: string; name: string };
+    if (ctor.morphAlias) return ctor.morphAlias;
+
     const entries = Object.entries(MorphRegistry.list());
     const entry = entries.find(([, name]) => name === this.constructor.name);
     return entry ? entry[0] : this.constructor.name;
@@ -309,7 +314,6 @@ export abstract class SqlModel<
  */
 
 export { MorphableMixin, MorphableBaseModel, MorphRegistry };
-export { MongoModel } from "./CoreModel";
 
 // Attribute typing for models (ModelInstance adds only typed attrs to avoid merge conflicts).
 export type ModelAttrs<TAttrs extends Record<string, unknown>> = {
@@ -328,4 +332,24 @@ export interface PivotRelation {
   attach(parentId: unknown, relatedId: unknown): Promise<void>;
   detach(parentId: unknown, relatedId: unknown): Promise<void>;
   sync(parentId: unknown, relatedIds: unknown[]): Promise<void>;
+}
+
+/**
+ * MongoModel
+ * Narrowed base class for Mongo-backed models with typed getDB().
+ */
+export abstract class MongoModel<
+  TAttrs extends Record<string, unknown> = Record<string, unknown>
+> extends BaseModel<TAttrs> {
+  constructor(...args: any[]) {
+    super(...args);
+    const driver = dbConfig.connections[this.connectionName as ConnectionName]?.driver;
+    if (driver !== "mongo") {
+      throw new Error(`MongoModel requires a mongo driver connection. Received: ${this.connectionName}`);
+    }
+  }
+
+  public override async getDB(): Promise<Db> {
+    return await getConnection(this.connectionName as ConnectionName);
+  }
 }

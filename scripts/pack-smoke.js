@@ -791,6 +791,47 @@ function runNoSqlRuntimeSmoke(sample) {
   );
   assertContains("mongo-seed-check", mongoSeedCheck.combined, "geo-count:2");
 
+  const scenarioMongo = runCli(
+    sample.dir,
+    ["make:scenario", "blog", "--test", "--mongo", "--controllers", "--services", "--run", "--force"],
+    sample.env
+  );
+  assertSuccess("nosql make:scenario --mongo --run", scenarioMongo);
+  assertContains(
+    "nosql make:scenario --mongo --run",
+    scenarioMongo.combined,
+    "Scenario generation complete"
+  );
+  assertContains(
+    "nosql make:scenario --mongo --run",
+    scenarioMongo.combined,
+    "Completed: BlogScenarioSeeder"
+  );
+
+  const demoMongoScenario = runCli(
+    sample.dir,
+    ["demo:scenario", "--test", "--mongo", "--random"],
+    sample.env
+  );
+  assertSuccess("nosql demo:scenario blog --mongo", demoMongoScenario);
+  assertContains("nosql demo:scenario blog --mongo", demoMongoScenario.combined, "users: 5");
+  assertContains("nosql demo:scenario blog --mongo", demoMongoScenario.combined, "posts: 15");
+  assertContains(
+    "nosql demo:scenario blog --mongo",
+    demoMongoScenario.combined,
+    "comments: 35"
+  );
+  assertContains(
+    "nosql demo:scenario blog --mongo",
+    demoMongoScenario.combined,
+    "post_user_pivot: 10"
+  );
+  assertContains(
+    "nosql demo:scenario blog --mongo",
+    demoMongoScenario.combined,
+    "favorite posts: 2"
+  );
+
   const resetMongo = runCli(sample.dir, ["migrate:reset", "--test", "--mongo"], sample.env);
   assertSuccess("nosql migrate:reset --mongo", resetMongo);
   assertOneOf("nosql migrate:reset --mongo", resetMongo.combined, [

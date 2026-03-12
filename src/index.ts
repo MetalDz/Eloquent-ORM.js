@@ -6,6 +6,7 @@
 export {
   BaseModel,
   SqlModel,
+  MongoModel,
   MorphRegistry,
   type ORMRecord,
   type ModelAttrs,
@@ -24,7 +25,6 @@ export {
 
 export {
   CoreModel,
-  MongoModel,
   type ModelEventHooks,
 } from "./core/model/CoreModel";
 

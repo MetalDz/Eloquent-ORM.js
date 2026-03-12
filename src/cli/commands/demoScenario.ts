@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import chalk from "chalk";
 import {
   closeAllConnections,
@@ -7,6 +9,8 @@ import {
 } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
 import { dbConfig } from "../../config/database";
+import { PathMap } from "../utils/PathMap";
+import { loadModule } from "../utils/typescript/tsRuntime";
 import type { Collection, Db, Document, Filter } from "mongodb";
 
 type Row = Record<string, unknown>;
@@ -22,6 +26,48 @@ function toNumber(value: unknown): number {
   if (typeof value === "number") return value;
   if (typeof value === "string") return Number(value);
   return 0;
+}
+
+function resolveMorphAlias(
+  modelPath: string,
+  exportName: string,
+  fallback: string
+): string {
+  if (!fs.existsSync(modelPath)) {
+    return fallback;
+  }
+
+  try {
+    const mod = loadModule(modelPath);
+    const modelCtor = mod[exportName] as { getMorphClass?: () => string } | undefined;
+    if (modelCtor && typeof modelCtor.getMorphClass === "function") {
+      return String(modelCtor.getMorphClass());
+    }
+  } catch {
+    // keep fallback alias when app/test models are not loadable
+  }
+
+  return fallback;
+}
+
+function resolveScenarioMorphAliases(isTest: boolean): {
+  userMorph: string;
+  postMorph: string;
+} {
+  const modelsDir = PathMap.models(isTest);
+  return {
+    userMorph: resolveMorphAlias(path.join(modelsDir, "User.ts"), "User", "users"),
+    postMorph: resolveMorphAlias(path.join(modelsDir, "Post.ts"), "Post", "posts"),
+  };
+}
+
+function buildMongoIdInFilter(values: unknown[]): Filter<Document> {
+  return {
+    $or: [
+      { id: { $in: values } },
+      { _id: { $in: values } },
+    ],
+  } as Filter<Document>;
 }
 
 export async function demoScenario(options?: DemoScenarioOptions): Promise<void> {
@@ -109,28 +155,7 @@ export async function demoScenario(options?: DemoScenarioOptions): Promise<void>
     );
     console.log(chalk.gray("posts for user:"), posts.length);
 
-    // Lazy-load models to avoid CLI compile errors when app folder is missing.
-    let userMorph = "users";
-    let postMorph = "posts";
-    try {
-      if (options?.test) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { User } = require("../../test/database/models/User");
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { Post } = require("../../test/database/models/Post");
-        if (User?.getMorphClass) userMorph = User.getMorphClass();
-        if (Post?.getMorphClass) postMorph = Post.getMorphClass();
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { User } = require("../../app/models/User");
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { Post } = require("../../app/models/Post");
-        if (User?.getMorphClass) userMorph = User.getMorphClass();
-        if (Post?.getMorphClass) postMorph = Post.getMorphClass();
-      }
-    } catch {
-      // keep defaults
-    }
+    const { userMorph, postMorph } = resolveScenarioMorphAliases(!!options?.test);
 
     const userComments = await adapter.query<Row>(
       `SELECT * FROM ${commentsTable} WHERE ${adapter.wrapId("commentable_id")} = ${adapter.placeholder(1)} AND ${adapter.wrapId("commentable_type")} = ${adapter.placeholder(2)} LIMIT 3`,
@@ -174,9 +199,10 @@ export async function demoScenario(options?: DemoScenarioOptions): Promise<void>
 
 async function runMongoDemoScenario(
   connectionName: string,
-  options?: Pick<DemoScenarioOptions, "user" | "random">
+  options?: Pick<DemoScenarioOptions, "user" | "random" | "test">
 ): Promise<void> {
   const db = (await getConnection(connectionName as never)) as Db;
+  const { userMorph, postMorph } = resolveScenarioMorphAliases(!!options?.test);
 
   const usersCollection = db.collection("users");
   const postsCollection = db.collection("posts");
@@ -222,7 +248,7 @@ async function runMongoDemoScenario(
 
   const userComments = await commentsCollection.countDocuments({
     commentable_id: userId,
-    commentable_type: "users",
+    commentable_type: userMorph,
   } as Filter<Document>);
   console.log(chalk.gray("comments on user:"), userComments);
 
@@ -232,7 +258,7 @@ async function runMongoDemoScenario(
   if (postIds.length > 0) {
     const postComments = await commentsCollection.countDocuments({
       commentable_id: { $in: postIds },
-      commentable_type: "posts",
+      commentable_type: postMorph,
     } as Filter<Document>);
     console.log(chalk.gray("comments on posts:"), postComments);
   } else {
@@ -248,9 +274,7 @@ async function runMongoDemoScenario(
     .filter((id) => id !== undefined);
   const favoritesCount =
     favoritePostIds.length > 0
-      ? await postsCollection.countDocuments({
-          id: { $in: favoritePostIds },
-        } as Filter<Document>)
+      ? await postsCollection.countDocuments(buildMongoIdInFilter(favoritePostIds))
       : 0;
   console.log(chalk.gray("favorite posts:"), favoritesCount);
 }

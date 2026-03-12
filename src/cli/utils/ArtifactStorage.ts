@@ -24,6 +24,42 @@ function resolveExistingPath(filePath: string): string | null {
   return null;
 }
 
+function readFileContent(filePath: string): string | null {
+  try {
+    return fs.readFileSync(filePath, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+function resolveStorageKindFromConnectionName(connectionName: unknown): StorageKind {
+  if (typeof connectionName !== "string") {
+    return "unknown";
+  }
+
+  const driver = dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver;
+  return driver === "mongo" ? "mongo" : driver ? "sql" : "unknown";
+}
+
+function resolveModelStorageKindFromContent(content: string): StorageKind {
+  if (/\bextends\s+MongoModel\b/.test(content)) {
+    return "mongo";
+  }
+
+  if (/\bextends\s+SqlModel\b/.test(content)) {
+    return "sql";
+  }
+
+  const connectionMatch = content.match(
+    /static\s+connectionName\s*=\s*(?:process\.env\.[A-Z0-9_]+\s*\?\?\s*)?["'`]([^"'`]+)["'`]/
+  );
+  if (connectionMatch?.[1]) {
+    return resolveStorageKindFromConnectionName(connectionMatch[1]);
+  }
+
+  return "unknown";
+}
+
 function isCtor(value: unknown): value is new (...args: unknown[]) => unknown {
   return typeof value === "function";
 }
@@ -46,10 +82,8 @@ export function resolveModelStorageKindFromCtor(modelCtor: unknown): StorageKind
   }
 
   const connectionName = (modelCtor as { connectionName?: unknown } | undefined)?.connectionName;
-  if (typeof connectionName === "string") {
-    const driver = dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver;
-    return driver === "mongo" ? "mongo" : driver ? "sql" : "unknown";
-  }
+  const connectionKind = resolveStorageKindFromConnectionName(connectionName);
+  if (connectionKind !== "unknown") return connectionKind;
 
   return "unknown";
 }
@@ -78,8 +112,81 @@ export function resolveModelStorageKind(
     return "unknown";
   }
 
+  const content = readFileContent(modelPath);
+  if (content) {
+    const staticKind = resolveModelStorageKindFromContent(content);
+    if (staticKind !== "unknown") {
+      return staticKind;
+    }
+  }
+
   const importedModule = loadModule(modelPath);
   return resolveModelStorageKindFromCtor(importedModule[modelName]);
+}
+
+function collectModelImportBasenames(filePath: string): string[] {
+  const content = readFileContent(filePath);
+  if (!content) {
+    return [];
+  }
+
+  const matches = content.matchAll(/from\s+["'][^"']*models\/([^"']+)["']/g);
+  const basenames = new Set<string>();
+
+  for (const match of matches) {
+    const rawImport = match[1]?.trim();
+    if (!rawImport) {
+      continue;
+    }
+    basenames.add(path.basename(rawImport));
+  }
+
+  return Array.from(basenames);
+}
+
+export function resolveFactoryStorageKindFromFile(
+  filePath: string,
+  isTest: boolean
+): StorageKind {
+  if (!fs.existsSync(filePath)) {
+    return "unknown";
+  }
+
+  const modelsDir = PathMap.models(isTest);
+  const importedModels = collectModelImportBasenames(filePath);
+
+  if (importedModels.length > 0) {
+    const kinds = new Set<StorageKind>();
+    for (const importedModel of importedModels) {
+      const modelPath = resolveExistingPath(path.join(modelsDir, importedModel));
+      if (!modelPath) {
+        kinds.add("unknown");
+        continue;
+      }
+
+      const content = readFileContent(modelPath);
+      if (!content) {
+        kinds.add("unknown");
+        continue;
+      }
+
+      kinds.add(resolveModelStorageKindFromContent(content));
+    }
+
+    if (kinds.has("mongo") && !kinds.has("sql") && kinds.size === 1) {
+      return "mongo";
+    }
+
+    if (kinds.has("sql") && !kinds.has("mongo") && kinds.size === 1) {
+      return "sql";
+    }
+  }
+
+  const importedModule = loadModule(filePath);
+  const exportName = Object.keys(importedModule).find((name) =>
+    name.endsWith("Factory")
+  );
+  return resolveFactoryStorageKindFromCtor(exportName ? importedModule[exportName] : undefined);
 }
 
 function collectFactoryImportBasenames(filePath: string): string[] {
@@ -119,12 +226,7 @@ export function resolveSeederStorageKindFromFile(
       kinds.add("unknown");
       continue;
     }
-
-    const importedModule = loadModule(factoryPath);
-    const exportName = Object.keys(importedModule).find(
-      (name) => name === importedFactory || name.endsWith("Factory")
-    );
-    kinds.add(resolveFactoryStorageKindFromCtor(exportName ? importedModule[exportName] : undefined));
+    kinds.add(resolveFactoryStorageKindFromFile(factoryPath, isTest));
   }
 
   if (kinds.has("mongo") && !kinds.has("sql") && kinds.size === 1) {

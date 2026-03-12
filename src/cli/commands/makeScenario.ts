@@ -45,6 +45,40 @@ type ScenarioManifest = {
   seedName: string;
 };
 
+function clearRequireCache(filePath: string): void {
+  const resolved = path.resolve(filePath);
+  delete require.cache[resolved];
+
+  try {
+    delete require.cache[require.resolve(resolved)];
+  } catch {
+    // ignore files that were not loaded yet
+  }
+}
+
+function clearScenarioArtifactModuleCache(isTest: boolean): void {
+  const modelsDir = PathMap.models(isTest);
+  const factoriesDir = PathMap.factories(isTest);
+  const seedsDir = PathMap.seeds(isTest);
+
+  for (const modelName of scenarioManagedModelNames()) {
+    clearRequireCache(path.join(modelsDir, `${modelName}.ts`));
+    clearRequireCache(path.join(modelsDir, `${modelName}.js`));
+    clearRequireCache(path.join(factoriesDir, `${modelName}Factory.ts`));
+    clearRequireCache(path.join(factoriesDir, `${modelName}Factory.js`));
+  }
+
+  for (const pivotFactory of scenarioManagedPivotFactories()) {
+    clearRequireCache(path.join(factoriesDir, `${pivotFactory}.ts`));
+    clearRequireCache(path.join(factoriesDir, `${pivotFactory}.js`));
+  }
+
+  for (const seedName of scenarioManagedSeeders()) {
+    clearRequireCache(path.join(seedsDir, `${seedName}.ts`));
+    clearRequireCache(path.join(seedsDir, `${seedName}.js`));
+  }
+}
+
 function renderModel(
   spec: ModelSpec,
   options: { isTest: boolean; useMongo: boolean; defaultConnectionName: string }
@@ -65,7 +99,7 @@ function renderModel(
  */
 
 import { ${modelBaseClass}, ModelInstance } from "${coreImportPath}";
-import { column, validate, type SchemaField } from "${schemaImportPath}";
+import { column, relation, validate, type SchemaField } from "${schemaImportPath}";
 
 type ${spec.name}Attrs = {
 ${attrs}
@@ -133,24 +167,9 @@ const blogPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "posts: {",
-        "  kind: \"relation\",",
-        "  relation: \"hasMany\",",
-        "  model: \"Post\",",
-        "  options: { foreignKey: \"user_id\" },",
-        "},",
-        "favorites: {",
-        "  kind: \"relation\",",
-        "  relation: \"belongsToMany\",",
-        "  model: \"Post\",",
-        "  options: {},",
-        "},",
-        "comments: {",
-        "  kind: \"relation\",",
-        "  relation: \"morphMany\",",
-        "  model: \"Comment\",",
-        "  options: { morphName: \"commentable\" },",
-        "},",
+        "posts: relation(\"hasMany\", \"Post\", { foreignKey: \"user_id\" }),",
+        "favorites: relation(\"belongsToMany\", \"Post\", {}),",
+        "comments: relation(\"morphMany\", \"Comment\", { morphName: \"commentable\" }),",
       ],
     },
     {
@@ -170,24 +189,9 @@ const blogPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "author: {",
-        "  kind: \"relation\",",
-        "  relation: \"belongsTo\",",
-        "  model: \"User\",",
-        "  options: { foreignKey: \"user_id\" },",
-        "},",
-        "favoritedBy: {",
-        "  kind: \"relation\",",
-        "  relation: \"belongsToMany\",",
-        "  model: \"User\",",
-        "  options: {},",
-        "},",
-        "comments: {",
-        "  kind: \"relation\",",
-        "  relation: \"morphMany\",",
-        "  model: \"Comment\",",
-        "  options: { morphName: \"commentable\" },",
-        "},",
+        "author: relation(\"belongsTo\", \"User\", { foreignKey: \"user_id\" }),",
+        "favoritedBy: relation(\"belongsToMany\", \"User\", {}),",
+        "comments: relation(\"morphMany\", \"Comment\", { morphName: \"commentable\" }),",
       ],
     },
     {
@@ -209,12 +213,7 @@ const blogPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "commentable: {",
-        "  kind: \"relation\",",
-        "  relation: \"morphTo\",",
-        "  model: \"Commentable\",",
-        "  options: { morphName: \"commentable\" },",
-        "},",
+        "commentable: relation(\"morphTo\", \"Commentable\", { morphName: \"commentable\" }),",
       ],
     },
   ],
@@ -225,17 +224,17 @@ const blogPreset: ScenarioPreset = {
     "",
     "for (const user of users) {",
     "  for (let i = 0; i < 3; i++) {",
-    "    const post = (await postFactory.create({ user_id: user.id })) as SeedModel;",
+    "    const post = (await postFactory.create({ user_id: idOf(user) })) as SeedModel;",
     "    allPosts.push(post);",
     "    for (let j = 0; j < 2; j++) {",
     "      await commentFactory.create({",
-    "        commentable_id: post.id,",
+    "        commentable_id: idOf(post),",
     "        commentable_type: morphTypeOf(post),",
     "      });",
     "    }",
     "  }",
     "  await commentFactory.create({",
-    "    commentable_id: user.id,",
+    "    commentable_id: idOf(user),",
     "    commentable_type: morphTypeOf(user),",
     "  });",
     "}",
@@ -243,7 +242,7 @@ const blogPreset: ScenarioPreset = {
     "for (const user of users) {",
     "  const favorites = pickRandomIds(allPosts, 2);",
     "  if (typeof user.attach === \"function\") {",
-    "    await user.attach(\"post_user_pivot\", \"user_id\", \"post_id\", user.id, favorites);",
+    "    await user.attach(\"post_user_pivot\", \"user_id\", \"post_id\", idOf(user), favorites);",
     "  }",
     "}",
   ],
@@ -268,24 +267,9 @@ const mediaPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "photos: {",
-        "  kind: \"relation\",",
-        "  relation: \"hasMany\",",
-        "  model: \"Photo\",",
-        "  options: { foreignKey: \"user_id\" },",
-        "},",
-        "videos: {",
-        "  kind: \"relation\",",
-        "  relation: \"hasMany\",",
-        "  model: \"Video\",",
-        "  options: { foreignKey: \"user_id\" },",
-        "},",
-        "likes: {",
-        "  kind: \"relation\",",
-        "  relation: \"belongsToMany\",",
-        "  model: \"Photo\",",
-        "  options: {},",
-        "},",
+        "photos: relation(\"hasMany\", \"Photo\", { foreignKey: \"user_id\" }),",
+        "videos: relation(\"hasMany\", \"Video\", { foreignKey: \"user_id\" }),",
+        "likes: relation(\"belongsToMany\", \"Photo\", {}),",
       ],
     },
     {
@@ -305,18 +289,8 @@ const mediaPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "author: {",
-        "  kind: \"relation\",",
-        "  relation: \"belongsTo\",",
-        "  model: \"User\",",
-        "  options: { foreignKey: \"user_id\" },",
-        "},",
-        "comments: {",
-        "  kind: \"relation\",",
-        "  relation: \"morphMany\",",
-        "  model: \"Comment\",",
-        "  options: { morphName: \"commentable\" },",
-        "},",
+        "author: relation(\"belongsTo\", \"User\", { foreignKey: \"user_id\" }),",
+        "comments: relation(\"morphMany\", \"Comment\", { morphName: \"commentable\" }),",
       ],
     },
     {
@@ -336,18 +310,8 @@ const mediaPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "author: {",
-        "  kind: \"relation\",",
-        "  relation: \"belongsTo\",",
-        "  model: \"User\",",
-        "  options: { foreignKey: \"user_id\" },",
-        "},",
-        "comments: {",
-        "  kind: \"relation\",",
-        "  relation: \"morphMany\",",
-        "  model: \"Comment\",",
-        "  options: { morphName: \"commentable\" },",
-        "},",
+        "author: relation(\"belongsTo\", \"User\", { foreignKey: \"user_id\" }),",
+        "comments: relation(\"morphMany\", \"Comment\", { morphName: \"commentable\" }),",
       ],
     },
     {
@@ -369,12 +333,7 @@ const mediaPreset: ScenarioPreset = {
         "created_at: column(\"timestamp\"),",
         "updated_at: column(\"timestamp\"),",
         "",
-        "commentable: {",
-        "  kind: \"relation\",",
-        "  relation: \"morphTo\",",
-        "  model: \"Commentable\",",
-        "  options: { morphName: \"commentable\" },",
-        "},",
+        "commentable: relation(\"morphTo\", \"Commentable\", { morphName: \"commentable\" }),",
       ],
     },
   ],
@@ -386,18 +345,18 @@ const mediaPreset: ScenarioPreset = {
     "",
     "for (const user of users) {",
     "  for (let i = 0; i < 2; i++) {",
-    "    const photo = (await photoFactory.create({ user_id: user.id })) as SeedModel;",
+    "    const photo = (await photoFactory.create({ user_id: idOf(user) })) as SeedModel;",
     "    allPhotos.push(photo);",
     "    await commentFactory.create({",
-    "      commentable_id: photo.id,",
+    "      commentable_id: idOf(photo),",
     "      commentable_type: morphTypeOf(photo),",
     "    });",
     "  }",
     "  for (let i = 0; i < 2; i++) {",
-    "    const video = (await videoFactory.create({ user_id: user.id })) as SeedModel;",
+    "    const video = (await videoFactory.create({ user_id: idOf(user) })) as SeedModel;",
     "    allVideos.push(video);",
     "    await commentFactory.create({",
-    "      commentable_id: video.id,",
+    "      commentable_id: idOf(video),",
     "      commentable_type: morphTypeOf(video),",
     "    });",
     "  }",
@@ -406,7 +365,7 @@ const mediaPreset: ScenarioPreset = {
     "for (const user of users) {",
     "  const favorites = pickRandomIds(allPhotos, 2);",
     "  if (typeof user.attach === \"function\") {",
-    "    await user.attach(\"photo_user_pivot\", \"user_id\", \"photo_id\", user.id, favorites);",
+    "    await user.attach(\"photo_user_pivot\", \"user_id\", \"photo_id\", idOf(user), favorites);",
     "  }",
     "}",
   ],
@@ -594,6 +553,7 @@ export async function makeScenario(
 
   if (options.force === true) {
     const removedArtifacts = cleanupScenarioArtifacts(isTest);
+    clearScenarioArtifactModuleCache(isTest);
     if (removedArtifacts > 0) {
       console.log(chalk.yellow(`Force cleanup removed ${removedArtifacts} stale scenario artifact(s).`));
     }
@@ -655,7 +615,8 @@ ${preset.id === "media"
   : 'import { PostFactory } from "../factories/PostFactory";'}
 
 type SeedModel = {
-  id: number;
+  id?: number;
+  _id?: number;
   getMorphClass?: () => string;
   attach?: (
     pivotTable: string,
@@ -668,12 +629,19 @@ type SeedModel = {
 
 const morphTypeOf = (model: SeedModel): string => {
   if (typeof model.getMorphClass === "function") return model.getMorphClass();
-  const ctor = model.constructor as { name?: string } | undefined;
+  const ctor = model.constructor as { getMorphClass?: () => string; name?: string } | undefined;
+  if (ctor && typeof ctor.getMorphClass === "function") {
+    return String(ctor.getMorphClass());
+  }
   return String(ctor?.name ?? "Model");
 };
 
+const idOf = (model: SeedModel): number | undefined => {
+  return (model.id ?? model._id) as number | undefined;
+};
+
 const pickRandomIds = (items: SeedModel[], count: number): number[] => {
-  const pool = items.map((p) => p.id).filter((id) => typeof id === "number");
+  const pool = items.map((item) => idOf(item)).filter((id) => id !== undefined) as number[];
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     const tmp = pool[i];
@@ -701,6 +669,7 @@ export async function ${preset.seedName}() {
   console.log(chalk.green(`Seeder created: ${seederPath}`));
 
   writeScenarioManifest(isTest, preset);
+  clearScenarioArtifactModuleCache(isTest);
 
   // 4) Migrations
   await makeMigration("all", {
