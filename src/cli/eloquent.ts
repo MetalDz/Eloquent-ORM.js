@@ -80,7 +80,9 @@ function ensureProductionTestOnly(
   return false;
 }
 
-function resolveRequestedStorageKind(argv: string[]): Exclude<StorageKind, "unknown"> | undefined {
+function resolveRequestedStorageKind(
+  argv: string[]
+): Exclude<StorageKind, "unknown" | "mixed"> | undefined {
   const hasMongo = argv.includes("--mongo");
   const hasSql =
     argv.includes("--mysql") ||

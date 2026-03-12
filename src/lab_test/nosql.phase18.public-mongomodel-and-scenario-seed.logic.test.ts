@@ -113,8 +113,8 @@ describe("NoSQL phase 18 public MongoModel and scenario seed parity", () => {
       const seederContent = fs.readFileSync(path.join(seedsDir, "BlogScenarioSeeder.ts"), "utf8");
       expect(seederContent).toContain("id?: number;");
       expect(seederContent).toContain("_id?: number;");
-      expect(seederContent).toContain("const idOf = (model: SeedModel): number | undefined => {");
-      expect(seederContent).toContain("return (model.id ?? model._id) as number | undefined;");
+      expect(seederContent).toContain("const idOf = (model: SeedModel): number => {");
+      expect(seederContent).toContain("return (model.id ?? model._id) as number;");
       expect(seederContent).toContain("if (ctor && typeof ctor.getMorphClass === \"function\") {");
       expect(seederContent).toContain("const post = (await postFactory.create({ user_id: idOf(user) })) as SeedModel;");
       expect(seederContent).toContain("commentable_id: idOf(post),");

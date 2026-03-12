@@ -636,8 +636,8 @@ const morphTypeOf = (model: SeedModel): string => {
   return String(ctor?.name ?? "Model");
 };
 
-const idOf = (model: SeedModel): number | undefined => {
-  return (model.id ?? model._id) as number | undefined;
+const idOf = (model: SeedModel): number => {
+  return (model.id ?? model._id) as number;
 };
 
 const pickRandomIds = (items: SeedModel[], count: number): number[] => {

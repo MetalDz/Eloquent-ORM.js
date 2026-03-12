@@ -16,7 +16,7 @@ import type { StorageKind } from "../ArtifactStorage";
 
 export async function loadFactories(
   isTest = false,
-  options: { storageKind?: Exclude<StorageKind, "unknown"> } = {}
+  options: { storageKind?: Exclude<StorageKind, "unknown" | "mixed"> } = {}
 ): Promise<void> {
   console.log(chalk.cyanBright("Initializing FactoryRegistry..."));
 

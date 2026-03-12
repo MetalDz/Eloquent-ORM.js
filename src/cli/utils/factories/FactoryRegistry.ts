@@ -43,7 +43,7 @@ export class FactoryRegistry {
 
   static async autoDiscover(
     isTest = false,
-    options: { storageKind?: Exclude<StorageKind, "unknown"> } = {}
+    options: { storageKind?: Exclude<StorageKind, "unknown" | "mixed"> } = {}
   ): Promise<void> {
     const dir = PathMap.factories(isTest);
     if (!fs.existsSync(dir)) {

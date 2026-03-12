@@ -1,5 +1,45 @@
 import fs from "fs";
+import Module from "module";
 import path from "path";
+import ts from "typescript";
+
+type InternalModuleCtor = typeof Module & {
+  _nodeModulePaths(from: string): string[];
+};
+
+type InternalModuleInstance = Module & {
+  _compile(code: string, filename: string): void;
+};
+
+function isInsideWorkspace(filePath: string): boolean {
+  const workspaceRoot = path.resolve(process.cwd());
+  const absolutePath = path.resolve(filePath);
+  return absolutePath === workspaceRoot || absolutePath.startsWith(`${workspaceRoot}${path.sep}`);
+}
+
+function resolveExistingModulePath(basePath: string): string | null {
+  const candidates = [
+    basePath,
+    `${basePath}.ts`,
+    `${basePath}.js`,
+    path.join(basePath, "index.ts"),
+    path.join(basePath, "index.js"),
+  ];
+
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+}
+
+function resolveLocalRequest(request: string, fromFilePath: string): string | null {
+  if (!request.startsWith(".") && !path.isAbsolute(request)) {
+    return null;
+  }
+
+  const candidateBase = path.isAbsolute(request)
+    ? request
+    : path.resolve(path.dirname(fromFilePath), request);
+
+  return resolveExistingModulePath(candidateBase);
+}
 
 let registered = false;
 
@@ -38,6 +78,55 @@ function resolveDistPath(filePath: string): string | null {
   return fs.existsSync(distPath) ? distPath : null;
 }
 
+function requireFromFile(filePath: string): Record<string, unknown> {
+  const absolutePath = path.resolve(filePath);
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require(absolutePath) as Record<string, unknown>;
+}
+
+function loadTranspiledTsModule(filePath: string): Record<string, unknown> {
+  const absolutePath = path.resolve(filePath);
+  const cached = require.cache[absolutePath];
+  if (cached) {
+    return cached.exports as Record<string, unknown>;
+  }
+
+  const source = fs.readFileSync(absolutePath, "utf8");
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2020,
+      downlevelIteration: true,
+      moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      skipLibCheck: true,
+      esModuleInterop: true,
+    },
+    fileName: absolutePath,
+  });
+
+  const moduleCtor = Module as InternalModuleCtor;
+  const loadedModule = new Module(absolutePath, module) as InternalModuleInstance;
+  loadedModule.filename = absolutePath;
+  loadedModule.paths = moduleCtor._nodeModulePaths(path.dirname(absolutePath));
+  const fallbackRequire = loadedModule.require.bind(loadedModule);
+  loadedModule.require = ((request: string) => {
+    const resolved = resolveLocalRequest(request, absolutePath);
+    if (resolved) {
+      if (resolved.endsWith(".ts")) {
+        if (isInsideWorkspace(resolved)) {
+          return requireFromFile(resolved);
+        }
+        return loadTranspiledTsModule(resolved);
+      }
+      return requireFromFile(resolved);
+    }
+    return fallbackRequire(request);
+  }) as Module["require"];
+  require.cache[absolutePath] = loadedModule;
+  loadedModule._compile(output.outputText, absolutePath);
+  return loadedModule.exports as Record<string, unknown>;
+}
+
 /**
  * Load a module from file path, supporting .ts via ts-node.
  * If ts-node is unavailable, fall back to compiled dist path when possible.
@@ -48,14 +137,13 @@ export function loadModule(filePath: string): Record<string, unknown> {
     if (!ok) {
       const distPath = resolveDistPath(filePath);
       if (distPath) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        return require(distPath) as Record<string, unknown>;
+        return requireFromFile(distPath);
       }
       throw new Error(
         "ts-node is required to load .ts files. Install it or run compiled JS."
       );
     }
+    return loadTranspiledTsModule(filePath);
   }
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(filePath) as Record<string, unknown>;
+  return requireFromFile(filePath);
 }

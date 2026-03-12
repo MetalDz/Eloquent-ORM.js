@@ -7,7 +7,7 @@ import { loadModule } from "./typescript/tsRuntime";
 import type { BaseModel } from "../../core/model/BaseModel";
 import type { Factory } from "./factories/Factory";
 
-export type StorageKind = "mongo" | "sql" | "unknown";
+export type StorageKind = "mongo" | "sql" | "mixed" | "unknown";
 
 function resolveExistingPath(filePath: string): string | null {
   if (fs.existsSync(filePath)) {
@@ -180,6 +180,10 @@ export function resolveFactoryStorageKindFromFile(
     if (kinds.has("sql") && !kinds.has("mongo") && kinds.size === 1) {
       return "sql";
     }
+
+    if (kinds.has("mongo") && kinds.has("sql")) {
+      return "mixed";
+    }
   }
 
   const importedModule = loadModule(filePath);
@@ -237,17 +241,23 @@ export function resolveSeederStorageKindFromFile(
     return "sql";
   }
 
+  if (kinds.has("mongo") && kinds.has("sql")) {
+    return "mixed";
+  }
+
   return kinds.size === 1 ? Array.from(kinds)[0] : "unknown";
 }
 
-export function targetStorageKindForConnection(connectionName: string): Exclude<StorageKind, "unknown"> {
+export function targetStorageKindForConnection(
+  connectionName: string
+): Exclude<StorageKind, "unknown" | "mixed"> {
   const driver = dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver;
   return driver === "mongo" ? "mongo" : "sql";
 }
 
 export function matchesTargetStorageKind(
   artifactKind: StorageKind,
-  targetKind: Exclude<StorageKind, "unknown">
+  targetKind: Exclude<StorageKind, "unknown" | "mixed">
 ): boolean {
   return artifactKind === "unknown" || artifactKind === targetKind;
 }
