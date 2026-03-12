@@ -7,6 +7,7 @@ import { ScopeMixin } from "../orm/mixins/ScopeMixin";
 import { HooksMixin } from "../orm/mixins/HooksMixin";
 import { QueryCacheMixin } from "../orm/mixins/QueryCacheMixin";
 import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin";
+import { SerializeMixin } from "../orm/mixins/SerializeMixin";
 import { getAdapter, ConnectionName } from "../connection/ConnectionFactory";
 import type { DriverAdapter } from "../connection/DriverAdapter";
 import { BelongsTo } from "../orm/relations/BelongsTo";
@@ -17,6 +18,7 @@ import { MorphOne } from "../orm/relations/MorphOne";
 import { MorphMany } from "../orm/relations/MorphMany";
 import { MorphTo } from "../orm/relations/MorphTo";
 import type { CoreModelClass } from "../orm/Relation";
+import type { SafeFinderDirection, SafeFinderFilters, SafeFinderQuery } from "./SafeFinder";
 
 // Morph system (re-export convenience)
 import { MorphableMixin, MorphableBaseModel } from "../orm/mixins/MorphableMixin";
@@ -52,7 +54,7 @@ export interface ORMCoreContract {
 
 /**
  * Compose mixins in dependency-safe order:
- * CoreModel -> Morphable -> PivotHelper -> Casts -> SoftDeletes -> Scope -> Hooks -> QueryCache -> EagerLoading
+ * CoreModel -> Morphable -> PivotHelper -> Casts -> SoftDeletes -> Scope -> Hooks -> QueryCache -> EagerLoading -> Serialize
  *
  * We cast CoreModel to AbstractConstructor<ORMCoreContract> as the composition seed so
  * TypeScript understands the initial shape we're building on top of.
@@ -61,12 +63,14 @@ const MorphableSeed = MorphableMixin(
   CoreModel as unknown as AbstractConstructor<ORMCoreContract>
 );
 
-const ComposedModel = EagerLoadingMixin(
-  QueryCacheMixin(
-    HooksMixin(
-      ScopeMixin(
-        SoftDeletesMixin(
-          CastsMixin(PivotHelperMixin(MorphableSeed))
+const ComposedModel = SerializeMixin(
+  EagerLoadingMixin(
+    QueryCacheMixin(
+      HooksMixin(
+        ScopeMixin(
+          SoftDeletesMixin(
+            CastsMixin(PivotHelperMixin(MorphableSeed))
+          )
         )
       )
     )
@@ -82,6 +86,81 @@ export abstract class BaseModel<
 > extends ComposedModel {
   constructor(...args: any[]) {
     super(...args);
+  }
+
+  static where<T extends typeof BaseModel>(
+    this: T,
+    field: string,
+    value: unknown
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.where as any).call(this, field, value);
+  }
+
+  static with<T extends typeof BaseModel>(
+    this: T,
+    ...relations: string[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.with as any).call(this, ...relations);
+  }
+
+  static active<T extends typeof BaseModel>(
+    this: T,
+    ...args: unknown[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.active as any).call(this, ...args);
+  }
+
+  static orderBy<T extends typeof BaseModel>(
+    this: T,
+    field: string,
+    direction: SafeFinderDirection = "asc"
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.orderBy as any).call(this, field, direction);
+  }
+
+  static limit<T extends typeof BaseModel>(
+    this: T,
+    count: number
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.limit as any).call(this, count);
+  }
+
+  static get<T extends typeof BaseModel>(this: T): Promise<InstanceType<T>[]> {
+    return (CoreModel.get as any).call(this);
+  }
+
+  static first<T extends typeof BaseModel>(this: T): Promise<InstanceType<T> | null> {
+    return (CoreModel.first as any).call(this);
+  }
+
+  static findBy<T extends typeof BaseModel>(
+    this: T,
+    field: string,
+    value: unknown
+  ): SafeFinderQuery<InstanceType<T>> {
+    return (CoreModel.findBy as any).call(this, field, value);
+  }
+
+  static findOneBy<T extends typeof BaseModel>(
+    this: T,
+    field: string,
+    value: unknown
+  ): Promise<InstanceType<T> | null> {
+    return (CoreModel.findOneBy as any).call(this, field, value);
+  }
+
+  static findAllBy<T extends typeof BaseModel>(
+    this: T,
+    filters: SafeFinderFilters
+  ): Promise<InstanceType<T>[]> {
+    return (CoreModel.findAllBy as any).call(this, filters);
+  }
+
+  static existsBy<T extends typeof BaseModel>(
+    this: T,
+    filters: SafeFinderFilters
+  ): Promise<boolean> {
+    return (CoreModel.existsBy as any).call(this, filters);
   }
 
   /**

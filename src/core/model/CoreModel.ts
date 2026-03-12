@@ -6,6 +6,12 @@ import type { Db } from "mongodb";
 
 import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator";
 import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
+import {
+  SafeFinderDirection,
+  SafeFinderFilters,
+  SafeFinderModelStatic,
+  SafeFinderQuery,
+} from "./SafeFinder";
 
 /**
  * Types for model contract (kept generic)
@@ -87,6 +93,99 @@ export abstract class CoreModel<
     rows: Record<string, unknown>[]
   ): InstanceType<T>[] {
     return rows.map((row) => this.hydrateRow(row) as InstanceType<T>);
+  }
+
+  protected static safeFinder<T extends typeof CoreModel>(
+    this: T
+  ): SafeFinderQuery<InstanceType<T>> {
+    const instance = this.newInstance();
+    return new SafeFinderQuery(
+      instance as InstanceType<T>,
+      this as unknown as SafeFinderModelStatic<InstanceType<T>>
+    );
+  }
+
+  static where<T extends typeof CoreModel>(
+    this: T,
+    field: string,
+    value: unknown
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().where(field, value);
+  }
+
+  static orderBy<T extends typeof CoreModel>(
+    this: T,
+    field: string,
+    direction: SafeFinderDirection = "asc"
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().orderBy(field, direction);
+  }
+
+  static limit<T extends typeof CoreModel>(
+    this: T,
+    count: number
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().limit(count);
+  }
+
+  static with<T extends typeof CoreModel>(
+    this: T,
+    ...relations: string[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().with(...relations);
+  }
+
+  static active<T extends typeof CoreModel>(
+    this: T,
+    ...args: unknown[]
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.safeFinder().active(...args);
+  }
+
+  static get<T extends typeof CoreModel>(this: T): Promise<InstanceType<T>[]> {
+    return this.safeFinder().get();
+  }
+
+  static first<T extends typeof CoreModel>(this: T): Promise<InstanceType<T> | null> {
+    return this.safeFinder().first();
+  }
+
+  static findBy<T extends typeof CoreModel>(
+    this: T,
+    field: string,
+    value: unknown
+  ): SafeFinderQuery<InstanceType<T>> {
+    return this.where(field, value);
+  }
+
+  static findOneBy<T extends typeof CoreModel>(
+    this: T,
+    field: string,
+    value: unknown
+  ): Promise<InstanceType<T> | null> {
+    return this.where(field, value).first();
+  }
+
+  static findAllBy<T extends typeof CoreModel>(
+    this: T,
+    filters: SafeFinderFilters
+  ): Promise<InstanceType<T>[]> {
+    const finder = this.safeFinder();
+    for (const [field, value] of Object.entries(filters)) {
+      finder.where(field, value);
+    }
+    return finder.get();
+  }
+
+  static async existsBy<T extends typeof CoreModel>(
+    this: T,
+    filters: SafeFinderFilters
+  ): Promise<boolean> {
+    const finder = this.safeFinder();
+    for (const [field, value] of Object.entries(filters)) {
+      finder.where(field, value);
+    }
+    return (await finder.first()) !== null;
   }
 
   /**
