@@ -51,20 +51,30 @@ export function EagerLoadingMixin<TBase extends Constructor>(Base: TBase) {
       if (typeof relationFn !== "function") {
         throw new Error(`Relation '${name}' is not defined on ${this.constructor.name}`);
       }
-      return relationFn.call(this) as RelationDefinition<this>;
+      const relation = relationFn.call(this) as RelationDefinition<this>;
+      relation.name = name;
+      return relation;
     }
 
     protected async eagerLoadRelations(records: this[]): Promise<this[]> {
       if (!this.eagerRelations.length || records.length === 0) return records;
+      const loadedTopLevels = new Set<string>();
 
       for (const relName of this.eagerRelations) {
         const [topLevel, ...nested] = relName.split(".");
         const relation = this.getRelationStrict(topLevel);
 
         if (nested.length > 0) {
-          await this.loadNestedRelations(records, relation, nested.join("."));
+          await this.loadNestedRelations(
+            records,
+            relation,
+            nested.join("."),
+            loadedTopLevels.has(topLevel)
+          );
+          loadedTopLevels.add(topLevel);
         } else {
           await relation.match(records);
+          loadedTopLevels.add(topLevel);
         }
       }
 
@@ -74,9 +84,15 @@ export function EagerLoadingMixin<TBase extends Constructor>(Base: TBase) {
     private async loadNestedRelations(
       records: this[],
       relation: RelationDefinition<this>,
-      nestedPath: string
+      nestedPath: string,
+      skipCurrentMatch = false
     ): Promise<void> {
-      await relation.match(records);
+      if (!skipCurrentMatch) {
+        await relation.match(records);
+      }
+      if (!nestedPath) {
+        return;
+      }
 
       const allRelated: EagerLoadable[] = [];
 
@@ -158,7 +174,7 @@ export function EagerLoadingMixin<TBase extends Constructor>(Base: TBase) {
     }
 
     getRelation?(name: string): RelationDefinition<this> {
-      return (this as Record<string, unknown>)[name] as RelationDefinition<this>;
+      return this.getRelationStrict(name);
     }
   }
 

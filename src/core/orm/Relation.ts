@@ -56,4 +56,51 @@ export abstract class Relation<TRelated extends RelationModel = RelationModel> {
    * Each relation must match related rows for eager loading
    */
   abstract match(parents: Record<string, unknown>[]): Promise<void>;
+
+  protected isMongoDatabase(
+    db: unknown
+  ): db is {
+    collection(name: string): {
+      findOne(filter: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+      find(filter: Record<string, unknown>): { toArray(): Promise<Record<string, unknown>[]> };
+      insertOne?(doc: Record<string, unknown>): Promise<unknown>;
+      insertMany?(docs: Record<string, unknown>[]): Promise<unknown>;
+      deleteMany?(filter: Record<string, unknown>): Promise<unknown>;
+    };
+  } {
+    return !!db && typeof (db as { collection?: unknown }).collection === "function";
+  }
+
+  protected buildMongoEqualityFilter(field: string, value: unknown): Record<string, unknown> {
+    if (field === "id") {
+      return { $or: [{ id: value }, { _id: value }] };
+    }
+
+    if (field === "_id") {
+      return { $or: [{ _id: value }, { id: value }] };
+    }
+
+    return { [field]: value };
+  }
+
+  protected buildMongoInFilter(field: string, values: unknown[]): Record<string, unknown> {
+    if (field === "id") {
+      return { $or: [{ id: { $in: values } }, { _id: { $in: values } }] };
+    }
+
+    if (field === "_id") {
+      return { $or: [{ _id: { $in: values } }, { id: { $in: values } }] };
+    }
+
+    return { [field]: { $in: values } };
+  }
+
+  protected getMongoComparableValues(record: Record<string, unknown>, field: string): unknown[] {
+    if (field === "id" || field === "_id") {
+      return [record.id, record._id].filter((value) => value !== undefined);
+    }
+
+    const value = record[field];
+    return value === undefined ? [] : [value];
+  }
 }

@@ -201,7 +201,7 @@ describe("Branch coverage 100% - phase 26 utilities + relation closures", () => 
     );
     (relation as any).name = undefined;
 
-    const parents: Row[] = [{ tag_id: 10 }, { tag_id: 999 }];
+    const parents: Row[] = [{ id: 10 }, { id: 999 }];
     await relation.match(parents);
 
     const firstParentRows = (parents[0] as any).relation as Row[];

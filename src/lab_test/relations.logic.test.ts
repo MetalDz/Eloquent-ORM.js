@@ -189,7 +189,7 @@ describe("Relation logic coverage", () => {
     );
     (relation as unknown as { name?: string }).name = "tags";
 
-    const single = await relation.getResults({ tag_id: 10 });
+    const single = await relation.getResults({ id: 10 });
     expect(single).toEqual([{ id: 7, name: "TagA" }]);
     expect(adapter.query).toHaveBeenNthCalledWith(
       1,
@@ -197,7 +197,7 @@ describe("Relation logic coverage", () => {
       [10]
     );
 
-    const parents: Row[] = [{ tag_id: 10 }, { tag_id: 11 }, { tag_id: 12 }];
+    const parents: Row[] = [{ id: 10 }, { id: 11 }, { id: 12 }];
     await relation.match(parents);
     expect(((parents[0] as Row).tags as Row[]).length).toBe(2);
     expect(((parents[1] as Row).tags as Row[]).length).toBe(1);

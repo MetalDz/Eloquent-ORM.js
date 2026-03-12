@@ -24,6 +24,49 @@ export interface ORMQuery<T> {
   get(): Promise<T[]>;
 }
 
+type QueryCapableModel<T> = {
+  name?: string;
+  query?: () => ORMQuery<T>;
+  where?: (field: string, value: unknown) => ORMQuery<T>;
+  first?: () => Promise<T | null>;
+  get?: () => Promise<T[]>;
+};
+
+function resolveQueryable<T>(RelatedModel: QueryCapableModel<T>): ORMQuery<T> {
+  if (typeof RelatedModel.query === "function") {
+    return RelatedModel.query();
+  }
+
+  if (typeof RelatedModel.where === "function") {
+    let current: ORMQuery<T> | null = null;
+
+    return {
+      where(field: string, value: unknown): ORMQuery<T> {
+        current = current ? current.where(field, value) : RelatedModel.where!(field, value);
+        return this;
+      },
+      async first(): Promise<T | null> {
+        if (current) return current.first();
+        if (typeof RelatedModel.first === "function") return RelatedModel.first();
+        throw new Error(
+          `❌ Model '${RelatedModel.name || "AnonymousModel"}' does not implement first().`
+        );
+      },
+      async get(): Promise<T[]> {
+        if (current) return current.get();
+        if (typeof RelatedModel.get === "function") return RelatedModel.get();
+        throw new Error(
+          `❌ Model '${RelatedModel.name || "AnonymousModel"}' does not implement get().`
+        );
+      },
+    };
+  }
+
+  throw new Error(
+    `❌ Model '${RelatedModel.name || "AnonymousModel"}' does not implement query()/where().`
+  );
+}
+
 /** Generic constructor helper for mixins */
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
@@ -71,7 +114,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
     /** 💫 morphOne(RelatedModel, 'commentable') */
     async morphOne<T extends MorphableBaseModel>(
       this: MorphableBaseModel,
-      RelatedModel: { query(): ORMQuery<T> },
+      RelatedModel: QueryCapableModel<T>,
       relationName: string
     ): Promise<T | null> {
       assertSafeRelationName(relationName);
@@ -82,7 +125,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
           : this.constructor.name;
       const modelId = (this as Record<string, unknown>).id as string | number | undefined;
 
-      return await RelatedModel.query()
+      return await resolveQueryable(RelatedModel)
         .where(`${relationName}_type`, modelName)
         .where(`${relationName}_id`, modelId)
         .first();
@@ -91,7 +134,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
     /** 🌌 morphMany(RelatedModel, 'commentable') */
     async morphMany<T extends MorphableBaseModel>(
       this: MorphableBaseModel,
-      RelatedModel: { query(): ORMQuery<T> },
+      RelatedModel: QueryCapableModel<T>,
       relationName: string
     ): Promise<T[]> {
       assertSafeRelationName(relationName);
@@ -102,7 +145,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
           : this.constructor.name;
       const modelId = (this as Record<string, unknown>).id as string | number | undefined;
 
-      return await RelatedModel.query()
+      return await resolveQueryable(RelatedModel)
         .where(`${relationName}_type`, modelName)
         .where(`${relationName}_id`, modelId)
         .get();

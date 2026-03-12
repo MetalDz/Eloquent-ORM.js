@@ -19,12 +19,20 @@ export class MorphTo extends Relation {
     const Model = MorphRegistry.resolve<RelationModel>(modelClassName) as CoreModelClass;
     const relatedInstance = new Model();
     const db = await relatedInstance.getDB();
-    const adapter = db as DriverAdapter;
+    let row: Record<string, unknown> | null;
 
-    const table = adapter.wrapId(relatedInstance.tableName);
-    const localKey = adapter.wrapId(this.localKey);
-    const sql = `SELECT * FROM ${table} WHERE ${localKey} = ${adapter.placeholder(1)} LIMIT 1`;
-    const row = await adapter.queryOne<Record<string, unknown>>(sql, [parent[this.morphId]]);
+    if (this.isMongoDatabase(db)) {
+      row = await db
+        .collection(relatedInstance.tableName)
+        .findOne(this.buildMongoEqualityFilter(this.localKey, parent[this.morphId]));
+    } else {
+      const adapter = db as DriverAdapter;
+      const table = adapter.wrapId(relatedInstance.tableName);
+      const localKey = adapter.wrapId(this.localKey);
+      const sql = `SELECT * FROM ${table} WHERE ${localKey} = ${adapter.placeholder(1)} LIMIT 1`;
+      row = await adapter.queryOne<Record<string, unknown>>(sql, [parent[this.morphId]]);
+    }
+
     return Model.hydrateRow(row);
   }
 
@@ -43,21 +51,31 @@ export class MorphTo extends Relation {
       const Model = MorphRegistry.resolve<RelationModel>(type) as CoreModelClass;
       const relatedInstance = new Model();
       const db = await relatedInstance.getDB();
-      const adapter = db as DriverAdapter;
-
-      const table = adapter.wrapId(relatedInstance.tableName);
-      const localKey = adapter.wrapId(this.localKey);
       const ids = models.map((m) => m[this.morphId]);
-      const inResult = adapter.inClause(localKey, ids, 1);
-      const sql = `SELECT * FROM ${table} WHERE ${inResult.sql}`;
-      const rows = await adapter.query<Record<string, unknown>>(sql, inResult.params);
+      let rows: Record<string, unknown>[];
+
+      if (this.isMongoDatabase(db)) {
+        rows = await db
+          .collection(relatedInstance.tableName)
+          .find(this.buildMongoInFilter(this.localKey, ids))
+          .toArray();
+      } else {
+        const adapter = db as DriverAdapter;
+        const table = adapter.wrapId(relatedInstance.tableName);
+        const localKey = adapter.wrapId(this.localKey);
+        const inResult = adapter.inClause(localKey, ids, 1);
+        const sql = `SELECT * FROM ${table} WHERE ${inResult.sql}`;
+        rows = await adapter.query<Record<string, unknown>>(sql, inResult.params);
+      }
 
       const relatedMap: Record<string, Record<string, unknown>> = {};
       for (const row of rows) {
         const instance = Model.hydrateRow(row);
         if (!instance) continue;
         const record = instance as unknown as Record<string, unknown>;
-        relatedMap[record[this.localKey] as string] = record;
+        for (const value of this.getMongoComparableValues(record, this.localKey)) {
+          relatedMap[String(value)] = record;
+        }
       }
 
       const relName = this.name ?? "relation";

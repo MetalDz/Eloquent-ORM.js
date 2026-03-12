@@ -153,6 +153,8 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
   });
 
   test("TypeScriptCompiler.compileWithDefaults returns true when diagnostics are empty", () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const createProgram = jest.fn(() => ({}));
     const getPreEmitDiagnostics = jest.fn(() => []);
     const flattenDiagnosticMessageText = jest.fn(() => "ok");
@@ -187,6 +189,8 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
     ).compileWithDefaults([], true);
     expect(ok).toBe(true);
     expect(createProgram).toHaveBeenCalledWith([], expect.objectContaining({ noEmit: true }));
+    expect(errorSpy).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalled();
   });
 
   test("TypeScriptCompiler.ensureRuntime registers ts-node when .ts hook is absent", () => {
@@ -252,6 +256,7 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
   });
 
   test("HooksMixin fire() early-returns when hooks are disabled with env value '1'", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     class CrudBase {
       async create(data: Record<string, unknown>): Promise<Record<string, unknown>> {
         return data;
@@ -278,6 +283,7 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
     await model.create({ id: 1 });
 
     expect(creatingSpy).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
   });
 
   test("HooksMixin deprecation warning falls back to AnonymousModel name", () => {
