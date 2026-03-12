@@ -1,9 +1,7 @@
 import fs from "fs";
-import path from "path";
-
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
 import { getAdapter } from "../core/connection/ConnectionFactory";
 import type { DriverAdapter } from "../core/connection/DriverAdapter";
+import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
@@ -13,14 +11,7 @@ jest.mock("../core/connection/ConnectionFactory", () => ({
 const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 
 function loadAppSmokeModel() {
-  const filePath = path.resolve(process.cwd(), "src/app/models/AppSmoke.ts");
-  try {
-    delete require.cache[require.resolve(filePath)];
-  } catch {
-    // ignore cache misses
-  }
-
-  return loadModule(filePath).AppSmoke as {
+  return loadAppModel<{
     new (): {
       tableName: string;
       connectionName: string;
@@ -33,7 +24,7 @@ function loadAppSmokeModel() {
       };
     };
     findOneBy(field: string, value: unknown): Promise<unknown>;
-  };
+  }>("AppSmoke").exported;
 }
 
 function makePgAdapter(): DriverAdapter & {
@@ -115,7 +106,7 @@ describe("AppSmoke safe finder integration", () => {
   });
 
   test("AppSmoke model file documents active/inactive/published opt-in usage", () => {
-    const filePath = path.resolve(process.cwd(), "src/app/models/AppSmoke.ts");
+    const filePath = resolveAppModelPath("AppSmoke");
     const content = fs.readFileSync(filePath, "utf8");
 
     const requiredSnippets = [

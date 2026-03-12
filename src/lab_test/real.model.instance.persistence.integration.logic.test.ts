@@ -1,8 +1,6 @@
-import path from "path";
-
 import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
 import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
+import { loadAppModel } from "./support/appModelResolver";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
@@ -13,37 +11,23 @@ const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
 const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
 
 function loadAppSmokeModel() {
-  const filePath = path.resolve(process.cwd(), "src/app/models/AppSmoke.ts");
-  try {
-    delete require.cache[require.resolve(filePath)];
-  } catch {
-    // ignore cache misses
-  }
-
-  return loadModule(filePath).AppSmoke as {
+  return loadAppModel<{
     new (): Record<string, unknown> & {
       fill(data: Record<string, unknown>): unknown;
       save(): Promise<void>;
       patch(data: Record<string, unknown>): Promise<void>;
     };
-  };
+  }>("AppSmoke").exported;
 }
 
 function loadGeoLocalisationModel() {
-  const filePath = path.resolve(process.cwd(), "src/app/models/GeoLocalisation.ts");
-  try {
-    delete require.cache[require.resolve(filePath)];
-  } catch {
-    // ignore cache misses
-  }
-
-  return loadModule(filePath).GeoLocalisation as {
+  return loadAppModel<{
     new (): Record<string, unknown> & {
       fill(data: Record<string, unknown>): unknown;
       save(): Promise<void>;
       patch(data: Record<string, unknown>): Promise<void>;
     };
-  };
+  }>("GeoLocalisation").exported;
 }
 
 function makeSqlAdapter(): DriverAdapter & {
