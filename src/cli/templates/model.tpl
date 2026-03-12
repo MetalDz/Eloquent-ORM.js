@@ -38,6 +38,14 @@ export class {{ModelName}} extends {{modelBaseClass}}<{{ModelName}}Attrs> {
    * static timestamps = true;
    * static softDeletes = true;
    * static cacheEnabled = true;
+   *
+   * INSTANCE PERSISTENCE EXAMPLES
+   * -------------------------------------------------
+   *   const model = new {{ModelName}}();
+   *   model.fill({ name: "Example" });
+   *   await model.save();
+   *   await model.patch({ name: "Example 2" });
+   * -------------------------------------------------
    */
 
   static validationHooks = {

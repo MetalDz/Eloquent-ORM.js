@@ -65,7 +65,7 @@ function renderModel(
  */
 
 import { ${modelBaseClass}, ModelInstance } from "${coreImportPath}";
-import { column, validate } from "${schemaImportPath}";
+import { column, validate, type SchemaField } from "${schemaImportPath}";
 
 type ${spec.name}Attrs = {
 ${attrs}
@@ -78,7 +78,17 @@ export class ${spec.name} extends ${modelBaseClass}<${spec.name}Attrs> {
 
   static schema = {
 ${schema}
-  };
+  } satisfies Record<string, SchemaField>;
+
+  /*
+   * INSTANCE PERSISTENCE EXAMPLES
+   * -------------------------------------------------
+   *   const model = new ${spec.name}();
+   *   model.fill({ name: "Example" });
+   *   await model.save();
+   *   await model.patch({ name: "Example 2" });
+   * -------------------------------------------------
+   */
 
   constructor() {
     super("${spec.table}", ${connectionExpr});
