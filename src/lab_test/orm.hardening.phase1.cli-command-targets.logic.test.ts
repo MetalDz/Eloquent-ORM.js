@@ -12,6 +12,14 @@ describe("ORM hardening phase 1 CLI command target resolution extraction", () =>
     "validation tasks/ORM-Hardening-Phase1-CLI-Command-Target-Resolution-Plan.md"
   );
   const cliPath = path.resolve(rootDir, "src/cli/eloquent.ts");
+  const seedScenarioRegistrationPath = path.resolve(
+    rootDir,
+    "src/cli/utils/CliSeedScenarioCommandRegistration.ts"
+  );
+  const migrationRegistrationPath = path.resolve(
+    rootDir,
+    "src/cli/utils/CliMigrationCommandRegistration.ts"
+  );
 
   test("sub-plan exists and freezes the command target extraction scope", () => {
     const plan = fs.readFileSync(planPath, "utf8");
@@ -55,12 +63,16 @@ describe("ORM hardening phase 1 CLI command target resolution extraction", () =>
     ).toThrow("Choose only one explicit connection flag or use --all-connections.");
   });
 
-  test("eloquent CLI delegates repeated command target resolution to the extracted helper", () => {
-    const source = fs.readFileSync(cliPath, "utf8");
+  test("extracted CLI registration modules delegate repeated command target resolution to the helper", () => {
+    const cliSource = fs.readFileSync(cliPath, "utf8");
+    const seedScenarioSource = fs.readFileSync(seedScenarioRegistrationPath, "utf8");
+    const migrationSource = fs.readFileSync(migrationRegistrationPath, "utf8");
 
-    expect(source).toContain('from "./utils/CliCommandTargets"');
-    expect(source).toContain("resolveCliPrimaryConnectionName(options)");
-    expect(source.match(/resolveCliConnectionNames\(options\)/g)?.length).toBeGreaterThanOrEqual(8);
-    expect(source).not.toContain('from "./utils/resolveConnectionFlags"');
+    expect(cliSource).not.toContain('from "./utils/resolveConnectionFlags"');
+    expect(seedScenarioSource).toContain('from "./CliCommandTargets"');
+    expect(seedScenarioSource).toContain("resolveCliPrimaryConnectionName(options)");
+    expect(seedScenarioSource.match(/resolveCliConnectionNames\(options\)/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(migrationSource).toContain('from "./CliCommandTargets"');
+    expect(migrationSource.match(/resolveCliConnectionNames\(options\)/g)?.length).toBeGreaterThanOrEqual(4);
   });
 });

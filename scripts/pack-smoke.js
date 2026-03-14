@@ -95,6 +95,10 @@ function assertOneOf(step, text, options) {
   }
 }
 
+function factoryStatusVisibleSection(text) {
+  return text.split(/\r?\nLoaded \d+ factories\./, 1)[0] || text;
+}
+
 function assertFileExists(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Expected file to exist: ${filePath}`);
@@ -829,14 +833,25 @@ function runNoSqlRuntimeSmoke(sample) {
     sample.env
   );
   assertSuccess("nosql factory:status --mongo", factoryStatusMongo);
+  const factoryStatusMongoVisible = factoryStatusVisibleSection(factoryStatusMongo.combined);
   assertContains(
     "nosql factory:status --mongo",
-    factoryStatusMongo.combined,
+    factoryStatusMongoVisible,
     "GeoLocationFactory"
   );
   assertNotContains(
     "nosql factory:status --mongo",
+    factoryStatusMongoVisible,
+    "'UserFactory'"
+  );
+  assertContains(
+    "nosql factory:status --mongo",
     factoryStatusMongo.combined,
+    "Skipping incompatible factory for mongo: UserFactory"
+  );
+  assertNotContains(
+    "nosql factory:status --mongo",
+    factoryStatusMongoVisible,
     "UserFactory"
   );
 
