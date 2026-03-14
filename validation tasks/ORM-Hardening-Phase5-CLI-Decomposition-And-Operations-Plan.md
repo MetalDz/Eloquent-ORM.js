@@ -1,7 +1,7 @@
 # ORM Hardening Phase 5: CLI Decomposition and Operations Plan
 
-Last updated: 2026-03-12  
-Status: PLANNED
+Last updated: 2026-03-14  
+Status: IN PROGRESS
 
 ## Goal
 - Reduce command-routing complexity in the CLI while hardening the weakest operational modules and keeping production safety explicit.
@@ -37,6 +37,11 @@ Status: PLANNED
 - Add dedicated tests for the lowest-coverage operational helpers.
 - Keep built CLI and pack-smoke coverage aligned with direct command tests.
 - Preserve explicit production/test gating across all drivers.
+- [x] Start with `fileWriter` create/skip/overwrite/error branch coverage and deterministic console reporting.
+- [x] Harden `ModelIntrospector` extraction and cache invalidation behavior with dedicated tests.
+- [x] Harden `makeController` and `makeService` routing/logging with direct command tests and shared scaffold support.
+- [x] Keep package publish whitelist aligned with the built `dist` root and pack-smoke expectations.
+- [x] Keep `pack-smoke` npm packaging isolated from the user-global npm cache.
 
 ## Acceptance Criteria
 - `eloquent.ts` has a clearer operational boundary and less direct responsibility concentration.

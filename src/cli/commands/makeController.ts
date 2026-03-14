@@ -1,8 +1,11 @@
-import path from "path";
-import chalk from "chalk";
 import { TemplateEngine } from "../utils/TemplateEngine";
-import { PathMap } from "../utils/PathMap";
 import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
+import {
+  camelCaseScaffoldName,
+  logScaffoldCreated,
+  logScaffoldFailure,
+  resolveScaffoldArtifact,
+} from "../utils/ScaffoldGeneratorSupport";
 
 /**
  * Command: eloquent make:controller
@@ -17,26 +20,16 @@ export async function makeController(
     const isTest = !!options.test;
     const softDelete = !!options.soft;
     const forceWrite = !!options.force;
+    const artifact = resolveScaffoldArtifact("controller", modelName, { test: isTest });
 
-    const className = `${capitalize(modelName)}Controller`;
-    const fileName = `${className}.ts`;
-
-    const controllersDir = path.resolve(
-      PathMap.root,
-      isTest ? "src/test/controllers" : "src/app/controllers"
-    );
-    const outputPath = path.join(controllersDir, fileName);
-
-    const serviceImportPath = isTest
-      ? `../services/${capitalize(modelName)}Service`
-      : `../services/${capitalize(modelName)}Service`;
+    const serviceImportPath = `../services/${artifact.modelClassName}Service`;
     const modelImportPath = isTest
-      ? `../database/models/${capitalize(modelName)}`
-      : `../models/${capitalize(modelName)}`;
+      ? `../database/models/${artifact.modelClassName}`
+      : `../models/${artifact.modelClassName}`;
 
     const softDeleteBlock = softDelete
       ? `
-  // PATCH /${camelCase(modelName)}/:id/restore
+  // PATCH /${camelCaseScaffoldName(modelName)}/:id/restore
   async restore(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params?.id as unknown as string | number | undefined;
@@ -45,7 +38,7 @@ export async function makeController(
         return;
       }
       await this.service.restore(id);
-      res.json({ message: "${capitalize(modelName)} restored successfully" });
+      res.json({ message: "${artifact.modelClassName} restored successfully" });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       res.status(400).json({ error: message });
@@ -56,32 +49,21 @@ export async function makeController(
 
     const template = TemplateEngine.load("controller");
     const rendered = TemplateEngine.render(template, {
-      PascalCase: capitalize(modelName),
-      camelCase: camelCase(modelName),
+      PascalCase: artifact.modelClassName,
+      camelCase: camelCaseScaffoldName(modelName),
       serviceImportPath,
       modelImportPath,
       softDeleteBlock,
     });
 
     const created = forceWrite
-      ? overwriteFile(outputPath, rendered)
-      : writeFileSafe(outputPath, rendered);
+      ? overwriteFile(artifact.outputPath, rendered)
+      : writeFileSafe(artifact.outputPath, rendered);
+
     if (created) {
-      const relPath = isTest
-        ? `src/test/controllers/${fileName}`
-        : `src/app/controllers/${fileName}`;
-      console.log(chalk.greenBright(`✔ Controller created:`), chalk.cyan(relPath));
+      logScaffoldCreated("controller", artifact.relativePath);
     }
   } catch (err) {
-    console.error(chalk.red(`❌ Failed to create controller for model: ${modelName}`));
-    console.error(err);
+    logScaffoldFailure("controller", modelName, err);
   }
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function camelCase(str: string): string {
-  return str.charAt(0).toLowerCase() + str.slice(1);
 }

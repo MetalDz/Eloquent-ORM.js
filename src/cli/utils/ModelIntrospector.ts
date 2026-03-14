@@ -50,7 +50,7 @@ export class ModelIntrospector {
       throw new Error(`Model file not found: ${modelPath}`);
     }
 
-    delete require.cache[require.resolve(modelPath)];
+    this.clearModelModuleCache(modelPath);
     const importedModule = loadModule(modelPath);
     const ModelClass = importedModule[modelName] as AbstractConstructor & {
       schema?: Record<string, SchemaField>;
@@ -107,6 +107,14 @@ export class ModelIntrospector {
     };
 
     return { fields, relations, features };
+  }
+
+  private static clearModelModuleCache(modelPath: string): void {
+    try {
+      delete require.cache[require.resolve(modelPath)];
+    } catch {
+      // Ignore cache misses; loadModule() will still read the current file.
+    }
   }
 
   private static extractMixins(schema: Record<string, SchemaField>): string[] {

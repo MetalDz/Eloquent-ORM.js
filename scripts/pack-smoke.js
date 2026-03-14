@@ -6,6 +6,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
 
 const repoRoot = path.resolve(__dirname, "..");
 const nodeCmd = process.execPath;
+const npmCacheDir = path.join(repoRoot, ".npm-pack-smoke-cache");
 const npmCliPath =
   process.env.npm_execpath ||
   path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
@@ -53,7 +54,21 @@ function run(command, args, options = {}) {
 }
 
 function runNpm(args, options = {}) {
-  return run(nodeCmd, [npmCliPath, ...args], options);
+  fs.mkdirSync(npmCacheDir, { recursive: true });
+  const command = process.platform === "win32" ? "cmd.exe" : nodeCmd;
+  const commandArgs =
+    process.platform === "win32"
+      ? ["/d", "/s", "/c", "npm.cmd", ...args]
+      : [npmCliPath, ...args];
+  return run(command, commandArgs, {
+    ...options,
+    env: {
+      ...process.env,
+      npm_config_cache: npmCacheDir,
+      NPM_CONFIG_CACHE: npmCacheDir,
+      ...(options.env || {}),
+    },
+  });
 }
 
 function assertSuccess(step, result) {
@@ -975,5 +990,9 @@ try {
 
   if (tarballPath && fs.existsSync(tarballPath)) {
     fs.rmSync(tarballPath, { force: true });
+  }
+
+  if (fs.existsSync(npmCacheDir)) {
+    fs.rmSync(npmCacheDir, { recursive: true, force: true });
   }
 }

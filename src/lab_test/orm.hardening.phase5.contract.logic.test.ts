@@ -13,7 +13,7 @@ describe("ORM hardening phase 5 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 5: CLI Decomposition and Operations Plan",
-      "Status: PLANNED",
+      "Status: IN PROGRESS",
       "`src/cli/eloquent.ts`",
       "`src/cli/commands/demoScenario.ts`",
       "`src/cli/commands/makeController.ts`",
@@ -44,6 +44,7 @@ describe("ORM hardening phase 5 plan contract", () => {
       "## Proposed Work Slices",
       "Isolate command registration concerns from command implementation concerns.",
       "Keep built CLI and pack-smoke coverage aligned with direct command tests.",
+      "Start with `fileWriter` create/skip/overwrite/error branch coverage and deterministic console reporting.",
       "## Acceptance Criteria",
       "`eloquent.ts` has a clearer operational boundary and less direct responsibility concentration.",
       "The current lowest-coverage CLI/helper files have dedicated tests and materially better coverage.",

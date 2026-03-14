@@ -1,0 +1,14 @@
+.env
+.git
+.github
+.cache
+.cache-phase32
+coverage
+custom-cache-dir
+node_modules
+src/app
+src/test
+src/lab_test
+validation tasks
+*.sqlite
+*.sqlite-journal

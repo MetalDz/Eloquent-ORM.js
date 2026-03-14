@@ -1,0 +1,42 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Users\fares\AppData\Roaming\npm\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.7.0
+2 info using node@v24.13.0
+3 silly config load:file:C:\Users\fares\AppData\Roaming\npm\node_modules\npm\npmrc
+4 silly config load:file:L:\npm dev Packages\.npmrc
+5 silly config load:file:C:\Users\fares\.npmrc
+6 silly config load:file:C:\Users\fares\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm pack
+8 verbose argv "pack"
+9 verbose logfile logs-max:10 dir:L:\npm dev Packages\.npm-pack-smoke-cache\_logs\2026-03-14T13_12_26_371Z-
+10 verbose logfile L:\npm dev Packages\.npm-pack-smoke-cache\_logs\2026-03-14T13_12_26_371Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 notice
+14 notice package: eloquentjs@0.10.0
+15 notice Tarball Contents
+16 notice 2.9kB CHANGELOG.md
+16 notice 6.8kB README.md
+16 notice 2.7kB package.json
+16 notice 2.7kB src/cli/templates/controller.tpl
+16 notice 336B src/cli/templates/factory.tpl
+16 notice 920B src/cli/templates/migration.tpl
+16 notice 3.1kB src/cli/templates/model.tpl
+16 notice 2.6kB src/cli/templates/pivot-factory.tpl
+16 notice 487B src/cli/templates/seed.tpl
+16 notice 833B src/cli/templates/service.tpl
+17 notice Tarball Details
+18 notice name: eloquentjs
+19 notice version: 0.10.0
+20 notice filename: eloquentjs-0.10.0.tgz
+21 notice package size: 8.0 kB
+22 notice unpacked size: 23.4 kB
+23 notice shasum: 12f9515ac330c1bcd9ee1ff87fb90b5ea89622ac
+24 notice integrity: sha512-u7KSaCvswL90d[...]sKp1OKc22F6Zw==
+25 notice total files: 10
+26 notice
+27 verbose cwd L:\npm dev Packages
+28 verbose os Windows_NT 10.0.26200
+29 verbose node v24.13.0
+30 verbose npm  v11.7.0
+31 verbose exit 0
+32 info ok

@@ -1,8 +1,10 @@
-import path from "path";
-import chalk from "chalk";
 import { TemplateEngine } from "../utils/TemplateEngine";
-import { PathMap } from "../utils/PathMap";
 import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
+import {
+  logScaffoldCreated,
+  logScaffoldFailure,
+  resolveScaffoldArtifact,
+} from "../utils/ScaffoldGeneratorSupport";
 
 export async function makeService(
   modelName: string,
@@ -11,39 +13,26 @@ export async function makeService(
   try {
     const isTest = !!options.test;
     const forceWrite = !!options.force;
-    const className = `${capitalize(modelName)}Service`;
-    const fileName = `${className}.ts`;
-    const servicesDir = path.resolve(
-      PathMap.root,
-      isTest ? "src/test/services" : "src/app/services"
-    );
+    const artifact = resolveScaffoldArtifact("service", modelName, { test: isTest });
 
     const modelImportPath = isTest
-      ? `../database/models/${capitalize(modelName)}`
-      : `../models/${capitalize(modelName)}`;
+      ? `../database/models/${artifact.modelClassName}`
+      : `../models/${artifact.modelClassName}`;
 
     const template = TemplateEngine.load("service");
     const rendered = TemplateEngine.render(template, {
-      ModelName: capitalize(modelName),
+      ModelName: artifact.modelClassName,
       modelImportPath,
     });
 
-    const outputPath = path.join(servicesDir, fileName);
     const created = forceWrite
-      ? overwriteFile(outputPath, rendered)
-      : writeFileSafe(outputPath, rendered);
+      ? overwriteFile(artifact.outputPath, rendered)
+      : writeFileSafe(artifact.outputPath, rendered);
+
     if (created) {
-      const relPath = isTest
-        ? `src/test/services/${fileName}`
-        : `src/app/services/${fileName}`;
-      console.log(chalk.greenBright(`✔ Service created:`), chalk.cyan(relPath));
+      logScaffoldCreated("service", artifact.relativePath);
     }
   } catch (err) {
-    console.error(chalk.red(`❌ Failed to create service for model: ${modelName}`));
-    console.error(err);
+    logScaffoldFailure("service", modelName, err);
   }
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }

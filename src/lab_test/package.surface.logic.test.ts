@@ -26,7 +26,7 @@ describe("Package surface hardening", () => {
       "./package.json": "./package.json",
     });
     expect(pkg.files).toEqual(
-      expect.arrayContaining(["dist/**/*", "src/cli/templates/**/*", "README.md", "CHANGELOG.md"])
+      expect.arrayContaining(["dist", "src/cli/templates/**/*", "README.md", "CHANGELOG.md"])
     );
     expect(pkg.dependencies?.eloquentjs).toBeUndefined();
     expect(pkg.dependencies?.["ts-node"]).toBeDefined();

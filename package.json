@@ -22,7 +22,7 @@
     "eloquent": "./dist/cli/eloquent.js"
   },
   "files": [
-    "dist/**/*",
+    "dist",
     "src/cli/templates/**/*",
     "README.md",
     "CHANGELOG.md"
