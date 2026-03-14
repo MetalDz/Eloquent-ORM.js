@@ -112,9 +112,22 @@ export class ${spec.name} extends ${modelBaseClass}<${spec.name}Attrs> {
 
   static schema = {
 ${schema}
+
+    /*
+     * RELATIONS EXAMPLES (uncomment and adapt):
+     * user: relation("belongsTo", "User", { foreignKey: "user_id" }),
+     * image: relation("morphOne", "Image", { morphName: "imageable" }),
+     * comments: relation("morphMany", "Comment", { morphName: "commentable" }),
+     * commentable: relation("morphTo", undefined, { morphName: "commentable" }),
+     */
   } satisfies Record<string, SchemaField>;
 
   /*
+   * OPTIONAL MIXINS (uncomment as needed):
+   * static timestamps = true;
+   * static softDeletes = true;
+   * static cacheEnabled = true;
+   *
    * INSTANCE PERSISTENCE EXAMPLES
    * -------------------------------------------------
    *   const model = new ${spec.name}();
@@ -123,6 +136,42 @@ ${schema}
    *   await model.patch({ name: "Example 2" });
    * -------------------------------------------------
    */
+
+  static validationHooks = {
+    beforeValidate: async (data: Record<string, unknown>) => {
+      console.log("[beforeValidate] ${spec.name}", data);
+    },
+    afterValidate: async (data: Record<string, unknown>) => {
+      console.log("[afterValidate] ${spec.name}", data);
+    },
+  };
+
+  static customRules = {
+    isUnique: async (_value: unknown) => {
+      return true;
+    },
+  };
+
+  static modelEvents = {
+    beforeCreate: async (data: Record<string, unknown>) => {
+      console.log("[beforeCreate] ${spec.name}", data);
+    },
+    afterCreate: async (record: Record<string, unknown> | null) => {
+      console.log("[afterCreate] ${spec.name} created:", record);
+    },
+    beforeUpdate: async (data: Record<string, unknown>) => {
+      console.log("[beforeUpdate] ${spec.name}", data);
+    },
+    afterUpdate: async (data: Record<string, unknown>) => {
+      console.log("[afterUpdate] ${spec.name} updated:", data);
+    },
+    beforeDelete: async (id: number | string) => {
+      console.log("[beforeDelete] ${spec.name}", id);
+    },
+    afterDelete: async (id: number | string) => {
+      console.log("[afterDelete] ${spec.name}", id);
+    },
+  };
 
   constructor() {
     super("${spec.table}", ${connectionExpr});

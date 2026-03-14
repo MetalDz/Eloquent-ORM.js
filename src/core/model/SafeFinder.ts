@@ -45,7 +45,10 @@ export class SafeFinderQuery<TModel extends SafeFinderModelInstance = SafeFinder
   }
 
   with(...relations: string[]): this {
-    this.eagerRelations.push(...relations);
+    for (const relation of relations) {
+      this.assertRelationPath(relation);
+      this.eagerRelations.push(relation);
+    }
     return this;
   }
 
@@ -222,6 +225,23 @@ export class SafeFinderQuery<TModel extends SafeFinderModelInstance = SafeFinder
   private hasColumnField(field: string): boolean {
     const schema = this.getSchema();
     return schema[field]?.kind === "column";
+  }
+
+  private assertRelationPath(relation: string): void {
+    if (typeof relation !== "string" || relation.trim() === "") {
+      throw new Error(`with() expects non-empty relation names on ${this.modelClass.name}.`);
+    }
+
+    const segments = relation.split(".");
+    if (segments.some((segment) => segment.trim() === "")) {
+      throw new Error(`Invalid relation path '${relation}' on ${this.modelClass.name}.`);
+    }
+
+    const topLevel = segments[0];
+    const relationFn = (this.model as Record<string, unknown>)[topLevel];
+    if (typeof relationFn !== "function") {
+      throw new Error(`Relation '${topLevel}' is not defined on ${this.modelClass.name}.`);
+    }
   }
 
   private async applyEagerLoading(records: TModel[]): Promise<TModel[]> {

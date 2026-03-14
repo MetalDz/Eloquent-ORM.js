@@ -12,6 +12,7 @@ import { dbConfig } from "../../config/database";
 import { PathMap } from "../utils/PathMap";
 import { loadModule } from "../utils/typescript/tsRuntime";
 import type { Collection, Db, Document, Filter } from "mongodb";
+import { resolveScenarioMorphAliases } from "../utils/ScenarioMorphAliasRouting";
 
 type Row = Record<string, unknown>;
 
@@ -26,39 +27,6 @@ function toNumber(value: unknown): number {
   if (typeof value === "number") return value;
   if (typeof value === "string") return Number(value);
   return 0;
-}
-
-function resolveMorphAlias(
-  modelPath: string,
-  exportName: string,
-  fallback: string
-): string {
-  if (!fs.existsSync(modelPath)) {
-    return fallback;
-  }
-
-  try {
-    const mod = loadModule(modelPath);
-    const modelCtor = mod[exportName] as { getMorphClass?: () => string } | undefined;
-    if (modelCtor && typeof modelCtor.getMorphClass === "function") {
-      return String(modelCtor.getMorphClass());
-    }
-  } catch {
-    // keep fallback alias when app/test models are not loadable
-  }
-
-  return fallback;
-}
-
-function resolveScenarioMorphAliases(isTest: boolean): {
-  userMorph: string;
-  postMorph: string;
-} {
-  const modelsDir = PathMap.models(isTest);
-  return {
-    userMorph: resolveMorphAlias(path.join(modelsDir, "User.ts"), "User", "users"),
-    postMorph: resolveMorphAlias(path.join(modelsDir, "Post.ts"), "Post", "posts"),
-  };
 }
 
 function buildMongoIdInFilter(values: unknown[]): Filter<Document> {
@@ -155,7 +123,10 @@ export async function demoScenario(options?: DemoScenarioOptions): Promise<void>
     );
     console.log(chalk.gray("posts for user:"), posts.length);
 
-    const { userMorph, postMorph } = resolveScenarioMorphAliases(!!options?.test);
+    const { userMorph, postMorph } = resolveScenarioMorphAliases({
+      isTest: !!options?.test,
+      connectionName,
+    });
 
     const userComments = await adapter.query<Row>(
       `SELECT * FROM ${commentsTable} WHERE ${adapter.wrapId("commentable_id")} = ${adapter.placeholder(1)} AND ${adapter.wrapId("commentable_type")} = ${adapter.placeholder(2)} LIMIT 3`,
@@ -202,7 +173,10 @@ async function runMongoDemoScenario(
   options?: Pick<DemoScenarioOptions, "user" | "random" | "test">
 ): Promise<void> {
   const db = (await getConnection(connectionName as never)) as Db;
-  const { userMorph, postMorph } = resolveScenarioMorphAliases(!!options?.test);
+  const { userMorph, postMorph } = resolveScenarioMorphAliases({
+    isTest: !!options?.test,
+    connectionName,
+  });
 
   const usersCollection = db.collection("users");
   const postsCollection = db.collection("posts");

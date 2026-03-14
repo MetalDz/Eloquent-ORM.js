@@ -13,7 +13,7 @@ describe("ORM hardening phase 2 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 2: Driver Parity and Artifact Routing Plan",
-      "Status: PLANNED",
+      "Status: COMPLETED",
       "`--mongo`",
       "`--pg`",
       "`--mysql`",
@@ -38,7 +38,13 @@ describe("ORM hardening phase 2 plan contract", () => {
       "No hidden driver fallback when the user explicitly picked a driver.",
       "No silent execution of mixed SQL/`mongo` artifacts",
       "## Proposed Work Slices",
-      "Formalize an artifact compatibility matrix: `sql`, `mongo`, `mixed`.",
+      "[x] Formalize an artifact compatibility matrix: `sql`, `mongo`, `mixed`.",
+      "[x] Add deterministic skip/fail behavior for incompatible artifacts.",
+      "[x] Keep relation and seeding flows aligned with explicit driver selection.",
+      "## Completed Phase 2 Slices",
+      "`src/cli/utils/ArtifactCompatibility.ts`",
+      "`src/cli/utils/ArtifactRoutingReport.ts`",
+      "`src/cli/utils/ScenarioMorphAliasRouting.ts`",
       "## Acceptance Criteria",
       "`--mongo` commands only load Mongo-compatible artifacts.",
       "Mixed artifacts are rejected or skipped deterministically with a clear reason.",

@@ -84,7 +84,24 @@ function requireFromFile(filePath: string): Record<string, unknown> {
   return require(absolutePath) as Record<string, unknown>;
 }
 
-function loadTranspiledTsModule(filePath: string): Record<string, unknown> {
+function loadTypeScriptModule(
+  filePath: string,
+  runtimeAvailable = ensureTsRuntime()
+): Record<string, unknown> {
+  if (!runtimeAvailable) {
+    const distPath = resolveDistPath(filePath);
+    if (distPath) {
+      return requireFromFile(distPath);
+    }
+  }
+
+  return loadTranspiledTsModule(filePath, runtimeAvailable);
+}
+
+function loadTranspiledTsModule(
+  filePath: string,
+  runtimeAvailable: boolean
+): Record<string, unknown> {
   const absolutePath = path.resolve(filePath);
   const cached = require.cache[absolutePath];
   if (cached) {
@@ -113,10 +130,10 @@ function loadTranspiledTsModule(filePath: string): Record<string, unknown> {
     const resolved = resolveLocalRequest(request, absolutePath);
     if (resolved) {
       if (resolved.endsWith(".ts")) {
-        if (isInsideWorkspace(resolved)) {
+        if (runtimeAvailable && isInsideWorkspace(resolved)) {
           return requireFromFile(resolved);
         }
-        return loadTranspiledTsModule(resolved);
+        return loadTypeScriptModule(resolved, runtimeAvailable);
       }
       return requireFromFile(resolved);
     }
@@ -133,17 +150,7 @@ function loadTranspiledTsModule(filePath: string): Record<string, unknown> {
  */
 export function loadModule(filePath: string): Record<string, unknown> {
   if (filePath.endsWith(".ts")) {
-    const ok = ensureTsRuntime();
-    if (!ok) {
-      const distPath = resolveDistPath(filePath);
-      if (distPath) {
-        return requireFromFile(distPath);
-      }
-      throw new Error(
-        "ts-node is required to load .ts files. Install it or run compiled JS."
-      );
-    }
-    return loadTranspiledTsModule(filePath);
+    return loadTypeScriptModule(filePath);
   }
   return requireFromFile(filePath);
 }

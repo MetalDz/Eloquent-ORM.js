@@ -1,7 +1,7 @@
 # ORM Hardening Phase 3: Generator and Runtime Loading Plan
 
-Last updated: 2026-03-12  
-Status: PLANNED
+Last updated: 2026-03-14  
+Status: COMPLETED
 
 ## Goal
 - Keep generated artifacts and runtime loading behavior stable across app/test/temp files, pack smoke, and CI.
@@ -28,10 +28,10 @@ Status: PLANNED
 - No generator-only features that bypass the runtime stack.
 
 ## Proposed Work Slices
-- Keep template and inline generator outputs feature-aligned.
-- Validate generated app/test models against the default BaseModel stack.
-- Keep temp-module loading stable both inside and outside Jest resolution.
-- Extend pack-smoke contracts for generated artifact lifecycles.
+- [x] Keep template and inline generator outputs feature-aligned.
+- [x] Validate generated app/test models against the default BaseModel stack.
+- [x] Keep temp-module loading stable both inside and outside Jest resolution.
+- [x] Extend pack-smoke contracts for generated artifact lifecycles.
 
 ## Acceptance Criteria
 - Generated models from `make:model` and `make:scenario` inherit the same default runtime surface.

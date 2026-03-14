@@ -8,6 +8,7 @@ import {
   resolveFactoryStorageKindFromCtor,
   type StorageKind,
 } from "../ArtifactStorage";
+import { createTargetedArtifactDecision, summarizeSkippedArtifacts } from "../ArtifactRoutingReport";
 import type { Factory } from "./Factory";
 import type { BaseModel } from "../../../core/model/BaseModel";
 
@@ -68,6 +69,14 @@ export class FactoryRegistry {
             options.storageKind &&
             !matchesTargetStorageKind(factoryStorageKind, options.storageKind)
           ) {
+            const message = summarizeSkippedArtifacts(
+              "factory",
+              [createTargetedArtifactDecision(name, factoryStorageKind, options.storageKind)],
+              options.storageKind
+            );
+            if (message) {
+              console.warn(chalk.yellow(message));
+            }
             continue;
           }
 

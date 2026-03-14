@@ -15,6 +15,11 @@ import {
   resolveSeederStorageKindFromFile,
   targetStorageKindForConnection,
 } from "../utils/ArtifactStorage";
+import { describeArtifactCompatibilityMismatch } from "../utils/ArtifactCompatibility";
+import {
+  createTargetedArtifactDecision,
+  summarizeSkippedArtifacts,
+} from "../utils/ArtifactRoutingReport";
 
 /**
  * db:seed
@@ -75,12 +80,17 @@ export async function dbSeed(options: {
       console.log(chalk.gray(`Seeding connection: ${connectionName}`));
       let connectionFailed = false;
       const targetStorageKind = targetStorageKindForConnection(connectionName);
-      const seedFiles = allSeedFiles.filter((file) =>
-        matchesTargetStorageKind(
+      const routingDecisions = allSeedFiles.map((file) =>
+        createTargetedArtifactDecision(
+          file,
           resolveSeederStorageKindFromFile(path.join(seedsDir, file), isTest),
           targetStorageKind
         )
       );
+      const seedFiles = routingDecisions
+        .filter((decision) => matchesTargetStorageKind(decision.kind, targetStorageKind))
+        .map((decision) => decision.name);
+      const skippedSeeders = routingDecisions.filter((decision) => !decision.matches);
 
       // Run a specific seeder if requested
       const className = options?.class?.toLowerCase();
@@ -92,9 +102,16 @@ export async function dbSeed(options: {
 
         if (!target) {
           if (incompatibleTarget) {
+            const incompatibleKind = resolveSeederStorageKindFromFile(
+              path.join(seedsDir, incompatibleTarget),
+              isTest
+            );
             console.log(
               chalk.red(
-                `Seeder '${options.class}' is not compatible with ${targetStorageKind} connection '${connectionName}'.`
+                `Seeder '${options.class}' is not compatible with ${targetStorageKind} connection '${connectionName}' (${describeArtifactCompatibilityMismatch(
+                  incompatibleKind,
+                  targetStorageKind
+                )}).`
               )
             );
           } else {
@@ -136,6 +153,14 @@ export async function dbSeed(options: {
         // Otherwise, run all seeders in alphabetical order
         try {
           if (seedFiles.length === 0) {
+            const skippedSummary = summarizeSkippedArtifacts(
+              "seeder",
+              skippedSeeders,
+              targetStorageKind
+            );
+            if (skippedSummary) {
+              console.log(chalk.yellow(skippedSummary));
+            }
             console.log(
               chalk.yellow(
                 `No compatible seeder files found for ${connectionName}.`

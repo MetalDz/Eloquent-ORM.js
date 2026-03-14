@@ -151,7 +151,7 @@ describe("Branch coverage 100% - phase 33 relation + tsRuntime edge branches", (
     expect(register).toHaveBeenCalledTimes(1);
   });
 
-  test("tsRuntime throws for .ts outside src when ts-node is unavailable", () => {
+  test("tsRuntime loads .ts outside src when ts-node is unavailable", () => {
     jest.doMock("ts-node", () => {
       throw new Error("ts-node unavailable");
     });
@@ -161,10 +161,15 @@ describe("Branch coverage 100% - phase 33 relation + tsRuntime edge branches", (
       runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
     });
 
-    const outsideTsPath = path.join("tmp", "outside-module.ts");
-    expect(() => runtime!.loadModule(outsideTsPath)).toThrow(
-      "ts-node is required to load .ts files. Install it or run compiled JS."
-    );
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-no-tsnode-"));
+    const outsideTsPath = path.join(root, "outside-module.ts");
+    fs.writeFileSync(outsideTsPath, "module.exports = { ok: 'fallback' };", "utf8");
+
+    try {
+      expect(runtime!.loadModule(outsideTsPath)).toEqual({ ok: "fallback" });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 
   test("tsRuntime loads .ts directly when ts-node runtime is available", () => {

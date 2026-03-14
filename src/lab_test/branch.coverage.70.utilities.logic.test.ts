@@ -404,6 +404,7 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     fs.writeFileSync(jsFile, "module.exports = { v: 1 };", "utf8");
 
     jest.resetModules();
+    jest.unmock("typescript");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const runtime = require("../cli/utils/typescript/tsRuntime") as {
       loadModule(filePath: string): Record<string, unknown>;
@@ -423,6 +424,7 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     fs.writeFileSync(jsFile, "module.exports = { x: 2 };", "utf8");
 
     jest.resetModules();
+    jest.unmock("typescript");
     jest.doMock("ts-node", () => ({
       register: () => {
         throw new Error("unavailable");
@@ -435,13 +437,14 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     expect(runtime.loadModule(tsFile)).toEqual({ x: 2 });
   });
 
-  test("tsRuntime: ts load throws when ts-node is unavailable and dist fallback is missing", () => {
+  test("tsRuntime: ts load uses internal transpile fallback when ts-node is unavailable and dist fallback is missing", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-throw-"));
     const tsFile = path.join(root, "src", "missing.ts");
     fs.mkdirSync(path.dirname(tsFile), { recursive: true });
     fs.writeFileSync(tsFile, "export const x = 1;", "utf8");
 
     jest.resetModules();
+    jest.unmock("typescript");
     jest.doMock("ts-node", () => ({
       register: () => {
         throw new Error("unavailable");
@@ -451,8 +454,6 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     const runtime = require("../cli/utils/typescript/tsRuntime") as {
       loadModule(filePath: string): Record<string, unknown>;
     };
-    expect(() => runtime.loadModule(tsFile)).toThrow(
-      "ts-node is required to load .ts files. Install it or run compiled JS."
-    );
+    expect(runtime.loadModule(tsFile)).toEqual({ x: 1 });
   });
 });

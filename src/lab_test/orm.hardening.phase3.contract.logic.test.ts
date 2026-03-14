@@ -13,7 +13,7 @@ describe("ORM hardening phase 3 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 3: Generator and Runtime Loading Plan",
-      "Status: PLANNED",
+      "Status: COMPLETED",
       "`model.tpl`",
       "`make:scenario`",
       "`tsRuntime`",
@@ -35,8 +35,10 @@ describe("ORM hardening phase 3 plan contract", () => {
       "## Non-Goals",
       "No duplication of model behavior in generator templates.",
       "## Proposed Work Slices",
-      "Keep template and inline generator outputs feature-aligned.",
-      "Validate generated app/test models against the default BaseModel stack.",
+      "- [x] Keep template and inline generator outputs feature-aligned.",
+      "- [x] Validate generated app/test models against the default BaseModel stack.",
+      "- [x] Keep temp-module loading stable both inside and outside Jest resolution.",
+      "- [x] Extend pack-smoke contracts for generated artifact lifecycles.",
       "## Acceptance Criteria",
       "Generated models from `make:model` and `make:scenario` inherit the same default runtime surface.",
       "Temp-generated `.ts` files can be loaded reliably in local and CI contexts.",

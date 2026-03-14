@@ -31,6 +31,53 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
       super(...args);
     }
 
+    private getTrackedPrimaryValue(pk: string): unknown {
+      const self = this as Record<string, unknown>;
+      const original =
+        ((self._originalAttributes as Record<string, unknown> | undefined) ?? {}) as Record<
+          string,
+          unknown
+        >;
+
+      if (pk === "_id") {
+        return self._id ?? self.id ?? original._id ?? original.id;
+      }
+
+      if (pk === "id") {
+        return self.id ?? self._id ?? original.id ?? original._id;
+      }
+
+      return self[pk] ?? original[pk];
+    }
+
+    private syncSoftDeleteState(
+      id: number | string,
+      pk: string,
+      deletedAtValue: string | null,
+      options?: { removed?: boolean }
+    ): void {
+      if (!Object.is(this.getTrackedPrimaryValue(pk), id)) {
+        return;
+      }
+
+      const self = this as Record<string, unknown>;
+      self[this.deletedAtColumn] = deletedAtValue;
+
+      if (options?.removed) {
+        self._exists = false;
+        self._originalAttributes = {};
+        return;
+      }
+
+      const syncPersistedState = self.syncPersistedState;
+      if (typeof syncPersistedState === "function") {
+        syncPersistedState.call(this, {
+          ...self,
+          [this.deletedAtColumn]: deletedAtValue,
+        });
+      }
+    }
+
     /**
      * 🚫 Override delete() to perform soft delete instead of hard remove
      */
@@ -42,6 +89,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
 
       const timestamp = new Date().toISOString();
       await baseUpdate(id, { [this.deletedAtColumn]: timestamp }, pk);
+      this.syncSoftDeleteState(id, pk, timestamp);
     }
 
     /**
@@ -54,6 +102,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
       }
 
       await baseUpdate(id, { [this.deletedAtColumn]: null }, pk);
+      this.syncSoftDeleteState(id, pk, null);
     }
 
     /**
@@ -129,6 +178,7 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
       }
 
       await baseDelete(id, pk);
+      this.syncSoftDeleteState(id, pk, null, { removed: true });
     }
 
     /**

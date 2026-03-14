@@ -1,7 +1,7 @@
 # ORM Hardening Phase 2: Driver Parity and Artifact Routing Plan
 
-Last updated: 2026-03-12  
-Status: PLANNED
+Last updated: 2026-03-14  
+Status: COMPLETED
 
 ## Goal
 - Make SQL and `mongo` routing deterministic across CLI commands, artifact discovery, migration tracking, and runtime compatibility checks.
@@ -35,10 +35,20 @@ Status: PLANNED
 - No silent execution of mixed SQL/`mongo` artifacts in a single targeted flow.
 
 ## Proposed Work Slices
-- Formalize an artifact compatibility matrix: `sql`, `mongo`, `mixed`.
-- Add deterministic skip/fail behavior for incompatible artifacts.
-- Expand Mongo migration tracker coverage and runtime confidence.
-- Keep relation and seeding flows aligned with explicit driver selection.
+- [x] Formalize an artifact compatibility matrix: `sql`, `mongo`, `mixed`.
+- [x] Add deterministic skip/fail behavior for incompatible artifacts.
+- [x] Expand Mongo migration tracker coverage and runtime confidence.
+- [x] Keep relation and seeding flows aligned with explicit driver selection.
+
+## Completed Phase 2 Slices
+- [x] `src/cli/utils/ArtifactCompatibility.ts`
+  - extracted the storage-kind compatibility matrix and grouped-kind collapse logic out of `ArtifactStorage`
+- [x] `src/lab_test/orm.hardening.phase2.mongo-migration-tracker.logic.test.ts`
+  - added dedicated runtime coverage for Mongo migration history, relink/prune rules, and lock behavior
+- [x] `src/cli/utils/ArtifactRoutingReport.ts`
+  - added deterministic targeted-artifact skip reporting for `db:seed` and factory auto-discovery
+- [x] `src/cli/utils/ScenarioMorphAliasRouting.ts`
+  - aligned scenario/demo relation morph-alias resolution with explicit driver targeting
 
 ## Acceptance Criteria
 - `--mongo` commands only load Mongo-compatible artifacts.

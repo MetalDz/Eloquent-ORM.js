@@ -13,13 +13,13 @@ describe("ORM hardening phase 4 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 4: Read Path and Persistence Plan",
-      "Status: PLANNED",
+      "Status: COMPLETED",
       "`SafeFinder`",
       "`fill()`",
       "`save()`",
       "`patch()`",
       "`delete()` / `restore()` consistency",
-      "`src/core/model/SafeFinder.ts` (`301` lines)",
+      "`src/core/model/SafeFinder.ts` (`321` lines)",
       "`src/core/model/CoreModel.ts` still owns a large share of persistence behavior.",
     ];
 
@@ -36,8 +36,11 @@ describe("ORM hardening phase 4 plan contract", () => {
       "No open-ended raw query builder.",
       "No weakening of schema validation or SQL placeholder safety.",
       "## Proposed Work Slices",
-      "Keep safe finder restricted to schema-validated fields.",
-      "Ensure eager-loaded results serialize correctly through `toObject()` / `toJSON()`.",
+      "- [x] Keep instance persistence dirty-tracking explicit and testable.",
+      "- [x] Ensure eager-loaded results serialize correctly through `toObject()` / `toJSON()`.",
+      "- [x] Keep safe finder restricted to schema-validated fields.",
+      "- [x] Keep soft-delete and restore flows compatible with persisted instance state.",
+      "- [x] Extend real-model integration tests across SQL and `mongo`.",
       "## Acceptance Criteria",
       "`where`, `first`, `get`, `limit`, `orderBy`, `with`, `active`, `inactive`, and `published` remain safe and deterministic.",
       "`toObject()` / `toJSON()` are available on normal `BaseModel` descendants.",

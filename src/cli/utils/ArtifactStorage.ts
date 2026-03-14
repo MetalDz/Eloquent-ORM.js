@@ -6,8 +6,13 @@ import { PathMap } from "./PathMap";
 import { loadModule } from "./typescript/tsRuntime";
 import type { BaseModel } from "../../core/model/BaseModel";
 import type { Factory } from "./factories/Factory";
-
-export type StorageKind = "mongo" | "sql" | "mixed" | "unknown";
+import {
+  collapseStorageKinds,
+  resolveArtifactCompatibility,
+  type StorageKind,
+  type TargetStorageKind,
+} from "./ArtifactCompatibility";
+export type { ArtifactCompatibilityReason, StorageKind, TargetStorageKind } from "./ArtifactCompatibility";
 
 function resolveExistingPath(filePath: string): string | null {
   if (fs.existsSync(filePath)) {
@@ -173,17 +178,7 @@ export function resolveFactoryStorageKindFromFile(
       kinds.add(resolveModelStorageKindFromContent(content));
     }
 
-    if (kinds.has("mongo") && !kinds.has("sql") && kinds.size === 1) {
-      return "mongo";
-    }
-
-    if (kinds.has("sql") && !kinds.has("mongo") && kinds.size === 1) {
-      return "sql";
-    }
-
-    if (kinds.has("mongo") && kinds.has("sql")) {
-      return "mixed";
-    }
+    return collapseStorageKinds(kinds);
   }
 
   const importedModule = loadModule(filePath);
@@ -233,31 +228,19 @@ export function resolveSeederStorageKindFromFile(
     kinds.add(resolveFactoryStorageKindFromFile(factoryPath, isTest));
   }
 
-  if (kinds.has("mongo") && !kinds.has("sql") && kinds.size === 1) {
-    return "mongo";
-  }
-
-  if (kinds.has("sql") && !kinds.has("mongo") && kinds.size === 1) {
-    return "sql";
-  }
-
-  if (kinds.has("mongo") && kinds.has("sql")) {
-    return "mixed";
-  }
-
-  return kinds.size === 1 ? Array.from(kinds)[0] : "unknown";
+  return collapseStorageKinds(kinds);
 }
 
 export function targetStorageKindForConnection(
   connectionName: string
-): Exclude<StorageKind, "unknown" | "mixed"> {
+): TargetStorageKind {
   const driver = dbConfig.connections[connectionName as keyof typeof dbConfig.connections]?.driver;
   return driver === "mongo" ? "mongo" : "sql";
 }
 
 export function matchesTargetStorageKind(
   artifactKind: StorageKind,
-  targetKind: Exclude<StorageKind, "unknown" | "mixed">
+  targetKind: TargetStorageKind
 ): boolean {
-  return artifactKind === "unknown" || artifactKind === targetKind;
+  return resolveArtifactCompatibility(artifactKind, targetKind).matches;
 }

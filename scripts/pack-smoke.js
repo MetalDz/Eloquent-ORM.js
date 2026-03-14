@@ -222,6 +222,58 @@ function runNodeScript(sampleDir, fileName, content, env, step) {
   return result;
 }
 
+function runGeneratedModelRuntimeCheck(sample, options) {
+  const step = options.step;
+  const fileName = options.fileName;
+  const modelName = options.modelName;
+  const expectedName = options.expectedName;
+  const filePathSegments = JSON.stringify(options.filePathSegments);
+
+  const result = runNodeScript(
+    sample.dir,
+    fileName,
+    [
+      'const path = require("path");',
+      'const runtimePath = path.join(process.cwd(), "node_modules", "eloquentjs", "dist", "cli", "utils", "typescript", "tsRuntime.js");',
+      'const { loadModule } = require(runtimePath);',
+      `const filePath = path.join(process.cwd(), ...${filePathSegments});`,
+      `const expectedName = ${JSON.stringify(expectedName)};`,
+      `const modelName = ${JSON.stringify(modelName)};`,
+      "const mod = loadModule(filePath);",
+      "const Model = mod[modelName];",
+      "if (!Model) throw new Error(`Missing generated model export: ${modelName}`);",
+      "const instance = new Model();",
+      'instance.fill({ name: expectedName });',
+      "const objectValue = instance.toObject();",
+      "const jsonValue = JSON.parse(instance.toJSON());",
+      'const instanceMethods = ["fill", "save", "patch", "toObject", "toJSON", "with"];',
+      'const staticMethods = ["where", "with", "findBy", "findOneBy", "findAllBy", "existsBy"];',
+      "for (const method of instanceMethods) {",
+      "  if (typeof instance[method] !== 'function') {",
+      "    throw new Error(`Missing instance method ${method} on ${modelName}`);",
+      "  }",
+      "}",
+      "for (const method of staticMethods) {",
+      "  if (typeof Model[method] !== 'function') {",
+      "    throw new Error(`Missing static method ${method} on ${modelName}`);",
+      "  }",
+      "}",
+      "if (objectValue.name !== expectedName || jsonValue.name !== expectedName) {",
+      "  throw new Error(`Generated model serialization mismatch for ${modelName}`);",
+      "}",
+      'console.log(`generated-model-runtime:${modelName}:${objectValue.name}`);',
+      "",
+    ].join("\n"),
+    {
+      ...sample.env,
+      ...(options.envOverrides || {}),
+    },
+    step
+  );
+
+  assertContains(step, result.combined, `generated-model-runtime:${modelName}:${expectedName}`);
+}
+
 function createSampleApp(tarballName, label) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `eloquent-pack-smoke-${label}-`));
   const localTarballPath = path.join(dir, tarballName);
@@ -298,6 +350,16 @@ function runGeneralCliSmoke(sample) {
   assertFileContains(demoAutoModelPath, 'import { SqlModel, ModelInstance } from "eloquentjs";');
   assertFileContains(demoAutoModelPath, 'import { column, validate } from "eloquentjs";');
   assertNonEmptyMigration(migrationsDir, "_demoautos_table");
+  runGeneratedModelRuntimeCheck(sample, {
+    step: "generated SQL model runtime",
+    fileName: "generated-sql-model-runtime.cjs",
+    modelName: "DemoAuto",
+    expectedName: "Smoke SQL Model",
+    filePathSegments: ["src", "test", "database", "models", "DemoAuto.ts"],
+    envOverrides: {
+      DB_CONNECTION: "mysql",
+    },
+  });
 
   const plainModelResult = runCli(
     sample.dir,
@@ -408,6 +470,16 @@ function runBlogScenarioSmoke(sample) {
     testMigrationsDir(sample),
     "_users_table"
   );
+  runGeneratedModelRuntimeCheck(sample, {
+    step: "generated scenario SQL model runtime",
+    fileName: "generated-scenario-sql-model-runtime.cjs",
+    modelName: "User",
+    expectedName: "Scenario SQL Model",
+    filePathSegments: ["src", "test", "database", "models", "User.ts"],
+    envOverrides: {
+      DB_CONNECTION: "mysql",
+    },
+  });
 
   const makeMigrationResult = runCli(sample.dir, ["make:migration", "--all", "--test"], sample.env);
   assertSuccess("make:migration --all", makeMigrationResult);
@@ -635,6 +707,13 @@ function runNoSqlRuntimeSmoke(sample) {
   );
   const geoMigrationPath = assertNonEmptyMigration(mongoMigrationsDir, "_geolocations_table");
   assertFileContains(geoMigrationPath, "db.ensureCollection");
+  runGeneratedModelRuntimeCheck(sample, {
+    step: "generated Mongo model runtime",
+    fileName: "generated-mongo-model-runtime.cjs",
+    modelName: "GeoLocation",
+    expectedName: "Smoke Mongo Model",
+    filePathSegments: ["src", "test", "database", "models", "GeoLocation.ts"],
+  });
 
   const factoryMongo = runCli(
     sample.dir,
