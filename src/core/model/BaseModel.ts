@@ -57,9 +57,46 @@ export interface ORMCoreContract {
   all(): Promise<unknown[]>;
 }
 
+export const BASE_MODEL_COMPOSITION_ORDER = [
+  "CoreModel",
+  "MorphableMixin",
+  "PivotHelperMixin",
+  "CastsMixin",
+  "SoftDeletesMixin",
+  "ScopeMixin",
+  "HooksMixin",
+  "QueryCacheMixin",
+  "EagerLoadingMixin",
+  "SerializeMixin",
+] as const;
+
+export const MODEL_BOUNDARY_MATRIX = {
+  CoreModel: [
+    "hydration",
+    "driver-agnostic CRUD",
+    "validation dispatch",
+    "lifecycle event dispatch",
+    "persistence state tracking",
+    "safe-finder construction",
+  ],
+  BaseModel: [
+    "default composed runtime surface",
+    "safe-finder static delegation",
+    "typed relation helpers",
+    "morph alias convenience",
+  ],
+  SqlModel: ["SQL connection guard", "typed SQL getDB()"],
+  MongoModel: ["Mongo connection guard", "typed Mongo getDB()"],
+  GeneratedModels: [
+    "extendSqlModelOrMongoModel",
+    "neverExtendCoreModelDirectly",
+    "inheritDefaultBaseModelStack",
+  ],
+} as const;
+
 /**
- * Compose mixins in dependency-safe order:
- * CoreModel -> Morphable -> PivotHelper -> Casts -> SoftDeletes -> Scope -> Hooks -> QueryCache -> EagerLoading -> Serialize
+ * Compose mixins in dependency-safe order.
+ * Keep BASE_MODEL_COMPOSITION_ORDER in sync with this stack.
  *
  * We cast CoreModel to AbstractConstructor<ORMCoreContract> as the composition seed so
  * TypeScript understands the initial shape we're building on top of.

@@ -13,7 +13,7 @@ describe("ORM hardening phase 1 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 1: Architecture and Public Boundaries Plan",
-      "Status: PLANNED",
+      "Status: IN PROGRESS",
       "## Goal",
       "`CoreModel`",
       "`BaseModel`",
@@ -24,6 +24,7 @@ describe("ORM hardening phase 1 plan contract", () => {
       "`src/core/model/CoreModel.ts` (`783` lines)",
       "`src/core/model/BaseModel.ts` (`355` lines)",
       "`src/cli/eloquent.ts` (`1042` lines)",
+      "`validation tasks/ORM-Hardening-Phase1-Implementation-Notes.md`",
     ];
 
     for (const snippet of requiredSnippets) {
@@ -41,6 +42,8 @@ describe("ORM hardening phase 1 plan contract", () => {
       "## Proposed Work Slices",
       "Add a model/export boundary matrix",
       "Lock tests around the default runtime stack used by generated models.",
+      "\"core persistence behavior\"",
+      "\"composed convenience surface\"",
       "## Acceptance Criteria",
       "The role of `CoreModel`, `BaseModel`, and public exports is explicit and testable.",
       "`BaseModel`, `SqlModel`, and `MongoModel` resolve to the intended default runtime stack.",
@@ -51,5 +54,14 @@ describe("ORM hardening phase 1 plan contract", () => {
     for (const snippet of requiredSnippets) {
       expect(plan).toContain(snippet);
     }
+  });
+
+  test("phase 1 implementation notes file exists", () => {
+    const notesPath = path.resolve(
+      rootDir,
+      "validation tasks/ORM-Hardening-Phase1-Implementation-Notes.md"
+    );
+
+    expect(fs.existsSync(notesPath)).toBe(true);
   });
 });

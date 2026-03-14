@@ -1,24 +1,19 @@
 #!/usr/bin/env node
 /**
- * 🧠 EloquentJS Artisan v1.0 CLI
+ * EloquentJS Artisan v1.0 CLI
  * Author: MEKHERBECHE Fares
  * Description:
- *   Official CLI for EloquentJS ORM — generates models, controllers,
+ *   Official CLI for EloquentJS ORM - generates models, controllers,
  *   services, migrations, seeds, and manages caches & factories.
  */
 
 import chalk from "chalk";
-import figlet from "figlet";
 import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler";
 import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";
 import { loadFactories } from "./utils/factories/FactoryLoader";
-import {
-  checkProductionDestructiveCommand,
-  checkProductionTestOnlyCommand,
-} from "./utils/ProductionSafety";
 import { assertSeedBootstrapPrecheck } from "./utils/SeedBootstrapPrecheck";
 import { redactSecretsInArgs } from "../core/security/SecretRedactor";
 import {
@@ -28,7 +23,16 @@ import {
   shouldLogAtLevel,
   type StructuredLogLevel,
 } from "./utils/StructuredLogger";
-import type { StorageKind } from "./utils/ArtifactStorage";
+import {
+  applyCliTestConnectionOverride,
+  isCliTestArgv,
+  resolveCliRequestedStorageKind,
+  shouldAutoLoadFactoriesForCli,
+} from "./utils/CliBootstrapSupport";
+import {
+  ensureCliProductionOverride,
+  ensureCliProductionTestOnly,
+} from "./utils/CliProductionGuards";
 
 if (process.env.ELOQUENT_DEBUG === "true") {
   console.log("[cli] start", { argv: process.argv.slice(2) });
@@ -36,82 +40,6 @@ if (process.env.ELOQUENT_DEBUG === "true") {
 
 // Mark CLI runtime so commands can exit cleanly when done.
 process.env.ELOQUENT_CLI = "true";
-
-function isCliTest(): boolean {
-  return process.argv.includes("--test");
-}
-
-function ensureProductionOverride(
-  commandName: string,
-  options: { force?: boolean; yes?: boolean }
-): boolean {
-  const verdict = checkProductionDestructiveCommand({
-    command: commandName,
-    force: options.force === true,
-    yes: options.yes === true,
-  });
-
-  if (verdict.allowed) {
-    return true;
-  }
-
-  const reason = verdict.reason ?? `${commandName} is blocked in production.`;
-  console.error(chalk.red(`❌ ${reason}`));
-  process.exitCode = 1;
-  return false;
-}
-
-function ensureProductionTestOnly(
-  commandName: string,
-  options: { test?: boolean }
-): boolean {
-  const verdict = checkProductionTestOnlyCommand({
-    command: commandName,
-    test: options.test === true,
-  });
-
-  if (verdict.allowed) {
-    return true;
-  }
-
-  const reason = verdict.reason ?? `${commandName} requires --test in production.`;
-  console.error(chalk.red(`â‌Œ ${reason}`));
-  process.exitCode = 1;
-  return false;
-}
-
-function resolveRequestedStorageKind(
-  argv: string[]
-): Exclude<StorageKind, "unknown" | "mixed"> | undefined {
-  const hasMongo = argv.includes("--mongo");
-  const hasSql =
-    argv.includes("--mysql") ||
-    argv.includes("--pg") ||
-    argv.includes("--sqlite") ||
-    argv.includes("--all-connections");
-
-  if (hasMongo && !hasSql) {
-    return "mongo";
-  }
-
-  if (hasSql && !hasMongo) {
-    return "sql";
-  }
-
-  const defaultConnection = argv.includes("--test")
-    ? process.env.DB_TEST_CONNECTION || process.env.DB_CONNECTION
-    : process.env.DB_CONNECTION;
-
-  if (defaultConnection === "mongo" || defaultConnection === "mongo_test") {
-    return "mongo";
-  }
-
-  if (defaultConnection) {
-    return "sql";
-  }
-
-  return undefined;
-}
 
 // -------------------------------------------------------------------------
 // Test logs (plain text) - one file per command under src/test/logs
@@ -147,7 +75,7 @@ try {
   fs.appendFileSync(
     logFile,
     `\n----- RUN ${new Date().toISOString()} -----\n`,
-    "utf8"
+    "utf8",
   );
 
   const originalLog = console.log.bind(console);
@@ -158,7 +86,7 @@ try {
   const emitLog = (
     level: StructuredLogLevel,
     args: unknown[],
-    writer: (...writerArgs: unknown[]) => void
+    writer: (...writerArgs: unknown[]) => void,
   ): void => {
     if (!shouldLogAtLevel(level, minLogLevel)) {
       return;
@@ -188,12 +116,10 @@ try {
 }
 
 // Test-mode connection override (CLI only)
-if (isCliTest()) {
-  process.env.DB_CONNECTION = process.env.DB_TEST_CONNECTION || "mysql_test";
-}
+applyCliTestConnectionOverride(process.argv, process.env);
 
 // -----------------------------------------------------------------------------
-// ⚙️ Lazy TypeScript Runtime Initialization
+// Lazy TypeScript Runtime Initialization
 // -----------------------------------------------------------------------------
 try {
   const runtimeNeeded = RuntimeDetector.needsTypeScriptRuntime(process.argv);
@@ -203,63 +129,59 @@ try {
       console.log(chalk.gray("TypeScript runtime enabled (ts-node)."));
     }
     if (process.env.DEBUG === "true") {
-      console.log(chalk.gray("🧠 TypeScript runtime initialized (for TS-based command)\n"));
+      console.log(
+        chalk.gray("TypeScript runtime initialized (for TS-based command)\n"),
+      );
     }
   } else if (process.env.DEBUG === "true") {
-    console.log(chalk.gray("⚡ Skipping TypeScript runtime — not needed for this command.\n"));
+    console.log(
+      chalk.gray(
+        "Skipping TypeScript runtime - not needed for this command.\n",
+      ),
+    );
   }
   if (process.env.ELOQUENT_DEBUG === "true") {
     console.log("[cli] after runtime init");
   }
 } catch (err) {
-  console.error(chalk.red("❌ Failed to initialize TypeScript runtime at CLI startup."));
+  console.error(
+    chalk.red("ERROR: Failed to initialize TypeScript runtime at CLI startup."),
+  );
   console.error(err);
   process.exit(1);
 }
 
 // -----------------------------------------------------------------------------
-// 🧩 CLI Bootstrap
+// CLI Bootstrap
 // -----------------------------------------------------------------------------
-function shouldLoadFactories(argv: string[]): boolean {
-  const command = argv[2] ?? "";
-  const needsFactories = [
-    "db:seed",
-    "db:seed:fresh",
-    "factory:status",
-    "demo:scenario",
-    "make:scenario",
-  ];
-  return needsFactories.some((c) => command.startsWith(c));
-}
-
 (async () => {
   if (process.env.ELOQUENT_DEBUG === "true") {
     console.log("[cli] factory auto-load check");
   }
-  if (!shouldLoadFactories(process.argv)) return;
+  if (!shouldAutoLoadFactoriesForCli(process.argv)) return;
   try {
-    await loadFactories(process.argv.includes("--test"), {
-      storageKind: resolveRequestedStorageKind(process.argv),
+    await loadFactories(isCliTestArgv(process.argv), {
+      storageKind: resolveCliRequestedStorageKind(process.argv, process.env),
     });
-    if (process.env.DEBUG === "true") console.log(chalk.gray("🏭 Factories loaded successfully."));
+    if (process.env.DEBUG === "true")
+      console.log(chalk.gray("Factories loaded successfully."));
   } catch (error) {
-    console.error(chalk.red("❌ Failed to auto-load factories during CLI startup."));
+    console.error(
+      chalk.red("ERROR: Failed to auto-load factories during CLI startup."),
+    );
     if (error instanceof Error) console.error(chalk.red(error.message));
   }
 })();
 
 // -----------------------------------------------------------------------------
-// 🧩 Command Imports
+// Command Imports
 // -----------------------------------------------------------------------------
 import { makeModel } from "./commands/makeModel";
 import { makeController } from "./commands/makeController";
 import { makeService } from "./commands/makeService";
 import { makeSeed } from "./commands/makeSeed";
 import { makeMigration } from "./commands/makeMigration";
-import {
-  migrateRun,
-} from "./commands/migrateRun";
-import { resolveConnectionNamesFromFlags } from "./utils/resolveConnectionFlags";
+import { migrateRun } from "./commands/migrateRun";
 import { migrateRollback } from "./commands/migrateRollback";
 import { cacheClear } from "./commands/cacheClear";
 import { cacheStats } from "./commands/cacheStats";
@@ -273,39 +195,50 @@ import { dbSeedFresh } from "./commands/dbSeedFresh";
 import { demoScenario } from "./commands/demoScenario";
 import { makeScenario } from "./commands/makeScenario";
 import { dbSeedBootstrapPrecheck } from "./commands/dbSeedBootstrapPrecheck";
+import {
+  resolveCliConnectionNames,
+  resolveCliPrimaryConnectionName,
+} from "./utils/CliCommandTargets";
+import { runCliAction } from "./utils/CliActionRuntime";
+import { CLI_COMMAND_CATALOG } from "./utils/CliCommandCatalog";
+import { printCliBanner } from "./utils/CliPresentation";
 
 // -----------------------------------------------------------------------------
-// 🧱 CLI Setup
+// CLI Setup
 // -----------------------------------------------------------------------------
 const program = new Command();
 
-console.log(chalk.cyan(figlet.textSync("EloquentJS", { horizontalLayout: "fitted" })));
-console.log(chalk.gray("⚡ Developer CLI for EloquentJS ORM (v2.0)\n"));
-console.log(chalk.green("🚀 Ready to manage your EloquentJS models and database!\n"));
+printCliBanner();
 
 // -----------------------------------------------------------------------------
-// 🧩 Core Configuration
+// Core Configuration
 // -----------------------------------------------------------------------------
 program
-  .name("eloquent" )
+  .name("eloquent")
   .description("EloquentJS ORM Command Line Interface (Artisan-like tool)")
   .version("2.0.0");
 
 // -----------------------------------------------------------------------------
-// 🧩 MAKE COMMANDS
+// MAKE COMMANDS
 // -----------------------------------------------------------------------------
 program
   .command("make:model <name>")
   .option("--test", "Generate model inside test directory")
   .option("--mongo", "Generate a MongoModel-based model scaffold")
-  .option("--with-migration", "Automatically generate a migration for this model")
+  .option(
+    "--with-migration",
+    "Automatically generate a migration for this model",
+  )
   .option("--attrs-from-schema", "Infer model attrs type from schema fields")
   .option("--force", "Overwrite existing migration if it exists")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Generate a new model (with optional migration)")
   .action(async (name: string, options: Record<string, unknown>) => {
     if (
-      !ensureProductionOverride("make:model", {
+      !ensureCliProductionOverride("make:model", {
         force: !!(options as { force?: boolean }).force,
         yes: !!(options as { yes?: boolean }).yes,
       })
@@ -324,31 +257,65 @@ program
   .option("--test", "Generate controller inside test directory")
   .option("--soft", "Generate controller with soft delete support")
   .option("--force", "Overwrite existing controller file if it exists")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Create a new controller (linked to service)")
-  .action((name: string, options: { test?: boolean; soft?: boolean; force?: boolean; yes?: boolean }) => {
-    if (!ensureProductionOverride("make:controller", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    return makeController(name, {
-      test: !!options.test,
-      soft: !!options.soft,
-      force: !!options.force,
-    });
-  });
+  .action(
+    (
+      name: string,
+      options: {
+        test?: boolean;
+        soft?: boolean;
+        force?: boolean;
+        yes?: boolean;
+      },
+    ) => {
+      if (
+        !ensureCliProductionOverride("make:controller", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
+        return;
+      }
+      return makeController(name, {
+        test: !!options.test,
+        soft: !!options.soft,
+        force: !!options.force,
+      });
+    },
+  );
 
 program
   .command("make:service <name>")
   .option("--test", "Generate service inside test directory")
   .option("--force", "Overwrite existing service file if it exists")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Create a new service (business logic layer)")
-  .action((name: string, options: { test?: boolean; force?: boolean; yes?: boolean }) => {
-    if (!ensureProductionOverride("make:service", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    return makeService(name, { test: !!options.test, force: !!options.force });
-  });
+  .action(
+    (
+      name: string,
+      options: { test?: boolean; force?: boolean; yes?: boolean },
+    ) => {
+      if (
+        !ensureCliProductionOverride("make:service", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
+        return;
+      }
+      return makeService(name, {
+        test: !!options.test,
+        force: !!options.force,
+      });
+    },
+  );
 
 program
   .command("make:seed <model>")
@@ -356,22 +323,41 @@ program
   .option("--test", "Generate seed in test environment")
   .option("--mongo", "Target a Mongo-backed model")
   .option("--force", "Overwrite existing seeder file if it exists")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Generate a seeder file linked to a model factory")
-  .action(async (model: string, options: { count: string; test?: boolean; mongo?: boolean; force?: boolean; yes?: boolean }) => {
-    if (!ensureProductionTestOnly("make:seed", { test: !!options.test })) {
-      return;
-    }
-    if (!ensureProductionOverride("make:seed", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    await makeSeed(model, {
-      count: Number(options.count),
-      test: !!options.test,
-      force: !!options.force,
-      mongo: !!options.mongo,
-    });
-  });
+  .action(
+    async (
+      model: string,
+      options: {
+        count: string;
+        test?: boolean;
+        mongo?: boolean;
+        force?: boolean;
+        yes?: boolean;
+      },
+    ) => {
+      if (!ensureCliProductionTestOnly("make:seed", { test: !!options.test })) {
+        return;
+      }
+      if (
+        !ensureCliProductionOverride("make:seed", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
+        return;
+      }
+      await makeSeed(model, {
+        count: Number(options.count),
+        test: !!options.test,
+        force: !!options.force,
+        mongo: !!options.mongo,
+      });
+    },
+  );
 
 program
   .command("make:factory <name>")
@@ -379,71 +365,105 @@ program
   .option("--test", "Generate in test environment")
   .option("--mongo", "Target a Mongo-backed model")
   .option("--force", "Overwrite existing file")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Generate a factory for a model")
-  .action(async (name: string, options: { model?: string; test?: boolean; mongo?: boolean; force?: boolean; yes?: boolean }) => {
-    if (!ensureProductionTestOnly("make:factory", { test: !!options.test })) {
-      return;
-    }
-    if (!ensureProductionOverride("make:factory", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    const modelName = options.model ?? name;
+  .action(
+    async (
+      name: string,
+      options: {
+        model?: string;
+        test?: boolean;
+        mongo?: boolean;
+        force?: boolean;
+        yes?: boolean;
+      },
+    ) => {
+      if (!ensureCliProductionTestOnly("make:factory", { test: !!options.test })) {
+        return;
+      }
+      if (
+        !ensureCliProductionOverride("make:factory", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
+        return;
+      }
+      const modelName = options.model ?? name;
 
-    await makeFactory(modelName, {
-      test: !!options.test,
-      force: !!options.force,
-      mongo: !!options.mongo,
-    });
-  });
+      await makeFactory(modelName, {
+        test: !!options.test,
+        force: !!options.force,
+        mongo: !!options.mongo,
+      });
+    },
+  );
 
 program
   .command("make:scenario <name>")
-  .option("--test", "Generate scenario in test folders (default is app folders)")
+  .option(
+    "--test",
+    "Generate scenario in test folders (default is app folders)",
+  )
   .option("--mongo", "Generate scenario models/migrations for mongo connection")
   .option("--preset <name>", "Preset: blog | media")
   .option("--controllers", "Generate controllers for the target environment")
   .option("--services", "Generate services for the target environment")
   .option("--run", "Run migrate:fresh and db:seed for the target environment")
   .option("--force", "Overwrite existing scenario files")
-  .option("--yes", "Acknowledge production override for this destructive command")
-  .description("Generate an automated scenario (models, migrations, factories, seeds)")
-  .action(async (name: string, options: {
-    test?: boolean;
-    mongo?: boolean;
-    preset?: string;
-    controllers?: boolean;
-    services?: boolean;
-    run?: boolean;
-    force?: boolean;
-    yes?: boolean;
-  }) => {
-    try {
-      if (!ensureProductionTestOnly("make:scenario", { test: !!options.test })) {
-        return;
-      }
-      if (!ensureProductionOverride("make:scenario", { force: !!options.force, yes: !!options.yes })) {
-        return;
-      }
-      await makeScenario(name, {
-        test: !!options.test,
-        mongo: !!options.mongo,
-        preset: options.preset,
-        controllers: !!options.controllers,
-        services: !!options.services,
-        run: !!options.run,
-        force: !!options.force,
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
+  .description(
+    "Generate an automated scenario (models, migrations, factories, seeds)",
+  )
+  .action(
+    async (
+      name: string,
+      options: {
+        test?: boolean;
+        mongo?: boolean;
+        preset?: string;
+        controllers?: boolean;
+        services?: boolean;
+        run?: boolean;
+        force?: boolean;
+        yes?: boolean;
+      },
+    ) => {
+      return runCliAction(async () => {
+        if (
+          !ensureCliProductionTestOnly("make:scenario", { test: !!options.test })
+        ) {
+          return;
+        }
+        if (
+          !ensureCliProductionOverride("make:scenario", {
+            force: !!options.force,
+            yes: !!options.yes,
+          })
+        ) {
+          return;
+        }
+        await makeScenario(name, {
+          test: !!options.test,
+          mongo: !!options.mongo,
+          preset: options.preset,
+          controllers: !!options.controllers,
+          services: !!options.services,
+          run: !!options.run,
+          force: !!options.force,
+        });
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`â‌Œ ${message}`));
-      process.exitCode = 1;
-    }
-  });
-
+    },
+  );
 
 // -----------------------------------------------------------------------------
-// 🧩 SEED COMMANDS
+// SEED COMMANDS
 // -----------------------------------------------------------------------------
 program
   .command("db:seed")
@@ -455,56 +475,51 @@ program
   .option("--all-connections", "Run seeders for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder by class name")
   .option("--silent", "Suppress non-error output during seeding")
-  .option("--no-hooks", "Disable model validation/lifecycle hooks during seeding")
+  .option(
+    "--no-hooks",
+    "Disable model validation/lifecycle hooks during seeding",
+  )
   .description("Run database seeders (all or specific)")
-  .action(async (options: {
-    test?: boolean;
-    class?: string;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    silent?: boolean;
-    noHooks?: boolean;
-  }) => {
-    try {
-      if (!ensureProductionTestOnly("db:seed", { test: !!options.test })) {
-        return;
-      }
-      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-        mysql: !!options.mysql,
-        pg: !!options.pg,
-        sqlite: !!options.sqlite,
-        mongo: !!options.mongo,
-        allConnections: !!options.allConnections,
-      });
+  .action(
+    async (options: {
+      test?: boolean;
+      class?: string;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      silent?: boolean;
+      noHooks?: boolean;
+    }) => {
+      return runCliAction(async () => {
+        if (!ensureCliProductionTestOnly("db:seed", { test: !!options.test })) {
+          return;
+        }
+        const connectionNames = resolveCliConnectionNames(options);
 
-      if (options.allConnections) {
-        const cleanBootstrap = await assertSeedBootstrapPrecheck({
+        if (options.allConnections) {
+          const cleanBootstrap = await assertSeedBootstrapPrecheck({
+            test: !!options.test,
+            connectionNames,
+          });
+          if (!cleanBootstrap) {
+            throw new Error(
+              "All-connections seed precheck failed. Run migrate:run (with optional --test) first, then retry db:seed.",
+            );
+          }
+        }
+
+        await dbSeed({
           test: !!options.test,
+          class: options.class,
+          silent: !!options.silent,
+          noHooks: !!options.noHooks,
           connectionNames,
         });
-        if (!cleanBootstrap) {
-          throw new Error(
-            "All-connections seed precheck failed. Run migrate:run (with optional --test) first, then retry db:seed."
-          );
-        }
-      }
-
-      await dbSeed({
-        test: !!options.test,
-        class: options.class,
-        silent: !!options.silent,
-        noHooks: !!options.noHooks,
-        connectionNames,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`❌ ${message}`));
-      process.exitCode = 1;
-    }
-  });
+    },
+  );
 
 program
   .command("db:seed:precheck")
@@ -515,32 +530,24 @@ program
   .option("--mongo", "Check only the mongo connection")
   .option("--all-connections", "Check mysql, pg, and sqlite")
   .description("Validate migration bootstrap state before running db:seed")
-  .action(async (options: {
-    test?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-  }) => {
-    try {
-      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-        mysql: !!options.mysql,
-        pg: !!options.pg,
-        sqlite: !!options.sqlite,
-        mongo: !!options.mongo,
-        allConnections: !!options.allConnections,
+  .action(
+    async (options: {
+      test?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+    }) => {
+      return runCliAction(async () => {
+        const connectionNames = resolveCliConnectionNames(options);
+        await dbSeedBootstrapPrecheck({
+          test: !!options.test,
+          connectionNames,
+        });
       });
-      await dbSeedBootstrapPrecheck({
-        test: !!options.test,
-        connectionNames,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`❌ ${message}`));
-      process.exitCode = 1;
-    }
-  });
+    },
+  );
 
 program
   .command("db:seed:fresh")
@@ -552,56 +559,63 @@ program
   .option("--all-connections", "Run fresh seed for mysql, pg, and sqlite")
   .option("--class <name>", "Run a specific seeder after migration refresh")
   .option("--silent", "Suppress non-error output during refresh+seed")
-  .option("--no-hooks", "Disable model validation/lifecycle hooks during seeding")
+  .option(
+    "--no-hooks",
+    "Disable model validation/lifecycle hooks during seeding",
+  )
   .option("--force", "Skip confirmation prompt during refresh")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Drop all tables, rerun migrations, and seed the database")
-  .action(async (options: {
-    test?: boolean;
-    class?: string;
-    force?: boolean;
-    yes?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    silent?: boolean;
-    noHooks?: boolean;
-  }) => {
-    try {
-      if (!ensureProductionTestOnly("db:seed:fresh", { test: !!options.test })) {
-        return;
-      }
-      if (!ensureProductionOverride("db:seed:fresh", { force: !!options.force, yes: !!options.yes })) {
-        return;
-      }
-      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-        mysql: !!options.mysql,
-        pg: !!options.pg,
-        sqlite: !!options.sqlite,
-        mongo: !!options.mongo,
-        allConnections: !!options.allConnections,
-      });
+  .action(
+    async (options: {
+      test?: boolean;
+      class?: string;
+      force?: boolean;
+      yes?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      silent?: boolean;
+      noHooks?: boolean;
+    }) => {
+      return runCliAction(async () => {
+        if (
+          !ensureCliProductionTestOnly("db:seed:fresh", { test: !!options.test })
+        ) {
+          return;
+        }
+        if (
+          !ensureCliProductionOverride("db:seed:fresh", {
+            force: !!options.force,
+            yes: !!options.yes,
+          })
+        ) {
+          return;
+        }
+        const connectionNames = resolveCliConnectionNames(options);
 
-      await dbSeedFresh({
-        test: !!options.test,
-        class: options.class,
-        force: !!options.force,
-        silent: !!options.silent,
-        noHooks: !!options.noHooks,
-        connectionNames,
+        await dbSeedFresh({
+          test: !!options.test,
+          class: options.class,
+          force: !!options.force,
+          silent: !!options.silent,
+          noHooks: !!options.noHooks,
+          connectionNames,
+        });
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`❌ ${message}`));
-      process.exitCode = 1;
-    }
-  });
+    },
+  );
 
 program
   .command("demo:scenario")
-  .description("Run a quick verification scenario for seeded data (morph + pivot)")
+  .description(
+    "Run a quick verification scenario for seeded data (morph + pivot)",
+  )
   .option("--user <id>", "Run the scenario for a specific user id")
   .option("--random", "Pick a random user id")
   .option("--test", "Run scenario against test database")
@@ -609,32 +623,28 @@ program
   .option("--pg", "Run scenario only for the pg connection")
   .option("--sqlite", "Run scenario only for the sqlite connection")
   .option("--mongo", "Run scenario only for the mongo connection")
-  .action(async (options: {
-    user?: string;
-    random?: boolean;
-    test?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-  }) => {
-    const userId = options.user ? Number(options.user) : undefined;
-    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-      mysql: !!options.mysql,
-      pg: !!options.pg,
-      sqlite: !!options.sqlite,
-      mongo: !!options.mongo,
-    });
-    await demoScenario({
-      user: Number.isFinite(userId) ? userId : undefined,
-      random: !!options.random,
-      test: !!options.test,
-      connectionName: connectionNames[0],
-    });
-  });
+  .action(
+    async (options: {
+      user?: string;
+      random?: boolean;
+      test?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+    }) => {
+      const userId = options.user ? Number(options.user) : undefined;
+      await demoScenario({
+        user: Number.isFinite(userId) ? userId : undefined,
+        random: !!options.random,
+        test: !!options.test,
+        connectionName: resolveCliPrimaryConnectionName(options),
+      });
+    },
+  );
 
 // -----------------------------------------------------------------------------
-// 🧩 MIGRATION COMMANDS
+// ط·آ·ط¢آ¸ط£آ¢أ¢â€ڑآ¬ط¢آ¹ط·آ·ط¢آ¹ط·آ·أ¢â‚¬ط›ط·آ·ط¢آ¢ط·آ¢ط¢آ§ط·آ·ط¢آ¢ط·آ¢ط¢آ© MIGRATION COMMANDS
 // -----------------------------------------------------------------------------
 program
   .command("make:migration [model]")
@@ -647,64 +657,66 @@ program
   .option("--all-connections", "Generate migrations for mysql, pg, and sqlite")
   .option("--pivot-separate", "Emit pivot tables as separate migration files")
   .option("--force", "Required override flag in production mode")
-  .option("--yes", "Acknowledge production override for this destructive command")
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
   .description("Generate migration from a model or all models")
-  .action(async (
-    model: string | undefined,
-    options: {
-      test?: boolean;
-      all?: boolean;
-      mysql?: boolean;
-      pg?: boolean;
-      sqlite?: boolean;
-      mongo?: boolean;
-      allConnections?: boolean;
-      pivotSeparate?: boolean;
-      force?: boolean;
-      yes?: boolean;
-    }
-  ) => {
-    if (!ensureProductionOverride("make:migration", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    const useAll = !!(options as { all?: boolean }).all;
-    const target = useAll ? "all" : model;
-    if (!target) {
-      console.error(chalk.red("❌ Please provide a model name or use --all"));
-      return;
-    }
-    try {
-      const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-        mysql: !!options.mysql,
-        pg: !!options.pg,
-        sqlite: !!options.sqlite,
-        mongo: !!options.mongo,
-        allConnections: !!options.allConnections,
-      });
-
-      if (connectionNames.length === 0) {
-        await makeMigration(target, {
-          test: !!options.test,
-          pivotSeparate: !!options.pivotSeparate,
-          exit: false,
-        });
+  .action(
+    async (
+      model: string | undefined,
+      options: {
+        test?: boolean;
+        all?: boolean;
+        mysql?: boolean;
+        pg?: boolean;
+        sqlite?: boolean;
+        mongo?: boolean;
+        allConnections?: boolean;
+        pivotSeparate?: boolean;
+        force?: boolean;
+        yes?: boolean;
+      },
+    ) => {
+      if (
+        !ensureCliProductionOverride("make:migration", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
         return;
       }
-
-      for (const connectionName of connectionNames) {
-        await makeMigration(target, {
-          test: !!options.test,
-          pivotSeparate: !!options.pivotSeparate,
-          connectionName,
-          exit: false,
-        });
+      const useAll = !!(options as { all?: boolean }).all;
+      const target = useAll ? "all" : model;
+      if (!target) {
+        console.error(
+          chalk.red("ERROR: Please provide a model name or use --all"),
+        );
+        return;
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`â‌Œ ${message}`));
-      process.exitCode = 1;
-    }
-  });
+      return runCliAction(async () => {
+        const connectionNames = resolveCliConnectionNames(options);
+
+        if (connectionNames.length === 0) {
+          await makeMigration(target, {
+            test: !!options.test,
+            pivotSeparate: !!options.pivotSeparate,
+            exit: false,
+          });
+          return;
+        }
+
+        for (const connectionName of connectionNames) {
+          await makeMigration(target, {
+            test: !!options.test,
+            pivotSeparate: !!options.pivotSeparate,
+            connectionName,
+            exit: false,
+          });
+        }
+      });
+    },
+  );
 
 program
   .command("migrate:run [model]")
@@ -715,56 +727,56 @@ program
   .option("--sqlite", "Run migrations only for the sqlite connection")
   .option("--mongo", "Run migrations only for the mongo connection")
   .option("--all-connections", "Run migrations for mysql, pg, and sqlite")
-  .option("--all-migrations", "Auto-generate migrations for all models before running")
-  .option("--pivot-separate", "Emit pivot tables as separate migration files (with --all-migrations)")
-  .action(async (
-    model?: string,
-    options?: {
-      test?: boolean;
-      mysql?: boolean;
-      pg?: boolean;
-      sqlite?: boolean;
-      mongo?: boolean;
-      allConnections?: boolean;
-      allMigrations?: boolean;
-      pivotSeparate?: boolean;
-    }
-  ) => {
-    try {
-      const connectionNames = resolveConnectionNamesFromFlags(!!options?.test, {
-        mysql: !!options?.mysql,
-        pg: !!options?.pg,
-        sqlite: !!options?.sqlite,
-        mongo: !!options?.mongo,
-        allConnections: !!options?.allConnections,
-      });
+  .option(
+    "--all-migrations",
+    "Auto-generate migrations for all models before running",
+  )
+  .option(
+    "--pivot-separate",
+    "Emit pivot tables as separate migration files (with --all-migrations)",
+  )
+  .action(
+    async (
+      model?: string,
+      options?: {
+        test?: boolean;
+        mysql?: boolean;
+        pg?: boolean;
+        sqlite?: boolean;
+        mongo?: boolean;
+        allConnections?: boolean;
+        allMigrations?: boolean;
+        pivotSeparate?: boolean;
+      },
+    ) => {
+      return runCliAction(async () => {
+        const connectionNames = resolveCliConnectionNames(options);
 
-      if (options?.allMigrations) {
-        if (connectionNames.length === 0) {
-          await makeMigration("all", {
-            test: !!options.test,
-            exit: false,
-            pivotSeparate: !!options.pivotSeparate,
-          });
-        } else {
-          for (const connectionName of connectionNames) {
+        if (options?.allMigrations) {
+          if (connectionNames.length === 0) {
             await makeMigration("all", {
               test: !!options.test,
               exit: false,
               pivotSeparate: !!options.pivotSeparate,
-              connectionName,
             });
+          } else {
+            for (const connectionName of connectionNames) {
+              await makeMigration("all", {
+                test: !!options.test,
+                exit: false,
+                pivotSeparate: !!options.pivotSeparate,
+                connectionName,
+              });
+            }
           }
         }
-      }
 
-      return migrateRun(!!options?.test, model, false, true, { connectionNames });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`❌ ${message}`));
-      process.exitCode = 1;
-    }
-  });
+        return migrateRun(!!options?.test, model, false, true, {
+          connectionNames,
+        });
+      });
+    },
+  );
 
 program
   .command("migrate:rollback")
@@ -777,31 +789,27 @@ program
   .option("--all-migrations", "Rollback all applied migration batches")
   .option("--step <number>", "Number of migrations to rollback", "1")
   .description("Rollback the latest migration(s)")
-  .action(async (options: {
-    test?: boolean;
-    step?: string;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    allMigrations?: boolean;
-  }) => {
-    const stepNumber = Number(options.step ?? 1);
-    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-      mysql: !!options.mysql,
-      pg: !!options.pg,
-      sqlite: !!options.sqlite,
-      mongo: !!options.mongo,
-      allConnections: !!options.allConnections,
-    });
-    await migrateRollback({
-      test: !!options.test,
-      step: stepNumber,
-      allMigrations: !!options.allMigrations,
-      connectionNames,
-    });
-  });
+  .action(
+    async (options: {
+      test?: boolean;
+      step?: string;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      allMigrations?: boolean;
+    }) => {
+      const stepNumber = Number(options.step ?? 1);
+      const connectionNames = resolveCliConnectionNames(options);
+      await migrateRollback({
+        test: !!options.test,
+        step: stepNumber,
+        allMigrations: !!options.allMigrations,
+        connectionNames,
+      });
+    },
+  );
 
 program
   .command("migrate:status")
@@ -812,29 +820,28 @@ program
   .option("--sqlite", "Show status only for the sqlite connection")
   .option("--mongo", "Show status only for the mongo connection")
   .option("--all-connections", "Show status for mysql, pg, and sqlite")
-  .option("--all-migrations", "Accepted for parity; status already covers all migration files")
-  .action((options: {
-    test?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    allMigrations?: boolean;
-  }) => {
-    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-      mysql: !!options.mysql,
-      pg: !!options.pg,
-      sqlite: !!options.sqlite,
-      mongo: !!options.mongo,
-      allConnections: !!options.allConnections,
-    });
-    return migrateStatus({
-      test: !!options.test,
-      allMigrations: !!options.allMigrations,
-      connectionNames,
-    });
-  });
+  .option(
+    "--all-migrations",
+    "Accepted for parity; status already covers all migration files",
+  )
+  .action(
+    (options: {
+      test?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      allMigrations?: boolean;
+    }) => {
+      const connectionNames = resolveCliConnectionNames(options);
+      return migrateStatus({
+        test: !!options.test,
+        allMigrations: !!options.allMigrations,
+        connectionNames,
+      });
+    },
+  );
 
 program
   .command("migrate:fresh")
@@ -845,37 +852,44 @@ program
   .option("--sqlite", "Run fresh migration only for the sqlite connection")
   .option("--mongo", "Run fresh migration only for the mongo connection")
   .option("--all-connections", "Run fresh migration for mysql, pg, and sqlite")
-  .option("--all-migrations", "Auto-generate migrations for all models before running")
+  .option(
+    "--all-migrations",
+    "Auto-generate migrations for all models before running",
+  )
   .option("--force", "Skip confirmation prompt")
-  .option("--yes", "Acknowledge production override for this destructive command")
-  .action((options: {
-    test?: boolean;
-    force?: boolean;
-    yes?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    allMigrations?: boolean;
-  }) => {
-    if (!ensureProductionOverride("migrate:fresh", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-      mysql: !!options.mysql,
-      pg: !!options.pg,
-      sqlite: !!options.sqlite,
-      mongo: !!options.mongo,
-      allConnections: !!options.allConnections,
-    });
-    return migrateFresh({
-      test: !!options.test,
-      force: !!options.force,
-      allMigrations: !!options.allMigrations,
-      connectionNames,
-    });
-  });
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
+  .action(
+    (options: {
+      test?: boolean;
+      force?: boolean;
+      yes?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      allMigrations?: boolean;
+    }) => {
+      if (
+        !ensureCliProductionOverride("migrate:fresh", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
+        return;
+      }
+      const connectionNames = resolveCliConnectionNames(options);
+      return migrateFresh({
+        test: !!options.test,
+        force: !!options.force,
+        allMigrations: !!options.allMigrations,
+        connectionNames,
+      });
+    },
+  );
 
 program
   .command("migrate:reset")
@@ -886,45 +900,58 @@ program
   .option("--sqlite", "Reset migrations only for the sqlite connection")
   .option("--mongo", "Reset migrations only for the mongo connection")
   .option("--all-connections", "Reset migrations for mysql, pg, and sqlite")
-  .option("--all-migrations", "Accepted for parity; reset already rolls back all batches")
+  .option(
+    "--all-migrations",
+    "Accepted for parity; reset already rolls back all batches",
+  )
   .option("--force", "Required override flag in production mode")
-  .option("--yes", "Acknowledge production override for this destructive command")
-  .action((options: {
-    test?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    allMigrations?: boolean;
-    force?: boolean;
-    yes?: boolean;
-  }) => {
-    if (!ensureProductionOverride("migrate:reset", { force: !!options.force, yes: !!options.yes })) {
-      return;
-    }
-    const connectionNames = resolveConnectionNamesFromFlags(!!options.test, {
-      mysql: !!options.mysql,
-      pg: !!options.pg,
-      sqlite: !!options.sqlite,
-      mongo: !!options.mongo,
-      allConnections: !!options.allConnections,
-    });
-    return migrateReset({
-      test: !!options.test,
-      connectionNames,
-      allMigrations: !!options.allMigrations,
-    });
-  });
+  .option(
+    "--yes",
+    "Acknowledge production override for this destructive command",
+  )
+  .action(
+    (options: {
+      test?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      allMigrations?: boolean;
+      force?: boolean;
+      yes?: boolean;
+    }) => {
+      if (
+        !ensureCliProductionOverride("migrate:reset", {
+          force: !!options.force,
+          yes: !!options.yes,
+        })
+      ) {
+        return;
+      }
+      const connectionNames = resolveCliConnectionNames(options);
+      return migrateReset({
+        test: !!options.test,
+        connectionNames,
+        allMigrations: !!options.allMigrations,
+      });
+    },
+  );
 
 // -----------------------------------------------------------------------------
-// 🧩 CACHE COMMANDS
+// CACHE COMMANDS
 // -----------------------------------------------------------------------------
-program.command("cache:clear").description("Clear all ORM cache data and registry").action(cacheClear);
-program.command("cache:stats").description("Show current cache performance analytics").action(cacheStats);
+program
+  .command("cache:clear")
+  .description("Clear all ORM cache data and registry")
+  .action(cacheClear);
+program
+  .command("cache:stats")
+  .description("Show current cache performance analytics")
+  .action(cacheStats);
 
 // -----------------------------------------------------------------------------
-// 🧩 FACTORY INSPECTION COMMAND
+// FACTORY INSPECTION COMMAND
 // -----------------------------------------------------------------------------
 program
   .command("factory:status")
@@ -933,100 +960,44 @@ program
   .option("--pg", "Inspect SQL-backed factories for pg/sql storage")
   .option("--sqlite", "Inspect SQL-backed factories for sqlite/sql storage")
   .option("--mongo", "Inspect Mongo-backed factories only")
-  .option("--all-connections", "Inspect SQL-backed factories across all SQL connections")
+  .option(
+    "--all-connections",
+    "Inspect SQL-backed factories across all SQL connections",
+  )
   .option("--details", "Show detailed factory metadata including relations")
   .option("--graph", "Display an ASCII diagram of model relationships")
   .description("Show all registered factories (model + pivot + relations)")
-  .action(async (options: {
-    test?: boolean;
-    mysql?: boolean;
-    pg?: boolean;
-    sqlite?: boolean;
-    mongo?: boolean;
-    allConnections?: boolean;
-    details?: boolean;
-    graph?: boolean;
-  }) => {
-    await factoryStatus(options as { details?: boolean; graph?: boolean });
-  });
+  .action(
+    async (options: {
+      test?: boolean;
+      mysql?: boolean;
+      pg?: boolean;
+      sqlite?: boolean;
+      mongo?: boolean;
+      allConnections?: boolean;
+      details?: boolean;
+      graph?: boolean;
+    }) => {
+      await factoryStatus(options as { details?: boolean; graph?: boolean });
+    },
+  );
 
 // -----------------------------------------------------------------------------
-// 🧩 HELP COMMAND
+// HELP COMMAND
 // -----------------------------------------------------------------------------
 program
   .command("list")
   .description("Show all available EloquentJS commands")
   .action(() => {
-    console.log(chalk.green("\n📜 Available Commands:\n"));
-    console.log(chalk.gray("Tip: use --test to run supported commands in test mode.\n"));
-    console.table([
-      { Command: "make:model <name>", Description: "--test --mongo --with-migration --attrs-from-schema --force --yes" },
-      { Command: "make:controller <name>", Description: "--soft --test --force --yes" },
-      { Command: "make:service <name>", Description: "--test --force --yes" },
-      { Command: "make:seed <model>", Description: "--count <number> --test --mongo --force --yes" },
-      { Command: "make:scenario <name>", Description: "--test --mongo --preset <blog|media> --controllers --services --run --force --yes" },
-      { Command: "make:factory <name>", Description: "--model <model> --test --mongo --force --yes" },
-      {
-        Command: "make:migration [model]",
-        Description:
-          "--test --all --mysql --pg --sqlite --mongo --all-connections --pivot-separate --force --yes",
-      },
-      {
-        Command: "factory:status",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --details --graph",
-      },
-      {
-        Command: "db:seed",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --class <name> --silent --no-hooks",
-      },
-      {
-        Command: "db:seed:precheck",
-        Description: "--test --mysql --pg --sqlite --mongo --all-connections",
-      },
-      {
-        Command: "db:seed:fresh",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --class <name> --silent --no-hooks --force --yes",
-      },
-      {
-        Command: "demo:scenario",
-        Description: "--user <id> --random --test --mysql --pg --sqlite --mongo",
-      },
-      {
-        Command: "migrate:run [model]",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --pivot-separate",
-      },
-      {
-        Command: "migrate:rollback",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --step <number>",
-      },
-      {
-        Command: "migrate:status",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations",
-      },
-      {
-        Command: "migrate:fresh",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --force --yes",
-      },
-      {
-        Command: "migrate:reset",
-        Description:
-          "--test --mysql --pg --sqlite --mongo --all-connections --all-migrations --force --yes",
-      },
-      { Command: "cache:clear", Description: "(no options)" },
-      { Command: "cache:stats", Description: "(no options)" },
-      { Command: "list", Description: "(no options)" },
-    ]);
+    console.log(chalk.green("\nAvailable Commands:\n"));
+    console.log(
+      chalk.gray("Tip: use --test to run supported commands in test mode.\n"),
+    );
+    console.table(CLI_COMMAND_CATALOG);
   });
 
 // -----------------------------------------------------------------------------
-// 🧩 Default CLI Behavior
+// Default CLI Behavior
 // -----------------------------------------------------------------------------
 if (process.env.ELOQUENT_DEBUG === "true") {
   console.log("[cli] before parse");

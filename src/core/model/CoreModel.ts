@@ -4,14 +4,32 @@ import { dbConfig } from "../../config/database";
 import type { DriverAdapter } from "../connection/DriverAdapter";
 import type { Db } from "mongodb";
 
-import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator";
-import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
+import type { SchemaValidatorOptions } from "../schema/SchemaValidator";
+import type { SchemaField } from "../schema/SchemaBlueprint";
 import {
   SafeFinderDirection,
   SafeFinderFilters,
   SafeFinderModelStatic,
   SafeFinderQuery,
 } from "./SafeFinder";
+import {
+  assertPrimaryKeyNotMutated,
+  buildMongoPrimaryFilter,
+  createPersistedSnapshot,
+  extractPersistableAttributes,
+  getColumnFieldNames,
+  getDirtyAttributes,
+  getOriginalPrimaryKeyValue,
+  getPersistenceSchema,
+  getPrimaryKeyValue,
+  resolvePrimaryKey,
+  sanitizeAssignableData,
+} from "./CoreModelPersistenceState";
+import {
+  fireModelEvent,
+  shouldSkipModelHooks,
+  validateModelData,
+} from "./CoreModelValidationEvents";
 
 /**
  * Types for model contract (kept generic)
@@ -41,7 +59,7 @@ export interface ModelEventHooks {
 }
 
 /**
- * 🧱 CoreModel — driver-agnostic CRUD + schema validation + hooks + events
+ * CoreModel - driver-agnostic CRUD + schema validation + hooks + events
  */
 export abstract class CoreModel<
   TAttrs extends Record<string, unknown> = Record<string, unknown>
@@ -223,109 +241,47 @@ export abstract class CoreModel<
   }
 
   private shouldSkipModelHooks(): boolean {
-    const value = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
-    return value === "1" || value === "true";
+    return shouldSkipModelHooks(process.env.ELOQUENT_DISABLE_MODEL_HOOKS);
   }
 
   private buildMongoPrimaryFilter(
     pk: string,
     id: number | string
   ): Record<string, unknown> {
-    if (pk === "_id") {
-      return { _id: id };
-    }
-    if (pk === "id") {
-      return { $or: [{ id }, { _id: id }] };
-    }
-    return { [pk]: id };
+    return buildMongoPrimaryFilter(pk, id);
   }
 
   private getPersistenceSchema(): Record<string, SchemaField> {
-    const schema = (this.constructor as typeof CoreModel).schema;
-    if (!schema) {
-      throw new Error(
-        `${this.constructor.name} must define a schema to use fill(), save(), or patch().`
-      );
-    }
-    return schema;
+    return getPersistenceSchema(
+      this.constructor.name,
+      (this.constructor as typeof CoreModel).schema
+    );
   }
 
   private getColumnFieldNames(): string[] {
-    const schema = this.getPersistenceSchema();
-    return Object.entries(schema)
-      .filter(([, field]) => field.kind === "column")
-      .map(([fieldName]) => fieldName);
+    return getColumnFieldNames(this.getPersistenceSchema());
   }
 
   private resolvePrimaryKey(): string {
-    const schema = (this.constructor as typeof CoreModel).schema;
-    if (schema) {
-      for (const [fieldName, field] of Object.entries(schema)) {
-        if (field.kind === "column" && field.options.primary) {
-          return fieldName;
-        }
-      }
-      if (schema._id?.kind === "column") return "_id";
-      if (schema.id?.kind === "column") return "id";
-    }
-
-    return "id";
+    return resolvePrimaryKey((this.constructor as typeof CoreModel).schema);
   }
 
   private getPrimaryKeyValue(pk: string): unknown {
-    const record = this as Record<string, unknown>;
-    if (pk === "_id") {
-      return record._id ?? record.id;
-    }
-    if (pk === "id") {
-      return record.id ?? record._id;
-    }
-    return record[pk];
+    return getPrimaryKeyValue(this as Record<string, unknown>, pk);
   }
 
   private getOriginalPrimaryKeyValue(pk: string): unknown {
-    if (Object.prototype.hasOwnProperty.call(this._originalAttributes, pk)) {
-      return this._originalAttributes[pk];
-    }
-    if (pk === "_id" && Object.prototype.hasOwnProperty.call(this._originalAttributes, "id")) {
-      return this._originalAttributes.id;
-    }
-    if (pk === "id" && Object.prototype.hasOwnProperty.call(this._originalAttributes, "_id")) {
-      return this._originalAttributes._id;
-    }
-    return undefined;
+    return getOriginalPrimaryKeyValue(this._originalAttributes, pk);
   }
 
   private createSnapshot(source?: Record<string, unknown>): Record<string, unknown> {
     const snapshotSource =
       source ?? (Object.assign({}, this) as Record<string, unknown>);
-    const schema = (this.constructor as typeof CoreModel).schema;
-
-    if (!schema) {
-      return Object.fromEntries(
-        Object.entries(snapshotSource).filter(([field]) => !field.startsWith("_"))
-      );
-    }
-
-    const snapshot: Record<string, unknown> = {};
-    for (const [fieldName, field] of Object.entries(schema)) {
-      if (field.kind !== "column") continue;
-      if (Object.prototype.hasOwnProperty.call(snapshotSource, fieldName)) {
-        snapshot[fieldName] = snapshotSource[fieldName];
-      }
-    }
-
-    const primaryKey = this.resolvePrimaryKey();
-    if (!Object.prototype.hasOwnProperty.call(snapshot, primaryKey)) {
-      const record = snapshotSource as Record<string, unknown>;
-      if (primaryKey === "_id" && record.id !== undefined) {
-        snapshot._id = record.id;
-      } else if (primaryKey === "id" && record._id !== undefined) {
-        snapshot.id = record._id;
-      }
-    }
-
-    return snapshot;
+    return createPersistedSnapshot({
+      source: snapshotSource,
+      schema: (this.constructor as typeof CoreModel).schema,
+      primaryKey: this.resolvePrimaryKey(),
+    });
   }
 
   private syncPersistedState(source?: Record<string, unknown>): void {
@@ -334,69 +290,49 @@ export abstract class CoreModel<
   }
 
   private assertAssignableField(field: string, usage: "fill" | "patch"): void {
-    const schema = this.getPersistenceSchema();
-    const definition = schema[field];
-
-    if (!definition || definition.kind !== "column") {
-      throw new Error(`Unknown ${usage} field '${field}' on ${this.constructor.name}.`);
-    }
+    sanitizeAssignableData({
+      data: { [field]: undefined },
+      usage,
+      schema: this.getPersistenceSchema(),
+      modelName: this.constructor.name,
+    });
   }
 
   private sanitizeAssignableData(
     data: Record<string, unknown>,
     usage: "fill" | "patch"
   ): Record<string, unknown> {
-    if (!data || typeof data !== "object" || Array.isArray(data)) {
-      throw new Error(`${usage}() expects a plain object payload.`);
-    }
-
-    const sanitized: Record<string, unknown> = {};
-    for (const [field, value] of Object.entries(data)) {
-      this.assertAssignableField(field, usage);
-      sanitized[field] = value;
-    }
-
-    return sanitized;
+    return sanitizeAssignableData({
+      data,
+      usage,
+      schema: this.getPersistenceSchema(),
+      modelName: this.constructor.name,
+    });
   }
 
   private extractPersistableAttributes(): Record<string, unknown> {
-    const record = this as Record<string, unknown>;
-    const attributes: Record<string, unknown> = {};
-
-    for (const fieldName of this.getColumnFieldNames()) {
-      if (Object.prototype.hasOwnProperty.call(record, fieldName)) {
-        attributes[fieldName] = record[fieldName];
-      }
-    }
-
-    return attributes;
+    return extractPersistableAttributes({
+      record: this as Record<string, unknown>,
+      columnFieldNames: this.getColumnFieldNames(),
+    });
   }
 
   private assertPrimaryKeyNotMutated(primaryKey: string): void {
-    if (!this._exists) return;
-
-    const currentPrimaryKey = this.getPrimaryKeyValue(primaryKey);
-    const originalPrimaryKey = this.getOriginalPrimaryKeyValue(primaryKey);
-
-    if (!Object.is(currentPrimaryKey, originalPrimaryKey)) {
-      throw new Error(
-        `Cannot change persisted primary key '${primaryKey}' on ${this.constructor.name}.`
-      );
-    }
+    assertPrimaryKeyNotMutated({
+      exists: this._exists,
+      primaryKey,
+      currentPrimaryKey: this.getPrimaryKeyValue(primaryKey),
+      originalPrimaryKey: this.getOriginalPrimaryKeyValue(primaryKey),
+      modelName: this.constructor.name,
+    });
   }
 
   private getDirtyAttributes(primaryKey: string): Record<string, unknown> {
-    const currentAttributes = this.extractPersistableAttributes();
-    const dirtyAttributes: Record<string, unknown> = {};
-
-    for (const [field, value] of Object.entries(currentAttributes)) {
-      if (field === primaryKey) continue;
-      if (!Object.is(this._originalAttributes[field], value)) {
-        dirtyAttributes[field] = value;
-      }
-    }
-
-    return dirtyAttributes;
+    return getDirtyAttributes({
+      currentAttributes: this.extractPersistableAttributes(),
+      originalAttributes: this._originalAttributes,
+      primaryKey,
+    });
   }
 
   fill(data: Record<string, unknown>): this {
@@ -489,33 +425,19 @@ export abstract class CoreModel<
     options: { partial: boolean }
   ): Promise<void> {
     const schema = (this.constructor as typeof CoreModel).schema;
-    const hooks = this.shouldSkipModelHooks()
-      ? undefined
-      : (this.constructor as typeof CoreModel).validationHooks;
+    const hooks = (this.constructor as typeof CoreModel).validationHooks;
     const customRules = (this.constructor as typeof CoreModel).customRules;
 
-    if (!schema) return;
-
-    const validationRules: Record<string, ValidationRule> = {};
-
-    for (const [key, field] of Object.entries(schema)) {
-      if (field.kind === "column" && field.validate) {
-        if (options.partial && !Object.prototype.hasOwnProperty.call(data, key)) {
-          continue;
-        }
-        validationRules[key] = field.validate;
-      }
-    }
-
-    const errors = await SchemaValidator.validateData(data, validationRules, {
+    await validateModelData({
+      tableName: this.tableName,
+      schema,
       hooks,
       customRules,
+      data,
+      partial: options.partial,
+      skipModelHooks: this.shouldSkipModelHooks(),
     });
 
-    if (errors.length > 0) {
-      const formatted = errors.map((e) => `• ${e.field} ${e.message}`).join("\n");
-      throw new Error(`Validation failed for ${this.tableName}:\n${formatted}`);
-    }
   }
 
   /**
@@ -524,23 +446,17 @@ export abstract class CoreModel<
    * We use `unknown` for payload to avoid the `Parameters<>` union issue.
    * Returns `true` to proceed; returns `false` if the handler explicitly canceled (returned false).
    */
-  
   private async fireEvent(eventName: keyof ModelEventHooks, payload?: unknown): Promise<boolean> {
-    if (this.shouldSkipModelHooks()) return true;
     const handler = (this.constructor as typeof CoreModel).modelEvents?.[eventName];
-    if (!handler) return true;
-
-    // Cast handler to a generic async-capable function type that accepts unknown.
-    const fn = handler as (arg: unknown) => Promise<unknown> | unknown;
-    const result = await fn(payload);
-
-    // If handler returned boolean false, treat as cancellation.
-    if (result === false) return false;
-    return true;
+    return fireModelEvent({
+      skipModelHooks: this.shouldSkipModelHooks(),
+      handler: handler as ((arg: unknown) => Promise<unknown> | unknown) | undefined,
+      payload,
+    });
   }
 
   /* -----------------------------------------------------
-   * 📦 FIND (by ID)
+   * FIND (by ID)
    * ----------------------------------------------------- */
   async find(id: number | string, pk: string = "id"): Promise<this | null> {
     const db = await this.getDB();
@@ -572,9 +488,8 @@ export abstract class CoreModel<
         throw new Error(`Unsupported driver: ${driver}`);
     }
   }
-
   /* -----------------------------------------------------
-   * 📋 ALL (fetch all records)
+   * ALL (fetch all records)
    * ----------------------------------------------------- */
   async all(): Promise<this[]> {
     const db = await this.getDB();
@@ -603,9 +518,8 @@ export abstract class CoreModel<
         throw new Error(`Unsupported driver: ${driver}`);
     }
   }
-
   /* -----------------------------------------------------
-   * ➕ CREATE (insert new record)
+   * CREATE (insert new record)
    * ----------------------------------------------------- */
   async create(data: Record<string, unknown>): Promise<this | null> {
     // 1) Validate (runs validation hooks + custom rules)
@@ -665,9 +579,8 @@ export abstract class CoreModel<
 
     return hydrated;
   }
-
   /* -----------------------------------------------------
-   * ✏️ UPDATE (by ID)
+   * UPDATE (by ID)
    * ----------------------------------------------------- */
   async update(
     id: number | string,
@@ -720,9 +633,8 @@ export abstract class CoreModel<
     // 4) afterUpdate
     await this.fireEvent("afterUpdate", data);
   }
-
   /* -----------------------------------------------------
-   * ❌ DELETE (by ID)
+   * DELETE (by ID)
    * ----------------------------------------------------- */
   async delete(id: number | string, pk: string = "id"): Promise<void> {
     // 1) beforeDelete (can cancel)

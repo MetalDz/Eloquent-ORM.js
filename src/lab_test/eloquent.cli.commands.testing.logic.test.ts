@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { CLI_COMMAND_CATALOG } from "../cli/utils/CliCommandCatalog";
 
 type CommandSpec = {
   name: string;
@@ -220,7 +221,7 @@ const commandMatrix: CommandSpec[] = [
 ];
 
 function parseCommandBlocks(source: string): ParsedCommand[] {
-  const commandMatches = [...source.matchAll(/\.command\("([^"]+)"\)/g)];
+  const commandMatches = [...source.matchAll(/\.command\(\s*"([^"]+)"\s*\)/g)];
   const parseBoundary = source.indexOf("program.parse(process.argv);");
   const defaultBoundary = parseBoundary === -1 ? source.length : parseBoundary;
 
@@ -232,7 +233,7 @@ function parseCommandBlocks(source: string): ParsedCommand[] {
         ? commandMatches[index + 1].index ?? defaultBoundary
         : defaultBoundary;
     const block = source.slice(start, nextStart);
-    const optionFlags = [...block.matchAll(/\.option\("([^"]+)"/g)].map(
+    const optionFlags = [...block.matchAll(/\.option\(\s*"([^"]+)"/g)].map(
       (optionMatch) => optionMatch[1]
     );
 
@@ -271,10 +272,15 @@ describe("Eloquent CLI commands + parameters surface", () => {
   test("list command includes all registered command names", () => {
     const listCommand = commandMap.get("list");
     expect(listCommand).toBeDefined();
+    expect(listCommand?.block).toContain("CLI_COMMAND_CATALOG");
 
-    for (const command of commandMatrix.map((entry) => entry.name)) {
-      expect(listCommand?.block).toContain(command);
-    }
+    const catalogCommands = CLI_COMMAND_CATALOG.map((entry) => entry.Command.split(" ")[0]).sort(
+      (a, b) => a.localeCompare(b)
+    );
+    const expectedCommands = commandMatrix.map((entry) => entry.name).sort((a, b) =>
+      a.localeCompare(b)
+    );
+    expect(catalogCommands).toEqual(expectedCommands);
   });
 
 });
