@@ -15,8 +15,14 @@ type ParsedCommand = {
 };
 
 const rootDir = process.cwd();
-const cliSourcePath = path.resolve(rootDir, "src/cli/eloquent.ts");
-const cliSource = fs.readFileSync(cliSourcePath, "utf8");
+const cliSourcePaths = [
+  path.resolve(rootDir, "src/cli/eloquent.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliScaffoldCommandRegistration.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliMakeArtifactCommandRegistration.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliSeedScenarioCommandRegistration.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliMigrationCommandRegistration.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliSupportCommandRegistration.ts"),
+];
 
 const commandMatrix: CommandSpec[] = [
   {
@@ -246,12 +252,18 @@ function parseCommandBlocks(source: string): ParsedCommand[] {
   });
 }
 
+function parseCommandBlocksFromFiles(sourcePaths: string[]): ParsedCommand[] {
+  return sourcePaths.flatMap((sourcePath) =>
+    parseCommandBlocks(fs.readFileSync(sourcePath, "utf8")),
+  );
+}
+
 function sortFlags(flags: string[]): string[] {
   return [...flags].sort((a, b) => a.localeCompare(b));
 }
 
 describe("Eloquent CLI commands + parameters surface", () => {
-  const parsedCommands = parseCommandBlocks(cliSource);
+  const parsedCommands = parseCommandBlocksFromFiles(cliSourcePaths);
   const commandMap = new Map(parsedCommands.map((command) => [command.name, command]));
 
   test("all expected commands are registered in CLI bootstrap", () => {

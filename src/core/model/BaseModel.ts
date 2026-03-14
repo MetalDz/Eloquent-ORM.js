@@ -20,7 +20,7 @@ import { MorphOne } from "../orm/relations/MorphOne";
 import { MorphMany } from "../orm/relations/MorphMany";
 import { MorphTo } from "../orm/relations/MorphTo";
 import type { CoreModelClass } from "../orm/Relation";
-import type { SafeFinderDirection, SafeFinderFilters, SafeFinderQuery } from "./SafeFinder";
+import { BaseModelSafeFinderStaticsMixin } from "./BaseModelSafeFinderStatics";
 
 // Morph system (re-export convenience)
 import { MorphableMixin, MorphableBaseModel } from "../orm/mixins/MorphableMixin";
@@ -119,104 +119,17 @@ const ComposedModel = SerializeMixin(
   )
 );
 
+const SafeFinderStaticModel = BaseModelSafeFinderStaticsMixin(ComposedModel);
+
 /**
  * BaseModel
  * The central abstract model class your application models should extend.
  */
 export abstract class BaseModel<
   TAttrs extends Record<string, unknown> = Record<string, unknown>
-> extends ComposedModel {
+> extends SafeFinderStaticModel {
   constructor(...args: any[]) {
     super(...args);
-  }
-
-  static where<T extends typeof BaseModel>(
-    this: T,
-    field: string,
-    value: unknown
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.where as any).call(this, field, value);
-  }
-
-  static with<T extends typeof BaseModel>(
-    this: T,
-    ...relations: string[]
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.with as any).call(this, ...relations);
-  }
-
-  static active<T extends typeof BaseModel>(
-    this: T,
-    ...args: unknown[]
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.active as any).call(this, ...args);
-  }
-
-  static inactive<T extends typeof BaseModel>(
-    this: T,
-    ...args: unknown[]
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.inactive as any).call(this, ...args);
-  }
-
-  static published<T extends typeof BaseModel>(
-    this: T,
-    ...args: unknown[]
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.published as any).call(this, ...args);
-  }
-
-  static orderBy<T extends typeof BaseModel>(
-    this: T,
-    field: string,
-    direction: SafeFinderDirection = "asc"
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.orderBy as any).call(this, field, direction);
-  }
-
-  static limit<T extends typeof BaseModel>(
-    this: T,
-    count: number
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.limit as any).call(this, count);
-  }
-
-  static get<T extends typeof BaseModel>(this: T): Promise<InstanceType<T>[]> {
-    return (CoreModel.get as any).call(this);
-  }
-
-  static first<T extends typeof BaseModel>(this: T): Promise<InstanceType<T> | null> {
-    return (CoreModel.first as any).call(this);
-  }
-
-  static findBy<T extends typeof BaseModel>(
-    this: T,
-    field: string,
-    value: unknown
-  ): SafeFinderQuery<InstanceType<T>> {
-    return (CoreModel.findBy as any).call(this, field, value);
-  }
-
-  static findOneBy<T extends typeof BaseModel>(
-    this: T,
-    field: string,
-    value: unknown
-  ): Promise<InstanceType<T> | null> {
-    return (CoreModel.findOneBy as any).call(this, field, value);
-  }
-
-  static findAllBy<T extends typeof BaseModel>(
-    this: T,
-    filters: SafeFinderFilters
-  ): Promise<InstanceType<T>[]> {
-    return (CoreModel.findAllBy as any).call(this, filters);
-  }
-
-  static existsBy<T extends typeof BaseModel>(
-    this: T,
-    filters: SafeFinderFilters
-  ): Promise<boolean> {
-    return (CoreModel.existsBy as any).call(this, filters);
   }
 
   /**

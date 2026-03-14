@@ -13,7 +13,7 @@ describe("ORM hardening phase 1 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 1: Architecture and Public Boundaries Plan",
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "## Goal",
       "`CoreModel`",
       "`BaseModel`",
@@ -21,9 +21,9 @@ describe("ORM hardening phase 1 plan contract", () => {
       "`BaseModel`",
       "`SqlModel`",
       "`MongoModel`",
-      "`src/core/model/CoreModel.ts` (`783` lines)",
-      "`src/core/model/BaseModel.ts` (`355` lines)",
-      "`src/cli/eloquent.ts` (`1042` lines)",
+      "`src/core/model/CoreModel.ts` (`688` lines)",
+      "`src/core/model/BaseModel.ts` (`305` lines)",
+      "`src/cli/eloquent.ts` (`230` lines)",
       "`validation tasks/ORM-Hardening-Phase1-Implementation-Notes.md`",
     ];
 
@@ -49,6 +49,7 @@ describe("ORM hardening phase 1 plan contract", () => {
       "`BaseModel`, `SqlModel`, and `MongoModel` resolve to the intended default runtime stack.",
       "## Validation Strategy",
       "`npm run typecheck`",
+      "ORM-Hardening-Phase1-Completion-Review.md",
     ];
 
     for (const snippet of requiredSnippets) {
@@ -63,5 +64,14 @@ describe("ORM hardening phase 1 plan contract", () => {
     );
 
     expect(fs.existsSync(notesPath)).toBe(true);
+  });
+
+  test("phase 1 completion review file exists", () => {
+    const reviewPath = path.resolve(
+      rootDir,
+      "validation tasks/ORM-Hardening-Phase1-Completion-Review.md",
+    );
+
+    expect(fs.existsSync(reviewPath)).toBe(true);
   });
 });

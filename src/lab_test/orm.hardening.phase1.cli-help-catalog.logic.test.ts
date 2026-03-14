@@ -29,10 +29,13 @@ describe("ORM hardening phase 1 - CLI help catalog extraction", () => {
   });
 
   test("eloquent list command renders from the shared catalog", () => {
-    const cliPath = path.resolve(process.cwd(), "src/cli/eloquent.ts");
-    const content = fs.readFileSync(cliPath, "utf8");
+    const helperPath = path.resolve(
+      process.cwd(),
+      "src/cli/utils/CliSupportCommandRegistration.ts",
+    );
+    const content = fs.readFileSync(helperPath, "utf8");
 
-    expect(content).toContain('import { CLI_COMMAND_CATALOG } from "./utils/CliCommandCatalog";');
+    expect(content).toContain('import { CLI_COMMAND_CATALOG } from "./CliCommandCatalog";');
     expect(content).toContain("console.table(CLI_COMMAND_CATALOG);");
     expect(content).not.toContain('Command: "make:model <name>"');
   });

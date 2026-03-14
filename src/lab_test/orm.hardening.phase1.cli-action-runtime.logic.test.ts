@@ -12,7 +12,6 @@ describe("ORM hardening phase 1 CLI action runtime extraction", () => {
     rootDir,
     "validation tasks/ORM-Hardening-Phase1-CLI-Action-Error-Wrapper-Plan.md"
   );
-  const cliPath = path.resolve(rootDir, "src/cli/eloquent.ts");
 
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -79,9 +78,30 @@ describe("ORM hardening phase 1 CLI action runtime extraction", () => {
   });
 
   test("eloquent CLI delegates repeated action error handling to the extracted helper", () => {
-    const source = fs.readFileSync(cliPath, "utf8");
+    const sourcePaths = [
+      path.resolve(rootDir, "src/cli/eloquent.ts"),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliMakeArtifactCommandRegistration.ts",
+      ),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliSeedScenarioCommandRegistration.ts",
+      ),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliMigrationCommandRegistration.ts",
+      ),
+    ];
+    const sources = sourcePaths.map((sourcePath) => fs.readFileSync(sourcePath, "utf8"));
+    const totalRunCliActionCalls = sources.reduce(
+      (count, source) => count + (source.match(/runCliAction\(async \(\) =>/g)?.length ?? 0),
+      0,
+    );
 
-    expect(source).toContain('from "./utils/CliActionRuntime"');
-    expect(source.match(/runCliAction\(async \(\) =>/g)?.length).toBeGreaterThanOrEqual(6);
+    expect(sources[1]).toContain('from "./CliActionRuntime"');
+    expect(sources[2]).toContain('from "./CliActionRuntime"');
+    expect(sources[3]).toContain('from "./CliActionRuntime"');
+    expect(totalRunCliActionCalls).toBeGreaterThanOrEqual(6);
   });
 });

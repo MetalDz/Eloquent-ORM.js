@@ -11,8 +11,6 @@ describe("ORM hardening phase 1 CLI production guards extraction", () => {
     rootDir,
     "validation tasks/ORM-Hardening-Phase1-CLI-Production-Guards-Extraction-Plan.md"
   );
-  const cliPath = path.resolve(rootDir, "src/cli/eloquent.ts");
-
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
@@ -93,12 +91,32 @@ describe("ORM hardening phase 1 CLI production guards extraction", () => {
   });
 
   test("eloquent CLI delegates production guards to the extracted helper", () => {
-    const source = fs.readFileSync(cliPath, "utf8");
+    const sourcePaths = [
+      path.resolve(rootDir, "src/cli/eloquent.ts"),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliScaffoldCommandRegistration.ts",
+      ),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliMakeArtifactCommandRegistration.ts",
+      ),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliSeedScenarioCommandRegistration.ts",
+      ),
+      path.resolve(
+        rootDir,
+        "src/cli/utils/CliMigrationCommandRegistration.ts",
+      ),
+    ];
+    const sources = sourcePaths.map((sourcePath) => fs.readFileSync(sourcePath, "utf8"));
+    const combined = sources.join("\n");
 
-    expect(source).toContain('from "./utils/CliProductionGuards"');
-    expect(source).toContain("ensureCliProductionOverride(");
-    expect(source).toContain("ensureCliProductionTestOnly(");
-    expect(source).not.toContain("function ensureProductionOverride(");
-    expect(source).not.toContain("function ensureProductionTestOnly(");
+    expect(sources[0]).toContain('from "./utils/CliProductionGuards"');
+    expect(combined).toContain("ensureCliProductionOverride(");
+    expect(combined).toContain("ensureCliProductionTestOnly(");
+    expect(combined).not.toContain("function ensureProductionOverride(");
+    expect(combined).not.toContain("function ensureProductionTestOnly(");
   });
 });

@@ -1,7 +1,7 @@
 # ORM Hardening Phase 1 Implementation Notes
 
 Last updated: 2026-03-14  
-Status: IN PROGRESS
+Status: COMPLETED
 
 ## Boundary Matrix
 
@@ -68,11 +68,16 @@ Status: IN PROGRESS
   - covers primary-key resolution, snapshots, assignable payload checks, dirty tracking, and Mongo PK filters
   - `src/core/model/CoreModelValidationEvents.ts`
   - covers hook-disable evaluation, schema-driven validation rule assembly, validation dispatch, and lifecycle event cancellation handling
+  - `src/core/model/CoreModelSafeFinderSupport.ts`
+  - covers safe-finder query construction and shared keyed-filter application so `src/core/model/CoreModel.ts` no longer owns that setup inline
 
 ### BaseModel Extraction Targets
 - static safe-finder delegation helpers
 - relation-helper grouping
 - composition metadata that should remain explicit during refactors
+- Extracted on `2026-03-14`:
+  - `src/core/model/BaseModelSafeFinderStatics.ts`
+  - covers static safe-finder delegation so `src/core/model/BaseModel.ts` no longer owns the full delegation block inline
 
 ### CLI Extraction Targets
 - command registration maps in `src/cli/eloquent.ts`
@@ -92,6 +97,16 @@ Status: IN PROGRESS
   - covers the shared `list` command help rows so `src/cli/eloquent.ts` no longer embeds the command-help table inline
   - `src/cli/utils/CliPresentation.ts`
   - covers the startup banner and presentation strings so `src/cli/eloquent.ts` only invokes the shared helper
+  - `src/cli/utils/CliSupportCommandRegistration.ts`
+  - covers low-risk support command registration so `src/cli/eloquent.ts` delegates `cache:*`, `factory:status`, and `list` wiring to a grouped helper
+  - `src/cli/utils/CliScaffoldCommandRegistration.ts`
+  - covers low-risk scaffold generator registration so `src/cli/eloquent.ts` delegates `make:model`, `make:controller`, and `make:service` wiring to a grouped helper
+  - `src/cli/utils/CliMakeArtifactCommandRegistration.ts`
+  - covers low-risk artifact generator registration so `src/cli/eloquent.ts` delegates `make:seed`, `make:factory`, and `make:scenario` wiring to a grouped helper
+  - `src/cli/utils/CliSeedScenarioCommandRegistration.ts`
+  - covers seed/scenario execution registration so `src/cli/eloquent.ts` delegates `db:seed`, `db:seed:precheck`, `db:seed:fresh`, and `demo:scenario` wiring to a grouped helper
+  - `src/cli/utils/CliMigrationCommandRegistration.ts`
+  - covers migration registration so `src/cli/eloquent.ts` delegates `make:migration` and `migrate:*` wiring to a grouped helper
 
 ## Phase 1 Runtime Locks
 - Public exports from `src/index.ts` must point to the same runtime classes as deep model imports.

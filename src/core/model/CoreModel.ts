@@ -30,6 +30,7 @@ import {
   shouldSkipModelHooks,
   validateModelData,
 } from "./CoreModelValidationEvents";
+import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFinderSupport";
 
 /**
  * Types for model contract (kept generic)
@@ -123,7 +124,7 @@ export abstract class CoreModel<
     this: T
   ): SafeFinderQuery<InstanceType<T>> {
     const instance = this.newInstance();
-    return new SafeFinderQuery(
+    return createSafeFinderQuery(
       instance as InstanceType<T>,
       this as unknown as SafeFinderModelStatic<InstanceType<T>>
     );
@@ -208,22 +209,14 @@ export abstract class CoreModel<
     this: T,
     filters: SafeFinderFilters
   ): Promise<InstanceType<T>[]> {
-    const finder = this.safeFinder();
-    for (const [field, value] of Object.entries(filters)) {
-      finder.where(field, value);
-    }
-    return finder.get();
+    return applySafeFinderFilters(this.safeFinder(), filters).get();
   }
 
   static async existsBy<T extends typeof CoreModel>(
     this: T,
     filters: SafeFinderFilters
   ): Promise<boolean> {
-    const finder = this.safeFinder();
-    for (const [field, value] of Object.entries(filters)) {
-      finder.where(field, value);
-    }
-    return (await finder.first()) !== null;
+    return (await applySafeFinderFilters(this.safeFinder(), filters).first()) !== null;
   }
 
   /**
