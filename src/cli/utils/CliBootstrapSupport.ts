@@ -3,6 +3,7 @@ import type { StorageKind } from "./ArtifactStorage";
 type CliStorageKind = Exclude<StorageKind, "unknown" | "mixed">;
 
 export type CliBootstrapEnv = {
+  [key: string]: string | undefined;
   DB_CONNECTION?: string;
   DB_TEST_CONNECTION?: string;
 };
