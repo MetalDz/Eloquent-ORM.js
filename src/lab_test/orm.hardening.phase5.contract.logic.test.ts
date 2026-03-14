@@ -13,7 +13,7 @@ describe("ORM hardening phase 5 plan contract", () => {
 
     const requiredSnippets = [
       "# ORM Hardening Phase 5: CLI Decomposition and Operations Plan",
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "`src/cli/eloquent.ts`",
       "`src/cli/commands/demoScenario.ts`",
       "`src/cli/commands/makeController.ts`",

@@ -21,8 +21,15 @@ type ParsedCommand = {
   optionFlags: string[];
 };
 
+const rootDir = process.cwd();
+const cliSourcePaths = [
+  path.resolve(rootDir, "src/cli/eloquent.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliSupportCommandRegistration.ts"),
+  path.resolve(rootDir, "src/cli/utils/CliSeedScenarioCommandRegistration.ts"),
+];
+
 function parseCommandBlocks(source: string): ParsedCommand[] {
-  const commandMatches = [...source.matchAll(/\.command\("([^"]+)"\)/g)];
+  const commandMatches = [...source.matchAll(/\.command\(\s*"([^"]+)"\s*\)/g)];
   const parseBoundary = source.indexOf("program.parse(process.argv);");
   const defaultBoundary = parseBoundary === -1 ? source.length : parseBoundary;
 
@@ -34,7 +41,7 @@ function parseCommandBlocks(source: string): ParsedCommand[] {
         ? commandMatches[index + 1].index ?? defaultBoundary
         : defaultBoundary;
     const block = source.slice(start, nextStart);
-    const optionFlags = [...block.matchAll(/\.option\("([^"]+)"/g)].map(
+    const optionFlags = [...block.matchAll(/\.option\(\s*"([^"]+)"/g)].map(
       (optionMatch) => optionMatch[1]
     );
 
@@ -43,6 +50,12 @@ function parseCommandBlocks(source: string): ParsedCommand[] {
       optionFlags,
     };
   });
+}
+
+function parseCommandBlocksFromFiles(sourcePaths: string[]): ParsedCommand[] {
+  return sourcePaths.flatMap((sourcePath) =>
+    parseCommandBlocks(fs.readFileSync(sourcePath, "utf8"))
+  );
 }
 
 describe("NoSQL phase 8 demo/factory-status parity", () => {
@@ -138,12 +151,8 @@ describe("NoSQL phase 8 demo/factory-status parity", () => {
   });
 
   test("CLI command surface exposes explicit driver targeting for demo:scenario and factory:status", () => {
-    const cliSource = fs.readFileSync(
-      path.resolve(process.cwd(), "src/cli/eloquent.ts"),
-      "utf8"
-    );
     const commandMap = new Map(
-      parseCommandBlocks(cliSource).map((command) => [command.name, command])
+      parseCommandBlocksFromFiles(cliSourcePaths).map((command) => [command.name, command])
     );
 
     expect(commandMap.get("demo:scenario")?.optionFlags).toEqual(

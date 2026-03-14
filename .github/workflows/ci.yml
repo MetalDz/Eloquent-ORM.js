@@ -165,6 +165,22 @@ jobs:
     name: Package Smoke (Tarball)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --quiet --eval \"db.adminCommand({ ping: 1 }).ok\""
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"
+      MONGO_URI: mongodb://127.0.0.1:27017/eloquent_pack_smoke
+      MONGO_TEST_URI: mongodb://127.0.0.1:27017/eloquent_pack_smoke_test
+      MONGO_DB: eloquent_pack_smoke
+      MONGO_TEST_DB: eloquent_pack_smoke_test
 
     steps:
       - name: Checkout
@@ -184,6 +200,30 @@ jobs:
 
       - name: Verify npm pack surface
         run: npm pack --dry-run
+
+      - name: Run tarball smoke
+        run: npm run test:pack-smoke
+
+  package-smoke-windows:
+    name: Package Smoke (Windows Tarball)
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Run tarball smoke
         run: npm run test:pack-smoke
@@ -215,6 +255,9 @@ jobs:
           src/lab_test/nosql.full.integration.contract.logic.test.ts
           src/lab_test/nosql.cli.phase3.parity.logic.test.ts
           src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts
+          src/lab_test/nosql.phase8.demo-and-factory-status.logic.test.ts
+          src/lab_test/nosql.phase15.cli-scenario-runtime.logic.test.ts
+          src/lab_test/orm.hardening.phase5.demo-scenario-operations.logic.test.ts
           src/lab_test/nosql.phase5.docs-release.logic.test.ts
 
   dependency-security:

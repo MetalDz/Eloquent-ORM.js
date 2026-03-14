@@ -21,6 +21,7 @@ export async function makeController(
     const softDelete = !!options.soft;
     const forceWrite = !!options.force;
     const artifact = resolveScaffoldArtifact("controller", modelName, { test: isTest });
+    const routeName = camelCaseScaffoldName(artifact.modelClassName);
 
     const serviceImportPath = `../services/${artifact.modelClassName}Service`;
     const modelImportPath = isTest
@@ -29,7 +30,7 @@ export async function makeController(
 
     const softDeleteBlock = softDelete
       ? `
-  // PATCH /${camelCaseScaffoldName(modelName)}/:id/restore
+  // PATCH /${routeName}/:id/restore
   async restore(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params?.id as unknown as string | number | undefined;
@@ -50,7 +51,7 @@ export async function makeController(
     const template = TemplateEngine.load("controller");
     const rendered = TemplateEngine.render(template, {
       PascalCase: artifact.modelClassName,
-      camelCase: camelCaseScaffoldName(modelName),
+      camelCase: routeName,
       serviceImportPath,
       modelImportPath,
       softDeleteBlock,

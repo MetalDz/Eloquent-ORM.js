@@ -47,13 +47,15 @@ Use this checklist before creating a release tag or publishing a package.
 
 ### 4) Package Smoke Validation
 - Command source:
-  - CI job: `package-smoke`
+  - CI jobs: `package-smoke`, `package-smoke-windows`
 - Pass Criteria:
   - `npm pack --dry-run` passes.
-  - `npm run test:pack-smoke` passes.
+  - `npm run test:pack-smoke` passes on Linux with `ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME=1`.
+  - `npm run test:pack-smoke` passes on Windows.
 - Fail Criteria:
   - Tarball surface validation fails.
   - Smoke consumer execution fails.
+  - Windows tarball smoke regresses.
 
 ### 5) Dependency Security and Lockfile Policy
 - Command source:

@@ -175,8 +175,8 @@ function resolveTarballName(packOutput) {
   return line;
 }
 
-function listTarballEntries(tarballName) {
-  const listed = run("tar", ["-tf", tarballName], { cwd: repoRoot });
+function listTarballEntries(tarballFilePath) {
+  const listed = run("tar", ["-tf", tarballFilePath], { cwd: repoRoot });
   assertSuccess("tarball listing", listed);
   return listed.combined
     .split(/\r?\n/)
@@ -289,10 +289,18 @@ function runGeneratedModelRuntimeCheck(sample, options) {
   assertContains(step, result.combined, `generated-model-runtime:${modelName}:${expectedName}`);
 }
 
-function createSampleApp(tarballName, label) {
+function stageTarballSnapshot(sourceTarballPath) {
+  const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-pack-smoke-tarball-"));
+  const stagedTarballPath = path.join(stagingDir, path.basename(sourceTarballPath));
+  fs.copyFileSync(sourceTarballPath, stagedTarballPath);
+  return stagedTarballPath;
+}
+
+function createSampleApp(stagedTarballPath, label) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `eloquent-pack-smoke-${label}-`));
+  const tarballName = path.basename(stagedTarballPath);
   const localTarballPath = path.join(dir, tarballName);
-  fs.copyFileSync(path.join(repoRoot, tarballName), localTarballPath);
+  fs.copyFileSync(stagedTarballPath, localTarballPath);
   const uniqueMongoTestDb = `eloquent_pack_smoke_${sanitizePathSegment(label)}_${Date.now()}_${Math.floor(
     Math.random() * 10000
   )}`;
@@ -936,6 +944,7 @@ function runNoSqlRuntimeSmoke(sample) {
 
 let tarballPath = "";
 let tarballName = "";
+let stagedTarballPath = "";
 const sampleDirs = [];
 
 try {
@@ -944,25 +953,26 @@ try {
 
   tarballName = resolveTarballName(`${packed.stdout}\n${packed.stderr}`);
   tarballPath = path.join(repoRoot, tarballName);
+  stagedTarballPath = stageTarballSnapshot(tarballPath);
 
-  const tarballEntries = listTarballEntries(tarballName);
+  const tarballEntries = listTarballEntries(stagedTarballPath);
   assertTarballSurface(tarballEntries);
 
-  const generalSample = createSampleApp(tarballName, "commands");
+  const generalSample = createSampleApp(stagedTarballPath, "commands");
   sampleDirs.push(generalSample.dir);
   verifyPublicExports(generalSample);
   runGeneralCliSmoke(generalSample);
 
-  const blogSample = createSampleApp(tarballName, "blog");
+  const blogSample = createSampleApp(stagedTarballPath, "blog");
   sampleDirs.push(blogSample.dir);
   runBlogScenarioSmoke(blogSample);
   runNoSqlRuntimeSmoke(blogSample);
 
-  const mediaSample = createSampleApp(tarballName, "media");
+  const mediaSample = createSampleApp(stagedTarballPath, "media");
   sampleDirs.push(mediaSample.dir);
   runMediaScenarioSmoke(mediaSample);
 
-  const autoScenarioSample = createSampleApp(tarballName, "scenario-run");
+  const autoScenarioSample = createSampleApp(stagedTarballPath, "scenario-run");
   sampleDirs.push(autoScenarioSample.dir);
   runScenarioAutoSmoke(autoScenarioSample);
 
@@ -990,6 +1000,13 @@ try {
 
   if (tarballPath && fs.existsSync(tarballPath)) {
     fs.rmSync(tarballPath, { force: true });
+  }
+
+  if (stagedTarballPath) {
+    const stagedTarballDir = path.dirname(stagedTarballPath);
+    if (fs.existsSync(stagedTarballDir)) {
+      fs.rmSync(stagedTarballDir, { recursive: true, force: true });
+    }
   }
 
   if (fs.existsSync(npmCacheDir)) {

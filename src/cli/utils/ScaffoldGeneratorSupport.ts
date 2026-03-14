@@ -20,6 +20,20 @@ function scaffoldFileSuffix(kind: ScaffoldKind): string {
   return kind === "controller" ? "Controller" : "Service";
 }
 
+export function normalizeScaffoldModelName(kind: ScaffoldKind, modelName: string): string {
+  const trimmed = String(modelName ?? "").trim();
+  const suffix = scaffoldFileSuffix(kind);
+
+  if (trimmed.toLowerCase().endsWith(suffix.toLowerCase())) {
+    const baseName = trimmed.slice(0, -suffix.length).trim();
+    if (baseName) {
+      return baseName;
+    }
+  }
+
+  return trimmed;
+}
+
 export function capitalizeScaffoldName(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -40,7 +54,8 @@ export function resolveScaffoldArtifact(
   relativePath: string;
 } {
   const isTest = !!options.test;
-  const modelClassName = capitalizeScaffoldName(modelName);
+  const normalizedModelName = normalizeScaffoldModelName(kind, modelName);
+  const modelClassName = capitalizeScaffoldName(normalizedModelName);
   const className = `${modelClassName}${scaffoldFileSuffix(kind)}`;
   const fileName = `${className}.ts`;
   const relativeDir = scaffoldRelativeDir(kind, isTest);

@@ -13,6 +13,8 @@ describe("CI release qualification gates", () => {
     const requiredSnippets = [
       "quality-gate:",
       "critical-stability:",
+      "package-smoke:",
+      "package-smoke-windows:",
       "scenario-matrix:",
       "driver: mysql",
       "driver: pg",
@@ -21,6 +23,8 @@ describe("CI release qualification gates", () => {
       "NoSQL Regression Gate",
       "Run NoSQL focused regressions",
       "src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts",
+      "src/lab_test/nosql.phase15.cli-scenario-runtime.logic.test.ts",
+      'ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"',
       "dependency-security:",
       "Ensure lockfile exists",
       "test -f package-lock.json",
@@ -36,6 +40,9 @@ describe("CI release qualification gates", () => {
 
     expect(workflow).toMatch(
       /critical-stability:\s+name:\s+Critical Stability Re-runs \(MySQL\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+25/s
+    );
+    expect(workflow).toMatch(
+      /package-smoke-windows:\s+name:\s+Package Smoke \(Windows Tarball\)\s+runs-on:\s+windows-latest/s
     );
     expect(workflow).toMatch(
       /- name:\s+Repeat critical suites\s+timeout-minutes:\s+15/s
