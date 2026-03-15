@@ -93,11 +93,9 @@ export class FactoryRegistry {
                 ),
               ],
               options.storageKind
-            );
+            )!;
 
-            if (message) {
-              console.warn(chalk.yellow(message));
-            }
+            console.warn(chalk.yellow(message));
             continue;
           }
 

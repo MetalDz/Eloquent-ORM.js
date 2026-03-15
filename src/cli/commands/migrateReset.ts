@@ -10,8 +10,8 @@ export type MigrateResetOptions = {
 };
 
 /**
- * 🧩 migrate:reset
- * Rolls back *all* migrations completely (every batch).
+ * migrate:reset
+ * Rolls back all migrations completely (every batch).
  */
 export async function migrateReset(options: MigrateResetOptions = {}): Promise<void> {
   const isTest = !!options.test;
@@ -22,8 +22,8 @@ export async function migrateReset(options: MigrateResetOptions = {}): Promise<v
 
   console.log(
     chalk.cyan(
-      `\n↩️  Resetting ${isTest ? "test" : "development"} database (all batches) on ${connectionNames.join(", ")}...\n`
-    )
+      `\nRESET: ${isTest ? "test" : "development"} database (all batches) on ${connectionNames.join(", ")}...\n`,
+    ),
   );
   await migrateRollback({
     test: isTest,

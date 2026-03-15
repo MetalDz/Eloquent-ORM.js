@@ -78,10 +78,13 @@ Status: IN PROGRESS
 
 ### Phase 3: Core Mixins and ORM Runtime
 - Normalize mojibake in:
+  - `src/core/orm/mixins/MorphableMixin.ts`
   - `src/core/orm/mixins/PivotHelperMixin.ts`
   - `src/core/orm/mixins/ScopeMixin.ts`
   - `src/core/orm/Relation.ts`
-  - related ORM mixin comments and thrown message prefixes
+- related ORM mixin comments and thrown message prefixes
+- Completed first slice:
+  - `LTS-Phase5-MorphableMixin-Coverage-And-ASCII-Plan.md`
 
 ### Phase 4: TypeScript Runtime, Scaffolds, and Security/Cache/Connection Helpers
 - Normalize mojibake in:

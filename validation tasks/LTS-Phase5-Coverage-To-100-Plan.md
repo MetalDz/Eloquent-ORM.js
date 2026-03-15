@@ -8,10 +8,10 @@ Status: IN PROGRESS
 
 ## Current Reported Baseline
 Latest full-suite snapshot reported on `2026-03-15`:
-- Statements   : `97.85% (5970/6101)`
-- Branches     : `94.28% (3151/3342)`
-- Functions    : `97.48% (971/996)`
-- Lines        : `98.16% (5662/5768)`
+- Statements   : `98.71% (6014/6092)`
+- Branches     : `96.66% (3217/3328)`
+- Functions    : `97.69% (973/996)`
+- Lines        : `98.97% (5704/5763)`
 
 Progress note:
 - The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -29,6 +29,8 @@ Progress note:
 
 ### A. Operational CLI and Helper Hotspots
 - `src/cli/utils/ImportResolver.ts`
+- `src/cli/utils/ArtifactStorage.ts`
+- `src/cli/utils/ArtifactRoutingReport.ts`
 - `src/cli/commands/factoryStatus.ts`
 - `src/cli/utils/factories/FactoryGraph.ts`
 - `src/cli/utils/factories/FactoryRegistry.ts`
@@ -40,6 +42,7 @@ Progress note:
 - `src/cli/utils/fileWriter.ts`
 
 ### B. Migration and Runtime Branch Hotspots
+- `src/cli/commands/migrateReset.ts`
 - `src/cli/commands/migrateRollback.ts`
 - `src/cli/commands/migrateRun.ts`
 - `src/cli/commands/migrateStatus.ts`
@@ -52,6 +55,8 @@ Progress note:
 
 ### D. Residual Runtime Surface Hotspots
 - `src/core/model/BaseModel.ts`
+- `src/core/model/SafeFinder.ts`
+- `src/core/orm/mixins/MorphableMixin.ts`
 - `src/core/cache/CacheFallbackManager.ts`
 - `src/core/cache/drivers/FileCacheDriver.ts`
 
@@ -68,12 +73,29 @@ Progress note:
 ## Completed Slice Tracking
 - [x] `src/cli/utils/ImportResolver.ts` is now tracked in `LTS-Phase5-ImportResolver-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/ArtifactStorage.ts` is now tracked in `LTS-Phase5-ArtifactStorage-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/ArtifactRoutingReport.ts` is now tracked in `LTS-Phase5-ArtifactRoutingReport-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] Factory runtime coverage is now tracked in `LTS-Phase5-Factory-Runtime-Coverage-Plan.md`.
+  - Residual branch closure is locked in `LTS-Phase5-Factory-Runtime-Residual-Coverage-Plan.md`.
   - Scope: `factoryStatus`, `FactoryGraph`, `FactoryRegistry`, and `FactoryLoader`.
   - Clean-up: removed the unused local `generateGraph(...)` helper from `factoryStatus.ts` so the command delegates only to the shared graph runtime.
-  - Focused cluster snapshot after the slice: statements `99.37%`, branches `83.51%`, functions `100%`, lines `100%`.
+  - Focused cluster snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/migrations/MongoMigrationTracker.ts` is now tracked in `LTS-Phase5-MongoMigrationTracker-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/ModelIntrospector.ts` is now tracked in `LTS-Phase5-ModelIntrospector-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeController.ts` is now tracked in `LTS-Phase5-MakeController-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeService.ts` is now tracked in `LTS-Phase5-MakeService-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/fileWriter.ts` is now tracked in `LTS-Phase5-FileWriter-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRollback.ts` is now tracked in `LTS-Phase5-MigrateRollback-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `97.6%`, branches `84.52%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/migrateReset.ts` is now tracked in `LTS-Phase5-MigrateReset-Coverage-And-ASCII-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRun.ts` is now tracked in `LTS-Phase5-MigrateRun-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `99.03%`, branches `93.57%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateStatus.ts` is now tracked in `LTS-Phase5-MigrateStatus-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
@@ -87,6 +109,10 @@ Progress note:
 - [x] `src/cli/commands/makeScenario.ts` is now tracked in `LTS-Phase5-MakeScenario-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/BaseModel.ts` is now tracked in `LTS-Phase5-BaseModel-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/model/SafeFinder.ts` is now tracked in `LTS-Phase5-SafeFinder-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/orm/mixins/MorphableMixin.ts` is now tracked in `LTS-Phase5-MorphableMixin-Coverage-And-ASCII-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/cache/CacheFallbackManager.ts` and `src/core/cache/drivers/FileCacheDriver.ts` are now tracked in `LTS-Phase5-Cache-Runtime-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.

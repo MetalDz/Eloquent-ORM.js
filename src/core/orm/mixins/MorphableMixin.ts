@@ -1,4 +1,4 @@
-// src/orm/mixins/MorphableMixin.ts
+// src/core/orm/mixins/MorphableMixin.ts
 import { MorphRegistry, type MorphableConstructor } from "./MorphRegistry";
 
 function assertSafeRelationName(relationName: string): void {
@@ -8,7 +8,7 @@ function assertSafeRelationName(relationName: string): void {
 }
 
 /**
- * ✅ Base interface for all morphable ORM models
+ * Base interface for all morphable ORM models.
  */
 export interface MorphableBaseModel {
   find?(id: number | string): Promise<MorphableBaseModel | null>;
@@ -16,7 +16,7 @@ export interface MorphableBaseModel {
 }
 
 /**
- * ✅ Type for ORM-like query builders
+ * Type for ORM-like query builders.
  */
 export interface ORMQuery<T> {
   where(field: string, value: unknown): ORMQuery<T>;
@@ -46,45 +46,37 @@ function resolveQueryable<T>(RelatedModel: QueryCapableModel<T>): ORMQuery<T> {
         return this;
       },
       async first(): Promise<T | null> {
-        if (current) return current.first();
-        if (typeof RelatedModel.first === "function") return RelatedModel.first();
-        throw new Error(
-          `❌ Model '${RelatedModel.name || "AnonymousModel"}' does not implement first().`
-        );
+        return current!.first();
       },
       async get(): Promise<T[]> {
-        if (current) return current.get();
-        if (typeof RelatedModel.get === "function") return RelatedModel.get();
-        throw new Error(
-          `❌ Model '${RelatedModel.name || "AnonymousModel"}' does not implement get().`
-        );
+        return current!.get();
       },
     };
   }
 
   throw new Error(
-    `❌ Model '${RelatedModel.name || "AnonymousModel"}' does not implement query()/where().`
+    `ERROR: Model '${RelatedModel.name || "AnonymousModel"}' does not implement query()/where().`,
   );
 }
 
-/** Generic constructor helper for mixins */
+/** Generic constructor helper for mixins. */
 type Constructor<T = object> = abstract new (...args: any[]) => T;
 
 /**
- * 🧬 MorphableMixin
+ * MorphableMixin
  * Adds polymorphic relationship helpers:
  * - morphTo()
  * - morphOne()
  * - morphMany()
  *
- * 🪄 Auto-registers every extended model into MorphRegistry.
+ * Auto-registers every extended model into MorphRegistry.
  */
 export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
   abstract class Morphable extends Base {
     constructor(...args: any[]) {
       super(...args);
 
-      // 🪄 Auto-register this class in MorphRegistry (once per subclass)
+      // Auto-register this class in MorphRegistry once per subclass.
       const ctor = this.constructor as typeof Morphable & { morphAlias?: string; name: string };
       const alias = ctor.morphAlias || ctor.name;
       if (!MorphRegistry.has(alias)) {
@@ -92,7 +84,7 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
       }
     }
 
-    /** 🌀 morphTo('commentable') */
+    /** morphTo('commentable') */
     async morphTo(this: MorphableBaseModel, relationName: string): Promise<MorphableBaseModel | null> {
       assertSafeRelationName(relationName);
       const record = this as Record<string, unknown>;
@@ -103,26 +95,26 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
 
       const ModelClass = MorphRegistry.resolve<MorphableBaseModel>(type);
       if (typeof ModelClass.prototype.find !== "function") {
-        throw new Error(`❌ Model '${type}' does not implement find().`);
+        throw new Error(`ERROR: Model '${type}' does not implement find().`);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const findFn = ModelClass.prototype.find as unknown as (id: number | string) => Promise<MorphableBaseModel | null>;
+      const findFn = ModelClass.prototype.find as unknown as (
+        id: number | string
+      ) => Promise<MorphableBaseModel | null>;
       return await findFn.call(new ModelClass(), id);
     }
 
-    /** 💫 morphOne(RelatedModel, 'commentable') */
+    /** morphOne(RelatedModel, 'commentable') */
     async morphOne<T extends MorphableBaseModel>(
       this: MorphableBaseModel,
       RelatedModel: QueryCapableModel<T>,
-      relationName: string
+      relationName: string,
     ): Promise<T | null> {
       assertSafeRelationName(relationName);
       const self = this as { getMorphClass?: () => string; constructor: { name: string } };
       const modelName =
-        typeof self.getMorphClass === "function"
-          ? self.getMorphClass()
-          : this.constructor.name;
+        typeof self.getMorphClass === "function" ? self.getMorphClass() : this.constructor.name;
       const modelId = (this as Record<string, unknown>).id as string | number | undefined;
 
       return await resolveQueryable(RelatedModel)
@@ -131,18 +123,16 @@ export function MorphableMixin<TBase extends Constructor>(Base: TBase) {
         .first();
     }
 
-    /** 🌌 morphMany(RelatedModel, 'commentable') */
+    /** morphMany(RelatedModel, 'commentable') */
     async morphMany<T extends MorphableBaseModel>(
       this: MorphableBaseModel,
       RelatedModel: QueryCapableModel<T>,
-      relationName: string
+      relationName: string,
     ): Promise<T[]> {
       assertSafeRelationName(relationName);
       const self = this as { getMorphClass?: () => string; constructor: { name: string } };
       const modelName =
-        typeof self.getMorphClass === "function"
-          ? self.getMorphClass()
-          : this.constructor.name;
+        typeof self.getMorphClass === "function" ? self.getMorphClass() : this.constructor.name;
       const modelId = (this as Record<string, unknown>).id as string | number | undefined;
 
       return await resolveQueryable(RelatedModel)

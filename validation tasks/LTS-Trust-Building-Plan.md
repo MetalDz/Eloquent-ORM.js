@@ -14,10 +14,10 @@ Status: IN PROGRESS
   - controlled-production usable
   - not yet consumer-trusted as an LTS package
 - Latest reported full-suite coverage snapshot (`2026-03-15`):
-  - Statements   : `97.85% (5970/6101)`
-  - Branches     : `94.28% (3151/3342)`
-  - Functions    : `97.48% (971/996)`
-  - Lines        : `98.16% (5662/5768)`
+  - Statements   : `98.71% (6014/6092)`
+  - Branches     : `96.66% (3217/3328)`
+  - Functions    : `97.69% (973/996)`
+  - Lines        : `98.97% (5704/5763)`
   - Progress note:
     - the post-kickoff LTS Phase 5 slices materially improved the global baseline, but `100%` remains the release gate
 

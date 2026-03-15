@@ -17,6 +17,7 @@ Status: COMPLETED
   - empty/no-relationship/deduped-relationship paths in `FactoryGraph`
   - duplicate registration, missing factory lookup, pivot lookup, missing folder, targeted skip, successful import, and import failure paths in `FactoryRegistry`
   - success and failure initialization paths in `FactoryLoader`
+- Residual branch closure was completed in `LTS-Phase5-Factory-Runtime-Residual-Coverage-Plan.md`.
 
 ## Validation
 - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/lts.phase5.factory-runtime-coverage.logic.test.ts src/lab_test/nosql.phase9.runtime-demo-factory-status.logic.test.ts src/lab_test/orm.hardening.phase2.incompatible-artifact-routing.logic.test.ts src/lab_test/nosql.phase4.validation-and-gates.logic.test.ts src/lab_test/lts.phase5.coverage-to-100.logic.test.ts`
@@ -25,27 +26,27 @@ Status: COMPLETED
 
 ## Focused Snapshot
 - Combined focused cluster:
-  - Statements: `99.37%`
-  - Branches: `83.51%`
+  - Statements: `100%`
+  - Branches: `100%`
   - Functions: `100%`
   - Lines: `100%`
 - `factoryStatus.ts`
-  - Statements: `98.11%`
-  - Branches: `78.57%`
+  - Statements: `100%`
+  - Branches: `100%`
   - Functions: `100%`
   - Lines: `100%`
 - `FactoryGraph.ts`
   - Statements: `100%`
-  - Branches: `95.65%`
+  - Branches: `100%`
   - Functions: `100%`
   - Lines: `100%`
 - `FactoryRegistry.ts`
   - Statements: `100%`
-  - Branches: `86.36%`
+  - Branches: `100%`
   - Functions: `100%`
   - Lines: `100%`
 - `FactoryLoader.ts`
   - Statements: `100%`
-  - Branches: `50%`
+  - Branches: `100%`
   - Functions: `100%`
   - Lines: `100%`
