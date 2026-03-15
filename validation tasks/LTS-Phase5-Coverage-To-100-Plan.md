@@ -8,10 +8,10 @@ Status: IN PROGRESS
 
 ## Current Reported Baseline
 Latest full-suite snapshot reported on `2026-03-15`:
-- Statements   : `96.47% (5889/6104)`
-- Branches     : `91.05% (3053/3353)`
-- Functions    : `95.78% (954/996)`
-- Lines        : `96.81% (5587/5771)`
+- Statements   : `97.85% (5970/6101)`
+- Branches     : `94.28% (3151/3342)`
+- Functions    : `97.48% (971/996)`
+- Lines        : `98.16% (5662/5768)`
 
 Progress note:
 - The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -28,6 +28,7 @@ Progress note:
 ## Ordered Hotspot Inventory
 
 ### A. Operational CLI and Helper Hotspots
+- `src/cli/utils/ImportResolver.ts`
 - `src/cli/commands/factoryStatus.ts`
 - `src/cli/utils/factories/FactoryGraph.ts`
 - `src/cli/utils/factories/FactoryRegistry.ts`
@@ -65,6 +66,8 @@ Progress note:
 4. Finish residual runtime misses and rerun the full gate after each slice cluster.
 
 ## Completed Slice Tracking
+- [x] `src/cli/utils/ImportResolver.ts` is now tracked in `LTS-Phase5-ImportResolver-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] Factory runtime coverage is now tracked in `LTS-Phase5-Factory-Runtime-Coverage-Plan.md`.
   - Scope: `factoryStatus`, `FactoryGraph`, `FactoryRegistry`, and `FactoryLoader`.
   - Clean-up: removed the unused local `generateGraph(...)` helper from `factoryStatus.ts` so the command delegates only to the shared graph runtime.
