@@ -50,8 +50,10 @@ describe("Public Model alias and subpath entry", () => {
       "utf8"
     );
 
-    expect(apiDoc).toContain("`Model` is the public Laravel-style alias for `SqlModel`.");
-    expect(apiDoc).toContain("`eloquentjs/Model` exposes named model base exports:");
+    expect(apiDoc).toContain("## Root Package: `eloquentjs`");
+    expect(apiDoc).toContain("## Model Subpath: `eloquentjs/Model`");
+    expect(apiDoc).toContain("- `eloquentjs/Model` does not expose a default export.");
+    expect(apiDoc).toContain("- `eloquentjs/Model` does not expose the root `Model` alias.");
     expect(installDoc).toContain("### Laravel-Style SQL Model Import");
     expect(installDoc).toContain('import { Model, column, registerModels, type ModelInstance } from "eloquentjs";');
     expect(installDoc).toContain('import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model";');

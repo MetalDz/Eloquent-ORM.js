@@ -15,6 +15,7 @@ const expectedPublicExports = [
   "CacheManager",
   "CoreModel",
   "Factory",
+  "Model",
   "MongoModel",
   "MorphRegistry",
   "PivotHelperMixin",

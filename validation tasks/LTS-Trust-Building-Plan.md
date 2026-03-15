@@ -1,6 +1,6 @@
 # LTS Trust Building Plan
 
-Last updated: 2026-03-14  
+Last updated: 2026-03-15  
 Status: IN PROGRESS
 
 ## Goal
@@ -13,13 +13,13 @@ Status: IN PROGRESS
   - strong engineering readiness
   - controlled-production usable
   - not yet consumer-trusted as an LTS package
-- Current coverage baseline:
-  - Statements   : `92.57% (5633/6085)`
-  - Branches     : `87.26% (2940/3369)`
-  - Functions    : `92.23% (903/979)`
-  - Lines        : `92.91% (5338/5745)`
-  - Test Suites  : `196 passed`, `1 skipped`
-  - Tests        : `854 passed`, `25 skipped`
+- Current coverage baseline (validated on `2026-03-15` via `npm run test:coverage`):
+  - Statements   : `92.52% (5678/6137)`
+  - Branches     : `87.35% (2963/3392)`
+  - Functions    : `92.28% (921/998)`
+  - Lines        : `92.87% (5383/5796)`
+  - Kickoff note:
+    - the refreshed coverage run exposed one stale docs contract in `src/lab_test/public.model.alias-and-entry.logic.test.ts`, fixed as part of the Phase 5 kickoff slice
 
 ## LTS Target
 - Publish a clearly versioned stable line with explicit support and upgrade rules.
@@ -174,8 +174,10 @@ Status: IN PROGRESS
 - [x] add docs entry-point tests and section coverage tests
 
 ### Phase 5: Coverage to 100%
-- Use tracked slices to eliminate all remaining runtime/CLI/helper gaps
-- make `100%` coverage a release-blocking LTS gate
+- [x] Refresh the real coverage baseline from `npm run test:coverage`
+- [x] Record hotspot order and execution rules in `LTS-Phase5-Coverage-To-100-Plan.md`
+- [ ] Use tracked slices to eliminate all remaining runtime/CLI/helper gaps
+- [ ] make `100%` coverage a release-blocking LTS gate
 
 ## Acceptance Criteria
 - Consumers can identify:
