@@ -6,16 +6,16 @@ Status: IN PROGRESS
 ## Goal
 - Drive the package from high coverage to a true LTS-grade `100%` gate across statements, branches, functions, and lines.
 
-## Current Validated Baseline
-Baseline captured from `npm run test:coverage` on `2026-03-15`:
-- Statements   : `92.52% (5678/6137)`
-- Branches     : `87.35% (2963/3392)`
-- Functions    : `92.28% (921/998)`
-- Lines        : `92.87% (5383/5796)`
+## Current Reported Baseline
+Latest full-suite snapshot reported on `2026-03-15`:
+- Statements   : `93.71% (5751/6137)`
+- Branches     : `87.85% (2980/3392)`
+- Functions    : `93.48% (933/998)`
+- Lines        : `94.09% (5454/5796)`
 
-Kickoff note:
-- The refresh run exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
-- That regression has already been corrected in this kickoff slice so the Phase 5 work starts from a truthful baseline.
+Progress note:
+- The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
+- That regression was corrected, and subsequent Phase 5 slices moved the full-suite baseline upward from the original kickoff snapshot.
 
 ## Coverage Execution Rules
 - Every active hotspot slice must ship with:
@@ -63,6 +63,8 @@ Kickoff note:
 ## Completed Slice Tracking
 - [x] `src/cli/commands/migrateRollback.ts` is now tracked in `LTS-Phase5-MigrateRollback-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `97.6%`, branches `84.52%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/migrateRun.ts` is now tracked in `LTS-Phase5-MigrateRun-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
+  - Focused snapshot after the slice: statements `99.03%`, branches `93.57%`, functions `100%`, lines `100%`.
 
 ## Release Gate
 - LTS promotion remains blocked until:

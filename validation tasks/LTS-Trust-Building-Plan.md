@@ -13,13 +13,13 @@ Status: IN PROGRESS
   - strong engineering readiness
   - controlled-production usable
   - not yet consumer-trusted as an LTS package
-- Current coverage baseline (validated on `2026-03-15` via `npm run test:coverage`):
-  - Statements   : `92.52% (5678/6137)`
-  - Branches     : `87.35% (2963/3392)`
-  - Functions    : `92.28% (921/998)`
-  - Lines        : `92.87% (5383/5796)`
-  - Kickoff note:
-    - the refreshed coverage run exposed one stale docs contract in `src/lab_test/public.model.alias-and-entry.logic.test.ts`, fixed as part of the Phase 5 kickoff slice
+- Latest reported full-suite coverage snapshot (`2026-03-15`):
+  - Statements   : `93.71% (5751/6137)`
+  - Branches     : `87.85% (2980/3392)`
+  - Functions    : `93.48% (933/998)`
+  - Lines        : `94.09% (5454/5796)`
+  - Progress note:
+    - the post-kickoff LTS Phase 5 slices materially improved the global baseline, but `100%` remains the release gate
 
 ## LTS Target
 - Publish a clearly versioned stable line with explicit support and upgrade rules.
