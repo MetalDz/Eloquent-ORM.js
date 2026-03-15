@@ -1,5 +1,5 @@
-/* ============================================================
- * ًں§± SchemaBuilder v4.0
+﻿/* ============================================================
+ * SchemaBuilder v4.0
  * Auto-detects CREATE / ALTER / DROP COLUMN schema differences
  * ============================================================ */
 import {
@@ -55,14 +55,14 @@ export class SchemaBuilder {
     }
 
     if (!supportedDialects.includes(dialectName)) {
-      throw new Error(`â‌Œ Unsupported dialect: ${explicitDialect}`);
+      throw new Error(`ERROR: Unsupported dialect: ${explicitDialect}`);
     }
 
     const dialect = new SQLDialect(dialectName);
     const errors = validateSchema(schema);
     if (errors.length > 0)
       throw new Error(
-        `â‌Œ Schema validation failed for ${tableName}:\n${errors.join("\n")}`
+        `ERROR: Schema validation failed for ${tableName}:\n${errors.join("\n")}`
       );
 
     const columns: string[] = [];
@@ -141,7 +141,7 @@ export class SchemaBuilder {
     }
 
     /* ============================================================
-     * ًں§  Smart Diff Logic (Add + Drop)
+     * Smart Diff Logic (Add + Drop)
      * ============================================================ */
     let tableExists = false;
     let existingColumns: string[] = [];
@@ -241,7 +241,7 @@ export class SchemaBuilder {
         }
       }
     } catch {
-      console.warn(`âڑ ï¸ڈ Could not verify structure for '${tableName}'.`);
+      console.warn(`WARN: Could not verify structure for '${tableName}'.`);
     }
 
     }
@@ -283,7 +283,7 @@ export class SchemaBuilder {
       const addConstraints: ConstraintDefinition[] = [];
       const dropConstraints: ExistingConstraint[] = [];
 
-      // ًں§© Detect new columns
+      // Detect new columns
       for (const colName of schemaColumns) {
         if (!existingColumns.includes(colName)) {
           const sql = columnSqlByName.get(colName);
@@ -294,7 +294,7 @@ export class SchemaBuilder {
         }
       }
 
-      // ًں§© Detect removed columns
+      // Detect removed columns
       for (const existing of existingColumns) {
         if (
           !schemaColumns.includes(existing) &&
@@ -316,14 +316,14 @@ export class SchemaBuilder {
         }
       }
 
-      // ًں§© Nothing to change
+      // Nothing to change
       if (
         missingColumns.length === 0 &&
         dropColumns.length === 0 &&
         addConstraints.length === 0 &&
         dropConstraints.length === 0
       ) {
-        console.log(`ًں§¬ No schema differences for '${tableName}'.`);
+        console.log(`INFO: No schema differences for '${tableName}'.`);
       } else {
         // Order timestamps last
         const createdAtToken = dialect.wrap("created_at");
@@ -397,7 +397,7 @@ export class SchemaBuilder {
   }
 
   /* ============================================================
-   * ًں—‘ï¸ڈ DROP TABLE
+   * DROP TABLE
    * ============================================================ */
   static toDropSQL(
     tableName: string,
@@ -425,7 +425,7 @@ export class SchemaBuilder {
   }
 
   /* ============================================================
-   * ًں§± COLUMN BUILDER
+   * COLUMN BUILDER
    * ============================================================ */
   private static columnSQL(
     name: string,
@@ -485,7 +485,7 @@ export class SchemaBuilder {
   }
 
   /* ============================================================
-   * ًں”— RELATIONS
+   * RELATIONS
    * ============================================================ */
   
   private static relationSQL(
@@ -585,7 +585,7 @@ export class SchemaBuilder {
   }
 
   /* ============================================================
-   * ًں§© MIXINS
+   * MIXINS
    * ============================================================ */
 
   private static formatDefaultLiteral(value: unknown): string {

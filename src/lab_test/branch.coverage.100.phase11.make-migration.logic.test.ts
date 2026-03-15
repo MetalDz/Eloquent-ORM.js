@@ -146,7 +146,7 @@ describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => 
 
     await makeMigration("User", { test: true, exit: false });
     expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining("No new columns or schema changes — skipping")
+      expect.stringContaining("No new columns or schema changes - skipping")
     );
 
     fs.rmSync(ctx.root, { recursive: true, force: true });
@@ -239,4 +239,3 @@ describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => 
     fs.rmSync(ctx.root, { recursive: true, force: true });
   });
 });
-

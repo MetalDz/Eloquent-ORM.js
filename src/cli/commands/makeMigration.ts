@@ -85,7 +85,7 @@ type PendingPivotMigration = {
 
 type MongoIndexDefinition = {
   keys: Record<string, 1 | -1>;
-  options?: Record<string, unknown>;
+  options: Record<string, unknown>;
 };
 
 type MongoPivotDefinition = {
@@ -160,9 +160,9 @@ function buildMongoIndexDefinitions(
 
   const push = (
     keys: Record<string, 1 | -1>,
-    options?: Record<string, unknown>
+    options: Record<string, unknown>
   ): void => {
-    const signature = JSON.stringify({ keys, options: options ?? {} });
+    const signature = JSON.stringify({ keys, options });
     if (seen.has(signature)) return;
     seen.add(signature);
     indexes.push({ keys, options });
@@ -251,14 +251,14 @@ export async function makeMigration(
   PathMap.ensureDirs();
 
   if (!fs.existsSync(modelsDir)) {
-    console.error(chalk.red(`â‌Œ Models folder not found: ${modelsDir}`));
+    console.error(chalk.red(`ERROR: Models folder not found: ${modelsDir}`));
     return;
   }
 
-  console.log(chalk.gray(`ًں“پ Models Path: ${modelsDir}`));
+  console.log(chalk.gray(`INFO: Models Path: ${modelsDir}`));
   console.log(
     chalk.gray(
-      `ًں“پ Migrations Root: ${isTest ? PathMap.testMigrations() : PathMap.appMigrations()}`
+      `INFO: Migrations Root: ${isTest ? PathMap.testMigrations() : PathMap.appMigrations()}`
     )
   );
 
@@ -268,7 +268,7 @@ export async function makeMigration(
       : [`${pascalCase(modelName)}.ts`];
 
   if (requestedModelFiles.length === 0) {
-    console.warn(chalk.yellow("âڑ ï¸ڈ  No model files found."));
+    console.warn(chalk.yellow("WARN: No model files found."));
     return;
   }
 
@@ -287,13 +287,13 @@ export async function makeMigration(
   for (const file of requestedModelFiles) {
     const modelPath = path.join(modelsDir, file);
     if (!fs.existsSync(modelPath)) {
-      console.log(chalk.yellow(`âڑ ï¸ڈ  Model not found: ${modelPath}`));
+      console.log(chalk.yellow(`WARN: Model not found: ${modelPath}`));
       continue;
     }
 
     try {
       if (!TypeScriptCompiler.compile([modelPath])) {
-        console.warn(chalk.yellow(`âڑ ï¸ڈ  Skipping migration due to TS error in ${file}`));
+        console.warn(chalk.yellow(`WARN: Skipping migration due to TS error in ${file}`));
         continue;
       }
 
@@ -311,7 +311,7 @@ export async function makeMigration(
           }
         | undefined;
       if (!ModelClass?.schema || !ModelClass?.tableName) {
-        console.log(chalk.yellow(`âڑ ï¸ڈ  No schema found in ${modelClassName} â€” skipping.`));
+        console.log(chalk.yellow(`WARN: No schema found in ${modelClassName} - skipping.`));
         continue;
       }
 
@@ -326,7 +326,7 @@ export async function makeMigration(
         },
       });
     } catch (err) {
-      console.error(chalk.red(`â‌Œ Error processing ${file}:`));
+      console.error(chalk.red(`ERROR: Error processing ${file}:`));
       console.error(err instanceof Error ? err.message : err);
     }
   }
@@ -354,8 +354,8 @@ export async function makeMigration(
         f.includes(`update_${ModelClass.tableName}_table.ts`)
       );
       const needsBaselineCreate = createFiles.length === 0 && updateFiles.length === 0;
-      console.log(chalk.gray(`ًں”Œ Using connection: ${connectionName}`));
-      console.log(chalk.gray(`ًں“پ Migrations Path: ${migrationsDir}`));
+      console.log(chalk.gray(`INFO: Using connection: ${connectionName}`));
+      console.log(chalk.gray(`INFO: Migrations Path: ${migrationsDir}`));
 
       const driver =
         (dbConfig.connections as Record<string, { driver?: string }>)[connectionName]?.driver ??
@@ -371,7 +371,7 @@ export async function makeMigration(
         const hasMongoWork =
           needsBaselineCreate || mongoIndexes.length > 0 || mongoPivots.length > 0;
         if (!hasMongoWork) {
-          console.log(chalk.gray(`ℹ️ No new columns or schema changes — skipping.`));
+          console.log(chalk.gray("INFO: No new columns or schema changes - skipping."));
           continue;
         }
 
@@ -384,14 +384,9 @@ export async function makeMigration(
         const upStatements: string[] = [
           `await db.ensureCollection(${stringify(ModelClass.tableName)});`,
           ...mongoIndexes.map((index) => {
-            if (index.options && Object.keys(index.options).length > 0) {
-              return `await db.createIndex(${stringify(ModelClass.tableName)}, ${stringify(
+            return `await db.createIndex(${stringify(ModelClass.tableName)}, ${stringify(
                 index.keys
               )}, ${stringify(index.options)});`;
-            }
-            return `await db.createIndex(${stringify(ModelClass.tableName)}, ${stringify(
-              index.keys
-            )});`;
           }),
         ];
 
@@ -425,7 +420,7 @@ export async function makeMigration(
         }
 
         const header = `/**
- * ✅ Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
+ * Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
  * Connection: ${connectionName}
  * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
  * Generated at ${new Date().toISOString()}
@@ -436,11 +431,7 @@ export async function up(db: {
   ensureCollection(name: string): Promise<void>;
   createIndex(collectionName: string, keys: Record<string, 1 | -1>, options?: Record<string, unknown>): Promise<void>;
 }) {
-  ${
-    upStatements.length > 0
-      ? upStatements.join("\n  ")
-      : "// (no Mongo changes detected)"
-  }
+  ${upStatements.join("\n  ")}
 }
 
 export async function down(db: { dropCollection(name: string): Promise<void> }) {
@@ -451,32 +442,24 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
   }
 }`;
 
-        if (prefix === "create" && createFiles.length > 0) {
-          console.log(
-            chalk.gray(
-              `ℹ️ Baseline CREATE already exists for "${ModelClass.tableName}" — skipping CREATE regeneration.`
-            )
-          );
-        } else {
-          const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
-          const unchangedFile =
-            samePrefixFiles.find((fileName) =>
-              hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
-            ) ?? null;
+        const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
+        const unchangedFile =
+          samePrefixFiles.find((fileName) =>
+            hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
+          ) ?? null;
 
-          if (unchangedFile) {
-            console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
-          } else {
-            fs.writeFileSync(migrationPath, migrationContent, "utf8");
-            const label = prefix === "create" ? "CREATE" : "UPDATE";
-            console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
-          }
+        if (unchangedFile) {
+          console.log(chalk.gray(`INFO: Migration unchanged: ${unchangedFile}`));
+        } else {
+          fs.writeFileSync(migrationPath, migrationContent, "utf8");
+          const label = prefix === "create" ? "CREATE" : "UPDATE";
+          console.log(chalk.green(`OK: Migration (${label}) saved: ${migrationPath}`));
         }
 
         if (pivotSeparate && mongoPivots.length > 0) {
           for (const pivot of mongoPivots) {
             const pivotHeader = `/**
- * ✅ Auto-generated CREATE migration for ${pivot.collectionName}
+ * Auto-generated CREATE migration for ${pivot.collectionName}
  * Connection: ${connectionName}
  * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
  * Generated at ${new Date().toISOString()}
@@ -530,11 +513,11 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
       );
 
       if ((!mainSQL || mainSQL.trim() === "") && extraTables.length === 0) {
-        console.log(chalk.gray(`ℹ️ No new columns or schema changes — skipping.`));
+        console.log(chalk.gray("INFO: No new columns or schema changes - skipping."));
         continue;
       }
 
-      // 📆 Generate timestamp (always fresh)
+      // Generate timestamp (always fresh)
       const timestampBase = nextTimestamp();
 
       const normalizedMainSQL = mainSQL.trim().toUpperCase();
@@ -543,7 +526,7 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
       const migrationFile = `${timestampBase}_${prefix}_${ModelClass.tableName}_table.ts`;
       const migrationPath = path.join(migrationsDir, migrationFile);
 
-      // ًں§¾ Generate file content
+      // Generate file content
       const escapeForTemplateLiteral = (sql: string): string =>
         sql.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 
@@ -574,7 +557,7 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
       }
 
       const header = `/**
- * ًں§© Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
+ * Auto-generated ${prefix.toUpperCase()} migration for ${modelClassName}
  * Connection: ${connectionName}
  * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
  * Generated at ${new Date().toISOString()}
@@ -598,27 +581,19 @@ export async function down(db: { query(sql: string): Promise<void> }) {
 }`;
 
       if (hasMainSQL || !pivotSeparate) {
-        if (prefix === "create" && createFiles.length > 0) {
-          console.log(
-            chalk.gray(
-              `ℹ️ Baseline CREATE already exists for "${ModelClass.tableName}" — skipping CREATE regeneration.`
-            )
-          );
+        const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
+        const unchangedFile =
+          samePrefixFiles.find((fileName) =>
+            hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
+          ) ?? null;
+
+        if (unchangedFile) {
+          console.log(chalk.gray(`INFO: Migration unchanged: ${unchangedFile}`));
         } else {
-          const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
-          const unchangedFile =
-            samePrefixFiles.find((fileName) =>
-              hasSameGeneratedBody(path.join(migrationsDir, fileName), migrationContent)
-            ) ?? null;
+          fs.writeFileSync(migrationPath, migrationContent, "utf8");
 
-          if (unchangedFile) {
-            console.log(chalk.gray(`ℹ️ Migration unchanged: ${unchangedFile}`));
-          } else {
-            fs.writeFileSync(migrationPath, migrationContent, "utf8");
-
-            const label = prefix === "create" ? "CREATE" : "UPDATE";
-            console.log(chalk.green(`📄 Migration (${label}) saved: ${migrationPath}`));
-          }
+          const label = prefix === "create" ? "CREATE" : "UPDATE";
+          console.log(chalk.green(`OK: Migration (${label}) saved: ${migrationPath}`));
         }
       }
 
@@ -633,7 +608,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
             rollbackExtraTables[pivotIndex] ?? `DROP TABLE IF EXISTS ${pivotTable};`
           ).replace(/`/g, "\\`");
           const pivotHeader = `/**
- * ✅ Auto-generated CREATE migration for ${pivotTable}
+ * Auto-generated CREATE migration for ${pivotTable}
  * Connection: ${connectionName}
  * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
  * Generated at ${new Date().toISOString()}
@@ -655,7 +630,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
         }
       }
     } catch (err) {
-      console.error(chalk.red(`â‌Œ Error processing ${file}:`));
+      console.error(chalk.red(`ERROR: Error processing ${file}:`));
       console.error(err instanceof Error ? err.message : err);
     }
   }
@@ -676,7 +651,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
       hasSameGeneratedBody(path.join(pendingPivot.migrationsDir, fileName), pendingPivot.content)
     );
     if (unchangedPivot) {
-      console.log(chalk.gray(`ℹ️ Pivot migration unchanged: ${unchangedPivot}`));
+      console.log(chalk.gray(`INFO: Pivot migration unchanged: ${unchangedPivot}`));
       continue;
     }
 
@@ -684,19 +659,19 @@ export async function down(db: { query(sql: string): Promise<void> }) {
     const pivotFile = `${pivotTimestamp}_create_${pendingPivot.pivotTable}_table.ts`;
     const pivotPath = path.join(pendingPivot.migrationsDir, pivotFile);
     fs.writeFileSync(pivotPath, pendingPivot.content, "utf8");
-    console.log(chalk.green(`📄 Pivot migration saved: ${pivotPath}`));
+    console.log(chalk.green(`OK: Pivot migration saved: ${pivotPath}`));
   }
 
   try {
     await closeAllConnections();
-    console.log(chalk.gray("ًں”’ All database connections closed.\n"));
+    console.log(chalk.gray("INFO: All database connections closed.\n"));
   } catch {
-    console.warn(chalk.yellow("âڑ ï¸ڈ Could not close DB connections cleanly."));
+    console.warn(chalk.yellow("WARN: Could not close DB connections cleanly."));
   }
 
   console.log(
     chalk.cyanBright(
-      `âœ… Migration generation complete in ${isTest ? "TEST" : "DEVELOPMENT"} mode.\n`
+      `OK: Migration generation complete in ${isTest ? "TEST" : "DEVELOPMENT"} mode.\n`
     )
   );
 

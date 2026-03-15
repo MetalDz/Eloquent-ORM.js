@@ -8,10 +8,10 @@ Status: IN PROGRESS
 
 ## Current Reported Baseline
 Latest full-suite snapshot reported on `2026-03-15`:
-- Statements   : `96.47% (5885/6100)`
-- Branches     : `91.13% (3065/3363)`
+- Statements   : `96.47% (5889/6104)`
+- Branches     : `91.05% (3053/3353)`
 - Functions    : `95.78% (954/996)`
-- Lines        : `96.82% (5579/5762)`
+- Lines        : `96.81% (5587/5771)`
 
 Progress note:
 - The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -73,6 +73,20 @@ Progress note:
   - Focused snapshot after the slice: statements `97.6%`, branches `84.52%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRun.ts` is now tracked in `LTS-Phase5-MigrateRun-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `99.03%`, branches `93.57%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/migrateStatus.ts` is now tracked in `LTS-Phase5-MigrateStatus-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/connection/DatabaseConnection.ts` is now tracked in `LTS-Phase5-DatabaseConnection-Coverage-And-ASCII-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/demoScenario.ts` is now tracked in `LTS-Phase5-DemoScenario-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeMigration.ts` is now tracked in `LTS-Phase5-MakeMigration-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeScenario.ts` is now tracked in `LTS-Phase5-MakeScenario-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/model/BaseModel.ts` is now tracked in `LTS-Phase5-BaseModel-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/cache/CacheFallbackManager.ts` and `src/core/cache/drivers/FileCacheDriver.ts` are now tracked in `LTS-Phase5-Cache-Runtime-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 
 ## Release Gate
 - LTS promotion remains blocked until:

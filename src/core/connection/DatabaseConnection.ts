@@ -9,7 +9,7 @@ import {
 } from "./BetterSqliteConnection";
 
 /* ----------------------------------------------------------
- * 🧱 1. Type Declarations for Configurations
+ * 1. Type Declarations for Configurations
  * ---------------------------------------------------------- */
 
 /** Supported driver names */
@@ -117,7 +117,7 @@ function normalizeMongoConnectionError(
 }
 
 /* ----------------------------------------------------------
- * ⚙️ 2. Connect Function (Multi-Driver)
+ * 2. Connect Function (Multi-Driver)
  * ---------------------------------------------------------- */
 export async function connectDB(name: ConnectionName): Promise<ConnectionInstance> {
   const config = dbConfig.connections[name] as ConnectionConfig;
@@ -164,7 +164,7 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
         await client.connect();
         const db = client.db(config.database);
         mongoClientByDb.set(db, client);
-        console.log(`🧩 Connected to MongoDB: ${config.database}`);
+        console.log(`Connected to MongoDB: ${config.database}`);
         return db;
       } catch (error) {
         try {
@@ -178,7 +178,7 @@ export async function connectDB(name: ConnectionName): Promise<ConnectionInstanc
 
     /* ---------- Unknown ---------- */
     default:
-      throw new Error(`❌ Unsupported driver: ${(config as any).driver}`);
+      throw new Error(`Unsupported driver: ${(config as any).driver}`);
   }
 }
 
