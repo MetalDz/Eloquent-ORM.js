@@ -28,6 +28,7 @@ describe("LTS phase 5 coverage to 100", () => {
       "src/cli/commands/makeService.ts",
       "src/cli/commands/migrateRollback.ts",
       "src/cli/commands/demoScenario.ts",
+      "LTS-Phase5-MigrateRollback-Coverage-Plan.md",
       "Global `npm run test:coverage` remains the LTS release gate.",
     ];
 

@@ -60,6 +60,10 @@ Kickoff note:
 3. Close scenario/demo and generator edge branches.
 4. Finish residual runtime misses and rerun the full gate after each slice cluster.
 
+## Completed Slice Tracking
+- [x] `src/cli/commands/migrateRollback.ts` is now tracked in `LTS-Phase5-MigrateRollback-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
+  - Focused snapshot after the slice: statements `97.6%`, branches `84.52%`, functions `100%`, lines `100%`.
+
 ## Release Gate
 - LTS promotion remains blocked until:
   - `npm run test:coverage` reports `100%`
