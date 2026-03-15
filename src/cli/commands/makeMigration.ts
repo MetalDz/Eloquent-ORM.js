@@ -522,6 +522,12 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
 
       const normalizedMainSQL = mainSQL.trim().toUpperCase();
       const isCreateMigration = normalizedMainSQL.startsWith("CREATE TABLE");
+      const skipDuplicateCreate = !needsBaselineCreate && isCreateMigration;
+      if (skipDuplicateCreate) {
+        console.log(
+          chalk.gray("INFO: Baseline CREATE already exists - skipping duplicate CREATE migration.")
+        );
+      }
       const prefix = isCreateMigration ? "create" : "update";
       const migrationFile = `${timestampBase}_${prefix}_${ModelClass.tableName}_table.ts`;
       const migrationPath = path.join(migrationsDir, migrationFile);
@@ -580,7 +586,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
   }
 }`;
 
-      if (hasMainSQL || !pivotSeparate) {
+      if ((hasMainSQL || !pivotSeparate) && !skipDuplicateCreate) {
         const samePrefixFiles = prefix === "create" ? createFiles : updateFiles;
         const unchangedFile =
           samePrefixFiles.find((fileName) =>

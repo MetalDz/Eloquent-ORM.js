@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
+import { dbConfig } from "../config/database";
 import { SchemaBuilder } from "../core/schema/SchemaBuilder";
 import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
 
 describe("migration/schema ASCII normalization", () => {
   const rootDir = process.cwd();
+  const originalDefault = dbConfig.default;
   const planPath = path.resolve(
     rootDir,
     "validation tasks/Migration-Schema-ASCII-Normalization-Plan.md",
@@ -21,6 +23,10 @@ describe("migration/schema ASCII normalization", () => {
     rootDir,
     "src/core/schema/SchemaBuilder.ts",
   );
+
+  afterEach(() => {
+    dbConfig.default = originalDefault;
+  });
 
   test("phase plan documents the migration/schema remediation slice", () => {
     const plan = fs.readFileSync(planPath, "utf8");
@@ -106,6 +112,7 @@ describe("migration/schema ASCII normalization", () => {
     expect(content).toContain("RELATIONS");
     expect(content).toContain("MIXINS");
 
+    dbConfig.default = "mongo" as any;
     await expect(
       SchemaBuilder.toCreateSQL("users", schema, "unknown_conn", false, undefined, true),
     ).rejects.toThrow("ERROR: Unsupported dialect");
