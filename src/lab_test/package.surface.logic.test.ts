@@ -23,6 +23,11 @@ describe("Package surface hardening", () => {
         require: "./dist/index.js",
         default: "./dist/index.js",
       },
+      "./Model": {
+        types: "./dist/Model.d.ts",
+        require: "./dist/Model.js",
+        default: "./dist/Model.js",
+      },
       "./package.json": "./package.json",
     });
     expect(pkg.files).toEqual(

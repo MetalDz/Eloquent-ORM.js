@@ -7,6 +7,7 @@ Last updated: 2026-03-10
 2. Select default connection with `DB_CONNECTION`.
 3. Initialize model registration at app startup:
    - `registerModels([User, Post, ...])`
+   - or generate a bootstrap helper with `eloquent make:registry`
 4. Keep strict mode enabled by default unless migration path requires lazy behavior.
 
 ## 2) Migration Workflow
@@ -54,6 +55,7 @@ Use `--test` to isolate test fixtures from app data.
 
 Examples:
 - `eloquent make:model User --test`
+- `eloquent make:registry --test`
 - `eloquent make:migration --all --test`
 - `eloquent migrate:run --test --all-migrations`
 - `eloquent db:seed --test --class BlogScenarioSeeder`

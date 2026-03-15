@@ -1,18 +1,20 @@
 # EloquentJS Public API Reference
 
-Last updated: 2026-03-10
+Last updated: 2026-03-15
 
 ## Stability Contract
 - Only exports from `src/index.ts` are public and semver-tracked.
+- The dedicated model subpath `src/Model.ts` is also public and semver-tracked as `eloquentjs/Model`.
 - Deep imports from `src/*` or `dist/*` internals are private and may break without notice.
 
-## Public Exports
+## Root Package: `eloquentjs`
 
 ### Models and ORM Core
 - `BaseModel`
+- `Model`
 - `SqlModel`
-- `CoreModel`
 - `MongoModel`
+- `CoreModel`
 - `MorphRegistry`
 - `PivotHelperMixin`
 
@@ -38,7 +40,7 @@ Last updated: 2026-03-10
 - `setModelRegistryStrictMode`
 - `isModelRegistryStrictMode`
 
-## Type Exports
+### Root Type Exports
 - `ORMRecord`
 - `ModelAttrs`
 - `ModelInstance`
@@ -66,12 +68,41 @@ Last updated: 2026-03-10
 - `SchemaBuildResult`
 - `RegisterModelsOptions`
 
+## Model Subpath: `eloquentjs/Model`
+
+### Named Exports
+- `SqlModel`
+- `MongoModel`
+- `ModelInstance`
+- `ModelAttrs`
+
+### Subpath Rules
+- `eloquentjs/Model` does not expose a default export.
+- `eloquentjs/Model` does not expose the root `Model` alias.
+- Use the root package for the Laravel-style SQL alias:
+  - `import { Model } from "eloquentjs"`
+
+### Examples
+
+Root SQL alias:
+
+```ts
+import { Model } from "eloquentjs";
+```
+
+Explicit model bases:
+
+```ts
+import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model";
+```
+
 ## Extension Points
 
 ### Custom Models
-- Extend `SqlModel` or `MongoModel`.
+- Extend `Model` or `SqlModel` for SQL-backed models.
+- Extend `MongoModel` for Mongo-backed document models.
 - Define schema via `column`, `relation`, and `mixin`.
-- Register model classes at bootstrap using `registerModels([...])`.
+- Register model classes at bootstrap using `registerModels([...])` or a generated registry helper.
 
 ### Factory Extension
 - Extend `Factory` and implement per-model generation logic.
@@ -87,7 +118,6 @@ Last updated: 2026-03-10
 
 ## Notes
 - CLI command functions are not exported as public package API.
-- New public exports must be added through `src/index.ts` and documented here.
-- For mongo runtime/CLI behavior and limits, see:
+- New public exports must be added through `src/index.ts` or `src/Model.ts` and documented here.
+- For mongo runtime and CLI behavior, see:
   - `src/documentation/nosql-usage-guide.md`
-

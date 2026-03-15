@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { makeModel } from "../commands/makeModel";
 import { makeController } from "../commands/makeController";
 import { makeService } from "../commands/makeService";
+import { makeRegistry } from "../commands/makeRegistry";
 import { ensureCliProductionOverride } from "./CliProductionGuards";
 
 export function registerCliScaffoldCommands(program: Command): void {
@@ -35,6 +36,34 @@ export function registerCliScaffoldCommands(program: Command): void {
         mongo: !!(options as { mongo?: boolean }).mongo,
       });
     });
+
+  program
+    .command("make:registry")
+    .option("--test", "Generate model registry bootstrap inside test directory")
+    .option("--force", "Overwrite existing model registry file if it exists")
+    .option(
+      "--yes",
+      "Acknowledge production override for this destructive command",
+    )
+    .description("Generate a registerModels bootstrap helper from discovered models")
+    .action(
+      (
+        options: { test?: boolean; force?: boolean; yes?: boolean },
+      ) => {
+        if (
+          !ensureCliProductionOverride("make:registry", {
+            force: !!options.force,
+            yes: !!options.yes,
+          })
+        ) {
+          return;
+        }
+        return makeRegistry({
+          test: !!options.test,
+          force: !!options.force,
+        });
+      },
+    );
 
   program
     .command("make:controller <name>")

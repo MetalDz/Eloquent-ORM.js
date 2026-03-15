@@ -5,6 +5,28 @@ Hook registration and lifecycle execution are now guarded so only approved model
 
 ## Register models at bootstrap
 
+Generate a bootstrap helper with the CLI:
+
+```bash
+eloquent make:registry
+```
+
+or for test fixtures:
+
+```bash
+eloquent make:registry --test
+```
+
+Then import the generated helper in your app bootstrap:
+
+```ts
+import { registerAppModels } from "./app/registerModels";
+
+registerAppModels();
+```
+
+Manual bootstrap remains supported:
+
 ```ts
 import { registerModels } from "eloquentjs";
 import { User } from "./app/models/User";
@@ -34,7 +56,7 @@ registerModels([User, Post], { strict: false });
 - No central registration gate existed.
 
 ### Current behavior
-1. Register models once during startup using `registerModels([...])`.
+1. Register models once during startup using `registerModels([...])` or a generated `registerAppModels()` helper.
 2. Keep strict mode enabled (default) for access control.
 3. Prefer `static modelEvents` for user-defined lifecycle hooks.
 

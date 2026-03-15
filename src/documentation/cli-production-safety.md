@@ -17,6 +17,7 @@ Production detection:
 
 ## Destructive Commands (Guarded)
 - `make:model`
+- `make:registry`
 - `make:controller`
 - `make:service`
 - `make:seed`
@@ -59,4 +60,3 @@ eloquent migrate:reset --all-connections --all-migrations --force --yes
 2. Keep migration/seed operations in CI/CD job steps, not ad-hoc shells.
 3. Use least-privilege DB identities (`runtime` vs `migration` roles).
 4. Keep audit logging enabled for migration/seed commands.
-

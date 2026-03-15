@@ -34,4 +34,9 @@ export class ImportResolver {
     if (this.usingInstalledPackage()) return this.PACKAGE_NAME;
     return isTest ? "../../../core/schema/SchemaBlueprint" : "../../core/schema/SchemaBlueprint";
   }
+
+  static publicApiImportPath(): string {
+    if (this.usingInstalledPackage()) return this.PACKAGE_NAME;
+    return "../index";
+  }
 }

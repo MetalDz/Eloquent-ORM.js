@@ -10,6 +10,10 @@ export const CLI_COMMAND_CATALOG: CliCommandCatalogEntry[] = [
       "--test --mongo --with-migration --attrs-from-schema --force --yes",
   },
   {
+    Command: "make:registry",
+    Description: "--test --force --yes",
+  },
+  {
     Command: "make:controller <name>",
     Description: "--soft --test --force --yes",
   },

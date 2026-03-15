@@ -260,6 +260,11 @@ export abstract class SqlModel<
 }
 
 /**
+ * Laravel-style SQL model alias exposed for package consumers.
+ */
+export { SqlModel as Model };
+
+/**
  * Re-export morph helpers for convenience
  */
 

@@ -1,7 +1,7 @@
 # LTS Trust Building Plan
 
 Last updated: 2026-03-14  
-Status: PLANNED
+Status: IN PROGRESS
 
 ## Goal
 - Move the ORM from "production-usable in controlled environments" to "consumer-trusted LTS-grade package" through release discipline, support guarantees, compatibility policy, professional documentation, and a zero-gap coverage program.
@@ -155,23 +155,23 @@ Status: PLANNED
 ## Ordered LTS Plan
 
 ### Phase 1: Versioning + Support Foundation
-- Write versioning policy doc
-- write support policy doc
-- add contract tests for both
+- [x] Write versioning policy doc
+- [x] write support policy doc
+- [x] add contract tests for both
 
 ### Phase 2: Release Discipline
-- Write release cadence doc
-- add release promotion checklist
-- lock changelog/upgrade requirements in tests
+- [x] Write release cadence doc
+- [x] add release promotion checklist
+- [x] lock changelog/upgrade requirements in tests
 
 ### Phase 3: Compatibility + API Freeze
-- Write backward compatibility policy
-- write public API freeze policy
-- add tests for export/CLI/generator/runtime compatibility promises
+- [x] Write backward compatibility policy
+- [x] write public API freeze policy
+- [x] add tests for export/CLI/generator/runtime compatibility promises
 
 ### Phase 4: Consumer Documentation Suite
-- Publish full package docs from installation to usage to support
-- add docs entry-point tests and section coverage tests
+- [x] Publish full package docs from installation to usage to support
+- [x] add docs entry-point tests and section coverage tests
 
 ### Phase 5: Coverage to 100%
 - Use tracked slices to eliminate all remaining runtime/CLI/helper gaps

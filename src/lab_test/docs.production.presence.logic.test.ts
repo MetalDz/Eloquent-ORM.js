@@ -32,6 +32,7 @@ describe("production documentation presence and baseline content", () => {
       "CacheManager",
       "CoreModel",
       "Factory",
+      "Model",
       "MongoModel",
       "MorphRegistry",
       "PivotHelperMixin",

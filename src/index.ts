@@ -5,6 +5,7 @@
  */
 export {
   BaseModel,
+  Model,
   SqlModel,
   MongoModel,
   MorphRegistry,

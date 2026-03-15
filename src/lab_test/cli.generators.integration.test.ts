@@ -18,9 +18,11 @@ const canSpawn = !spawnProbe.error;
 const appModelsDir = path.resolve(rootDir, "src/app/models");
 const appControllersDir = path.resolve(rootDir, "src/app/controllers");
 const appServicesDir = path.resolve(rootDir, "src/app/services");
+const appRegistryFile = path.resolve(rootDir, "src/app/registerModels.ts");
 const appFactoriesDir = path.resolve(rootDir, "src/app/database/factories");
 const appSeedsDir = path.resolve(rootDir, "src/app/database/seeds");
 const testModelsDir = path.resolve(rootDir, "src/test/database/models");
+const testRegistryFile = path.resolve(rootDir, "src/test/registerModels.ts");
 const testFactoriesDir = path.resolve(rootDir, "src/test/database/factories");
 const testSeedsDir = path.resolve(rootDir, "src/test/database/seeds");
 const testRootDir = path.resolve(rootDir, "src/test");
@@ -79,9 +81,11 @@ function removeGeneratorArtifacts(): void {
     appModelFile,
     appControllerFile,
     appServiceFile,
+    appRegistryFile,
     appFactoryFile,
     appSeedFile,
     testModelFile,
+    testRegistryFile,
     testFactoryFile,
     testSeedFile,
   ].forEach(removeIfExists);
@@ -150,6 +154,42 @@ describeIfBuilt("CLI integration: generators", () => {
     const content = fs.readFileSync(appServiceFile, "utf8");
     expect(content).toContain(`class ${appModelName}Service`);
     expect(content).toContain(`../models/${appModelName}`);
+  });
+
+  test("make:registry app and test mode generate registerModels bootstraps", () => {
+    const appModelArgs = ["make:model", appModelName, "--force"];
+    const appModelResult = runCli(appModelArgs);
+    assertCliSuccess(appModelResult, appModelArgs);
+
+    const appArgs = ["make:registry", "--force"];
+    const appResult = runCli(appArgs);
+
+    assertCliSuccess(appResult, appArgs);
+    expect(appResult.combined).toContain("Model registry created");
+    expect(fs.existsSync(appRegistryFile)).toBe(true);
+    const appContent = fs.readFileSync(appRegistryFile, "utf8");
+    expect(appContent).toContain('import { registerModels, type RegisterModelsOptions } from "../index";');
+    expect(appContent).toContain(`import { ${appModelName} } from "./models/${appModelName}";`);
+    expect(appContent).toContain("export function registerAppModels(");
+    expect(appContent).toContain(`registerModels([...APP_MODELS], options);`);
+
+    const testModelArgs = ["make:model", testModelName, "--test", "--force"];
+    const testModelResult = runCli(testModelArgs);
+    assertCliSuccess(testModelResult, testModelArgs);
+
+    const testArgs = ["make:registry", "--test", "--force"];
+    const testResult = runCli(testArgs);
+
+    assertCliSuccess(testResult, testArgs);
+    expect(testResult.combined).toContain("Model registry created");
+    expect(fs.existsSync(testRegistryFile)).toBe(true);
+    const testContent = fs.readFileSync(testRegistryFile, "utf8");
+    expect(testContent).toContain('import { registerModels, type RegisterModelsOptions } from "../index";');
+    expect(testContent).toContain(
+      `import { ${testModelName} } from "./database/models/${testModelName}";`,
+    );
+    expect(testContent).toContain("export function registerTestModels(");
+    expect(testContent).toContain(`registerModels([...TEST_MODELS], options);`);
   });
 
   test("make:seed writes requested counts in app and test mode", () => {

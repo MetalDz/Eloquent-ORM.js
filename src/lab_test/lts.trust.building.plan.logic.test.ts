@@ -10,7 +10,7 @@ describe("LTS trust building plan", () => {
 
     const requiredSnippets = [
       "# LTS Trust Building Plan",
-      "Status: PLANNED",
+      "Status: IN PROGRESS",
       'Move the ORM from "production-usable in controlled environments" to "consumer-trusted LTS-grade package"',
       "controlled-production usable",
       "not yet consumer-trusted as an LTS package",

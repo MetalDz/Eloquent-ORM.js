@@ -37,6 +37,10 @@ const commandMatrix: CommandSpec[] = [
     ],
   },
   {
+    name: "make:registry",
+    expectedFlags: ["--test", "--force", "--yes"],
+  },
+  {
     name: "make:controller",
     expectedFlags: ["--test", "--soft", "--force", "--yes"],
   },

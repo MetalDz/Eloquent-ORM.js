@@ -24,9 +24,11 @@ describe("ORM hardening phase 1 - CLI scaffold command registration extraction",
 
     expect(content).toContain("export function registerCliScaffoldCommands");
     expect(content).toContain('.command("make:model <name>")');
+    expect(content).toContain('.command("make:registry")');
     expect(content).toContain('.command("make:controller <name>")');
     expect(content).toContain('.command("make:service <name>")');
     expect(content).toContain('ensureCliProductionOverride("make:model"');
+    expect(content).toContain('ensureCliProductionOverride("make:registry"');
     expect(content).toContain('ensureCliProductionOverride("make:controller"');
     expect(content).toContain('ensureCliProductionOverride("make:service"');
   });
@@ -40,6 +42,7 @@ describe("ORM hardening phase 1 - CLI scaffold command registration extraction",
     );
     expect(content).toContain("registerCliScaffoldCommands(program);");
     expect(content).not.toContain('.command("make:model <name>")');
+    expect(content).not.toContain('.command("make:registry")');
     expect(content).not.toContain('.command("make:controller <name>")');
     expect(content).not.toContain('.command("make:service <name>")');
   });

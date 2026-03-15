@@ -16,6 +16,7 @@ const describeIfBuilt = hasBuiltCli && canSpawn ? describe : describe.skip;
 
 const commandHelpMatrix: Array<{ label: string; args: string[] }> = [
   { label: "make:model", args: ["make:model", "--help"] },
+  { label: "make:registry", args: ["make:registry", "--help"] },
   { label: "make:controller", args: ["make:controller", "--help"] },
   { label: "make:service", args: ["make:service", "--help"] },
   { label: "make:seed", args: ["make:seed", "--help"] },

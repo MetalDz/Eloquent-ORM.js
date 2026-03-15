@@ -20,6 +20,7 @@ describe("ORM hardening phase 1 - CLI help catalog extraction", () => {
     const commands = CLI_COMMAND_CATALOG.map((entry) => entry.Command);
 
     expect(commands).toContain("make:model <name>");
+    expect(commands).toContain("make:registry");
     expect(commands).toContain("make:scenario <name>");
     expect(commands).toContain("db:seed");
     expect(commands).toContain("migrate:run [model]");
