@@ -8,10 +8,10 @@ Status: IN PROGRESS
 
 ## Current Reported Baseline
 Latest full-suite snapshot reported on `2026-03-15`:
-- Statements   : `93.71% (5751/6137)`
-- Branches     : `87.85% (2980/3392)`
-- Functions    : `93.48% (933/998)`
-- Lines        : `94.09% (5454/5796)`
+- Statements   : `96.47% (5885/6100)`
+- Branches     : `91.13% (3065/3363)`
+- Functions    : `95.78% (954/996)`
+- Lines        : `96.82% (5579/5762)`
 
 Progress note:
 - The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -28,6 +28,10 @@ Progress note:
 ## Ordered Hotspot Inventory
 
 ### A. Operational CLI and Helper Hotspots
+- `src/cli/commands/factoryStatus.ts`
+- `src/cli/utils/factories/FactoryGraph.ts`
+- `src/cli/utils/factories/FactoryRegistry.ts`
+- `src/cli/utils/factories/FactoryLoader.ts`
 - `src/cli/utils/migrations/MongoMigrationTracker.ts`
 - `src/cli/utils/ModelIntrospector.ts`
 - `src/cli/commands/makeController.ts`
@@ -61,6 +65,10 @@ Progress note:
 4. Finish residual runtime misses and rerun the full gate after each slice cluster.
 
 ## Completed Slice Tracking
+- [x] Factory runtime coverage is now tracked in `LTS-Phase5-Factory-Runtime-Coverage-Plan.md`.
+  - Scope: `factoryStatus`, `FactoryGraph`, `FactoryRegistry`, and `FactoryLoader`.
+  - Clean-up: removed the unused local `generateGraph(...)` helper from `factoryStatus.ts` so the command delegates only to the shared graph runtime.
+  - Focused cluster snapshot after the slice: statements `99.37%`, branches `83.51%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRollback.ts` is now tracked in `LTS-Phase5-MigrateRollback-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `97.6%`, branches `84.52%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRun.ts` is now tracked in `LTS-Phase5-MigrateRun-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.

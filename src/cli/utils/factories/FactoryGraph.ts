@@ -1,17 +1,19 @@
 /**
- * 📊 FactoryGraph
- * Generates an ASCII Entity-Relationship Diagram from all registered factories.
- * Supports all relation types including polymorphic (morphOne, morphMany, morphTo).
+ * FactoryGraph
+ * Generates an ASCII relationship graph from registered factories.
  */
 
 import chalk from "chalk";
+import type {
+  RelationDefinition,
+  SchemaField,
+} from "../../../core/schema/SchemaBlueprint";
+import {
+  FACTORY_GRAPH_HEADER,
+  getFactoryRelationArrow,
+} from "./FactoryDisplay";
 import { FactoryRegistry } from "./FactoryRegistry";
-import type { SchemaField, RelationDefinition } from "../../../core/schema/SchemaBlueprint";
-import type { BaseModel } from "../../../core/model/BaseModel";
 
-/* -------------------------------------------------------------------------- */
-/* 🧠 Type Guard: model has `schema`                                          */
-/* -------------------------------------------------------------------------- */
 function hasSchema<T extends { schema?: Record<string, SchemaField> }>(
   modelCtor: unknown
 ): modelCtor is T & { schema: Record<string, SchemaField> } {
@@ -21,9 +23,6 @@ function hasSchema<T extends { schema?: Record<string, SchemaField> }>(
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* 🔍 Relation Extraction                                                     */
-/* -------------------------------------------------------------------------- */
 interface RelationLink {
   from: string;
   to: string;
@@ -37,15 +36,16 @@ function collectLinks(factoryNames: string[]): RelationLink[] {
     const factory = FactoryRegistry.make(factoryName);
     const modelCtor = factory.model;
     const modelName = modelCtor.name.replace("Factory", "");
-
     const modelInstance = new modelCtor();
 
-    if (!hasSchema(modelInstance.constructor)) continue;
+    if (!hasSchema(modelInstance.constructor)) {
+      continue;
+    }
 
-    const schema = modelInstance.constructor.schema;
-
-    for (const field of Object.values(schema)) {
-      if (field.kind !== "relation") continue;
+    for (const field of Object.values(modelInstance.constructor.schema)) {
+      if (field.kind !== "relation") {
+        continue;
+      }
 
       const rel = field as RelationDefinition;
       links.push({
@@ -59,70 +59,46 @@ function collectLinks(factoryNames: string[]): RelationLink[] {
   return links;
 }
 
-/* -------------------------------------------------------------------------- */
-/* 🔄 Remove mirrored duplicate relations                                     */
-/* -------------------------------------------------------------------------- */
 function dedupeLinks(links: RelationLink[]): RelationLink[] {
   return links.filter(
     (link, index, array) =>
       index ===
       array.findIndex(
-        (l) =>
-          (l.from === link.from && l.to === link.to) ||
-          (l.from === link.to && l.to === link.from)
+        (candidate) =>
+          (candidate.from === link.from && candidate.to === link.to) ||
+          (candidate.from === link.to && candidate.to === link.from)
       )
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* 🎨 Map relation type → ASCII arrow                                        */
-/* -------------------------------------------------------------------------- */
-function getArrow(rel: string): string {
-  switch (rel) {
-    case "belongsTo":
-      return chalk.blue("⇠");
-    case "hasOne":
-      return chalk.green("⇢");
-    case "hasMany":
-      return chalk.green("⇢⇢");
-    case "belongsToMany":
-      return chalk.magenta("⇿");
-    default:
-      return rel.startsWith("morph") ? chalk.yellow("≈") : "→";
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* 📊 Graph Renderer                                                          */
-/* -------------------------------------------------------------------------- */
 export function generateFactoryGraph(factoryNames: string[]): string {
-  let output = chalk.cyanBright("\n📊 Model Relationship Graph\n\n");
+  let output = chalk.cyanBright(FACTORY_GRAPH_HEADER);
 
   if (factoryNames.length === 0) {
     return output + chalk.gray("No factories registered.\n");
   }
 
-  const rawLinks = collectLinks(factoryNames);
-  const uniqueLinks = dedupeLinks(rawLinks);
+  const uniqueLinks = dedupeLinks(collectLinks(factoryNames));
 
   if (uniqueLinks.length === 0) {
     return output + chalk.gray("No relationships detected.\n");
   }
 
-  // Group links by originating model
   const grouped = new Map<string, Array<{ to: string; rel: string }>>();
 
   for (const { from, to, rel } of uniqueLinks) {
-    if (!grouped.has(from)) grouped.set(from, []);
+    if (!grouped.has(from)) {
+      grouped.set(from, []);
+    }
     grouped.get(from)!.push({ to, rel });
   }
 
   for (const [node, relations] of grouped.entries()) {
     output += chalk.greenBright(`${node}\n`);
     for (const { to, rel } of relations) {
-      output += `${chalk.gray("  " + getArrow(rel) + " ")}${chalk.cyan(to)} ${chalk.gray(
-        `(${rel})`
-      )}\n`;
+      output += `${chalk.gray(`  ${getFactoryRelationArrow(rel)} `)}${chalk.cyan(
+        to
+      )} ${chalk.gray(`(${rel})`)}\n`;
     }
     output += "\n";
   }
