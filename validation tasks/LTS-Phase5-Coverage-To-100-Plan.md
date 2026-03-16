@@ -32,6 +32,7 @@ Progress note:
 - `src/cli/utils/CliCommandTargets.ts`
 - `src/cli/utils/ArtifactStorage.ts`
 - `src/cli/utils/ArtifactRoutingReport.ts`
+- `src/cli/utils/SeedBootstrapPrecheck.ts`
 - `src/cli/commands/factoryStatus.ts`
 - `src/cli/utils/factories/FactoryGraph.ts`
 - `src/cli/utils/factories/FactoryRegistry.ts`
@@ -82,6 +83,8 @@ Progress note:
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/ArtifactRoutingReport.ts` is now tracked in `LTS-Phase5-ArtifactRoutingReport-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/SeedBootstrapPrecheck.ts` is now tracked in `LTS-Phase5-SeedBootstrapPrecheck-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] Factory runtime coverage is now tracked in `LTS-Phase5-Factory-Runtime-Coverage-Plan.md`.
   - Residual branch closure is locked in `LTS-Phase5-Factory-Runtime-Residual-Coverage-Plan.md`.
   - Scope: `factoryStatus`, `FactoryGraph`, `FactoryRegistry`, and `FactoryLoader`.
@@ -102,6 +105,8 @@ Progress note:
 - [x] `src/cli/commands/migrateRollback.ts` is now tracked in `LTS-Phase5-MigrateRollback-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `97.6%`, branches `84.52%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateReset.ts` is now tracked in `LTS-Phase5-MigrateReset-Coverage-And-ASCII-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/migrateFresh.ts` is now tracked in `LTS-Phase5-MigrateFresh-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRun.ts` is now tracked in `LTS-Phase5-MigrateRun-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
   - Focused snapshot after the slice: statements `99.03%`, branches `93.57%`, functions `100%`, lines `100%`.
