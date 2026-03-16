@@ -388,7 +388,7 @@ describeIfBuiltOnly("CLI integration: migrate:* connection targeting", () => {
       const result = runCli(args, 240000, undefined, appSqliteEnv());
 
       assertCliSuccess(result, args);
-      expect(result.combined).toContain("Resetting development database");
+      expect(result.combined).toContain("RESET: development database");
       expect(result.combined).toMatch(/migration\(s\) rolled back successfully/i);
     }
   );
@@ -404,7 +404,7 @@ describeIfBuiltOnly("CLI integration: migrate:* connection targeting", () => {
     const result = runCli(args, 240000, undefined, testSqliteEnv());
 
     assertCliSuccess(result, args);
-    expect(result.combined).toContain("Resetting test database");
+    expect(result.combined).toContain("RESET: test database");
     expect(result.combined).toMatch(/migration\(s\) rolled back successfully/i);
   });
 });
