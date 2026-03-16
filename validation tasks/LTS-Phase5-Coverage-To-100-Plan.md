@@ -58,6 +58,7 @@ Progress note:
 ### D. Residual Runtime Surface Hotspots
 - `src/core/model/BaseModel.ts`
 - `src/core/model/SafeFinder.ts`
+- `src/core/orm/relations/BelongsToMany.ts`
 - `src/core/orm/mixins/MorphableMixin.ts`
 - `src/core/cache/CacheFallbackManager.ts`
 - `src/core/cache/drivers/FileCacheDriver.ts`
@@ -119,6 +120,8 @@ Progress note:
 - [x] `src/core/model/BaseModel.ts` is now tracked in `LTS-Phase5-BaseModel-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/SafeFinder.ts` is now tracked in `LTS-Phase5-SafeFinder-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/orm/relations/BelongsToMany.ts` is now tracked in `LTS-Phase5-BelongsToMany-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/orm/mixins/MorphableMixin.ts` is now tracked in `LTS-Phase5-MorphableMixin-Coverage-And-ASCII-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.

@@ -7,4 +7,3 @@ src/app
 *.sqlite
 *.sqlite-journal
 
-.npm-cache
