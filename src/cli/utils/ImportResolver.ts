@@ -4,6 +4,8 @@ import path from "path";
 export class ImportResolver {
   private static readonly PACKAGE_ROOT = path.resolve(__dirname, "..", "..", "..");
 
+  private static readonly FALLBACK_PACKAGE_NAME = "eloquent-orm.js";
+
   private static readonly PACKAGE_NAME = ImportResolver.readPackageName();
 
   private static readPackageName(): string {
@@ -11,9 +13,9 @@ export class ImportResolver {
     try {
       const raw = fs.readFileSync(packageJsonPath, "utf8");
       const pkg = JSON.parse(raw) as { name?: string };
-      return pkg.name?.trim() || "eloquentjs";
+      return pkg.name?.trim() || this.FALLBACK_PACKAGE_NAME;
     } catch {
-      return "eloquentjs";
+      return this.FALLBACK_PACKAGE_NAME;
     }
   }
 

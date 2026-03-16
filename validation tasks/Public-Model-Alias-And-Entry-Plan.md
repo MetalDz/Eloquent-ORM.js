@@ -7,9 +7,9 @@ Expose a Laravel-style SQL model import for package consumers without breaking t
 
 ## Completed
 - Added `Model` as a public alias of `SqlModel` in `src/index.ts`.
-- Added a dedicated package subpath entry at `eloquentjs/Model`.
+- Added a dedicated package subpath entry at `eloquent-orm.js/Model`.
 - Added `src/Model.ts` as the named-export consumer entry for:
-  - `import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model"`
+  - `import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model"`
 - Documented the alias in `src/documentation/api-reference.md`.
 - Added a Laravel-style runtime example in `src/documentation/installation-and-quickstart.md`.
 - Locked the surface with `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -18,17 +18,17 @@ Expose a Laravel-style SQL model import for package consumers without breaking t
 SQL-backed consumers can now use either:
 
 ```ts
-import { Model } from "eloquentjs";
+import { Model } from "eloquent-orm.js";
 ```
 
 or:
 
 ```ts
-import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model";
+import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
 ```
 
 Mongo-backed consumers can use:
 
 ```ts
-import { MongoModel } from "eloquentjs/Model";
+import { MongoModel } from "eloquent-orm.js/Model";
 ```

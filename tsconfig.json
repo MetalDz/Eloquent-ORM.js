@@ -19,7 +19,10 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "eloquentjs": ["src/index.ts"]
+      "eloquentjs": ["src/index.ts"],
+      "eloquentjs/Model": ["src/Model.ts"],
+      "eloquent-orm.js": ["src/index.ts"],
+      "eloquent-orm.js/Model": ["src/Model.ts"]
     },
     "esModuleInterop": true,            // Enables `import fs from 'fs'`
     "resolveJsonModule": true,          // Allows importing JSON configs

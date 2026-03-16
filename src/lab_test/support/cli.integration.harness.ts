@@ -434,7 +434,7 @@ export interface Comment extends ModelInstance<CommentAttrs> {}
 
   writeFixture(
     path.join(appFactoriesDir, "UserFactory.ts"),
-    `import { Factory } from "eloquentjs";
+    `import { Factory } from "eloquent-orm.js";
 import { User } from "../../models/User";
 
 export class UserFactory extends Factory<User> {
@@ -451,7 +451,7 @@ export class UserFactory extends Factory<User> {
 
   writeFixture(
     path.join(appFactoriesDir, "PostFactory.ts"),
-    `import { Factory } from "eloquentjs";
+    `import { Factory } from "eloquent-orm.js";
 import { Post } from "../../models/Post";
 
 export class PostFactory extends Factory<Post> {
@@ -468,7 +468,7 @@ export class PostFactory extends Factory<Post> {
 
   writeFixture(
     path.join(appFactoriesDir, "CommentFactory.ts"),
-    `import { Factory } from "eloquentjs";
+    `import { Factory } from "eloquent-orm.js";
 import { Comment } from "../../models/Comment";
 
 export class CommentFactory extends Factory<Comment> {

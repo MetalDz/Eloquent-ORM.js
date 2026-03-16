@@ -50,7 +50,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
     fs.rmSync(outsideRepo, { recursive: true, force: true });
   });
 
-  test("package-name read failures fall back to eloquentjs for installed-package imports", async () => {
+  test("package-name read failures fall back to eloquent-orm.js for installed-package imports", async () => {
     const outsideRepo = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-import-resolver-fallback-"));
     const fsModule = require("fs") as typeof import("fs");
     const originalReadFileSync = fsModule.readFileSync.bind(fsModule);
@@ -67,9 +67,9 @@ describe("LTS phase 5 ImportResolver coverage", () => {
 
     const { ImportResolver } = await import("../cli/utils/ImportResolver");
 
-    expect(ImportResolver.coreImportPath(false)).toBe("eloquentjs");
-    expect(ImportResolver.schemaImportPath(true)).toBe("eloquentjs");
-    expect(ImportResolver.publicApiImportPath()).toBe("eloquentjs");
+    expect(ImportResolver.coreImportPath(false)).toBe("eloquent-orm.js");
+    expect(ImportResolver.schemaImportPath(true)).toBe("eloquent-orm.js");
+    expect(ImportResolver.publicApiImportPath()).toBe("eloquent-orm.js");
 
     readSpy.mockRestore();
     cwdSpy.mockRestore();

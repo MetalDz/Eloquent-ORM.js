@@ -4,7 +4,7 @@ Last updated: 2026-03-16 11:32
 Status: COMPLETED
 
 ## Goal
-- Make `scripts/pack-smoke.js` follow the current package name from `package.json` instead of hardcoding the legacy `eloquentjs` import path.
+- Make `scripts/pack-smoke.js` follow the current package name from `package.json` instead of hardcoding a legacy package import path.
 
 ## Scope
 - `scripts/pack-smoke.js`

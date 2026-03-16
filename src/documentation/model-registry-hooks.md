@@ -28,7 +28,7 @@ registerAppModels();
 Manual bootstrap remains supported:
 
 ```ts
-import { registerModels } from "eloquentjs";
+import { registerModels } from "eloquent-orm.js";
 import { User } from "./app/models/User";
 import { Post } from "./app/models/Post";
 

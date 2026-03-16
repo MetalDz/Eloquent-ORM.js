@@ -37,6 +37,11 @@ describe("Public Model alias and subpath entry", () => {
   });
 
   test("consumer docs describe root alias and named model subpath imports", () => {
+    const packageJsonPath = path.resolve(process.cwd(), "package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
+      name?: string;
+    };
+    const packageName = packageJson.name ?? "eloquent-orm.js";
     const apiDoc = fs.readFileSync(
       path.resolve(process.cwd(), "src/documentation/api-reference.md"),
       "utf8"
@@ -50,14 +55,18 @@ describe("Public Model alias and subpath entry", () => {
       "utf8"
     );
 
-    expect(apiDoc).toContain("## Root Package: `eloquentjs`");
-    expect(apiDoc).toContain("## Model Subpath: `eloquentjs/Model`");
-    expect(apiDoc).toContain("- `eloquentjs/Model` does not expose a default export.");
-    expect(apiDoc).toContain("- `eloquentjs/Model` does not expose the root `Model` alias.");
+    expect(apiDoc).toContain(`## Root Package: \`${packageName}\``);
+    expect(apiDoc).toContain(`## Model Subpath: \`${packageName}/Model\``);
+    expect(apiDoc).toContain(`- \`${packageName}/Model\` does not expose a default export.`);
+    expect(apiDoc).toContain(`- \`${packageName}/Model\` does not expose the root \`Model\` alias.`);
     expect(installDoc).toContain("### Laravel-Style SQL Model Import");
-    expect(installDoc).toContain('import { Model, column, registerModels, type ModelInstance } from "eloquentjs";');
-    expect(installDoc).toContain('import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model";');
+    expect(installDoc).toContain(
+      `import { Model, column, registerModels, type ModelInstance } from "${packageName}";`,
+    );
+    expect(installDoc).toContain(
+      `import { SqlModel, MongoModel, type ModelInstance } from "${packageName}/Model";`,
+    );
     expect(planDoc).toContain("# Public Model Alias And Entry Plan");
-    expect(planDoc).toContain('`eloquentjs/Model`');
+    expect(planDoc).toContain(`\`${packageName}/Model\``);
   });
 });

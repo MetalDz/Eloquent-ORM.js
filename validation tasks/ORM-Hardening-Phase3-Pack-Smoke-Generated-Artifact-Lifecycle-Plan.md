@@ -12,7 +12,7 @@ Status: COMPLETED
 - Keep the smoke assertions focused on the default `BaseModel` surface exposed by generated artifacts.
 
 ## Implemented
-- Added a packaged runtime helper in `pack-smoke.js` that loads generated model files through `eloquentjs/dist/cli/utils/typescript/tsRuntime`.
+- Added a packaged runtime helper in `pack-smoke.js` that loads generated model files through the installed package `dist/cli/utils/typescript/tsRuntime` path.
 - Added a generated SQL model runtime smoke check for `DemoAuto.ts`.
 - Added a generated SQL scenario model runtime smoke check for `User.ts`.
 - Added a generated Mongo model runtime smoke check for `GeoLocation.ts`.

@@ -99,7 +99,7 @@ Step	    Feature	Description
 🚧	        CLI Tool	eloquent migrate, eloquent seed commands
 🚧	        Transactions	Commit/rollback for SQL drivers
 🚧	        Eager Loading	with() for related models
-🚧	        Publish to npm	npm install eloquentjs
+🚧	        Publish to npm	npm install eloquent-orm.js
 
 ✅ Phase 1 — Core Model Architecture
 
@@ -181,7 +181,7 @@ Created with ❤️ by ALPHA Consultings who love Laravel, Node.js, and TypeScri
 Register your models once at startup:
 
 ```ts
-import { registerModels } from "eloquentjs";
+import { registerModels } from "eloquent-orm.js";
 import { User } from "./app/models/User";
 import { Post } from "./app/models/Post";
 

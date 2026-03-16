@@ -99,7 +99,7 @@ describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure",
     else process.env.APP_ENV = oldAppEnv;
   });
 
-  test("ImportResolver falls back to eloquentjs when package name is blank", async () => {
+  test("ImportResolver falls back to eloquent-orm.js when package name is blank", async () => {
     const fsModule = require("fs") as typeof import("fs");
     const readSpy = jest
       .spyOn(fsModule, "readFileSync")
@@ -109,8 +109,8 @@ describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure",
     jest.resetModules();
     const { ImportResolver } = await import("../cli/utils/ImportResolver");
 
-    expect(ImportResolver.coreImportPath(true)).toBe("eloquentjs");
-    expect(ImportResolver.schemaImportPath(false)).toBe("eloquentjs");
+    expect(ImportResolver.coreImportPath(true)).toBe("eloquent-orm.js");
+    expect(ImportResolver.schemaImportPath(false)).toBe("eloquent-orm.js");
 
     readSpy.mockRestore();
     cwdSpy.mockRestore();

@@ -8,12 +8,17 @@ jest.mock("@faker-js/faker", () => ({
 }));
 
 describe("Model subpath named exports", () => {
-  test("eloquentjs/Model exposes named SQL and Mongo model bases", () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"),
+  ) as { name?: string };
+  const packageName = packageJson.name ?? "eloquent-orm.js";
+
+  test(`${packageName}/Model exposes named SQL and Mongo model bases`, () => {
     expect(ModelSubpath.SqlModel).toBe(SqlModel);
     expect(ModelSubpath.MongoModel).toBe(MongoModel);
   });
 
-  test("eloquentjs/Model no longer exposes a default or named Model alias", () => {
+  test(`${packageName}/Model no longer exposes a default or named Model alias`, () => {
     expect("default" in ModelSubpath).toBe(false);
     expect("Model" in ModelSubpath).toBe(false);
   });
@@ -33,11 +38,11 @@ describe("Model subpath named exports", () => {
     );
 
     expect(plan).toContain("# Model Subpath Named Exports Plan");
-    expect(plan).toContain("`eloquentjs/Model`");
+    expect(plan).toContain(`\`${packageName}/Model\``);
     expect(plan).toContain("Removed the default export from `src/Model.ts`.");
-    expect(apiDoc).toContain("`eloquentjs/Model` does not expose a default export.");
+    expect(apiDoc).toContain(`\`${packageName}/Model\` does not expose a default export.`);
     expect(installDoc).toContain(
-      'import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model";',
+      `import { SqlModel, MongoModel, type ModelInstance } from "${packageName}/Model";`,
     );
   });
 });

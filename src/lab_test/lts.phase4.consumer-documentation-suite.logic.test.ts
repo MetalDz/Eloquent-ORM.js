@@ -85,12 +85,16 @@ describe("LTS phase 4 consumer documentation suite", () => {
   });
 
   test("installation and troubleshooting guides cover first-use and support paths", () => {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
+    ) as { name?: string };
+    const packageName = packageJson.name ?? "eloquent-orm.js";
     const install = fs.readFileSync(installPath, "utf8");
     const troubleshooting = fs.readFileSync(troubleshootingPath, "utf8");
 
     const installSnippets = [
       "# Installation and Quick Start",
-      "npm install eloquentjs",
+      `npm install ${packageName}`,
       "Example SQL-first setup",
       "Example Mongo setup",
       "## Quick Start",

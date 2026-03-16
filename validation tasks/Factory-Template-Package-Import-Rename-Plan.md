@@ -4,7 +4,7 @@ Last updated: 2026-03-16 11:38
 Status: COMPLETED
 
 ## Goal
-- Make factory and pivot-factory generation follow the current package import path instead of hardcoding `eloquentjs`.
+- Make factory and pivot-factory generation follow the current package import path instead of hardcoding the legacy package name.
 
 ## Scope
 - `src/cli/commands/makeFactory.ts`

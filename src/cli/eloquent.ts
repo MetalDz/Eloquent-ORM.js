@@ -191,7 +191,7 @@ printCliBanner();
 // -----------------------------------------------------------------------------
 program
   .name("eloquent")
-  .description("EloquentJS ORM Command Line Interface (Artisan-like tool)")
+  .description("Eloquent ORM JS Command Line Interface (Artisan-like tool)")
   .version("1.0.0");
 
 // -----------------------------------------------------------------------------

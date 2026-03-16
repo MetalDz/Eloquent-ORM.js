@@ -1,12 +1,12 @@
 # Installation and Quick Start
 
-Last updated: 2026-03-14
+Last updated: 2026-03-16
 
 ## Installation
 Install the package from npm:
 
 ```bash
-npm install eloquentjs
+npm install eloquent-orm.js
 ```
 
 If you use TypeScript in your app, keep your project TypeScript toolchain available and ensure your build/runtime setup can load your model files.
@@ -44,7 +44,7 @@ eloquent make:model User --with-migration
 2. Register your models at app startup:
 
 ```ts
-import { registerModels } from "eloquentjs";
+import { registerModels } from "eloquent-orm.js";
 import { User } from "./app/models/User";
 
 registerModels([User]);
@@ -55,7 +55,7 @@ registerModels([User]);
 For SQL-backed models, you can use the Laravel-style `Model` alias instead of `SqlModel`:
 
 ```ts
-import { Model, column, registerModels, type ModelInstance } from "eloquentjs";
+import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
 
 type UserAttrs = {
   id?: number;
@@ -84,7 +84,7 @@ registerModels([User]);
 If you prefer a class-style import, the package also exposes:
 
 ```ts
-import { SqlModel, MongoModel, type ModelInstance } from "eloquentjs/Model";
+import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
 ```
 
 Use `SqlModel` from that subpath for SQL-backed models and `MongoModel` for Mongo-backed models.
