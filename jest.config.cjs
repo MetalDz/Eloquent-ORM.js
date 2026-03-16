@@ -5,6 +5,14 @@ module.exports = {
   roots: ["<rootDir>/src"],
   testMatch: ["**/lab_test/**/*.test.ts"],
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/**/*.d.ts",
+    "!src/app/**/*.ts",
+    "!src/test/**/*.ts",
+    "!src/lab_test/**/*.ts",
+  ],
+  coveragePathIgnorePatterns: ["<rootDir>/dist/"],
   clearMocks: true,
   coverageReporters: ["text-summary", "json-summary"],
   coverageThreshold: {
