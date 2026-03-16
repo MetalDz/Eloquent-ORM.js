@@ -31,6 +31,7 @@ type MigrateRunHarnessOptions = {
   existingCollections?: string[];
   loadModuleImpl?: (modulePath: string) => unknown;
   omitGetConnection?: boolean;
+  omitConnectionConfig?: boolean;
 };
 
 async function setupMigrateRunHarness(options: MigrateRunHarnessOptions = {}) {
@@ -131,11 +132,13 @@ async function setupMigrateRunHarness(options: MigrateRunHarnessOptions = {}) {
   }));
   jest.doMock("../config/database", () => ({
     dbConfig: {
-      connections: {
-        [connectionName]: {
-          driver,
-        },
-      },
+      connections: options.omitConnectionConfig
+        ? {}
+        : {
+            [connectionName]: {
+              driver,
+            },
+          },
     },
   }));
   jest.doMock("../core/connection/ConnectionFactory", () => ({
@@ -466,5 +469,116 @@ describe("LTS phase 5 migrateRun coverage", () => {
       expect.objectContaining({ success: true }),
     );
     fs.rmSync(sqlHarness.root, { recursive: true, force: true });
+  });
+
+  test("covers Mongo collection no-op branches and createIndex default options", async () => {
+    const harness = await setupMigrateRunHarness({
+      connectionName: "mongo" as ConnectionName,
+      migrationFiles: ["202603150108_manage_media.ts"],
+      existingCollections: ["media"],
+      loadModuleImpl: () => ({
+        up: async (ctx: {
+          ensureCollection: (name: string) => Promise<void>;
+          dropCollection: (name: string) => Promise<void>;
+          createIndex: (
+            collectionName: string,
+            keys: Record<string, 1 | -1>,
+            options?: Record<string, unknown>,
+          ) => Promise<void>;
+        }) => {
+          await ctx.ensureCollection("media");
+          await ctx.dropCollection("ghosts");
+          await ctx.createIndex("media", { slug: 1 });
+        },
+      }),
+    });
+
+    await harness.migrateRun(false, undefined, false, false, {
+      connectionNames: [harness.connectionName],
+    });
+
+    expect(harness.mongoDb.createCollection).not.toHaveBeenCalled();
+    expect(harness.collectionHandles.get("ghosts")?.drop).toBeUndefined();
+    expect(harness.collectionHandles.get("media")?.createIndex).toHaveBeenCalledWith(
+      { slug: 1 },
+      {},
+    );
+
+    fs.rmSync(harness.root, { recursive: true, force: true });
+  });
+
+  test("covers Mongo dry-run default index options, config fallback driver, js discovery, and model misses", async () => {
+    const dryRunHarness = await setupMigrateRunHarness({
+      connectionName: "mongo" as ConnectionName,
+      migrationFiles: ["202603150109_manage_media.ts"],
+      loadModuleImpl: () => ({
+        up: async (ctx: {
+          createIndex: (
+            collectionName: string,
+            keys: Record<string, 1 | -1>,
+            options?: Record<string, unknown>,
+          ) => Promise<void>;
+        }) => {
+          await ctx.createIndex("media", { slug: 1 });
+        },
+      }),
+    });
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await dryRunHarness.migrateRun(false, undefined, true, false, {
+      connectionNames: [dryRunHarness.connectionName],
+    });
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('"options":{}'),
+    );
+    fs.rmSync(dryRunHarness.root, { recursive: true, force: true });
+
+    const fallbackHarness = await setupMigrateRunHarness({
+      connectionName: "mongo" as ConnectionName,
+      driver: "mongo",
+      omitConnectionConfig: true,
+      migrationFiles: ["202603150110_media.js"],
+    });
+
+    await fallbackHarness.migrateRun(false, "user", false, false, {
+      connectionNames: [fallbackHarness.connectionName],
+    });
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("No migrations found for model: user"),
+    );
+    expect(fallbackHarness.mocks.getConnection).toHaveBeenCalledWith("mongo");
+    expect(fallbackHarness.mocks.loadModule).not.toHaveBeenCalled();
+
+    fs.rmSync(fallbackHarness.root, { recursive: true, force: true });
+  });
+
+  test("covers mongo model-specific filtering when matching js migrations remain", async () => {
+    const matchingFile = "202603150111_media.js";
+    const harness = await setupMigrateRunHarness({
+      connectionName: "mongo" as ConnectionName,
+      migrationFiles: [matchingFile],
+      loadModuleImpl: () => ({
+        up: async () => undefined,
+      }),
+    });
+
+    await harness.migrateRun(false, "media", false, false, {
+      connectionNames: [harness.connectionName],
+    });
+
+    expect(harness.mocks.loadModule).toHaveBeenCalledWith(
+      expect.stringContaining(matchingFile),
+    );
+    expect(harness.mocks.appendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionName: harness.connectionName,
+        result: "success",
+        metadata: expect.objectContaining({ modelName: "media" }),
+      }),
+    );
+
+    fs.rmSync(harness.root, { recursive: true, force: true });
   });
 });

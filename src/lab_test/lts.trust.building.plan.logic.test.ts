@@ -10,7 +10,7 @@ describe("LTS trust building plan", () => {
 
     const requiredSnippets = [
       "# LTS Trust Building Plan",
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       'Move the ORM from "production-usable in controlled environments" to "consumer-trusted LTS-grade package"',
       "controlled-production usable",
       "not yet consumer-trusted as an LTS package",
@@ -71,10 +71,10 @@ describe("LTS trust building plan", () => {
       "CLI reference",
       "support policy",
       "### 7) Coverage Plan to 100% (No Gaps)",
-      "Statements   : `99.65% (6078/6099)`",
-      "Branches     : `98.85% (3288/3326)`",
-      "Functions    : `100% (997/997)`",
-      "Lines        : `99.75% (5756/5770)`",
+      "Statements   : `100% (6290/6290)`",
+      "Branches     : `100% (3326/3326)`",
+      "Functions    : `100% (1031/1031)`",
+      "Lines        : `100% (5954/5954)`",
       "Coverage target:",
       "Statements: `100%`",
       "Branches: `100%`",

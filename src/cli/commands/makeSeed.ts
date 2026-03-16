@@ -5,12 +5,12 @@ import { PathMap } from "../utils/PathMap";
 import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
 
 /**
- * 🧩 makeSeed
+ * makeSeed
  * Generates a seeder for a given model (with its factory)
  */
 export async function makeSeed(
   name: string,
-  options?: { count?: number; test?: boolean; force?: boolean; mongo?: boolean }
+  options?: { count?: number; test?: boolean; force?: boolean; mongo?: boolean },
 ) {
   try {
     PathMap.ensureDirs();
@@ -38,10 +38,10 @@ export async function makeSeed(
       ? overwriteFile(filePath, rendered)
       : writeFileSafe(filePath, rendered);
     if (ok) {
-      console.log(chalk.greenBright(`✅ Seeder created: ${SeederName}`));
+      console.log(chalk.greenBright(`OK: Seeder created: ${SeederName}`));
     }
   } catch (err) {
-    console.error(chalk.red("❌ Failed to create seeder file."));
+    console.error(chalk.red("ERROR: Failed to create seeder file."));
     if (err instanceof Error) console.error(chalk.red(err.message));
   }
 }

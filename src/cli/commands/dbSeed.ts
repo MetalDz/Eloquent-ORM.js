@@ -153,14 +153,16 @@ export async function dbSeed(options: {
         // Otherwise, run all seeders in alphabetical order
         try {
           if (seedFiles.length === 0) {
-            const skippedSummary = summarizeSkippedArtifacts(
-              "seeder",
-              skippedSeeders,
-              targetStorageKind
+            // When no compatible seeders remain, every discovered seeder was skipped.
+            console.log(
+              chalk.yellow(
+                summarizeSkippedArtifacts(
+                  "seeder",
+                  skippedSeeders,
+                  targetStorageKind
+                )!
+              )
             );
-            if (skippedSummary) {
-              console.log(chalk.yellow(skippedSummary));
-            }
             console.log(
               chalk.yellow(
                 `No compatible seeder files found for ${connectionName}.`

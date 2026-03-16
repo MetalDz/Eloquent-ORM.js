@@ -108,9 +108,10 @@ describe("ORM hardening phase 1 CLI bootstrap extraction", () => {
     const source = fs.readFileSync(cliPath, "utf8");
 
     expect(source).toContain('from "./utils/CliBootstrapSupport"');
-    expect(source).toContain("applyCliTestConnectionOverride(process.argv, process.env);");
-    expect(source).toContain("shouldAutoLoadFactoriesForCli(process.argv)");
-    expect(source).toContain("isCliTestArgv(process.argv)");
-    expect(source).toContain("resolveCliRequestedStorageKind(process.argv, process.env)");
+    expect(source).toContain("export async function runCli(");
+    expect(source).toContain("applyCliTestConnectionOverride(argv, env);");
+    expect(source).toContain("shouldAutoLoadFactoriesForCli(argv)");
+    expect(source).toContain("isCliTestArgv(argv)");
+    expect(source).toContain("resolveCliRequestedStorageKind(argv, env)");
   });
 });

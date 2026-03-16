@@ -38,11 +38,11 @@ describe("LTS phase 3 compatibility and API freeze", () => {
     }
   });
 
-  test("master LTS plan remains in progress and shows Phase 3 completed", () => {
+  test("master LTS plan is completed and shows Phase 3 completed", () => {
     const masterPlan = fs.readFileSync(masterPlanPath, "utf8");
 
     const requiredSnippets = [
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "### Phase 3: Compatibility + API Freeze",
       "- [x] Write backward compatibility policy",
       "- [x] write public API freeze policy",

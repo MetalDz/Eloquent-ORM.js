@@ -592,4 +592,55 @@ describe("LTS phase 5 migrateRollback coverage", () => {
 
     fs.rmSync(downErrorHarness.root, { recursive: true, force: true });
   });
+
+  test("covers Mongo context no-op branches plus batch and id fallback sorting", async () => {
+    const migrationFiles = [
+      "202603150010_manage_media_a.ts",
+      "202603150011_manage_media_b.ts",
+      "202603150012_manage_media_c.ts",
+    ];
+    const harness = await setupMongoRollbackHarness({
+      rows: [
+        { name: migrationFiles[0], batch: 2 },
+        { name: migrationFiles[1], batch: 2 },
+        { name: migrationFiles[2], batch: 1 },
+      ],
+      createFiles: migrationFiles,
+      existingCollections: ["media"],
+      loadModuleImpl: (modulePath: string) => ({
+        down: async (ctx: {
+          ensureCollection: (name: string) => Promise<void>;
+          dropCollection: (name: string) => Promise<void>;
+          createIndex: (
+            collectionName: string,
+            keys: Record<string, 1 | -1>,
+            options?: Record<string, unknown>,
+          ) => Promise<void>;
+          query: (sql: string) => Promise<void>;
+        }) => {
+          if (modulePath.endsWith(migrationFiles[0])) {
+            await ctx.ensureCollection("media");
+            await ctx.dropCollection("ghosts");
+            await ctx.createIndex("media", { user_id: 1 });
+            await ctx.query("   ");
+          }
+        },
+      }),
+    });
+
+    await harness.migrateRollback({
+      connectionNames: [harness.connectionName],
+      allMigrations: true,
+    });
+
+    expect(harness.db.createCollection).not.toHaveBeenCalled();
+    expect(harness.collections.get("ghosts")?.drop).toBeUndefined();
+    expect(harness.collections.get("media")?.createIndex).toHaveBeenCalledWith(
+      { user_id: 1 },
+      {},
+    );
+    expect(process.exitCode).toBe(0);
+
+    fs.rmSync(harness.root, { recursive: true, force: true });
+  });
 });

@@ -17,11 +17,11 @@ describe("LTS phase 5 coverage to 100", () => {
 
     const requiredSnippets = [
       "# LTS Phase 5: Coverage To 100 Plan",
-      "Status: IN PROGRESS",
-      "Statements   : `99.65% (6078/6099)`",
-      "Branches     : `98.85% (3288/3326)`",
-      "Functions    : `100% (997/997)`",
-      "Lines        : `99.75% (5756/5770)`",
+      "Status: COMPLETED",
+      "Statements   : `100% (6290/6290)`",
+      "Branches     : `100% (3326/3326)`",
+      "Functions    : `100% (1031/1031)`",
+      "Lines        : `100% (5954/5954)`",
       "src/cli/utils/ImportResolver.ts",
       "LTS-Phase5-ImportResolver-Coverage-Plan.md",
       "src/cli/utils/CliCommandTargets.ts",
@@ -97,7 +97,7 @@ describe("LTS phase 5 coverage to 100", () => {
       "src/core/cache/drivers/FileCacheDriver.ts",
       "LTS-Phase5-Cache-Runtime-Coverage-Plan.md",
       "LTS-Phase5-MigrateRollback-Coverage-Plan.md",
-      "Global `npm run test:coverage` remains the LTS release gate.",
+      "Coverage release gate is satisfied:",
     ];
 
     for (const snippet of requiredSnippets) {
@@ -109,16 +109,16 @@ describe("LTS phase 5 coverage to 100", () => {
     const masterPlan = fs.readFileSync(masterPlanPath, "utf8");
 
     const requiredSnippets = [
-      "Status: IN PROGRESS",
-      "Statements   : `99.65% (6078/6099)`",
-      "Branches     : `98.85% (3288/3326)`",
-      "Functions    : `100% (997/997)`",
-      "Lines        : `99.75% (5756/5770)`",
+      "Status: COMPLETED",
+      "Statements   : `100% (6290/6290)`",
+      "Branches     : `100% (3326/3326)`",
+      "Functions    : `100% (1031/1031)`",
+      "Lines        : `100% (5954/5954)`",
       "### Phase 5: Coverage to 100%",
       "- [x] Refresh the real coverage baseline from `npm run test:coverage`",
       "- [x] Record hotspot order and execution rules in `LTS-Phase5-Coverage-To-100-Plan.md`",
-      "- [ ] Use tracked slices to eliminate all remaining runtime/CLI/helper gaps",
-      "- [ ] make `100%` coverage a release-blocking LTS gate",
+      "- [x] Use tracked slices to eliminate all remaining runtime/CLI/helper gaps",
+      "- [x] make `100%` coverage a release-blocking LTS gate",
     ];
 
     for (const snippet of requiredSnippets) {

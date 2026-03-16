@@ -24,7 +24,7 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     expect(content).toContain("src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts");
   });
 
-  test("temp transpiled modules use workspace ts direct-require, local js resolution, and fallback require", () => {
+  test("temp transpiled modules use workspace ts manual transpile, local js resolution, and fallback require", () => {
     let runtime: typeof import("../cli/utils/typescript/tsRuntime");
     jest.isolateModules(() => {
       runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
@@ -51,6 +51,7 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     );
 
     try {
+      runtime!.clearLoadedModuleCache(mainFile);
       const first = runtime!.loadModule(mainFile) as {
         loaded: number;
         separator: string;
@@ -60,8 +61,127 @@ describe("LTS phase 5 tsRuntime coverage", () => {
       expect(first.separator).toBe(path.sep);
 
     } finally {
+      runtime!.clearLoadedModuleCache(mainFile);
       delete require.cache[path.resolve(mainFile)];
       delete require.cache[path.resolve(jsDepFile)];
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("manual transpile falls back cleanly when the package name cannot be read", () => {
+    const packageJsonPath = path.resolve(rootDir, "package.json");
+    const originalReadFileSync = fs.readFileSync.bind(fs);
+    const readSpy = jest
+      .spyOn(fs, "readFileSync")
+      .mockImplementation(((filePath: fs.PathOrFileDescriptor, encoding?: unknown) => {
+        if (typeof filePath === "string" && path.resolve(filePath) === packageJsonPath) {
+          throw new Error("package metadata unavailable");
+        }
+        return originalReadFileSync(filePath, encoding as never);
+      }) as typeof fs.readFileSync);
+
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-pkg-missing-"));
+    const mainFile = path.join(tempRoot, "main.ts");
+    fs.writeFileSync(
+      mainFile,
+      ['const nodePath = require("path");', "export const separator = nodePath.sep;"].join("\n"),
+      "utf8",
+    );
+
+    try {
+      runtime!.clearLoadedModuleCache(mainFile);
+      expect(runtime!.loadModule(mainFile)).toEqual({ separator: path.sep });
+    } finally {
+      readSpy.mockRestore();
+      runtime!.clearLoadedModuleCache(mainFile);
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("manual transpile ignores non-string package names and continues resolving normal modules", () => {
+    const packageJsonPath = path.resolve(rootDir, "package.json");
+    const originalReadFileSync = fs.readFileSync.bind(fs);
+    const readSpy = jest
+      .spyOn(fs, "readFileSync")
+      .mockImplementation(((filePath: fs.PathOrFileDescriptor, encoding?: unknown) => {
+        if (typeof filePath === "string" && path.resolve(filePath) === packageJsonPath) {
+          return JSON.stringify({ name: 123 });
+        }
+        return originalReadFileSync(filePath, encoding as never);
+      }) as typeof fs.readFileSync);
+
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-pkg-nonstr-"));
+    const mainFile = path.join(tempRoot, "main.ts");
+    fs.writeFileSync(
+      mainFile,
+      ['const nodePath = require("path");', "export const separator = nodePath.sep;"].join("\n"),
+      "utf8",
+    );
+
+    try {
+      runtime!.clearLoadedModuleCache(mainFile);
+      expect(runtime!.loadModule(mainFile)).toEqual({ separator: path.sep });
+    } finally {
+      readSpy.mockRestore();
+      runtime!.clearLoadedModuleCache(mainFile);
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("package self resolution falls back when repo source entrypoints are unavailable", () => {
+    const packageName = (
+      JSON.parse(fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8")) as { name?: string }
+    ).name ?? "eloquent-orm.js";
+    const indexPath = path.resolve(rootDir, "src", "index.ts");
+    const modelPath = path.resolve(rootDir, "src", "Model.ts");
+    const originalExistsSync = fs.existsSync.bind(fs);
+    const existsSpy = jest
+      .spyOn(fs, "existsSync")
+      .mockImplementation(((candidate: fs.PathLike) => {
+        const resolved = path.resolve(String(candidate));
+        if (resolved === indexPath || resolved === modelPath) {
+          return false;
+        }
+        return originalExistsSync(candidate);
+      }) as typeof fs.existsSync);
+
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-self-miss-"));
+    const mainFile = path.join(tempRoot, "main.ts");
+    fs.writeFileSync(
+      mainFile,
+      [
+        `export const rootError = (() => { try { require(${JSON.stringify(packageName)}); return ""; } catch (error) { return String((error as Error).message); } })();`,
+        `export const modelError = (() => { try { require(${JSON.stringify(`${packageName}/Model`)}); return ""; } catch (error) { return String((error as Error).message); } })();`,
+      ].join("\n"),
+      "utf8",
+    );
+
+    try {
+      runtime!.clearLoadedModuleCache(mainFile);
+      expect(runtime!.loadModule(mainFile)).toEqual(
+        expect.objectContaining({
+          rootError: expect.stringContaining(packageName),
+          modelError: expect.stringContaining(`${packageName}/Model`),
+        }),
+      );
+    } finally {
+      existsSpy.mockRestore();
+      runtime!.clearLoadedModuleCache(mainFile);
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
   });
@@ -171,6 +291,10 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("cached transpiled exports are returned before re-reading the TypeScript file", () => {
+    jest.doMock("ts-node", () => {
+      throw new Error("ts-node unavailable");
+    });
+
     let runtime: typeof import("../cli/utils/typescript/tsRuntime");
     jest.isolateModules(() => {
       runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");

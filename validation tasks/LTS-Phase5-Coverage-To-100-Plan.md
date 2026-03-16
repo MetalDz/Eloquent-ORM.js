@@ -1,21 +1,21 @@
 # LTS Phase 5: Coverage To 100 Plan
 
-Last updated: 2026-03-16 11:18  
-Status: IN PROGRESS
+Last updated: 2026-03-16 17:03  
+Status: COMPLETED
 
 ## Goal
 - Drive the package from high coverage to a true LTS-grade `100%` gate across statements, branches, functions, and lines.
 
 ## Current Reported Baseline
 Latest full-suite snapshot reported on `2026-03-16`:
-- Statements   : `99.65% (6078/6099)`
-- Branches     : `98.85% (3288/3326)`
-- Functions    : `100% (997/997)`
-- Lines        : `99.75% (5756/5770)`
+- Statements   : `100% (6290/6290)`
+- Branches     : `100% (3326/3326)`
+- Functions    : `100% (1031/1031)`
+- Lines        : `100% (5954/5954)`
 
 Progress note:
-- The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
-- That regression was corrected, and subsequent Phase 5 slices moved the full-suite baseline upward from the original kickoff snapshot.
+- The source-only coverage scope is locked in `jest.config.cjs`.
+- The final verification run reached `100%` across statements, branches, functions, and lines.
 
 ## Coverage Execution Rules
 - Every active hotspot slice must ship with:
@@ -161,7 +161,7 @@ Progress note:
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 
 ## Release Gate
-- LTS promotion remains blocked until:
+- Coverage release gate is satisfied:
   - `npm run test:coverage` reports `100%`
   - no hotspot file remains without a tracked slice
   - the final coverage pass is reflected in the master LTS plan

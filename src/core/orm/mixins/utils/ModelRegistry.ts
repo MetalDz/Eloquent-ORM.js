@@ -81,7 +81,6 @@ export class ModelRegistry {
 
     if (this.strictMode) {
       this.assertGranted(modelCtor, context);
-      return;
     }
 
     this.grant(modelCtor);

@@ -39,11 +39,11 @@ describe("LTS phase 4 consumer documentation suite", () => {
     }
   });
 
-  test("master LTS plan remains in progress and shows Phase 4 completed", () => {
+  test("master LTS plan is completed and shows Phase 4 completed", () => {
     const masterPlan = fs.readFileSync(masterPlanPath, "utf8");
 
     const requiredSnippets = [
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "### Phase 4: Consumer Documentation Suite",
       "- [x] Publish full package docs from installation to usage to support",
       "- [x] add docs entry-point tests and section coverage tests",

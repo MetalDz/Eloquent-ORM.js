@@ -31,11 +31,11 @@ describe("LTS phase 1 versioning and support foundation", () => {
     }
   });
 
-  test("master plan is now in progress and shows Phase 1 completed", () => {
+  test("master plan is completed and shows Phase 1 completed", () => {
     const masterPlan = fs.readFileSync(masterPlanPath, "utf8");
 
     const requiredSnippets = [
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "### Phase 1: Versioning + Support Foundation",
       "- [x] Write versioning policy doc",
       "- [x] write support policy doc",

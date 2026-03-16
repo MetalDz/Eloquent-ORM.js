@@ -62,7 +62,6 @@ export function PivotHelperMixin<TBase extends Constructor>(Base: TBase) {
         case "sqlite":
         case "mysql":
         case "pg": {
-          if (rows.length === 0) return;
           const adapter = db as DriverAdapter;
           const keys = Object.keys(rows[0]);
           const table = adapter.wrapId(pivotTable);

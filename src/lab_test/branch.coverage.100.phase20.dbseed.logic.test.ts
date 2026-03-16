@@ -227,6 +227,63 @@ describe("Branch coverage 100% - phase 20 dbSeed edge branches", () => {
     expect(process.exitCode).toBe(0);
   });
 
+  test("class mode reports incompatible targeted seeders for mismatched storage", async () => {
+    mockSeedDirectory(["SqlOnlySeeder.ts"], true);
+    jest
+      .spyOn(artifactStorage, "resolveSeederStorageKindFromFile")
+      .mockReturnValue("sql");
+    jest
+      .spyOn(artifactStorage, "targetStorageKindForConnection")
+      .mockReturnValue("mongo");
+
+    await dbSeed({
+      test: true,
+      class: "SqlOnlySeeder",
+      connectionNames: ["mongo_test" as never],
+      close: false,
+      exit: false,
+    });
+
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining("Seeder 'SqlOnlySeeder' is not compatible with mongo connection 'mongo_test'"),
+    );
+    expect(mockedAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: "failure",
+        metadata: expect.objectContaining({
+          className: "SqlOnlySeeder",
+          reason: "seeder_not_found",
+        }),
+      }),
+    );
+    expect(process.exitCode).toBe(1);
+  });
+
+  test("all-seeders mode logs skipped summaries when only incompatible seeders are present", async () => {
+    mockSeedDirectory(["SqlOnlySeeder.ts"], true);
+    jest
+      .spyOn(artifactStorage, "resolveSeederStorageKindFromFile")
+      .mockReturnValue("sql");
+    jest
+      .spyOn(artifactStorage, "targetStorageKindForConnection")
+      .mockReturnValue("mongo");
+
+    await dbSeed({
+      test: true,
+      connectionNames: ["mongo_test" as never],
+      close: false,
+      exit: false,
+    });
+
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining("Skipping incompatible seeder for mongo: SqlOnlySeeder.ts"),
+    );
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining("No compatible seeder files found for mongo_test."),
+    );
+    expect(process.exitCode).toBe(0);
+  });
+
   test("CLI mode schedules process.exit when run completes", async () => {
     process.env.ELOQUENT_CLI = "true";
     process.exitCode = undefined;

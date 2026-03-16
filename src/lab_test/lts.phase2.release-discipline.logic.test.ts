@@ -36,11 +36,11 @@ describe("LTS phase 2 release discipline", () => {
     }
   });
 
-  test("master LTS plan is still in progress and shows Phase 2 completed", () => {
+  test("master LTS plan is completed and shows Phase 2 completed", () => {
     const masterPlan = fs.readFileSync(masterPlanPath, "utf8");
 
     const requiredSnippets = [
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "### Phase 2: Release Discipline",
       "- [x] Write release cadence doc",
       "- [x] add release promotion checklist",

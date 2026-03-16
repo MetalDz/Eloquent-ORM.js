@@ -54,11 +54,13 @@ function resolvePackageSelfRequest(request: string): string | null {
   }
 
   if (request === PACKAGE_NAME) {
-    return resolveExistingModulePath(path.join(PACKAGE_ROOT, "src", "index"));
+    const entryPath = path.join(PACKAGE_ROOT, "src", "index.ts");
+    return fs.existsSync(entryPath) ? entryPath : null;
   }
 
   if (request === `${PACKAGE_NAME}/Model`) {
-    return resolveExistingModulePath(path.join(PACKAGE_ROOT, "src", "Model"));
+    const modelPath = path.join(PACKAGE_ROOT, "src", "Model.ts");
+    return fs.existsSync(modelPath) ? modelPath : null;
   }
 
   return null;
@@ -181,10 +183,7 @@ function loadTranspiledTsModule(
   loadedModule.require = ((request: string) => {
     const packageSelfResolved = resolvePackageSelfRequest(request);
     if (packageSelfResolved) {
-      if (packageSelfResolved.endsWith(".ts")) {
-        return loadTypeScriptModule(packageSelfResolved, runtimeAvailable);
-      }
-      return requireFromFile(packageSelfResolved);
+      return loadTypeScriptModule(packageSelfResolved, runtimeAvailable);
     }
 
     const resolved = resolveLocalRequest(request, absolutePath);

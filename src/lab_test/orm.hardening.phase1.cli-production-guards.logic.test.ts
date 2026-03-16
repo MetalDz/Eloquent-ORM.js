@@ -111,12 +111,18 @@ describe("ORM hardening phase 1 CLI production guards extraction", () => {
       ),
     ];
     const sources = sourcePaths.map((sourcePath) => fs.readFileSync(sourcePath, "utf8"));
-    const combined = sources.join("\n");
+    const cliSource = sources[0];
+    const helperSources = sources.slice(1);
+    const helperCombined = helperSources.join("\n");
 
-    expect(sources[0]).toContain('from "./utils/CliProductionGuards"');
-    expect(combined).toContain("ensureCliProductionOverride(");
-    expect(combined).toContain("ensureCliProductionTestOnly(");
-    expect(combined).not.toContain("function ensureProductionOverride(");
-    expect(combined).not.toContain("function ensureProductionTestOnly(");
+    expect(cliSource).toContain("registerCliScaffoldCommands(program);");
+    expect(cliSource).toContain("registerCliMakeArtifactCommands(program);");
+    expect(cliSource).toContain("registerCliSeedScenarioCommands(program);");
+    expect(cliSource).toContain("registerCliMigrationCommands(program);");
+    expect(cliSource).not.toContain('from "./utils/CliProductionGuards"');
+    expect(helperCombined).toContain("ensureCliProductionOverride(");
+    expect(helperCombined).toContain("ensureCliProductionTestOnly(");
+    expect(helperCombined).not.toContain("function ensureProductionOverride(");
+    expect(helperCombined).not.toContain("function ensureProductionTestOnly(");
   });
 });
