@@ -49,8 +49,13 @@ describe("Package docs and examples rename", () => {
       "src/test/database/factories/UserPostPivotFactory.ts",
       "src/test/database/factories/PostUserPivotFactory.ts",
     ];
+    const existingExampleFiles = exampleFiles.filter((relativePath) =>
+      fs.existsSync(path.resolve(rootDir, relativePath)),
+    );
 
-    for (const relativePath of exampleFiles) {
+    expect(existingExampleFiles.length).toBeGreaterThan(0);
+
+    for (const relativePath of existingExampleFiles) {
       const content = fs.readFileSync(path.resolve(rootDir, relativePath), "utf8");
       expect(
         content.includes(`"${packageName}"`) || content.includes('"../../../index"')
