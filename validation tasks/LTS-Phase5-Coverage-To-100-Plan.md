@@ -1,17 +1,17 @@
 # LTS Phase 5: Coverage To 100 Plan
 
-Last updated: 2026-03-16 10:17  
+Last updated: 2026-03-16 11:02  
 Status: IN PROGRESS
 
 ## Goal
 - Drive the package from high coverage to a true LTS-grade `100%` gate across statements, branches, functions, and lines.
 
 ## Current Reported Baseline
-Latest full-suite snapshot reported on `2026-03-15`:
-- Statements   : `98.71% (6014/6092)`
-- Branches     : `96.66% (3217/3328)`
-- Functions    : `97.69% (973/996)`
-- Lines        : `98.97% (5704/5763)`
+Latest full-suite snapshot reported on `2026-03-16`:
+- Statements   : `99.59% (6074/6099)`
+- Branches     : `98.52% (3277/3326)`
+- Functions    : `100% (997/997)`
+- Lines        : `99.68% (5752/5770)`
 
 Progress note:
 - The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -59,7 +59,9 @@ Progress note:
 - `src/cli/utils/typescript/tsRuntime.ts`
 
 ### D. Residual Runtime Surface Hotspots
+- `src/index.ts`
 - `src/core/model/BaseModel.ts`
+- `src/core/model/BaseModelSafeFinderStatics.ts`
 - `src/core/model/CoreModel.ts`
 - `src/core/model/SafeFinder.ts`
 - `src/core/orm/relations/BelongsToMany.ts`
@@ -129,7 +131,11 @@ Progress note:
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/typescript/tsRuntime.ts` is now tracked in `LTS-Phase5-tsRuntime-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/index.ts` is now tracked in `LTS-Phase5-Index-Entrypoint-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/BaseModel.ts` is now tracked in `LTS-Phase5-BaseModel-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/model/BaseModelSafeFinderStatics.ts` is now tracked in `LTS-Phase5-BaseModelSafeFinderStatics-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/CoreModel.ts` is now tracked in `LTS-Phase5-CoreModel-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.

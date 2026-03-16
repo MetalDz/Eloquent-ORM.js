@@ -95,6 +95,11 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
   });
 
   test("ImportResolver returns package import path outside repo and relative paths in repo", () => {
+    const packageName = (
+      JSON.parse(fs.readFileSync(path.resolve(originalCwd, "package.json"), "utf8")) as {
+        name?: string;
+      }
+    ).name;
     const outside = fs.mkdtempSync(path.join(os.tmpdir(), "import-resolver-"));
     process.chdir(outside);
     jest.resetModules();
@@ -102,8 +107,8 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     const { ImportResolver: OutsideResolver } = require("../cli/utils/ImportResolver") as {
       ImportResolver: { coreImportPath(isTest: boolean): string; schemaImportPath(isTest: boolean): string };
     };
-    expect(OutsideResolver.coreImportPath(true)).toBe("eloquentjs");
-    expect(OutsideResolver.schemaImportPath(false)).toBe("eloquentjs");
+    expect(OutsideResolver.coreImportPath(true)).toBe(packageName);
+    expect(OutsideResolver.schemaImportPath(false)).toBe(packageName);
 
     process.chdir(originalCwd);
     jest.resetModules();

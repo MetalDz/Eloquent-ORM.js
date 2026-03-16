@@ -48,6 +48,11 @@ describe("Package surface hardening", () => {
       jest.resetModules();
 
       jest.isolateModules(() => {
+        const packageName = (
+          JSON.parse(
+            fs.readFileSync(path.resolve(originalCwd, "package.json"), "utf8"),
+          ) as { name?: string }
+        ).name;
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { ImportResolver } = require("../cli/utils/ImportResolver") as {
           ImportResolver: {
@@ -56,8 +61,8 @@ describe("Package surface hardening", () => {
           };
         };
 
-        expect(ImportResolver.coreImportPath(true)).toBe("eloquentjs");
-        expect(ImportResolver.schemaImportPath(true)).toBe("eloquentjs");
+        expect(ImportResolver.coreImportPath(true)).toBe(packageName);
+        expect(ImportResolver.schemaImportPath(true)).toBe(packageName);
       });
     } finally {
       process.chdir(originalCwd);
