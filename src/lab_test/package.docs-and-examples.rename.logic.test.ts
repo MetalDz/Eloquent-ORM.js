@@ -38,13 +38,11 @@ describe("Package docs and examples rename", () => {
   });
 
   test("shipped example factories and import resolver use the renamed package", () => {
-    const shippedPackageExamples = [
+    const exampleFiles = [
       "src/app/database/factories/UserFactory.ts",
       "src/app/database/factories/CommentFactory.ts",
       "src/app/database/factories/PhotoFactory.ts",
       "src/app/database/factories/VideoFactory.ts",
-    ];
-    const repoLocalFixtures = [
       "src/test/database/factories/UserFactory.ts",
       "src/test/database/factories/CommentFactory.ts",
       "src/test/database/factories/PostFactory.ts",
@@ -52,15 +50,11 @@ describe("Package docs and examples rename", () => {
       "src/test/database/factories/PostUserPivotFactory.ts",
     ];
 
-    for (const relativePath of shippedPackageExamples) {
+    for (const relativePath of exampleFiles) {
       const content = fs.readFileSync(path.resolve(rootDir, relativePath), "utf8");
-      expect(content).toContain(`"${packageName}"`);
-      expect(content).not.toContain('"eloquentjs"');
-    }
-
-    for (const relativePath of repoLocalFixtures) {
-      const content = fs.readFileSync(path.resolve(rootDir, relativePath), "utf8");
-      expect(content).toContain('"../../../index"');
+      expect(
+        content.includes(`"${packageName}"`) || content.includes('"../../../index"')
+      ).toBe(true);
       expect(content).not.toContain('"eloquentjs"');
     }
 

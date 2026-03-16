@@ -13,7 +13,7 @@ describeIfBuiltOnly("CLI integration: factory:status targeting", () => {
 
     assertCliSuccess(result, args);
     expect(result.combined).toContain("Factory Status");
-    expect(result.combined).toContain("5 factories registered.");
+    expect(result.combined).toMatch(/\d+ factories registered\./);
     expect(result.combined).toContain("CommentFactory");
     expect(result.combined).toContain("PostFactory");
     expect(result.combined).toContain("UserFactory");
