@@ -11,11 +11,18 @@ type InternalModuleInstance = Module & {
   _compile(code: string, filename: string): void;
 };
 
-function isInsideWorkspace(filePath: string): boolean {
-  const workspaceRoot = path.resolve(process.cwd());
-  const absolutePath = path.resolve(filePath);
-  return absolutePath === workspaceRoot || absolutePath.startsWith(`${workspaceRoot}${path.sep}`);
-}
+const PACKAGE_ROOT = path.resolve(__dirname, "..", "..", "..", "..");
+
+const PACKAGE_NAME = (() => {
+  try {
+    const packageJsonPath = path.join(PACKAGE_ROOT, "package.json");
+    const raw = fs.readFileSync(packageJsonPath, "utf8");
+    const pkg = JSON.parse(raw) as { name?: string };
+    return typeof pkg.name === "string" ? pkg.name.trim() : "";
+  } catch {
+    return "";
+  }
+})();
 
 function resolveExistingModulePath(basePath: string): string | null {
   const candidates = [
@@ -39,6 +46,22 @@ function resolveLocalRequest(request: string, fromFilePath: string): string | nu
     : path.resolve(path.dirname(fromFilePath), request);
 
   return resolveExistingModulePath(candidateBase);
+}
+
+function resolvePackageSelfRequest(request: string): string | null {
+  if (!PACKAGE_NAME) {
+    return null;
+  }
+
+  if (request === PACKAGE_NAME) {
+    return resolveExistingModulePath(path.join(PACKAGE_ROOT, "src", "index"));
+  }
+
+  if (request === `${PACKAGE_NAME}/Model`) {
+    return resolveExistingModulePath(path.join(PACKAGE_ROOT, "src", "Model"));
+  }
+
+  return null;
 }
 
 let registered = false;
@@ -128,12 +151,17 @@ function loadTranspiledTsModule(
   loadedModule.paths = moduleCtor._nodeModulePaths(path.dirname(absolutePath));
   const fallbackRequire = loadedModule.require.bind(loadedModule);
   loadedModule.require = ((request: string) => {
+    const packageSelfResolved = resolvePackageSelfRequest(request);
+    if (packageSelfResolved) {
+      if (packageSelfResolved.endsWith(".ts")) {
+        return loadTypeScriptModule(packageSelfResolved, runtimeAvailable);
+      }
+      return requireFromFile(packageSelfResolved);
+    }
+
     const resolved = resolveLocalRequest(request, absolutePath);
     if (resolved) {
       if (resolved.endsWith(".ts")) {
-        if (runtimeAvailable && isInsideWorkspace(resolved)) {
-          return requireFromFile(resolved);
-        }
         return loadTypeScriptModule(resolved, runtimeAvailable);
       }
       return requireFromFile(resolved);

@@ -83,4 +83,26 @@ describe("LTS phase 5 ImportResolver coverage", () => {
 
     expect(ImportResolver.publicApiImportPath()).toBe("../index");
   });
+
+  test("inside the repo the public API import path resolves relative to the generated file", async () => {
+    jest.spyOn(process, "cwd").mockReturnValue(rootDir);
+
+    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+
+    expect(
+      ImportResolver.publicApiImportPath(
+        path.join(rootDir, "src", "app", "database", "factories", "UserFactory.ts"),
+      ),
+    ).toBe("../../../index");
+    expect(
+      ImportResolver.publicApiImportPath(
+        path.join(rootDir, "src", "test", "database", "factories", "UserFactory.ts"),
+      ),
+    ).toBe("../../../index");
+    expect(
+      ImportResolver.publicApiImportPath(
+        path.join(rootDir, "src", "app", "registerModels.ts"),
+      ),
+    ).toBe("../index");
+  });
 });

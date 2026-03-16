@@ -3,6 +3,11 @@ import path from "path";
 
 export class ImportResolver {
   private static readonly PACKAGE_ROOT = path.resolve(__dirname, "..", "..", "..");
+  private static readonly SOURCE_INDEX_PATH = path.join(
+    ImportResolver.PACKAGE_ROOT,
+    "src",
+    "index",
+  );
 
   private static readonly FALLBACK_PACKAGE_NAME = "eloquent-orm.js";
 
@@ -37,8 +42,18 @@ export class ImportResolver {
     return isTest ? "../../../core/schema/SchemaBlueprint" : "../../core/schema/SchemaBlueprint";
   }
 
-  static publicApiImportPath(): string {
+  static publicApiImportPath(fromFilePath?: string): string {
     if (this.usingInstalledPackage()) return this.PACKAGE_NAME;
-    return "../index";
+    if (!fromFilePath) return "../index";
+
+    const relativePath = path
+      .relative(path.dirname(path.resolve(fromFilePath)), this.SOURCE_INDEX_PATH)
+      .replace(/\\/g, "/");
+
+    if (relativePath.startsWith(".")) {
+      return relativePath;
+    }
+
+    return `./${relativePath}`;
   }
 }

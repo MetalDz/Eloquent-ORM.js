@@ -86,7 +86,6 @@ export async function makeFactory(
     const features = analysis.features ?? {};
     const shouldOverwrite =
       options.overwrite === true || options.force === true;
-    const packageImportPath = ImportResolver.publicApiImportPath();
 
     // Map field types to faker paths.
     const fakerMap: Record<string, string> = {
@@ -162,6 +161,9 @@ export async function makeFactory(
       }
     }
 
+    const factoriesDir = PathMap.factories(!!options.test);
+    const outputPath = path.join(factoriesDir, `${FactoryName}.ts`);
+    const packageImportPath = ImportResolver.publicApiImportPath(outputPath);
     const renderData = {
       ModelName,
       FactoryName,
@@ -183,10 +185,7 @@ export async function makeFactory(
     }
 
     // Write the main factory file using writeFileSafe / overwriteFile.
-    const factoriesDir = PathMap.factories(!!options.test);
     ensureDirSync(factoriesDir);
-
-    const outputPath = path.join(factoriesDir, `${FactoryName}.ts`);
     if (fs.existsSync(outputPath)) {
       if (shouldOverwrite) {
         overwriteFile(outputPath, rendered);
@@ -230,12 +229,18 @@ export async function makeFactory(
             ? rel.relatedKey
             : `${right.toLowerCase()}_id`;
 
+        const pivotOutputPath = path.join(
+          factoriesDir,
+          `${pivotFactoryName}.ts`,
+        );
+        const pivotPackageImportPath =
+          ImportResolver.publicApiImportPath(pivotOutputPath);
         const pivotRenderData = {
           PivotFactoryName: pivotFactoryName,
           pivotTable,
           foreignKey,
           relatedKey,
-          packageImportPath,
+          packageImportPath: pivotPackageImportPath,
         } as const;
 
         const pivotRendered = TemplateEngine.render(
@@ -243,10 +248,6 @@ export async function makeFactory(
           pivotRenderData,
         );
 
-        const pivotOutputPath = path.join(
-          factoriesDir,
-          `${pivotFactoryName}.ts`,
-        );
         if (fs.existsSync(pivotOutputPath)) {
           if (shouldOverwrite) {
             overwriteFile(pivotOutputPath, pivotRendered);

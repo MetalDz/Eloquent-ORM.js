@@ -13,7 +13,12 @@ describeIfBuiltOnly("CLI integration: factory:status targeting", () => {
 
     assertCliSuccess(result, args);
     expect(result.combined).toContain("Factory Status");
+    expect(result.combined).toContain("5 factories registered.");
     expect(result.combined).toContain("CommentFactory");
+    expect(result.combined).toContain("PostFactory");
+    expect(result.combined).toContain("UserFactory");
+    expect(result.combined).toContain("PostUserPivotFactory");
+    expect(result.combined).toContain("UserPostPivotFactory");
   });
 
   test("factory:status --graph --test exits cleanly", () => {
@@ -22,6 +27,9 @@ describeIfBuiltOnly("CLI integration: factory:status targeting", () => {
 
     assertCliSuccess(result, args);
     expect(result.combined).toContain("Model Relationship Graph");
+    expect(result.combined).toContain("Comment");
+    expect(result.combined).toContain("Post");
     expect(result.combined).toContain("User");
-  });
+    expect(result.combined).toContain("Commentable");
+  }); 
 });

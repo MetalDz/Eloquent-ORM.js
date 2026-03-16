@@ -64,7 +64,9 @@ describe("makeFactory package import rename support", () => {
       "utf8",
     );
 
-    jest.spyOn(ImportResolver, "publicApiImportPath").mockReturnValue("Eloquent-ORM.js");
+    const importSpy = jest
+      .spyOn(ImportResolver, "publicApiImportPath")
+      .mockReturnValue("Eloquent-ORM.js");
     jest.spyOn(ModelIntrospector, "analyze").mockResolvedValue({
       fields: [],
       relations: [
@@ -87,6 +89,10 @@ describe("makeFactory package import rename support", () => {
       fs.readFileSync(path.join(factoriesDir, "UserRolePivotFactory.ts"), "utf8"),
     ).toContain(
       'import { BaseModel, Factory, PivotHelperMixin } from "Eloquent-ORM.js";',
+    );
+    expect(importSpy).toHaveBeenCalledWith(path.join(factoriesDir, "UserFactory.ts"));
+    expect(importSpy).toHaveBeenCalledWith(
+      path.join(factoriesDir, "UserRolePivotFactory.ts"),
     );
   });
 

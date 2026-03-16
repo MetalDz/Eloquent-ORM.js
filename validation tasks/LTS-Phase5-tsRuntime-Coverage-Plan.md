@@ -13,7 +13,8 @@ Status: COMPLETED
 ## Targeted Gaps
 - bare-module fallback through `fallbackRequire(...)`
 - missing local import fallback when no `.ts` / `.js` candidate exists
-- workspace `.ts` direct-require branch when runtime registration is available
+- nested workspace `.ts` dependency loading when runtime registration is available
+- workspace package self-reference imports for the renamed package root and `/Model` subpath
 - local `.js` resolution through `resolveExistingModulePath(...)`
 - cached transpiled module reload path
 
@@ -22,7 +23,8 @@ Status: COMPLETED
 - Added a focused regression that locks:
   - non-local requests falling back to Node's normal module resolver
   - missing local requests falling back to Node's normal module error
-  - workspace `.ts` imports being required directly when ts-node is active
+  - workspace `.ts` dependencies staying loadable through the manual transpile path
+  - workspace package self-imports resolving through the local package source entrypoints
   - extensionless local `.js` imports resolving through the local override
   - repeated temp-module loads returning the cached transpiled exports
 

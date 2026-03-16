@@ -18,11 +18,27 @@ import {
   resetMysqlTestDatabase,
   resetPgDatabase,
   resetSqliteDatabase,
+  rootDir,
   runCli,
 } from "./cli.integration.harness";
 
 export const describeIfBuiltOnly =
   hasBuiltCli && canSpawnCli ? describe : describe.skip;
+
+function defaultAppMysqlDatabaseName(): string {
+  try {
+    const packageJsonPath = path.resolve(rootDir, "package.json");
+    const raw = fs.readFileSync(packageJsonPath, "utf8");
+    const pkg = JSON.parse(raw) as { name?: string };
+    const packageName = String(pkg.name || "").trim();
+    if (!packageName) {
+      return "eloquent_orm_js";
+    }
+    return packageName.replace(/[^A-Za-z0-9_]/g, "_");
+  } catch {
+    return "eloquent_orm_js";
+  }
+}
 
 export function appMysqlEnv(): NodeJS.ProcessEnv {
   return {
@@ -80,7 +96,7 @@ export function testAllConnectionsEnv(): NodeJS.ProcessEnv {
 
 export async function resetAppMysql(): Promise<void> {
   if (!hasAppMysqlEnv) return;
-  await resetMysqlDatabase(process.env.DB_NAME || "eloquentjs", {
+  await resetMysqlDatabase(process.env.DB_NAME || defaultAppMysqlDatabaseName(), {
     host: process.env.DB_HOST || "localhost",
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",

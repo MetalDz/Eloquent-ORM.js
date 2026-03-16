@@ -72,7 +72,7 @@ export async function makeRegistry(options: RegistryOptions = {}): Promise<void>
     const models = discoverRegistryModels(isTest);
     const template = TemplateEngine.load("model-registry");
     const rendered = TemplateEngine.render(template, {
-      packageImportPath: ImportResolver.publicApiImportPath(),
+      packageImportPath: ImportResolver.publicApiImportPath(outputPath),
       models,
       modelsConstName: registryConstName(isTest),
       functionName: registryFunctionName(isTest),

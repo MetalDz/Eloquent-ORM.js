@@ -221,6 +221,9 @@ describeIfBuilt("CLI integration: generators", () => {
     assertCliSuccess(appResult, appArgs);
     expect(appResult.combined).toContain(`Factory generation complete for model: ${appModelName}`);
     expect(fs.existsSync(appFactoryFile)).toBe(true);
+    expect(fs.readFileSync(appFactoryFile, "utf8")).toContain(
+      'import { Factory } from "../../../index";',
+    );
     expect(fs.readFileSync(appFactoryFile, "utf8")).toContain(`model = ${appModelName};`);
 
     const testArgs = [
@@ -236,6 +239,9 @@ describeIfBuilt("CLI integration: generators", () => {
     assertCliSuccess(testResult, testArgs);
     expect(testResult.combined).toContain(`Factory generation complete for model: ${testModelName}`);
     expect(fs.existsSync(testFactoryFile)).toBe(true);
+    expect(fs.readFileSync(testFactoryFile, "utf8")).toContain(
+      'import { Factory } from "../../../index";',
+    );
     expect(fs.readFileSync(testFactoryFile, "utf8")).toContain(`model = ${testModelName};`);
   });
 

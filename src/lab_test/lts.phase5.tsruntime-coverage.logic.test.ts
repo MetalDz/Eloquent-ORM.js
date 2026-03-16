@@ -66,6 +66,59 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     }
   });
 
+  test("workspace ts dependencies can self-import the renamed package root and model subpath", () => {
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
+    ) as { name?: string };
+    const packageName = packageJson.name ?? "eloquent-orm.js";
+    const tempRoot = fs.mkdtempSync(
+      path.join(rootDir, "src", "lab_test", "support", "tsruntime-selfref-"),
+    );
+    const depFile = path.join(tempRoot, "dep.ts");
+    const mainFile = path.join(tempRoot, "main.ts");
+
+    fs.writeFileSync(
+      depFile,
+      [
+        `import { Model, Factory } from "${packageName}";`,
+        `import { SqlModel, MongoModel } from "${packageName}/Model";`,
+        "export const sameModel = Model === SqlModel;",
+        "export const factoryCtor = typeof Factory;",
+        "export const mongoCtor = typeof MongoModel;",
+      ].join("\n"),
+      "utf8",
+    );
+    fs.writeFileSync(
+      mainFile,
+      [
+        'import { sameModel, factoryCtor, mongoCtor } from "./dep";',
+        "export const loaded = { sameModel, factoryCtor, mongoCtor };",
+      ].join("\n"),
+      "utf8",
+    );
+
+    try {
+      const loaded = runtime!.loadModule(mainFile) as {
+        loaded: { sameModel: boolean; factoryCtor: string; mongoCtor: string };
+      };
+
+      expect(loaded.loaded).toEqual({
+        sameModel: true,
+        factoryCtor: "function",
+        mongoCtor: "function",
+      });
+    } finally {
+      delete require.cache[path.resolve(depFile)];
+      delete require.cache[path.resolve(mainFile)];
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   test("missing local imports fall back to Node's normal module error path", () => {
     let runtime: typeof import("../cli/utils/typescript/tsRuntime");
     jest.isolateModules(() => {
