@@ -73,6 +73,8 @@ describe("LTS phase 5 coverage to 100", () => {
       "LTS-Phase5-tsRuntime-Coverage-Plan.md",
       "src/core/model/BaseModel.ts",
       "LTS-Phase5-BaseModel-Coverage-Plan.md",
+      "src/core/model/CoreModel.ts",
+      "LTS-Phase5-CoreModel-Coverage-Plan.md",
       "src/core/model/SafeFinder.ts",
       "LTS-Phase5-SafeFinder-Coverage-Plan.md",
       "src/core/orm/relations/BelongsToMany.ts",

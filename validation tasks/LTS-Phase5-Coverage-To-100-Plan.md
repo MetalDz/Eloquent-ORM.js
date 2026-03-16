@@ -1,6 +1,6 @@
 # LTS Phase 5: Coverage To 100 Plan
 
-Last updated: 2026-03-16 10:07  
+Last updated: 2026-03-16 10:17  
 Status: IN PROGRESS
 
 ## Goal
@@ -60,6 +60,7 @@ Progress note:
 
 ### D. Residual Runtime Surface Hotspots
 - `src/core/model/BaseModel.ts`
+- `src/core/model/CoreModel.ts`
 - `src/core/model/SafeFinder.ts`
 - `src/core/orm/relations/BelongsToMany.ts`
 - `src/core/orm/mixins/MorphableMixin.ts`
@@ -129,6 +130,8 @@ Progress note:
 - [x] `src/cli/utils/typescript/tsRuntime.ts` is now tracked in `LTS-Phase5-tsRuntime-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/BaseModel.ts` is now tracked in `LTS-Phase5-BaseModel-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/core/model/CoreModel.ts` is now tracked in `LTS-Phase5-CoreModel-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/SafeFinder.ts` is now tracked in `LTS-Phase5-SafeFinder-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
