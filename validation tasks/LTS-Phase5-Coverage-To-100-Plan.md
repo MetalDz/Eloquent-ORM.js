@@ -1,6 +1,6 @@
 # LTS Phase 5: Coverage To 100 Plan
 
-Last updated: 2026-03-16 09:51  
+Last updated: 2026-03-16 10:07  
 Status: IN PROGRESS
 
 ## Goal
@@ -54,6 +54,7 @@ Progress note:
 - `src/cli/commands/demoScenario.ts`
 - `src/cli/commands/makeFactory.ts`
 - `src/cli/commands/makeMigration.ts`
+- `src/cli/commands/makeModel.ts`
 - `src/cli/commands/makeScenario.ts`
 - `src/cli/utils/typescript/tsRuntime.ts`
 
@@ -120,6 +121,8 @@ Progress note:
 - [x] `src/cli/commands/makeFactory.ts` is now tracked in `LTS-Phase5-MakeFactory-Coverage-And-ASCII-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/makeMigration.ts` is now tracked in `LTS-Phase5-MakeMigration-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeModel.ts` is now tracked in `LTS-Phase5-MakeModel-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/makeScenario.ts` is now tracked in `LTS-Phase5-MakeScenario-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.

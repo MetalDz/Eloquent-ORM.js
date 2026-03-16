@@ -65,6 +65,8 @@ describe("LTS phase 5 coverage to 100", () => {
       "LTS-Phase5-MakeFactory-Coverage-And-ASCII-Plan.md",
       "src/cli/commands/makeMigration.ts",
       "LTS-Phase5-MakeMigration-Coverage-Plan.md",
+      "src/cli/commands/makeModel.ts",
+      "LTS-Phase5-MakeModel-Coverage-Plan.md",
       "src/cli/commands/makeScenario.ts",
       "LTS-Phase5-MakeScenario-Coverage-Plan.md",
       "src/cli/utils/typescript/tsRuntime.ts",
