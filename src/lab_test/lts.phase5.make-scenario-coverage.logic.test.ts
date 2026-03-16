@@ -34,6 +34,7 @@ type ScenarioHarness = {
   makeMigration: jest.Mock;
   migrateFresh: jest.Mock;
   dbSeed: jest.Mock;
+  clearLoadedModuleCache: jest.Mock;
   resolveConnectionNamesFromFlags: jest.Mock;
   resolveConnectionName: jest.Mock;
 };
@@ -70,6 +71,7 @@ function setupMakeScenarioHarness(options: HarnessOptions = {}): ScenarioHarness
   const makeMigration = jest.fn(async () => undefined);
   const migrateFresh = jest.fn(async () => undefined);
   const dbSeed = jest.fn(async () => undefined);
+  const clearLoadedModuleCache = jest.fn();
   const resolveConnectionNamesFromFlags = jest.fn(
     () => options.connectionNames ?? (useMongo ? ["mongo"] : []),
   );
@@ -130,6 +132,9 @@ function setupMakeScenarioHarness(options: HarnessOptions = {}): ScenarioHarness
   jest.doMock("../cli/commands/dbSeed", () => ({
     dbSeed,
   }));
+  jest.doMock("../cli/utils/typescript/tsRuntime", () => ({
+    clearLoadedModuleCache,
+  }));
 
   return {
     root,
@@ -145,6 +150,7 @@ function setupMakeScenarioHarness(options: HarnessOptions = {}): ScenarioHarness
     makeMigration,
     migrateFresh,
     dbSeed,
+    clearLoadedModuleCache,
     resolveConnectionNamesFromFlags,
     resolveConnectionName,
   };
@@ -453,6 +459,15 @@ describe("LTS phase 5 makeScenario coverage", () => {
           path.join(ctx.migrationsRoot, "mongo_test", "20260315000000001_create_users_table.ts"),
         ),
       ).toBe(false);
+      expect(ctx.clearLoadedModuleCache).toHaveBeenCalledWith(
+        path.join(ctx.modelsDir, "User.ts"),
+      );
+      expect(ctx.clearLoadedModuleCache).toHaveBeenCalledWith(
+        path.join(ctx.factoriesDir, "UserFactory.ts"),
+      );
+      expect(ctx.clearLoadedModuleCache).toHaveBeenCalledWith(
+        path.join(ctx.seedsDir, "BlogScenarioSeeder.ts"),
+      );
 
       const userModel = fs.readFileSync(path.join(ctx.modelsDir, "User.ts"), "utf8");
       expect(userModel).toContain("extends MongoModel");
@@ -503,6 +518,59 @@ describe("LTS phase 5 makeScenario coverage", () => {
           exit: false,
           connectionName: "sqlite_warn",
         }),
+      );
+    } finally {
+      removeDir(ctx.root);
+    }
+  });
+
+  test("covers SQL scenario switches pruning stale blog pivot migrations in test mode", async () => {
+    const ctx = setupMakeScenarioHarness({
+      isTest: true,
+      useMongo: false,
+      connectionNames: [],
+      resolvedConnectionName: "mysql_test",
+    });
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
+
+    const manifestPath = path.join(ctx.root, "src/test/.eloquent-scenario.json");
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        presetId: "blog",
+        generatedAt: new Date().toISOString(),
+        models: ["User", "Post", "Comment"],
+        seedName: "BlogScenarioSeeder",
+      }),
+      "utf8",
+    );
+
+    const migrationDir = path.join(ctx.migrationsRoot, "mysql_test");
+    fs.mkdirSync(migrationDir, { recursive: true });
+    const stalePostsMigration = path.join(
+      migrationDir,
+      "20260315000000001_create_posts_table.ts",
+    );
+    const stalePivotMigration = path.join(
+      migrationDir,
+      "20260315000000002_create_post_user_pivot_table.ts",
+    );
+    fs.writeFileSync(stalePostsMigration, "export async function up() {}\n", "utf8");
+    fs.writeFileSync(stalePivotMigration, "export async function up() {}\n", "utf8");
+
+    try {
+      const { makeScenario } = await import("../cli/commands/makeScenario");
+      await makeScenario("media", { test: true, force: true });
+
+      expect(fs.existsSync(stalePostsMigration)).toBe(false);
+      expect(fs.existsSync(stalePivotMigration)).toBe(false);
+      expect(fs.existsSync(path.join(ctx.modelsDir, "Photo.ts"))).toBe(true);
+      expect(fs.existsSync(path.join(ctx.modelsDir, "Video.ts"))).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Scenario preset changed. Run `eloquent migrate:fresh --test --force` before `migrate:run` to reset old scenario tables and history.",
+        ),
       );
     } finally {
       removeDir(ctx.root);

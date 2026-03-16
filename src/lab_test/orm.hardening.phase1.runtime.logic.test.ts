@@ -48,6 +48,8 @@ describe("ORM hardening phase 1 runtime boundaries", () => {
   const mongoModelName = "CliBoundaryPhase1Mongo";
   const sqlModelFile = path.join(appModelsDir, `${sqlModelName}.ts`);
   const mongoModelFile = path.join(appModelsDir, `${mongoModelName}.ts`);
+  const originalDbConnection = process.env.DB_CONNECTION;
+  const originalDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
   const notesPath = path.resolve(
     rootDir,
     "validation tasks/ORM-Hardening-Phase1-Implementation-Notes.md"
@@ -59,12 +61,28 @@ describe("ORM hardening phase 1 runtime boundaries", () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
+    process.env.DB_CONNECTION = "mysql";
+    process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
     removeIfExists(sqlModelFile);
     removeIfExists(mongoModelFile);
+  });
+
+  afterAll(() => {
+    if (originalDbConnection === undefined) {
+      delete process.env.DB_CONNECTION;
+    } else {
+      process.env.DB_CONNECTION = originalDbConnection;
+    }
+
+    if (originalDisableHooks === undefined) {
+      delete process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+    } else {
+      process.env.ELOQUENT_DISABLE_MODEL_HOOKS = originalDisableHooks;
+    }
   });
 
   test("implementation notes freeze the boundary matrix and extraction targets", () => {

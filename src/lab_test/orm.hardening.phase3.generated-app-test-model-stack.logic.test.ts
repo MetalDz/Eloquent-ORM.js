@@ -29,6 +29,8 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
   const rootDir = process.cwd();
   const appModelsDir = path.resolve(rootDir, "src/app/models");
   const testModelsDir = path.resolve(rootDir, "src/test/database/models");
+  const originalDbConnection = process.env.DB_CONNECTION;
+  const originalDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
   const sqlAppModelName = "CliPhase3AppSql";
   const mongoAppModelName = "CliPhase3AppMongo";
   const sqlTestModelName = "CliPhase3TestSql";
@@ -45,6 +47,8 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
+    process.env.DB_CONNECTION = "mysql";
+    process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
     for (const filePath of generatedFiles) {
       removeIfExists(filePath);
     }
@@ -54,6 +58,20 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
     jest.restoreAllMocks();
     for (const filePath of generatedFiles) {
       removeIfExists(filePath);
+    }
+  });
+
+  afterAll(() => {
+    if (originalDbConnection === undefined) {
+      delete process.env.DB_CONNECTION;
+    } else {
+      process.env.DB_CONNECTION = originalDbConnection;
+    }
+
+    if (originalDisableHooks === undefined) {
+      delete process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
+    } else {
+      process.env.ELOQUENT_DISABLE_MODEL_HOOKS = originalDisableHooks;
     }
   });
 

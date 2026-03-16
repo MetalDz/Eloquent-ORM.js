@@ -66,6 +66,20 @@ function resolvePackageSelfRequest(request: string): string | null {
 
 let registered = false;
 const transpiledModuleCache = new Map<string, Record<string, unknown>>();
+const forceTranspileReloadPaths = new Set<string>();
+
+export function clearLoadedModuleCache(filePath: string): void {
+  const absolutePath = path.resolve(filePath);
+  transpiledModuleCache.delete(absolutePath);
+  forceTranspileReloadPaths.add(absolutePath);
+  delete require.cache[absolutePath];
+
+  try {
+    delete require.cache[require.resolve(absolutePath)];
+  } catch {
+    // ignore cache misses for files that were not required yet
+  }
+}
 
 /**
  * Ensure ts-node runtime is registered so Node can load .ts files.
@@ -112,6 +126,19 @@ function loadTypeScriptModule(
   filePath: string,
   runtimeAvailable = ensureTsRuntime()
 ): Record<string, unknown> {
+  const absolutePath = path.resolve(filePath);
+  const forceTranspileReload = forceTranspileReloadPaths.delete(absolutePath);
+
+  if (runtimeAvailable && !forceTranspileReload) {
+    try {
+      return requireFromFile(filePath);
+    } catch {
+      clearLoadedModuleCache(filePath);
+      // Fall back to manual transpilation when direct ts-node loading cannot
+      // resolve repo-local self imports or temp workspace dependencies.
+    }
+  }
+
   if (!runtimeAvailable) {
     const distPath = resolveDistPath(filePath);
     if (distPath) {
@@ -127,6 +154,7 @@ function loadTranspiledTsModule(
   runtimeAvailable: boolean
 ): Record<string, unknown> {
   const absolutePath = path.resolve(filePath);
+  forceTranspileReloadPaths.delete(absolutePath);
   const cached = transpiledModuleCache.get(absolutePath);
   if (cached) {
     return cached;

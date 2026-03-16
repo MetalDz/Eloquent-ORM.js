@@ -193,6 +193,61 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     }
   });
 
+  test("cached transpiled exports can be explicitly cleared before reloading the TypeScript file", () => {
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-clear-"));
+    const mainFile = path.join(tempRoot, "cached.ts");
+
+    fs.writeFileSync(mainFile, "export const loaded = 1;\n", "utf8");
+
+    try {
+      expect(runtime!.loadModule(mainFile)).toEqual({ loaded: 1 });
+
+      fs.writeFileSync(mainFile, "export const loaded = 77;\n", "utf8");
+      runtime!.clearLoadedModuleCache(mainFile);
+
+      expect(runtime!.loadModule(mainFile)).toEqual({ loaded: 77 });
+    } finally {
+      runtime!.clearLoadedModuleCache(mainFile);
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("runtime-available ts loads prefer direct require so Jest mocks stay visible", () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-mock-"));
+    const depFile = path.join(tempRoot, "dep.ts");
+    const mainFile = path.join(tempRoot, "main.ts");
+
+    fs.writeFileSync(depFile, "export const loaded = 'real';\n", "utf8");
+    fs.writeFileSync(
+      mainFile,
+      ['import { loaded } from "./dep";', "export const value = loaded;"].join("\n"),
+      "utf8",
+    );
+
+    jest.doMock(depFile, () => ({
+      __esModule: true,
+      loaded: "mocked",
+    }));
+
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    try {
+      expect(runtime!.loadModule(mainFile)).toEqual({ value: "mocked" });
+    } finally {
+      runtime!.clearLoadedModuleCache(depFile);
+      runtime!.clearLoadedModuleCache(mainFile);
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   test("non-TypeScript modules are required directly", () => {
     let runtime: typeof import("../cli/utils/typescript/tsRuntime");
     jest.isolateModules(() => {

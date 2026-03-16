@@ -12,6 +12,7 @@ import { ImportResolver } from "../utils/ImportResolver";
 import { resolveConnectionNamesFromFlags } from "../utils/resolveConnectionFlags";
 import type { ConnectionName } from "../../core/connection/ConnectionFactory";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import { clearLoadedModuleCache } from "../utils/typescript/tsRuntime";
 
 type ScenarioOptions = {
   test?: boolean;
@@ -46,14 +47,7 @@ type ScenarioManifest = {
 };
 
 function clearRequireCache(filePath: string): void {
-  const resolved = path.resolve(filePath);
-  delete require.cache[resolved];
-
-  try {
-    delete require.cache[require.resolve(resolved)];
-  } catch {
-    // ignore files that were not loaded yet
-  }
+  clearLoadedModuleCache(path.resolve(filePath));
 }
 
 function clearScenarioArtifactModuleCache(isTest: boolean): void {
