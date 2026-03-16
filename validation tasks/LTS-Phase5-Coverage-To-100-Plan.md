@@ -1,6 +1,6 @@
 # LTS Phase 5: Coverage To 100 Plan
 
-Last updated: 2026-03-15  
+Last updated: 2026-03-16 09:51  
 Status: IN PROGRESS
 
 ## Goal
@@ -55,6 +55,7 @@ Progress note:
 - `src/cli/commands/makeFactory.ts`
 - `src/cli/commands/makeMigration.ts`
 - `src/cli/commands/makeScenario.ts`
+- `src/cli/utils/typescript/tsRuntime.ts`
 
 ### D. Residual Runtime Surface Hotspots
 - `src/core/model/BaseModel.ts`
@@ -121,6 +122,8 @@ Progress note:
 - [x] `src/cli/commands/makeMigration.ts` is now tracked in `LTS-Phase5-MakeMigration-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/makeScenario.ts` is now tracked in `LTS-Phase5-MakeScenario-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/typescript/tsRuntime.ts` is now tracked in `LTS-Phase5-tsRuntime-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/core/model/BaseModel.ts` is now tracked in `LTS-Phase5-BaseModel-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.

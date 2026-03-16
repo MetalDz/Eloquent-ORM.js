@@ -42,6 +42,7 @@ function resolveLocalRequest(request: string, fromFilePath: string): string | nu
 }
 
 let registered = false;
+const transpiledModuleCache = new Map<string, Record<string, unknown>>();
 
 /**
  * Ensure ts-node runtime is registered so Node can load .ts files.
@@ -103,9 +104,9 @@ function loadTranspiledTsModule(
   runtimeAvailable: boolean
 ): Record<string, unknown> {
   const absolutePath = path.resolve(filePath);
-  const cached = require.cache[absolutePath];
+  const cached = transpiledModuleCache.get(absolutePath);
   if (cached) {
-    return cached.exports as Record<string, unknown>;
+    return cached;
   }
 
   const source = fs.readFileSync(absolutePath, "utf8");
@@ -141,7 +142,9 @@ function loadTranspiledTsModule(
   }) as Module["require"];
   require.cache[absolutePath] = loadedModule;
   loadedModule._compile(output.outputText, absolutePath);
-  return loadedModule.exports as Record<string, unknown>;
+  const exportsObject = loadedModule.exports as Record<string, unknown>;
+  transpiledModuleCache.set(absolutePath, exportsObject);
+  return exportsObject;
 }
 
 /**
