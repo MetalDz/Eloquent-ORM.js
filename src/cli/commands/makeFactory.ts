@@ -45,28 +45,37 @@ type ModelAnalysis = {
   features?: Record<string, unknown>;
 };
 
-
-
 function ensureDirSync(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
 /**
- * 🎯 EloquentJS ORM — make:factory
+ * EloquentJS ORM - make:factory
  * Generates factories for models and their pivot/morph relations.
  */
-export async function makeFactory(factoryName: string, options: MakeFactoryOptions = {}): Promise<void> {
+export async function makeFactory(
+  factoryName: string,
+  options: MakeFactoryOptions = {},
+): Promise<void> {
   try {
-    console.log(chalk.cyan(`\n🧬 Generating Factory: ${factoryName}...`));
+    console.log(chalk.cyan(`\nGenerating factory: ${factoryName}...`));
 
-    const FactoryName = factoryName.endsWith("Factory") ? factoryName : `${factoryName}Factory`;
+    const FactoryName = factoryName.endsWith("Factory")
+      ? factoryName
+      : `${factoryName}Factory`;
     const ModelName = options.model ?? factoryName.replace(/Factory$/i, "");
 
-    // 🧠 Reflect schema using ModelIntrospector
-    const analysisRaw = (await ModelIntrospector.analyze(ModelName, { test: !!options.test })) as unknown;
+    // Reflect schema using ModelIntrospector.
+    const analysisRaw = (await ModelIntrospector.analyze(ModelName, {
+      test: !!options.test,
+    })) as unknown;
 
     if (!analysisRaw) {
-      console.warn(chalk.yellow(`⚠️  No metadata found for model "${ModelName}". Aborting.`));
+      console.warn(
+        chalk.yellow(
+          `WARN: No metadata found for model "${ModelName}". Aborting.`,
+        ),
+      );
       return;
     }
 
@@ -74,9 +83,10 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
     const fields = analysis.fields ?? [];
     const relations = analysis.relations ?? [];
     const features = analysis.features ?? {};
-    const shouldOverwrite = options.overwrite === true || options.force === true;
+    const shouldOverwrite =
+      options.overwrite === true || options.force === true;
 
-    // 🔹 Map field types → Faker paths (tweak to your faker API)
+    // Map field types to faker paths.
     const fakerMap: Record<string, string> = {
       string: "person.fullName()",
       text: "lorem.sentence()",
@@ -96,15 +106,17 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
       fakerPath: fakerMap[String(f.type ?? "").toLowerCase()] ?? "lorem.word()",
     }));
 
-    // 📁 Load main factory template (fail early if missing)
+    // Load the main factory template and fail early if it is missing.
     const templatePath = PathMap.template("factory");
     if (!fs.existsSync(templatePath)) {
-      console.error(chalk.red(`❌ Factory template not found at: ${templatePath}`));
+      console.error(
+        chalk.red(`ERROR: Factory template not found at: ${templatePath}`),
+      );
       return;
     }
     const templateContent = fs.readFileSync(templatePath, "utf8");
 
-    // Build relation imports and example usage snippets for template
+    // Build relation imports and example usage snippets for template.
     const relationImports = new Set<string>();
     const relationExamples: string[] = [];
 
@@ -112,37 +124,39 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
       if (rel.target && typeof rel.target === "string") {
         const candidateFactoryName = `${rel.target}Factory`;
         const candidateImportPath = `../factories/${candidateFactoryName}`;
-        relationImports.add(`import { ${candidateFactoryName} } from "${candidateImportPath}";`);
+        relationImports.add(
+          `import { ${candidateFactoryName} } from "${candidateImportPath}";`,
+        );
       }
+
+      const relatedName = String(rel.target ?? "Related");
 
       switch (rel.type) {
         case "belongsTo":
           relationExamples.push(
-            `// create ${ModelName} with a new ${rel.target}: ${FactoryName}.with('${rel.name}', ${String(
-              rel.target ?? "Related"
-            )}Factory).create();`
+            `// create ${ModelName} with a new ${relatedName}: ${FactoryName}.with('${rel.name}', ${relatedName}Factory).create();`,
           );
           break;
         case "hasMany":
           relationExamples.push(
-            `// create ${ModelName} and 3 ${rel.target}: ${FactoryName}.with('${rel.name}', ${String(
-              rel.target ?? "Related"
-            )}Factory, 3).create();`
+            `// create ${ModelName} and 3 ${relatedName}: ${FactoryName}.with('${rel.name}', ${relatedName}Factory, 3).create();`,
           );
           break;
         case "belongsToMany":
           relationExamples.push(
-            `// attach existing ${String(rel.target)}: const r = await ${String(rel.target)}Factory.create(); await my${ModelName}.${rel.name}().attach([r.id]);`
+            `// attach existing ${relatedName}: const r = await ${relatedName}Factory.create(); await my${ModelName}.${rel.name}().attach([r.id]);`,
           );
           break;
         case "morphTo":
         case "morphMany":
           relationExamples.push(
-            `// morph example: await ${String(rel.target)}Factory.morphFor(parentInstance, '${rel.name}').create();`
+            `// morph example: await ${relatedName}Factory.morphFor(parentInstance, '${rel.name}').create();`,
           );
           break;
         default:
-          relationExamples.push(`// relation ${rel.name} (${String(rel.type)})`);
+          relationExamples.push(
+            `// relation ${rel.name} (${String(rel.type)})`,
+          );
       }
     }
 
@@ -159,26 +173,32 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
 
     let rendered = TemplateEngine.render(templateContent, renderData);
     if (options.test) {
-      rendered = rendered.replace(/from \"\.\.\/\.\.\/models\//g, 'from "../models/');
+      rendered = rendered.replace(
+        /from \"\.\.\/\.\.\/models\//g,
+        'from "../models/',
+      );
     }
 
-    // ensure output directory exists
+    // Write the main factory file using writeFileSafe / overwriteFile.
     const factoriesDir = PathMap.factories(!!options.test);
     ensureDirSync(factoriesDir);
 
-    // 🧾 Write main factory file using writeFileSafe / overwriteFile
     const outputPath = path.join(factoriesDir, `${FactoryName}.ts`);
     if (fs.existsSync(outputPath)) {
       if (shouldOverwrite) {
         overwriteFile(outputPath, rendered);
       } else {
-        console.log(chalk.yellow(`ℹ️  Factory file already exists: ${outputPath}. Use overwrite option to replace.`));
+        console.log(
+          chalk.yellow(
+            `INFO: Factory file already exists: ${outputPath}. Use overwrite option to replace.`,
+          ),
+        );
       }
     } else {
       writeFileSafe(outputPath, rendered);
     }
 
-    // 🔄 Generate Pivot Factories automatically
+    // Generate pivot factories automatically.
     for (const rel of relations) {
       if (rel.isPivot && rel.target && typeof rel.target === "string") {
         const left = ModelName;
@@ -191,13 +211,21 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
 
         if (!fs.existsSync(pivotTemplatePath)) {
           console.warn(
-            chalk.yellow(`⚠️  Pivot template not found at: ${pivotTemplatePath} — skipping pivot ${pivotTable}.`)
+            chalk.yellow(
+              `WARN: Pivot template not found at: ${pivotTemplatePath} - skipping pivot ${pivotTable}.`,
+            ),
           );
           continue;
         }
 
-        const foreignKey = typeof rel.foreignKey === "string" ? rel.foreignKey : `${left.toLowerCase()}_id`;
-        const relatedKey = typeof rel.relatedKey === "string" ? rel.relatedKey : `${right.toLowerCase()}_id`;
+        const foreignKey =
+          typeof rel.foreignKey === "string"
+            ? rel.foreignKey
+            : `${left.toLowerCase()}_id`;
+        const relatedKey =
+          typeof rel.relatedKey === "string"
+            ? rel.relatedKey
+            : `${right.toLowerCase()}_id`;
 
         const pivotRenderData = {
           PivotFactoryName: pivotFactoryName,
@@ -206,14 +234,24 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
           relatedKey,
         } as const;
 
-        const pivotRendered = TemplateEngine.render(fs.readFileSync(pivotTemplatePath, "utf8"), pivotRenderData);
+        const pivotRendered = TemplateEngine.render(
+          fs.readFileSync(pivotTemplatePath, "utf8"),
+          pivotRenderData,
+        );
 
-        const pivotOutputPath = path.join(factoriesDir, `${pivotFactoryName}.ts`);
+        const pivotOutputPath = path.join(
+          factoriesDir,
+          `${pivotFactoryName}.ts`,
+        );
         if (fs.existsSync(pivotOutputPath)) {
           if (shouldOverwrite) {
             overwriteFile(pivotOutputPath, pivotRendered);
           } else {
-            console.log(chalk.yellow(`ℹ️  Pivot factory already exists: ${pivotOutputPath}`));
+            console.log(
+              chalk.yellow(
+                `INFO: Pivot factory already exists: ${pivotOutputPath}`,
+              ),
+            );
           }
         } else {
           writeFileSafe(pivotOutputPath, pivotRendered);
@@ -221,9 +259,13 @@ export async function makeFactory(factoryName: string, options: MakeFactoryOptio
       }
     }
 
-    console.log(chalk.greenBright(`\n🎉 Factory generation complete for model: ${ModelName}\n`));
+    console.log(
+      chalk.greenBright(
+        `\nFactory generation complete for model: ${ModelName}\n`,
+      ),
+    );
   } catch (err: unknown) {
-    console.error(chalk.red("❌ Factory generation failed"));
+    console.error(chalk.red("ERROR: Factory generation failed"));
     if (err instanceof Error) {
       console.error(chalk.red(err.message));
       if (err.stack) console.error(chalk.gray(err.stack));

@@ -29,6 +29,7 @@ Progress note:
 
 ### A. Operational CLI and Helper Hotspots
 - `src/cli/utils/ImportResolver.ts`
+- `src/cli/utils/CliCommandTargets.ts`
 - `src/cli/utils/ArtifactStorage.ts`
 - `src/cli/utils/ArtifactRoutingReport.ts`
 - `src/cli/commands/factoryStatus.ts`
@@ -50,6 +51,7 @@ Progress note:
 
 ### C. Scenario and Generator Hotspots
 - `src/cli/commands/demoScenario.ts`
+- `src/cli/commands/makeFactory.ts`
 - `src/cli/commands/makeMigration.ts`
 - `src/cli/commands/makeScenario.ts`
 
@@ -73,6 +75,8 @@ Progress note:
 ## Completed Slice Tracking
 - [x] `src/cli/utils/ImportResolver.ts` is now tracked in `LTS-Phase5-ImportResolver-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/CliCommandTargets.ts` is now tracked in `LTS-Phase5-CliCommandTargets-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/ArtifactStorage.ts` is now tracked in `LTS-Phase5-ArtifactStorage-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/ArtifactRoutingReport.ts` is now tracked in `LTS-Phase5-ArtifactRoutingReport-Coverage-Plan.md`.
@@ -90,6 +94,8 @@ Progress note:
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/makeService.ts` is now tracked in `LTS-Phase5-MakeService-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeRegistry.ts` is now tracked in `LTS-Phase5-MakeRegistry-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/fileWriter.ts` is now tracked in `LTS-Phase5-FileWriter-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/migrateRollback.ts` is now tracked in `LTS-Phase5-MigrateRollback-Coverage-Plan.md` with dedicated Mongo/runtime branch coverage.
@@ -103,6 +109,8 @@ Progress note:
 - [x] `src/core/connection/DatabaseConnection.ts` is now tracked in `LTS-Phase5-DatabaseConnection-Coverage-And-ASCII-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/demoScenario.ts` is now tracked in `LTS-Phase5-DemoScenario-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/commands/makeFactory.ts` is now tracked in `LTS-Phase5-MakeFactory-Coverage-And-ASCII-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/commands/makeMigration.ts` is now tracked in `LTS-Phase5-MakeMigration-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.

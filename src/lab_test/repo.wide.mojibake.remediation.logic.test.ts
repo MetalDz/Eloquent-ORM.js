@@ -69,6 +69,7 @@ describe("repo-wide mojibake remediation plan", () => {
       "`src/core/cache/*`",
       "`src/core/connection/*`",
       "LTS-Phase5-DatabaseConnection-Coverage-And-ASCII-Plan.md",
+      "LTS-Phase5-MakeFactory-Coverage-And-ASCII-Plan.md",
       "### Phase 5: Example/Fixture Sweep",
       "Every remediation slice must ship with:",
       "a dedicated `.md`",

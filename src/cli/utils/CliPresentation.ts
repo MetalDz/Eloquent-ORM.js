@@ -7,7 +7,7 @@ export function printCliBanner(
   writeLine(
     chalk.cyan(figlet.textSync("EloquentJS", { horizontalLayout: "fitted" })),
   );
-  writeLine(chalk.gray("Developer CLI for EloquentJS ORM (v1.0)\n"));
+  writeLine(chalk.gray("Developer CLI for EloquentJS ORM (v2.0)\n"));
   writeLine(
     chalk.green("Ready to manage your EloquentJS models and database!\n"),
   );

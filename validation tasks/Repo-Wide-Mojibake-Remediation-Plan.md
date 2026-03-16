@@ -96,6 +96,8 @@ Status: IN PROGRESS
   - `src/core/connection/*`
 - Completed first slice:
   - `LTS-Phase5-DatabaseConnection-Coverage-And-ASCII-Plan.md`
+- Completed additional slice:
+  - `LTS-Phase5-MakeFactory-Coverage-And-ASCII-Plan.md`
 
 ### Phase 5: Example/Fixture Sweep
 - Normalize committed example models and generated fixture files that are part of the repo contract.
