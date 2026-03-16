@@ -1,4 +1,4 @@
-import { Factory } from "eloquentjs";
+import { Factory } from "{{packageImportPath}}";
 import { {{ModelName}} } from "../../models/{{ModelName}}";
 
 export class {{FactoryName}} extends Factory<{{ModelName}}> {

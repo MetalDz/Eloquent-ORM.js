@@ -5,6 +5,7 @@ import { PathMap } from "../utils/PathMap";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { writeFileSafe, overwriteFile } from "../utils/fileWriter";
 import { ModelIntrospector } from "../utils/ModelIntrospector";
+import { ImportResolver } from "../utils/ImportResolver";
 
 type MakeFactoryOptions = {
   model?: string;
@@ -85,6 +86,7 @@ export async function makeFactory(
     const features = analysis.features ?? {};
     const shouldOverwrite =
       options.overwrite === true || options.force === true;
+    const packageImportPath = ImportResolver.publicApiImportPath();
 
     // Map field types to faker paths.
     const fakerMap: Record<string, string> = {
@@ -169,6 +171,7 @@ export async function makeFactory(
       relationImports: Array.from(relationImports),
       relationExamples,
       features,
+      packageImportPath,
     } as const;
 
     let rendered = TemplateEngine.render(templateContent, renderData);
@@ -232,6 +235,7 @@ export async function makeFactory(
           pivotTable,
           foreignKey,
           relatedKey,
+          packageImportPath,
         } as const;
 
         const pivotRendered = TemplateEngine.render(

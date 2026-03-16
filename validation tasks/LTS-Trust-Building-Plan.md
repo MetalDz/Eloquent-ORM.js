@@ -1,6 +1,6 @@
 # LTS Trust Building Plan
 
-Last updated: 2026-03-16  
+Last updated: 2026-03-16 11:18  
 Status: IN PROGRESS
 
 ## Goal
@@ -14,10 +14,10 @@ Status: IN PROGRESS
   - controlled-production usable
   - not yet consumer-trusted as an LTS package
 - Latest reported full-suite coverage snapshot (`2026-03-16`):
-  - Statements   : `99.59% (6074/6099)`
-  - Branches     : `98.52% (3277/3326)`
+  - Statements   : `99.65% (6078/6099)`
+  - Branches     : `98.85% (3288/3326)`
   - Functions    : `100% (997/997)`
-  - Lines        : `99.68% (5752/5770)`
+  - Lines        : `99.75% (5756/5770)`
   - Progress note:
     - the post-kickoff LTS Phase 5 slices materially improved the global baseline, but `100%` remains the release gate
 

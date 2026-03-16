@@ -1,4 +1,4 @@
-import { BaseModel, Factory, PivotHelperMixin } from "eloquentjs";
+import { BaseModel, Factory, PivotHelperMixin } from "{{packageImportPath}}";
 
 class PivotModelBase extends BaseModel {}
 const PivotModel = PivotHelperMixin(PivotModelBase);

@@ -1,6 +1,6 @@
 # LTS Phase 5: Coverage To 100 Plan
 
-Last updated: 2026-03-16 11:02  
+Last updated: 2026-03-16 11:18  
 Status: IN PROGRESS
 
 ## Goal
@@ -8,10 +8,10 @@ Status: IN PROGRESS
 
 ## Current Reported Baseline
 Latest full-suite snapshot reported on `2026-03-16`:
-- Statements   : `99.59% (6074/6099)`
-- Branches     : `98.52% (3277/3326)`
+- Statements   : `99.65% (6078/6099)`
+- Branches     : `98.85% (3288/3326)`
 - Functions    : `100% (997/997)`
-- Lines        : `99.68% (5752/5770)`
+- Lines        : `99.75% (5756/5770)`
 
 Progress note:
 - The kickoff refresh exposed one stale docs assertion in `src/lab_test/public.model.alias-and-entry.logic.test.ts`.
@@ -30,9 +30,13 @@ Progress note:
 ### A. Operational CLI and Helper Hotspots
 - `src/cli/utils/ImportResolver.ts`
 - `src/cli/utils/CliCommandTargets.ts`
+- `src/cli/utils/CliProductionGuards.ts`
+- `src/cli/utils/ScaffoldGeneratorSupport.ts`
 - `src/cli/utils/ArtifactStorage.ts`
+- `src/cli/utils/ArtifactCompatibility.ts`
 - `src/cli/utils/ArtifactRoutingReport.ts`
 - `src/cli/utils/SeedBootstrapPrecheck.ts`
+- `src/cli/utils/resolveConnectionFlags.ts`
 - `src/cli/commands/factoryStatus.ts`
 - `src/cli/utils/factories/FactoryGraph.ts`
 - `src/cli/utils/factories/FactoryRegistry.ts`
@@ -84,11 +88,19 @@ Progress note:
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/CliCommandTargets.ts` is now tracked in `LTS-Phase5-CliCommandTargets-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/CliProductionGuards.ts` is now tracked in `LTS-Phase5-CliProductionGuards-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/ScaffoldGeneratorSupport.ts` is now tracked in `LTS-Phase5-ScaffoldGeneratorSupport-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/ArtifactStorage.ts` is now tracked in `LTS-Phase5-ArtifactStorage-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/ArtifactCompatibility.ts` is now tracked in `LTS-Phase5-ArtifactCompatibility-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/ArtifactRoutingReport.ts` is now tracked in `LTS-Phase5-ArtifactRoutingReport-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] `src/cli/utils/SeedBootstrapPrecheck.ts` is now tracked in `LTS-Phase5-SeedBootstrapPrecheck-Coverage-Plan.md`.
+  - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
+- [x] `src/cli/utils/resolveConnectionFlags.ts` is now tracked in `LTS-Phase5-ResolveConnectionFlags-Coverage-Plan.md`.
   - Focused snapshot after the slice: statements `100%`, branches `100%`, functions `100%`, lines `100%`.
 - [x] Factory runtime coverage is now tracked in `LTS-Phase5-Factory-Runtime-Coverage-Plan.md`.
   - Residual branch closure is locked in `LTS-Phase5-Factory-Runtime-Residual-Coverage-Plan.md`.

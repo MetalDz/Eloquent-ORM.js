@@ -5,6 +5,8 @@ const { spawnSync } = require("child_process");
 require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
 
 const repoRoot = path.resolve(__dirname, "..");
+const packageMeta = require(path.join(repoRoot, "package.json"));
+const packageName = String(packageMeta.name || "").trim();
 const nodeCmd = process.execPath;
 const npmCacheDir = path.join(repoRoot, ".npm-pack-smoke-cache");
 const npmCliPath =
@@ -33,6 +35,10 @@ const expectedPublicExports = [
   "validate",
   "validateSchema",
 ].sort();
+
+if (!packageName) {
+  throw new Error("package.json name is required for pack-smoke package import checks.");
+}
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -226,7 +232,7 @@ function runCli(sampleDir, args, env) {
     ".bin",
     process.platform === "win32" ? "eloquent.cmd" : "eloquent"
   );
-  const cliEntry = path.join(sampleDir, "node_modules", "eloquentjs", "dist", "cli", "eloquent.js");
+  const cliEntry = path.join(sampleDir, "node_modules", packageName, "dist", "cli", "eloquent.js");
 
   assertFileExists(binPath);
   assertFileExists(cliEntry);
@@ -254,7 +260,7 @@ function runGeneratedModelRuntimeCheck(sample, options) {
     fileName,
     [
       'const path = require("path");',
-      'const runtimePath = path.join(process.cwd(), "node_modules", "eloquentjs", "dist", "cli", "utils", "typescript", "tsRuntime.js");',
+      `const runtimePath = path.join(process.cwd(), "node_modules", ${JSON.stringify(packageName)}, "dist", "cli", "utils", "typescript", "tsRuntime.js");`,
       'const { loadModule } = require(runtimePath);',
       `const filePath = path.join(process.cwd(), ...${filePathSegments});`,
       `const expectedName = ${JSON.stringify(expectedName)};`,
@@ -328,7 +334,7 @@ function verifyPublicExports(sample) {
   const imports = runNodeScript(
     sample.dir,
     "smoke-import-check.cjs",
-    'const pkg = require("eloquentjs");\nconsole.log(Object.keys(pkg).sort().join(","));\n',
+    `const pkg = require(${JSON.stringify(packageName)});\nconsole.log(Object.keys(pkg).sort().join(","));\n`,
     sample.env,
     "package import"
   );
@@ -375,8 +381,8 @@ function runGeneralCliSmoke(sample) {
   assertContains("make:model", modelResult.combined, "Model created");
 
   const demoAutoModelPath = path.join(sample.dir, "src", "test", "database", "models", "DemoAuto.ts");
-  assertFileContains(demoAutoModelPath, 'import { SqlModel, ModelInstance } from "eloquentjs";');
-  assertFileContains(demoAutoModelPath, 'import { column, validate } from "eloquentjs";');
+  assertFileContains(demoAutoModelPath, `import { SqlModel, ModelInstance } from "${packageName}";`);
+  assertFileContains(demoAutoModelPath, `import { column, validate } from "${packageName}";`);
   assertNonEmptyMigration(migrationsDir, "_demoautos_table");
   runGeneratedModelRuntimeCheck(sample, {
     step: "generated SQL model runtime",
@@ -396,8 +402,8 @@ function runGeneralCliSmoke(sample) {
   );
   assertSuccess("make:model Demo", plainModelResult);
   const demoModelPath = path.join(sample.dir, "src", "test", "database", "models", "Demo.ts");
-  assertFileContains(demoModelPath, 'import { SqlModel, ModelInstance } from "eloquentjs";');
-  assertFileContains(demoModelPath, 'import { column, validate } from "eloquentjs";');
+  assertFileContains(demoModelPath, `import { SqlModel, ModelInstance } from "${packageName}";`);
+  assertFileContains(demoModelPath, `import { column, validate } from "${packageName}";`);
 
   const directMigrationResult = runCli(sample.dir, ["make:migration", "Demo", "--test"], sample.env);
   assertSuccess("make:migration Demo", directMigrationResult);
@@ -420,7 +426,7 @@ function runGeneralCliSmoke(sample) {
   assertSuccess("make:factory", factoryResult);
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "factories", "DemoFactory.ts"),
-    'import { Factory } from "eloquentjs";'
+    `import { Factory } from "${packageName}";`
   );
 
   const seedResult = runCli(sample.dir, ["make:seed", "Demo", "--test", "--count", "2"], sample.env);
@@ -483,11 +489,11 @@ function runBlogScenarioSmoke(sample) {
 
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "models", "User.ts"),
-    'import { SqlModel, ModelInstance } from "eloquentjs";'
+    `import { SqlModel, ModelInstance } from "${packageName}";`
   );
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "factories", "UserFactory.ts"),
-    'import { Factory } from "eloquentjs";'
+    `import { Factory } from "${packageName}";`
   );
   assertFileExists(
     path.join(sample.dir, "src", "test", "database", "factories", "UserPostPivotFactory.ts")
@@ -596,11 +602,11 @@ function runMediaScenarioSmoke(sample) {
 
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "models", "Photo.ts"),
-    'import { SqlModel, ModelInstance } from "eloquentjs";'
+    `import { SqlModel, ModelInstance } from "${packageName}";`
   );
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "factories", "PhotoFactory.ts"),
-    'import { Factory } from "eloquentjs";'
+    `import { Factory } from "${packageName}";`
   );
   assertFileExists(
     path.join(sample.dir, "src", "test", "database", "factories", "UserPhotoPivotFactory.ts")
@@ -727,7 +733,7 @@ function runNoSqlRuntimeSmoke(sample) {
   assertSuccess("nosql make:model --mongo", modelMongo);
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "models", "GeoLocation.ts"),
-    'import { MongoModel, ModelInstance } from "eloquentjs";'
+    `import { MongoModel, ModelInstance } from "${packageName}";`
   );
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "models", "GeoLocation.ts"),
@@ -751,7 +757,7 @@ function runNoSqlRuntimeSmoke(sample) {
   assertSuccess("nosql make:factory --mongo model", factoryMongo);
   assertFileContains(
     path.join(sample.dir, "src", "test", "database", "factories", "GeoLocationFactory.ts"),
-    'import { Factory } from "eloquentjs";'
+    `import { Factory } from "${packageName}";`
   );
 
   const seedMongo = runCli(
@@ -881,7 +887,9 @@ function runNoSqlRuntimeSmoke(sample) {
       "",
       "(async () => {",
       '  const uri = process.env.MONGO_TEST_URI || process.env.MONGO_URI;',
-      '  const databaseName = process.env.MONGO_TEST_DB || process.env.MONGO_DB || "eloquentjs_db";',
+      `  const databaseName = process.env.MONGO_TEST_DB || process.env.MONGO_DB || ${JSON.stringify(
+        `${sanitizePathSegment(packageName).toLowerCase()}_db`
+      )};`,
       "  if (!uri) {",
       '    throw new Error("Missing MONGO_TEST_URI/MONGO_URI for mongo seed smoke.");',
       "  }",
