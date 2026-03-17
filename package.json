@@ -42,6 +42,7 @@
     "docs:lint": "cd docs && mintlify broken-links",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
+    "coverage:misses": "npm run test:coverage && node scripts/coverage-misses.cjs",
     "test:critical": "jest --runInBand src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
     "test:pack-smoke": "node scripts/pack-smoke.js",
     "dev": "ts-node src/index.ts",
