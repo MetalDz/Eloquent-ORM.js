@@ -1,0 +1,52 @@
+---
+title: Release Qualification Checklist
+description: Hard release gates for publish readiness.
+---
+
+# Release Qualification Checklist
+
+## Hard Gates
+
+### 1) Typecheck + Build + Test
+
+- `npm run typecheck`
+- `npm run build`
+- `npm run test:coverage`
+
+### 2) Critical stability rerun
+
+- CI runs `npm run test:critical` three times.
+- Any failure or timeout fails qualification.
+
+### 3) Multi-driver matrix
+
+- Drivers: `mysql`, `pg`, `sqlite`
+- Required on each:
+  - `make:scenario`
+  - `make:migration --all --test`
+  - `migrate:run --test`
+  - `db:seed --test`
+  - `demo:scenario --test`
+  - rollback/re-run recovery path
+
+### 4) Package smoke validation
+
+- `npm pack --dry-run` pass
+- `npm run test:pack-smoke` pass (Linux, with optional Mongo smoke)
+- Windows smoke pass
+
+### 5) Dependency checks
+
+- `package-lock.json` exists
+- `npm ci --ignore-scripts` pass
+- `npm audit --omit=dev --audit-level=high` pass
+
+### 6) NoSQL gate
+
+- NoSQL regression suites must pass
+- CLI parity and routing checks must pass
+- Tarball NoSQL runtime checks must pass
+
+## Release decision
+
+Release is only allowed when all hard gates pass in the same PR/commit context.

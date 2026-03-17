@@ -1,0 +1,64 @@
+---
+title: Migration Rollback Recovery
+description: Recover from partial rollback failures safely and deterministically.
+---
+
+# Migration Rollback Recovery Runbook
+
+## Purpose
+
+Recover when `migrate:rollback` fails mid-run and leaves a partial migration state.
+
+## Signals
+
+- Non-zero rollback exit code
+- Log line includes `Error rolling back ...`
+- Mixed state in `migrate:status`
+
+## Safety
+
+- Backup before retrying rollback in production.
+- Fix migrations in source, never in generated runtime artifacts.
+- Avoid manual row-level edits in `migrations` unless unavoidable.
+
+## Single connection workflow
+
+1. Capture status:
+
+```bash
+eloquent migrate:status --mysql
+```
+
+2. Fix failing migration `down()` implementation.
+
+3. Re-run rollback for remaining migrations:
+
+```bash
+eloquent migrate:rollback --mysql --all-migrations
+eloquent migrate:rollback --test --mysql --all-migrations
+```
+
+4. Verify and re-apply:
+
+```bash
+eloquent migrate:status --mysql
+eloquent migrate:run --mysql --all-migrations
+eloquent migrate:status --mysql
+```
+
+## All-connections workflow
+
+1. `migrate:status --all-connections` (and `--test`)
+2. Fix migration source
+3. `migrate:rollback --all-connections --all-migrations` (and test)
+4. `migrate:run --all-connections --all-migrations` (and test)
+5. re-check status
+
+## Post-incident checks
+
+- Add or extend a regression test for the failing rollback pattern.
+- Make `down()` implementations idempotent.
+- Update release notes if behavior changes.
+- Legacy `migration_locks` table can be cleaned up post-upgrade if desired:
+  - SQLite/MySQL: `DROP TABLE IF EXISTS migration_locks;`
+  - PostgreSQL: `DROP TABLE IF EXISTS migration_locks CASCADE;`

@@ -1,0 +1,81 @@
+---
+title: Upgrade and Migration Guide
+description: Version-by-version changes and required migration actions.
+---
+
+# Upgrade and Migration Guide
+
+## 0.10.x highlights
+
+### Model registration and hooks
+
+Public helpers now include:
+
+- `registerModels`
+- `isModelRegistered`
+- `setModelRegistryStrictMode`
+- `isModelRegistryStrictMode`
+
+Recommendation:
+
+- Register all models during bootstrap.
+- Keep strict mode enabled by default.
+
+### Factory concurrency semantics
+
+- `Factory.createMany(..., concurrency > 1)` is fail-fast.
+- If any worker fails, the operation rejects.
+- Use `allSettled`-style handling where partial success is required.
+
+### Migration safety
+
+- Migration tracker enforces append-only history checks and checksum-style invariants.
+- If rollback fails, run the rollback recovery runbook.
+
+### Production guardrails
+
+- Destructive production commands require:
+  - `ELOQUENT_ALLOW_PROD_DESTRUCTIVE=true`
+  - `--force --yes`
+
+### Secrets and access
+
+- CLI logs redact secrets.
+- Credentials split across:
+  - runtime role: `ELOQUENT_DB_ROLE=runtime`
+  - migration role: `ELOQUENT_DB_ROLE=migration`
+
+### Observability
+
+- Structured logging:
+  - `ELOQUENT_LOG_FORMAT=json`
+  - `ELOQUENT_LOG_LEVEL=debug|info|warn|error`
+
+### NoSQL enablement
+
+If your SQL-first project enables mongo:
+
+- Add:
+  - `MONGO_URI`
+  - `MONGO_DB_NAME`
+  - `MONGO_TEST_URI`
+  - `MONGO_TEST_DB_NAME`
+- Keep SQL migration commands on SQL connections.
+- Use explicit mongo commands:
+  - `db:seed --mongo`
+  - `demo:scenario --test`
+
+## Upgrade checklists
+
+### Pre-upgrade
+1. Backup target databases.
+2. Confirm migration files are immutable once applied.
+3. Validate `.env` runtime/migration role split.
+4. Ensure CI includes production guard flags.
+
+### Post-upgrade
+1. Run `migrate:status` for active connections.
+2. Run targeted smoke and seed scenarios.
+3. Verify logs and audit flags.
+4. Verify no secret leakage in logs.
+5. If Mongo is enabled, run precheck + seed + scenario command paths.

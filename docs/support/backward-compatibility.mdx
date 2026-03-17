@@ -1,0 +1,50 @@
+---
+title: Backward Compatibility Policy
+description: Compatibility boundaries and what changes are considered breaking.
+---
+
+# Backward Compatibility Policy
+
+## Compatibility goal
+
+Stability guarantees are defined for:
+
+- documented package exports
+- documented CLI commands and flags
+- documented model runtime APIs
+- generator outputs
+- migration and seeding lifecycle contracts
+
+## Breaking changes
+
+- Removing or renaming documented exports
+- Removing or repurposing documented CLI flags
+- Changing generated file names, import paths, or default runtime stack incompatibly
+- Changing documented model/runtime behavior incompatibly
+- Changing migration or seeding behavior requiring consumer action
+
+## Major-only changes
+
+- Export removals
+- CLI flag removals/semantic changes
+- Generator contract changes
+- Runtime API removals
+- Migration/seed contract changes needing manual upgrades
+
+## Minor/Patch expectations
+
+- minor: additive changes only
+- patch: bug fixes/security/docs updates/refactors with no contract drift
+
+## Test-locking
+
+Compatibility claims are locked by dedicated tests for:
+- package surface
+- CLI surface
+- generated app/test stack
+- scenario artifacts
+- packaged smoke runtime
+
+## Internal modules
+
+Private unless explicitly documented; deep imports are unsupported.

@@ -1,0 +1,42 @@
+---
+title: Release Cadence
+description: Channels, eligibility rules, and promotion criteria.
+---
+
+# Release Cadence
+
+## Channels
+
+- `alpha`: early validation, no stability guarantees
+- `beta`: feature-complete validation window
+- `rc`: release-candidate validation for blockers only
+- `stable`: production channel with versioning policy guarantees
+- `LTS`: long-term support line after stability criteria are met
+
+## Cadence model
+
+- patch: corrections, regressions, security fixes as needed
+- minor: scheduled batches after additive validation
+- major: intentional breaking changes with migration guidance
+
+## Stable promotion
+
+Required:
+
+- green CI
+- green package smoke
+- release qualification checklist
+- changelog updated
+- upgrade docs for behavioral changes
+
+## LTS promotion
+
+- stable reliability across releases
+- API/CLI compatibility rules enforced
+- coverage target reached
+- support policy and consumer docs complete from install through operations
+
+## Emergency release
+
+- security/critical regressions can bypass cadence
+- still require versioning compliance, changelog, and upgrade note where needed

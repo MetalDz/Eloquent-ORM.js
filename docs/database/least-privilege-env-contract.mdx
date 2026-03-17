@@ -1,0 +1,83 @@
+---
+title: Least-Privilege Environment Contract
+description: Separate runtime and migration DB identities with explicit environment variables.
+---
+
+# DB Least-Privilege Environment Contract
+
+## Goal
+
+- Run application traffic with least-privilege credentials.
+- Run schema migration operations with elevated migration-specific credentials.
+
+## Execution role
+
+- `ELOQUENT_DB_ROLE=runtime` (default): uses runtime credentials.
+- `ELOQUENT_DB_ROLE=migration`: uses migration credentials.
+
+## MySQL
+
+### Runtime
+- `DB_RUNTIME_HOST`
+- `DB_RUNTIME_USER`
+- `DB_RUNTIME_PASSWORD`
+- `DB_RUNTIME_NAME`
+- `DB_RUNTIME_PORT`
+
+### Migration
+- `DB_MIGRATION_HOST`
+- `DB_MIGRATION_USER`
+- `DB_MIGRATION_PASSWORD`
+- `DB_MIGRATION_NAME`
+- `DB_MIGRATION_PORT`
+
+### Test variants
+- `DB_TEST_RUNTIME_*`
+- `DB_TEST_MIGRATION_*`
+
+Fallback compatibility:
+- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`
+- `DB_TEST_HOST`, `DB_TEST_USER`, `DB_TEST_PASSWORD`, `DB_TEST_NAME`, `DB_TEST_PORT`
+
+## PostgreSQL
+
+### Runtime
+- `PG_RUNTIME_HOST`
+- `PG_RUNTIME_USER`
+- `PG_RUNTIME_PASSWORD`
+- `PG_RUNTIME_NAME` (or `PG_RUNTIME_DB_NAME`)
+- `PG_RUNTIME_PORT`
+
+### Migration
+- `PG_MIGRATION_HOST`
+- `PG_MIGRATION_USER`
+- `PG_MIGRATION_PASSWORD`
+- `PG_MIGRATION_NAME` (or `PG_MIGRATION_DB_NAME`)
+- `PG_MIGRATION_PORT`
+
+### Test variants
+- `PG_TEST_RUNTIME_*`
+- `PG_TEST_MIGRATION_*`
+
+Fallback compatibility:
+- `PG_HOST`, `PG_USER`, `PG_PASSWORD`, `PG_NAME` (or `PG_DB_NAME`), `PG_PORT`
+- `PG_TEST_HOST`, `PG_TEST_USER`, `PG_TEST_PASSWORD`, `PG_TEST_NAME` (or `PG_TEST_DB_NAME`), `PG_TEST_PORT`
+
+## SQLite
+
+- Runtime path: `SQLITE_RUNTIME_PATH` (fallback `SQLITE_PATH`)
+- Migration path: `SQLITE_MIGRATION_PATH` (fallback `SQLITE_PATH`)
+- Tests:
+  - `SQLITE_TEST_RUNTIME_PATH`
+  - `SQLITE_TEST_MIGRATION_PATH`
+
+## Recommended usage
+
+1. Runtime: `ELOQUENT_DB_ROLE=runtime`
+2. Migration jobs: `ELOQUENT_DB_ROLE=migration`
+3. CI test migrations: use `DB_TEST_MIGRATION_*` and `PG_TEST_MIGRATION_*` with `ELOQUENT_DB_ROLE=migration`
+
+## Minimum permission model
+
+- Runtime users: `SELECT`, `INSERT`, `UPDATE`, `DELETE` for app tables.
+- Migration users: schema create/alter/drop only in target DB; avoid global admin privileges.

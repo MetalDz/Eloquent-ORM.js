@@ -6,3 +6,5 @@ src/test
 src/app
 *.sqlite
 *.sqlite-journal
+.mint-cli-home/
+.mintlify/

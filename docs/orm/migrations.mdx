@@ -1,0 +1,31 @@
+---
+title: Migrations
+description: Migration generation, execution, rollback, and status patterns.
+---
+
+# Migrations
+
+Use the CLI migration commands to keep SQL and Mongo schema changes deterministic.
+
+## Core commands
+
+- `make:migration`
+- `migrate:run`
+- `migrate:rollback`
+- `migrate:reset`
+- `migrate:fresh`
+- `migrate:status`
+
+## Environment targets
+
+Use `--test` and connection flags for CI-safe migration execution.
+
+## Stability reminders
+
+- Guarded destructive operations (`reset`, `fresh`) require production protection.
+- `--all-connections` remains SQL-only (`mysql`, `pg`, `sqlite`).
+- Use `--mongo` only when explicitly targeting Mongo.
+
+## Safety
+
+Prefer backup-and-verify for production paths and explicit environment control.

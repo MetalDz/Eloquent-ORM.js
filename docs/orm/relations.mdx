@@ -1,0 +1,26 @@
+---
+title: Relations
+description: Relationship helpers for models.
+---
+
+# ORM Relations
+
+This page documents how to model associations across SQL and Mongo workflows.
+
+## Relation kinds
+
+- `belongsTo`
+- `hasOne`
+- `hasMany`
+- `belongsToMany`
+- `morphOne` / `morphMany`
+
+## Design notes
+
+- Relationship metadata is used by graph/status helpers for visualization and diagnostics.
+- Relation helpers should remain explicit and stable across schema changes.
+
+## Learn more
+
+- [Factory and scenario workflow](../orm/compatibility)
+

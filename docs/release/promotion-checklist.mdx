@@ -1,0 +1,36 @@
+---
+title: Release Promotion Checklist
+description: Required checks before promoting stable or LTS.
+---
+
+# Release Promotion Checklist
+
+## Stable promotion
+
+- [ ] `npm run typecheck` passes
+- [ ] `npm run build` passes
+- [ ] `npm run test:coverage` passes
+- [ ] `npm run test:pack-smoke` passes
+- [ ] CI gates are green
+- [ ] `CHANGELOG.md` updated under `## Unreleased`
+- [ ] `src/documentation/upgrade-guide.md` updated for breaking/notable changes
+- [ ] release qualification checklist complete
+
+## LTS promotion
+
+- [ ] Stable promotion checklist complete
+- [ ] support policy published for line
+- [ ] versioning policy remains aligned
+- [ ] backward compatibility promises locked by tests
+- [ ] public API freeze rules active
+- [ ] consumer docs complete from installation to support
+- [ ] coverage target reached
+
+## Blockers
+
+Do not promote when:
+- changelog is stale
+- upgrade guidance is missing
+- smoke validation is red
+- compatibility contracts are failing
+- support expectations are undocumented

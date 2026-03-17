@@ -1,0 +1,21 @@
+---
+title: Generators
+description: Scaffolding flow for models, services, controllers, migrations, and scenarios.
+---
+
+# Generators
+
+Scaffold generators keep runtime and repository structure consistent.
+
+## Typical flow
+
+1. `make:model`
+2. `make:migration`
+3. `make:controller`
+4. `make:service`
+5. `make:scenario --mongo` or `--test`
+
+## Best practice
+
+Generate in stages and run generated code through tests before committing.
+

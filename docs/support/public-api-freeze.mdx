@@ -1,0 +1,43 @@
+---
+title: Public API Freeze Policy
+description: Rules for what is considered public and how it is constrained.
+---
+
+# Public API Freeze Policy
+
+## Goal
+
+Define public API and prevent accidental drift as the package reaches LTS posture.
+
+## Public API
+
+- root package exports (`dist/index.js`)
+- published CLI surface
+- documented model/runtime APIs
+- documented generator outputs
+- documented shipped templates
+
+## Internal by default
+
+- `dist/core/*`
+- `dist/cli/*`
+- repo source import paths
+- unexported helpers
+
+## Freeze rules
+
+- Public surfaces are not removed outside major.
+- Semantic repurposing is blocked outside major.
+- Behavior changes must be documented and tested.
+- Export additions still require review to prevent accidental surface growth.
+
+## Enforcement checkpoints
+
+- Package surface tests
+- CLI command/flag tests
+- generated app stack tests
+- scenario generated artifact lifecycle tests
+
+## LTS requirement
+
+No release should be marked LTS until these freeze rules are active and enforced.

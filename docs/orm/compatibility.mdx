@@ -1,0 +1,42 @@
+---
+---
+title: SQL and Mongo Compatibility
+description: Shared capabilities and explicit differences between SQL and NoSQL targets.
+---
+
+# SQL and Mongo Compatibility
+
+## Shared contracts
+
+- Model structure and registration flows
+- Factory + seeding flow
+- CLI scenario tooling and status output
+
+## SQL
+
+- Full migration support with SQL adapters.
+- Relation-heavy workflows with conventional constraints.
+- Command surface includes full SQL migration/seed lifecycle.
+
+## Mongo
+
+- Document-oriented runtime under `MongoModel`.
+- `mongo` command targeting is explicit: `--mongo` or `--mongo --test`.
+- SQL adapter methods are not supported by design.
+- Scenario and seed workflows still supported with Mongo-aware compatibility checks.
+
+## What is intentionally unsupported on Mongo
+
+- SQL adapter API calls (`getAdapter("mongo")`, SQL query paths).
+- Cross-driver parity for transaction-sensitive SQL-only guarantees.
+
+## Recommended runtime split
+
+- Keep schema-changing workflows on SQL targets.
+- Use Mongo for document workflows and scenario seeding/validation paths.
+- Validate with targeted smoke and the NoSQL regression contracts.
+
+## Related docs
+
+- [NoSQL usage guide](./nosql)
+- [Usage guide matrix](../getting-started/usage-guides)

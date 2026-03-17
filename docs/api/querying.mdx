@@ -1,0 +1,20 @@
+---
+title: Querying
+description: Safe finder patterns and query execution patterns.
+---
+
+# Querying
+
+Use safe finder APIs for filtered reads and explicit result handling.
+
+## Typical read flow
+
+- Build constraints via query chain APIs.
+- Prefer explicit null-safe branches.
+- Use safe finder return contracts in services to avoid assumptions.
+
+## Notes
+
+- Keep query functions deterministic in tests by fixing connection and fixture input.
+- Prefer explicit `orderBy` direction for predictable output.
+

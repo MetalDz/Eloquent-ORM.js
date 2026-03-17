@@ -1,0 +1,79 @@
+---
+---
+title: CLI Production Safety
+description: Guardrails for destructive operations in production.
+---
+
+# CLI Production Safety
+
+## Goal
+
+- Prevent accidental destructive operations in production.
+- Keep operator intent explicit for high-risk commands.
+
+## Production guard contract
+
+Destructive commands require the following when `APP_ENV=production` or `NODE_ENV=production`:
+
+- `ELOQUENT_ALLOW_PROD_DESTRUCTIVE=true`
+- `--force`
+- `--yes`
+
+## Destructive commands (guarded)
+
+- `make:model`
+- `make:registry`
+- `make:controller`
+- `make:service`
+- `make:seed`
+- `make:factory`
+- `make:scenario`
+- `make:migration`
+- `migrate:fresh`
+- `migrate:reset`
+- `db:seed:fresh`
+
+## Safe commands
+
+- `migrate:status`
+- `db:seed` (except precheck requirements for `--all-connections`)
+- `db:seed:precheck`
+- `factory:status`
+- `cache:stats`
+- `list`
+
+## Seed all-connections precheck
+
+When running:
+
+```bash
+eloquent db:seed --all-connections --class UserSeeder
+```
+
+the CLI runs a bootstrap precheck for migration and connection consistency.
+
+If precheck fails:
+
+1. Run migrations first (`migrate:run` or `migrate:run --test`).
+2. Retry `db:seed`.
+
+Manual precheck:
+
+```bash
+eloquent db:seed:precheck --all-connections
+```
+
+## Controlled production example
+
+```bash
+export APP_ENV=production
+export ELOQUENT_ALLOW_PROD_DESTRUCTIVE=true
+eloquent migrate:reset --all-connections --all-migrations --force --yes
+```
+
+## Recommended operational flow
+
+1. Run `migrate:status` before destructive commands.
+2. Keep migration and seed operations inside CI/CD jobs.
+3. Use least-privilege credentials for runtime vs migration roles.
+4. Keep audit logs enabled around migration/seed windows.

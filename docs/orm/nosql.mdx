@@ -1,0 +1,64 @@
+---
+title: NoSQL (Mongo) Usage
+description: Mongo runtime contract, supported commands, and explicit limits.
+---
+
+# NoSQL (Mongo) Usage Guide
+
+## Scope
+
+- Connection family: `mongo`
+- Targets:
+  - app: `mongo`
+  - test: `mongo_test`
+
+## Environment
+
+- `MONGO_URI`
+- `MONGO_DB_NAME`
+- `MONGO_TEST_URI`
+- `MONGO_TEST_DB_NAME`
+
+CLI selection:
+
+- `DB_CONNECTION` defaults the runtime target.
+- `--mongo` targets mongo.
+- `--mongo --test` targets `mongo_test`.
+- `--all-connections` is SQL-only.
+
+## Runtime model contract
+
+- Use `MongoModel` for Mongo document models.
+- `MongoModel` supports explicit mongo connection names.
+- `_id` mode: uses `_id` key.
+- `id` mode: uses fallback matching `id` or `_id`.
+
+## Compatible command paths
+
+- `make:model --mongo`
+- `make:migration` (mongo targets with explicit `--mongo`)
+- `migrate:status|run|rollback|fresh|reset --mongo`
+- `db:seed --mongo`
+- `db:seed:fresh --mongo`
+- `db:seed:precheck --mongo`
+- `demo:scenario --mongo`
+- `make:scenario --test --mongo`
+
+## Unsupported by design
+
+- SQL adapter APIs in Mongo paths.
+- Implicit SQL contract assumptions in `--all-connections`.
+
+## Recommended Mongo flow
+
+```bash
+eloquent db:seed:precheck --mongo
+eloquent db:seed:precheck --mongo --test
+eloquent db:seed --mongo --class BlogScenarioSeeder
+eloquent db:seed --mongo --test --class BlogScenarioSeeder
+eloquent demo:scenario --test
+```
+
+## CI visibility
+
+NoSQL safety coverage comes from dedicated NoSQL regression suites and scenario smoke checks.

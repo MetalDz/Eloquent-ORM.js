@@ -1,0 +1,58 @@
+---
+title: Model Registry and Hooks
+description: Registry-based model bootstrap and lifecycle hook controls.
+---
+
+# Model Registry and Hooks
+
+## Why it exists
+
+Hook registration and lifecycle execution are guarded so only approved models can access hook pipelines.
+
+## Register models
+
+Generate with CLI:
+
+```bash
+eloquent make:registry
+eloquent make:registry --test
+```
+
+Then import generated helper:
+
+```ts
+import { registerAppModels } from "./app/registerModels";
+
+registerAppModels();
+```
+
+Manual bootstrap remains supported:
+
+```ts
+import { registerModels } from "eloquent-orm.js";
+import { User } from "./app/models/User";
+import { Post } from "./app/models/Post";
+
+registerModels([User, Post]); // strict mode enabled by default
+registerModels([User, Post], { strict: false }); // optional
+```
+
+## Hook behavior
+
+- Strict mode: unregistered models cannot access hook registration or lifecycle hooks.
+- Non-strict mode: models can be lazily granted on first registration/hook execution.
+- Hook execution currently covers lifecycle event pipelines (`create`, `update`, `delete`) and query cache invalidation.
+
+## Migration guidance
+
+### Previous behavior
+
+- `Model.on(...)` and `model.registerHook(...)` were broadly available.
+
+### Current behavior
+
+- Register via `registerModels()` or generated helper first.
+- Keep strict mode enabled by default.
+- Prefer `static modelEvents` on model classes.
+
+Deprecated APIs are still present temporarily and emit warnings; prefer migration to the registry flow for forward compatibility.

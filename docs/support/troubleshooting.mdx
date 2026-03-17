@@ -1,0 +1,67 @@
+---
+title: Troubleshooting
+description: Resolve common build, runtime, CLI, and migration issues.
+---
+
+# Troubleshooting Guide
+
+## Build and TypeScript
+
+### Build fails on CLI helper types
+
+1. Run:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+### Wrong imports from generated artifacts
+
+- Regenerate artifacts with current CLI.
+- Keep artifact naming normalized and avoid duplicated suffixes in model/service/controller names.
+
+## Runtime and connection issues
+
+### SQL startup failures
+
+- Verify `DB_CONNECTION` and driver credentials.
+- Re-run migration/status with explicit target flags.
+
+### Mongo connectivity or DNS failure
+
+- Verify:
+  - `MONGO_URI`
+  - `MONGO_DB_NAME`
+  - `MONGO_TEST_URI`
+  - `MONGO_TEST_DB_NAME`
+
+## CLI and packaging failures
+
+### `npm run test:pack-smoke` fails
+
+```bash
+npm run build
+npm run test:pack-smoke
+```
+
+Enable live Mongo path in smoke if needed:
+
+```bash
+ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME=1
+```
+
+### `factory:status --mongo` skips factories
+
+- Expected for SQL-only factories in a mongo-targeted check.
+- Visible registry will exclude incompatible factories while leaving diagnostics.
+
+## Migration and seeding
+
+### Partial rollback or mixed state
+
+Use the [migration rollback recovery runbook](../orm/migration-rollback).
+
+### Mongo seeding differences
+
+Check the [NoSQL usage guide](../orm/nosql) for explicit compatibility matrix.

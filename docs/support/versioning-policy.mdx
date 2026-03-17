@@ -1,0 +1,44 @@
+---
+title: Versioning Policy
+description: SemVer policy and release rules for this package.
+---
+
+# Versioning Policy
+
+## Versioning model
+
+- major: breaking public API/CLI/generator/migration changes
+- minor: additive and compatible features
+- patch: backward-compatible fixes
+
+## Breaking changes
+
+When breaking:
+
+- update changelog
+- include upgrade note
+- provide migration path when feasible
+
+## Minor changes
+
+- new commands
+- new APIs
+- new options
+- new drivers/features without contract changes
+
+## Patch changes
+
+- bug fixes
+- security fixes
+- docs corrections
+- internal refactors without public contract drift
+
+## Deprecation
+
+- announce before removal
+- include replacement and target removal version
+
+## Pre-release
+
+- `alpha`, `beta`, `rc` allowed
+- pre-release builds are not LTS-covered

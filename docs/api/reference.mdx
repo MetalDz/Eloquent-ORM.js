@@ -1,0 +1,78 @@
+---
+title: API Reference
+description: Public package and model exports with compatibility guarantees.
+---
+
+# Eloquent ORM JS API Reference
+
+## Stability contract
+
+- Only exports from `src/index.ts` are public and semver-tracked.
+- The model subpath `src/Model.ts` is public and semver-tracked as `eloquent-orm.js/Model`.
+- Deep imports from `src/*` or `dist/*` internals are private.
+
+## Root package: `eloquent-orm.js`
+
+### ORM Core
+- `BaseModel`
+- `Model`
+- `SqlModel`
+- `MongoModel`
+- `CoreModel`
+- `MorphRegistry`
+- `PivotHelperMixin`
+
+### Factories and schema
+- `Factory`
+- `column`
+- `relation`
+- `mixin`
+- `validate`
+- `validateSchema`
+- `SchemaBuilder`
+- `SchemaValidator`
+
+### Cache and registration
+- `CacheManager`
+- `setupCache`
+- `registerModels`
+- `isModelRegistered`
+- `setModelRegistryStrictMode`
+- `isModelRegistryStrictMode`
+
+### Types
+- `ORMRecord`, `ModelAttrs`, `ModelInstance`, `TypedRelation`, `PivotRelation`
+- `PlainObject`, `ModelCtor`, `FactoryCtor`, `ModelEventHooks`
+- schema and validation types used by schema builders and factories
+
+## Subpath export: `eloquent-orm.js/Model`
+
+### Named exports
+
+- `SqlModel`
+- `MongoModel`
+- `ModelInstance`
+- `ModelAttrs`
+
+### Subpath rules
+
+- `eloquent-orm.js/Model` has no default export.
+- It does not expose the root `Model` alias.
+- Use root import for Laravel-style SQL models:
+
+```ts
+import { Model } from "eloquent-orm.js";
+```
+
+## Common usage
+
+```ts
+import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
+import { SqlModel, MongoModel, type ModelInstance as MongoInstance } from "eloquent-orm.js/Model";
+```
+
+## Notes
+
+- CLI commands are **not** part of the runtime API surface.
+- New public exports must be added via `src/index.ts` or `src/Model.ts`.
+- Public changes must be reflected in docs and test surfaces.

@@ -1,0 +1,36 @@
+---
+title: Support Policy
+description: Stable/LTS support, channels, and backport boundaries.
+---
+
+# Support Policy
+
+## Current position
+
+- Pre-release channels are for evaluation only.
+- Stable is the active production channel.
+- LTS is defined only after a formal promotion.
+
+## LTS definition (planned)
+
+- Start/end support dates
+- Node.js support range
+- Supported driver matrix (`mysql`, `pg`, `sqlite`, `mongo`)
+- Backport policy
+
+## Supported runtime surface
+
+- Stable/LTS release notes must explicitly list supported Node and driver matrix.
+- SQL and Mongo support expectations are documented separately where parity differs.
+
+## Backport policy
+
+- Security fixes: backported to active lines.
+- Correctness fixes: backported based on risk.
+- Feature additions: not backported to maintenance/LTS unless explicit.
+
+## Out of scope
+
+- Unsupported Node versions
+- Undocumented internals
+- Unofficial forks/custom builds

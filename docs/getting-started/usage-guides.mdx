@@ -1,0 +1,75 @@
+---
+title: Usage Guides
+description: End-to-end workflow patterns for runtime, migration, seeding, and tests.
+---
+
+# Usage Guides
+
+## 1) Runtime setup
+
+1. Configure `.env`.
+2. Set `DB_CONNECTION`.
+3. Register models at startup:
+
+```ts
+registerModels([User, Post, ...]);
+```
+
+or generate a bootstrap helper:
+
+```bash
+eloquent make:registry
+```
+
+Keep strict mode enabled by default unless you have migration-specific lazy bootstrap needs.
+
+## 2) Migration workflow
+
+```bash
+eloquent make:migration User
+eloquent make:migration --all --test
+eloquent migrate:run --all-migrations
+eloquent migrate:status
+```
+
+## 3) Seeding workflow
+
+```bash
+eloquent db:seed --class UserSeeder
+eloquent db:seed --test --class BlogScenarioSeeder
+eloquent db:seed:fresh --class UserSeeder --force --yes
+eloquent db:seed --all-connections --class UserSeeder
+eloquent db:seed:precheck --all-connections
+```
+
+## 4) Multi-driver workflow
+
+- Single target: `--mysql`, `--pg`, `--sqlite`
+- All SQL connections: `--all-connections`
+- Mongo target (SQL-only excluded): `--mongo`, `--mongo --test`
+
+## 5) Test mode workflow
+
+```bash
+eloquent make:model User --test
+eloquent make:registry --test
+eloquent make:migration --all --test
+eloquent migrate:run --test --all-migrations
+```
+
+## 6) Recovery and safety
+
+- Use `--force --yes` with production guard checks for destructive operations.
+- Prefer least-privilege credentials:
+  - `ELOQUENT_DB_ROLE=runtime`
+  - `ELOQUENT_DB_ROLE=migration`
+- Keep CLI prechecks in place before `--all-connections` seed runs.
+
+## 7) NoSQL quick path
+
+Use explicit target flags and keep SQL operations out of implicit scopes.
+
+```bash
+eloquent db:seed:precheck --mongo --test
+eloquent make:scenario --test --mongo --run
+```

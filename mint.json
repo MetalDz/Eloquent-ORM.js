@@ -1,0 +1,77 @@
+{
+  "name": "Eloquent ORM JS",
+  "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+  "favicon": "/favicon.ico",
+  "colors": {
+    "primary": "#0f766e",
+    "light": "#ffffff",
+    "dark": "#0f172a"
+  },
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "getting-started/package-docs",
+        "getting-started/installation",
+        "getting-started/quick-start",
+        "getting-started/usage-guides",
+        "getting-started/upgrade-guide"
+      ]
+    },
+    {
+      "group": "API",
+      "pages": [
+        "api/overview",
+        "api/reference",
+        "api/models",
+        "api/querying"
+      ]
+    },
+    {
+      "group": "ORM",
+      "pages": [
+        "orm/relations",
+        "orm/model-registry",
+        "orm/compatibility",
+        "orm/migrations",
+        "orm/nosql",
+        "orm/migration-rollback"
+      ]
+    },
+    {
+      "group": "CLI",
+      "pages": [
+        "cli/commands",
+        "cli/generators",
+        "cli/production-safety",
+        "cli/test-matrix"
+      ]
+    },
+    {
+      "group": "Operations",
+      "pages": [
+        "database/least-privilege-env-contract",
+        "support/troubleshooting"
+      ]
+    },
+    {
+      "group": "Release & Support",
+      "pages": [
+        "production-support/release-policy",
+        "release/cadence",
+        "release/promotion-checklist",
+        "release/qualification-checklist",
+        "support/backward-compatibility",
+        "support/public-api-freeze",
+        "support/versioning-policy",
+        "support/support-policy"
+      ]
+    }
+  ],
+  "footer": {
+    "socials": {
+      "github": "https://github.com/MetalDz"
+    }
+  }
+}

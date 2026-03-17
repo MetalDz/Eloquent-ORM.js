@@ -1,0 +1,28 @@
+---
+title: API Overview
+description: High-level API surface and export entrypoints.
+---
+
+# API Overview
+
+## Root exports
+
+- `Model` and helper exports from package root
+- `BaseModel`, `SqlModel`, `MongoModel`, `CoreModel`, factory, schema, cache, and registration APIs
+- Factory and helper utilities for runtime/bootstrap scenarios
+
+## Key entrypoints
+
+- `import { registerModels, type ModelInstance, column } from "eloquent-orm.js";`
+- `import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";`
+- `import { BaseModel, SqlModel, MorphRegistry } from "eloquent-orm.js"`
+
+## Migration helpers
+
+- Migrations are primarily driven through CLI entrypoints.
+- Runtime integration is available from the generated app bootstrap layer.
+
+## Related
+
+- [ORM relations](../orm/relations)
+- [CLI commands](../cli/commands)

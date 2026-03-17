@@ -1,0 +1,92 @@
+---
+---
+title: Installation
+description: Install and configure Eloquent ORM JS in your Node.js project.
+---
+
+# Installation and Quick Start
+
+## Install
+
+```bash
+npm install eloquent-orm.js
+```
+
+If your app uses TypeScript, keep a TypeScript toolchain available.
+
+## SQL example environment
+
+```env
+DB_CONNECTION=sqlite
+SQLITE_PATH=./database.sqlite
+DB_TEST_CONNECTION=sqlite_test
+SQLITE_TEST_PATH=./database.test.sqlite
+```
+
+## Mongo example environment
+
+```env
+DB_CONNECTION=mongo
+MONGO_URI=mongodb://127.0.0.1:27017/eloquent_app
+MONGO_DB_NAME=eloquent_app
+DB_TEST_CONNECTION=mongo_test
+MONGO_TEST_URI=mongodb://127.0.0.1:27017/eloquent_app_test
+MONGO_TEST_DB_NAME=eloquent_app_test
+```
+
+## Quick start
+
+1. Register models at app startup.
+2. Generate and run migrations.
+3. Seed data and run a scenario check.
+
+```bash
+eloquent make:model User --with-migration
+eloquent migrate:run --all-migrations
+eloquent db:seed --class UserSeeder
+```
+
+## Runtime bootstrap example
+
+```ts
+import { registerModels } from "eloquent-orm.js";
+import { User } from "./app/models/User";
+
+registerModels([User]);
+```
+
+For SQL models you can import the Laravel-style alias:
+
+```ts
+import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
+```
+
+For explicit base classes:
+
+```ts
+import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+```
+
+## First runtime test
+
+```ts
+const user = new User();
+user.fill({ name: "Alice", email: "alice@example.com" });
+await user.save();
+const stored = await User.findOneBy("email", "alice@example.com");
+console.log(stored?.toJSON());
+```
+
+## Verify your installation
+
+```bash
+npm run build
+node dist/cli/eloquent.js --help
+```
+
+## Where to go next
+
+- [Usage guides](./quick-start)
+- [Usage guides](./usage-guides)
+- [API reference](../api/reference)
+- [NoSQL usage](../orm/nosql)

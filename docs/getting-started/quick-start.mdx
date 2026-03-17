@@ -1,0 +1,52 @@
+---
+---
+title: Quick Start
+description: Start with model + migration + seed in one pass.
+---
+
+# Quick Start
+
+```bash
+eloquent make:model Post --with-migration
+```
+
+This creates `src/app/models/Post.ts` and a migration file for your configured target.
+
+## Runtime setup
+
+1. Ensure model registration is completed at app bootstrap.
+
+```ts
+import { registerModels } from "eloquent-orm.js";
+import { User } from "./app/models/User";
+import { Post } from "./app/models/Post";
+
+registerModels([User, Post]);
+```
+
+2. Generate and apply migrations.
+
+```bash
+eloquent make:migration --all
+eloquent migrate:run --test --all-migrations
+```
+
+3. Seed test fixtures and run a demo scenario.
+
+```bash
+eloquent db:seed --test --class BlogScenarioSeeder
+eloquent demo:scenario --test --random
+```
+
+4. Query and inspect records.
+
+```ts
+const user = await User.findOneBy("email", "alice@example.com");
+console.log(user?.toJSON());
+```
+
+## Next steps
+
+- [Runtime usage guides](./usage-guides)
+- [CLI commands](../cli/commands)
+- [Migration runbook](../orm/migrations)

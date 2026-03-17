@@ -1,0 +1,47 @@
+---
+title: CLI Test Matrix
+description: Mapping between CLI behavior and owning test files.
+---
+
+# CLI Test Matrix
+
+Track where each CLI surface is verified and what remains.
+
+## Fully covered commands
+
+| Command | Covered Parameters / Modes | Evidence |
+| --- | --- | --- |
+| `list` | no options | `src/lab_test/cli.commands.help.test.ts`, `scripts/pack-smoke.js` |
+| `cache:clear` | no options | `src/lab_test/cache.commands.logic.test.ts`, `scripts/pack-smoke.js` |
+| `cache:stats` | no options | `scripts/pack-smoke.js` |
+| `db:seed` | app/test class mode, single-connection flags, and `--all-connections` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts` |
+| `db:seed:fresh` | app/test single-connection flags plus `--all-connections` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts` |
+| `factory:status` | `--details`, `--graph`, `--test` + tarball smoke | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts`, `scripts/pack-smoke.js` |
+| `make:controller` | app-mode soft-delete assertions + tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:factory` | app/test `--model` assertions + tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:model` | app-mode create/overwrite assertions + tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:migration` | all-mode flags and pivot mode coverage | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts` |
+| `make:scenario` | `--test --preset`, `--controllers`, `--services`, `--run`, `--force` | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts`, `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:seed` | app/test count assertions + tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `make:service` | app-mode assertions + tarball smoke | `src/lab_test/cli.generators.integration.test.ts`, `scripts/pack-smoke.js` |
+| `migrate:run` | app/test single and all-connection modes | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts`, `src/lab_test/migrate.run.logic.test.ts` |
+| `migrate:status` | app/test shell coverage | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts` |
+| `migrate:fresh` | app/test shell coverage with `--force` | same as above |
+| `migrate:reset` | app/test shell coverage | same as above |
+| `demo:scenario` | `--user`, `--random`, and tarball smoke | `src/lab_test/cli.integration.scenario.lifecycle.test.ts`, `src/lab_test/cli.integration.*.targeting.test.ts`, `scripts/pack-smoke.js` |
+
+## Partially covered
+
+| Command | Covered now | Remaining gap |
+| --- | --- | --- |
+| `migrate:rollback` | `--test --step` in app sqlite/mysql/pg | all-connections rollback does not exist by design |
+
+## Command ownership (main tests)
+
+- `make:*`: `src/lab_test/cli.generators.integration.test.ts`
+- `demo:scenario`, `migrate:*`, `db:seed:*`: scenario integration + targeting suites
+- `factory:status`: scenario integration + pack smoke
+
+## Next hardening target
+
+Decide whether tarball smoke should mirror every generator assertion already covered in unit/integration suites or remain a smoke-latency sample surface.
