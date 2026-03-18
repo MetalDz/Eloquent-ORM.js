@@ -93,7 +93,24 @@ Detailed runtime guides:
 - `src/documentation/usage-guides-controller.md`
 - `src/documentation/usage-guides-services.md`
 
-## 7) NoSQL Workflow (Mongo)
+## 7) Cache Runtime Environment
+Use cache at the service boundary, not in controllers.
+
+Production cache env keys:
+
+```env
+APP_ENV=production
+MEMCACHED_HOST=127.0.0.1
+MEMCACHED_PORT=11211
+CACHE_DIR=.cache
+```
+
+Current runtime behavior:
+- `APP_ENV=development`: memory cache
+- `APP_ENV=staging`: file cache using `CACHE_DIR`
+- `APP_ENV=production`: Memcached, then file cache, then memory cache
+
+## 8) NoSQL Workflow (Mongo)
 Use explicit mongo targeting when running NoSQL paths:
 - app mode: `--mongo`
 - test mode: `--mongo --test` (targets `mongo_test` when configured)
@@ -106,7 +123,7 @@ Key notes:
   - `eloquent db:seed --mongo [--test] --class <Seeder>`
   - `eloquent demo:scenario [--test]`
 
-## 8) Model Scenarios by Driver
+## 9) Model Scenarios by Driver
 
 ### SQL model example
 

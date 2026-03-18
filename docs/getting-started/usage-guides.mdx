@@ -170,6 +170,21 @@ import { CacheManager, setupCache } from "eloquent-orm.js";
 setupCache();
 ```
 
+Production cache env keys:
+
+```env
+APP_ENV=production
+MEMCACHED_HOST=127.0.0.1
+MEMCACHED_PORT=11211
+CACHE_DIR=.cache
+```
+
+Current runtime behavior:
+
+- `APP_ENV=development`: memory cache
+- `APP_ENV=staging`: file cache using `CACHE_DIR`
+- `APP_ENV=production`: Memcached, then file cache, then memory cache
+
 Read-through pattern:
 
 ```ts

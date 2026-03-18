@@ -12,6 +12,49 @@ Last updated: 2026-03-06
 - `ELOQUENT_DB_ROLE=migration`
   - Uses migration user/password env keys first.
 
+## What `ELOQUENT_DB_ROLE` means
+`ELOQUENT_DB_ROLE` tells the ORM which credential family to prefer when a connection is resolved.
+
+- `runtime`
+  - use for normal application execution
+  - Express requests, controllers, services, queues, and standard CRUD traffic
+- `migration`
+  - use only for migration-oriented jobs
+  - schema create/alter/drop flows, CI migration stages, and controlled maintenance tasks
+
+The contract is least privilege:
+- runtime credentials should handle normal data access
+- migration credentials may need elevated schema permissions
+
+## When to use it in development vs production
+The role meaning does not change between environments. What changes is where the process is running.
+
+### Local development app process
+```env
+APP_ENV=development
+ELOQUENT_DB_ROLE=runtime
+```
+
+### Local development migration command
+```env
+APP_ENV=development
+ELOQUENT_DB_ROLE=migration
+```
+
+### Production app process
+```env
+APP_ENV=production
+ELOQUENT_DB_ROLE=runtime
+```
+
+### Production migration job
+```env
+APP_ENV=production
+ELOQUENT_DB_ROLE=migration
+```
+
+In production, destructive CLI commands are further restricted by the production safety guard contract.
+
 ## MySQL Contract
 - Runtime keys:
   - `DB_RUNTIME_HOST`, `DB_RUNTIME_USER`, `DB_RUNTIME_PASSWORD`, `DB_RUNTIME_NAME`, `DB_RUNTIME_PORT`

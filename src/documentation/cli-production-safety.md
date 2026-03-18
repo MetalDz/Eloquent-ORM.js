@@ -15,6 +15,48 @@ For destructive commands in production, all of the following are required:
 Production detection:
 - `APP_ENV=production` or `NODE_ENV=production`
 
+## Choosing `APP_ENV`
+Use `APP_ENV` to describe the deployment environment of the current process.
+
+- `APP_ENV=development`
+  - local development
+  - local CLI work
+  - non-production integration environments
+- `APP_ENV=production`
+  - real deployed production apps
+  - production migration jobs
+  - controlled maintenance pipelines
+
+Do not set `APP_ENV=production` in local development unless you are deliberately testing production guard behavior.
+
+## Recommended combinations
+
+### Local development app
+```env
+APP_ENV=development
+ELOQUENT_DB_ROLE=runtime
+```
+
+### Local development migration command
+```env
+APP_ENV=development
+ELOQUENT_DB_ROLE=migration
+```
+
+### Production app runtime
+```env
+APP_ENV=production
+ELOQUENT_DB_ROLE=runtime
+```
+
+### Production migration job
+```env
+APP_ENV=production
+ELOQUENT_DB_ROLE=migration
+```
+
+This keeps runtime traffic on least-privilege credentials and reserves elevated credentials for migration windows only.
+
 ## Destructive Commands (Guarded)
 - `make:model`
 - `make:registry`
@@ -51,6 +93,7 @@ Manual precheck command:
 ## Example: Controlled Production Migration Reset
 ```bash
 export APP_ENV=production
+export ELOQUENT_DB_ROLE=migration
 export ELOQUENT_ALLOW_PROD_DESTRUCTIVE=true
 eloquent migrate:reset --all-connections --all-migrations --force --yes
 ```

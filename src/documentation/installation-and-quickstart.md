@@ -70,15 +70,129 @@ MONGO_URI=mongodb://127.0.0.1:27017
 MONGO_DB=eloquent_app
 MONGO_TEST_URI=mongodb://127.0.0.1:27017
 MONGO_TEST_DB=eloquent_app_test
+
+# Cache / Memcached
+MEMCACHED_HOST=127.0.0.1
+MEMCACHED_PORT=11211
+CACHE_DIR=.cache
 ```
 
 ## Quick `.env` Key List
 - `DB_CONNECTION`: active app connection name such as `mysql`, `pg`, `sqlite`, or `mongo`
 - `DB_TEST_CONNECTION`: active test connection name such as `mysql_test`, `pg_test`, `sqlite_test`, or `mongo_test`
+- `ELOQUENT_DB_ROLE`: use `runtime` for the app process and `migration` only for migration or reset jobs
+- `APP_ENV`: use `development` for local work and `production` only for real production processes
 - `DB_*` and `DB_TEST_*`: MySQL runtime and test credentials
 - `PG_*` and `PG_TEST_*`: PostgreSQL runtime and test credentials
 - `SQLITE_PATH` and `SQLITE_TEST_PATH`: SQLite file paths
 - `MONGO_URI`, `MONGO_DB`, `MONGO_TEST_URI`, and `MONGO_TEST_DB`: Mongo runtime and test targets
+- `MEMCACHED_HOST` and `MEMCACHED_PORT`: Memcached endpoint for production cache mode
+- `CACHE_DIR`: file-cache fallback directory used in staging and in the production fallback chain
+
+## `.env` Constant Reference
+
+### Connection Selectors
+- `DB_CONNECTION`: default application connection. Use one value such as `mysql`, `pg`, `sqlite`, or `mongo`.
+- `DB_TEST_CONNECTION`: default isolated test connection. Use one value such as `mysql_test`, `pg_test`, `sqlite_test`, or `mongo_test`.
+- `ELOQUENT_DB_ROLE`: credential role selector. Use `runtime` for normal app traffic and `migration` for migration or reset jobs.
+- `APP_ENV`: deployment mode. Use `development` for local work and `production` only for real production processes.
+
+### MySQL Constants
+- `DB_HOST`: MySQL host or IP for runtime traffic.
+- `DB_PORT`: MySQL port for runtime traffic. Usually `3306`.
+- `DB_USER`: MySQL username for runtime traffic.
+- `DB_PASSWORD`: MySQL password for runtime traffic.
+- `DB_NAME`: MySQL database name for runtime traffic.
+- `DB_TEST_HOST`: MySQL host or IP for isolated test traffic.
+- `DB_TEST_PORT`: MySQL port for isolated test traffic.
+- `DB_TEST_USER`: MySQL username for isolated test traffic.
+- `DB_TEST_PASSWORD`: MySQL password for isolated test traffic.
+- `DB_TEST_NAME`: MySQL database name for isolated test traffic.
+
+### PostgreSQL Constants
+- `PG_HOST`: PostgreSQL host or IP for runtime traffic.
+- `PG_PORT`: PostgreSQL port for runtime traffic. Usually `5432`.
+- `PG_USER`: PostgreSQL username for runtime traffic.
+- `PG_PASSWORD`: PostgreSQL password for runtime traffic.
+- `PG_NAME`: PostgreSQL database name for runtime traffic.
+- `PG_TEST_HOST`: PostgreSQL host or IP for isolated test traffic.
+- `PG_TEST_PORT`: PostgreSQL port for isolated test traffic.
+- `PG_TEST_USER`: PostgreSQL username for isolated test traffic.
+- `PG_TEST_PASSWORD`: PostgreSQL password for isolated test traffic.
+- `PG_TEST_NAME`: PostgreSQL database name for isolated test traffic.
+
+### SQLite Constants
+- `SQLITE_PATH`: file path for the runtime SQLite database.
+- `SQLITE_TEST_PATH`: file path for the isolated test SQLite database.
+
+### MongoDB Constants
+- `MONGO_URI`: MongoDB connection string for the runtime database.
+- `MONGO_DB`: runtime MongoDB database name.
+- `MONGO_TEST_URI`: MongoDB connection string for the isolated test database.
+- `MONGO_TEST_DB`: isolated test MongoDB database name.
+
+### Cache Constants
+- `MEMCACHED_HOST`: Memcached host or IP used in production cache mode.
+- `MEMCACHED_PORT`: Memcached port used in production cache mode. Usually `11211`.
+- `CACHE_DIR`: file-cache directory used in staging and as a fallback in production.
+
+## Runtime role and environment mode
+Use these two variables together:
+
+- `ELOQUENT_DB_ROLE=runtime`
+  - normal app runtime
+  - Express requests
+  - controllers, services, and standard CRUD traffic
+- `ELOQUENT_DB_ROLE=migration`
+  - migration commands
+  - reset or fresh flows
+  - controlled schema-change jobs
+- `APP_ENV=development`
+  - your local machine
+  - normal development and testing
+- `APP_ENV=production`
+  - real production deploys
+  - production migration jobs
+
+Recommended combinations:
+
+```env
+# Local app runtime
+APP_ENV=development
+ELOQUENT_DB_ROLE=runtime
+
+# Local migration command
+APP_ENV=development
+ELOQUENT_DB_ROLE=migration
+
+# Production app runtime
+APP_ENV=production
+ELOQUENT_DB_ROLE=runtime
+
+# Production migration job
+APP_ENV=production
+ELOQUENT_DB_ROLE=migration
+```
+
+## Cache Environment Keys
+When `APP_ENV=production`, cache setup uses this fallback chain:
+
+1. Memcached
+2. file cache
+3. memory cache
+
+Use these env keys:
+
+```env
+MEMCACHED_HOST=127.0.0.1
+MEMCACHED_PORT=11211
+CACHE_DIR=.cache
+```
+
+Defaults:
+- `MEMCACHED_HOST` defaults to `127.0.0.1`
+- `MEMCACHED_PORT` defaults to `11211`
+- `CACHE_DIR` defaults to `.cache`
 
 Example SQL-first setup:
 

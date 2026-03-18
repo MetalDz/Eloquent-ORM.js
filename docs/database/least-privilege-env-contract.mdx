@@ -15,6 +15,67 @@ description: Separate runtime and migration DB identities with explicit environm
 - `ELOQUENT_DB_ROLE=runtime` (default): uses runtime credentials.
 - `ELOQUENT_DB_ROLE=migration`: uses migration credentials.
 
+## What `ELOQUENT_DB_ROLE` means
+
+`ELOQUENT_DB_ROLE` tells the ORM which credential set to prefer when it resolves a connection.
+
+- `runtime`: use this for your normal application process
+  - HTTP requests
+  - Express controllers and services
+  - background jobs that read or write application data
+  - normal CRUD traffic
+- `migration`: use this only for schema-changing or migration-oriented jobs
+  - `migrate:run`
+  - `migrate:fresh`
+  - `migrate:reset`
+  - CI migration stages
+  - controlled maintenance windows
+
+The intent is least privilege:
+
+- runtime credentials should be able to read and write app data
+- migration credentials may need schema create, alter, or drop permissions
+
+## When to use it in development vs production
+
+Use the same role model in every environment. The difference is the deployment target, not the meaning of the role.
+
+### Local development app process
+
+```env
+APP_ENV=development
+ELOQUENT_DB_ROLE=runtime
+```
+
+Use this while building routes, testing CRUD, and running the app locally.
+
+### Local development migration command
+
+```env
+APP_ENV=development
+ELOQUENT_DB_ROLE=migration
+```
+
+Use this when you intentionally run migration or reset commands during development.
+
+### Production app process
+
+```env
+APP_ENV=production
+ELOQUENT_DB_ROLE=runtime
+```
+
+Use this in the real deployed application. The app should not run with migration credentials by default.
+
+### Production migration job
+
+```env
+APP_ENV=production
+ELOQUENT_DB_ROLE=migration
+```
+
+Use this only inside a controlled deploy job, release pipeline, or maintenance task. In production, destructive CLI commands are also guarded by the production safety contract.
+
 ## MySQL
 
 ### Runtime
