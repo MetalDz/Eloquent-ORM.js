@@ -5,22 +5,144 @@ description: Relationship helpers for models.
 
 # ORM Relations
 
-This page documents how to model associations across SQL and Mongo workflows.
+This page shows practical relation definitions for both SQL and Mongo models, including the driver-aware choices you should make in each workflow.
 
-## Relation kinds
+## Relation definitions in model schema
 
-- `belongsTo`
-- `hasOne`
-- `hasMany`
-- `belongsToMany`
-- `morphOne` / `morphMany`
+Relations are declared in `static schema` using the `relation` helper:
 
-## Design notes
+```ts
+relation("hasMany", "Post", { foreignKey: "user_id" })
+relation("belongsTo", "User", { foreignKey: "user_id" })
+relation("belongsToMany", "Tag", {
+  pivotTable: "post_tags",
+  pivotLocalKey: "post_id",
+  pivotForeignKey: "tag_id",
+})
+relation("morphOne", "Image", { morphName: "imageable" })
+relation("morphMany", "Comment", { morphName: "commentable" })
+relation("morphTo", "Commentable", { morphName: "commentable" })
+```
 
-- Relationship metadata is used by graph/status helpers for visualization and diagnostics.
-- Relation helpers should remain explicit and stable across schema changes.
+Options are validated at runtime and fed into migration/graph tooling.
+
+## Scenario 1: SQL relational model
+
+```ts
+import { column, relation } from "eloquent-orm.js";
+import { SqlModel } from "eloquent-orm.js/Model";
+
+type UserAttrs = { id?: number; name?: string };
+type PostAttrs = { id?: number; title?: string; user_id?: number };
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+    posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
+  };
+  constructor() {
+    super("users", process.env.DB_CONNECTION ?? "sqlite");
+  }
+}
+
+export class Post extends SqlModel<PostAttrs> {
+  static tableName = "posts";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    title: column("string", 255),
+    user_id: column("int"),
+    author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+    tags: relation("belongsToMany", "Tag", {
+      pivotTable: "post_tags",
+      pivotLocalKey: "post_id",
+      pivotForeignKey: "tag_id",
+    }),
+  };
+  constructor() {
+    super("posts", process.env.DB_CONNECTION ?? "sqlite");
+  }
+}
+```
+
+Use this model style when you need SQL migrations and relational constraints.
+
+## Scenario 2: Mongo model runtime
+
+```ts
+import { column, relation } from "eloquent-orm.js";
+import { MongoModel } from "eloquent-orm.js/Model";
+
+type CommentAttrs = {
+  id?: number;
+  body?: string;
+  commentable_type?: string;
+  commentable_id?: number;
+};
+type PhotoAttrs = {
+  id?: number;
+  path?: string;
+  commentable_id?: number;
+  commentable_type?: string;
+};
+
+export class Comment extends MongoModel<CommentAttrs> {
+  static tableName = "comments";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    body: column("string", 255),
+    commentable_id: column("string"),
+    commentable_type: column("string", 255),
+    commentable: relation("morphTo", "Image", { morphName: "commentable" }),
+  };
+  constructor() {
+    super("comments", "mongo");
+  }
+}
+
+export class Photo extends MongoModel<PhotoAttrs> {
+  static tableName = "photos";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    path: column("string", 255),
+    imageable_id: column("string"),
+    imageable_type: column("string", 255),
+    imageable: relation("morphTo", "GeoLocation", { morphName: "imageable" }),
+    comments: relation("morphMany", "Comment", { morphName: "commentable" }),
+  };
+  constructor() {
+    super("photos", "mongo");
+  }
+}
+```
+
+In Mongo flows, join-heavy SQL constraints are replaced by document/reference semantics.
+
+## Relation helper compatibility
+
+| Relation kind   | SQL                       | Mongo                         |
+| --------------- | ------------------------- | ----------------------------- |
+| `belongsTo`     | Yes                       | Yes (reference-based)         |
+| `hasMany`       | Yes                       | Yes (reference-based)         |
+| `hasOne`        | Yes                       | Yes (reference-based)         |
+| `morphOne`      | Yes                       | Yes                           |
+| `morphMany`     | Yes                       | Yes                           |
+| `morphTo`       | Yes                       | Yes                           |
+| `belongsToMany` | Yes (pivot)               | Prefer document references     |
+
+## Tips
+
+- Keep relation keys/aliases stable (`user_id`, `post_id`, `morphName`, `morphAlias`) to protect query compatibility.
+- Keep SQL many-to-many explicit with pivot metadata.
+- Keep Mongo models aligned to document boundaries and avoid SQL-only assumptions.
 
 ## Learn more
 
-- [Factory and scenario workflow](../orm/compatibility)
-
+- [Model basics](../api/models)
+- [Compatibility notes](./compatibility)
+- [NoSQL usage guide](./nosql)

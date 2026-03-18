@@ -1,8 +1,8 @@
 {
   "name": "eloquent-orm.js",
-  "version": "0.10.0",
+  "version": "1.0.0-rc.1",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
-  "readme": "Factories seeds integration in 0.7.7v",
+  "readme": "Factories seeds integration in 1.0.0-rc.1",
   "type": "commonjs",
   "author": {
     "name": "MEKHERBECHE Fares",

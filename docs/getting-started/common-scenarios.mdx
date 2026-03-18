@@ -1,0 +1,131 @@
+---
+title: Common Scenarios
+description: Scenario-first documentation for real consumer use cases.
+---
+
+# Common Scenarios
+
+Use this page when you want the fastest path from "I need X" to working commands and runtime structure.
+
+## Choose a scenario
+
+- First SQL CRUD API
+- Mongo document app
+- Blog with relations
+- Soft delete and restore
+- Cached GET endpoints
+- Test-isolated artifacts
+- Many-to-many favorites or tags
+- Casts, scopes, and serialization
+- Production-safe migrations
+
+## Scenario 1: First SQL CRUD API
+
+```bash
+eloquent make:model User --with-migration
+eloquent make:service User
+eloquent make:controller User
+eloquent make:migration --all
+eloquent migrate:run --all-migrations
+```
+
+Register models:
+
+```ts
+import { registerModels } from "eloquent-orm.js";
+import { User } from "./app/models/User";
+
+registerModels([User]);
+```
+
+Wire Express routes with the generated controller and keep CRUD in the service layer.
+
+## Scenario 2: Mongo document app
+
+```bash
+eloquent make:model GeoLocation --mongo
+eloquent make:service GeoLocation
+eloquent make:controller GeoLocation
+```
+
+Use `MongoModel` and explicit mongo connection names.
+
+## Scenario 3: Blog with relations
+
+```bash
+eloquent make:scenario blog --test --controllers --services --run --force
+```
+
+Use this when you want `User`, `Post`, `Comment`, favorites, and polymorphic comment flows quickly.
+
+## Scenario 4: Soft delete and restore
+
+Generate restore-ready controller:
+
+```bash
+eloquent make:controller User --soft
+```
+
+Use one schema declaration:
+
+```ts
+deleted_at: column("softDeletes")
+```
+
+or:
+
+```ts
+softDeletes: mixin("SoftDeletes")
+```
+
+## Scenario 5: Cache GET endpoints
+
+Keep cache logic in services:
+
+```ts
+import { CacheManager, setupCache } from "eloquent-orm.js";
+
+setupCache();
+```
+
+Read from cache before query execution and invalidate after writes.
+
+## Scenario 6: Test-isolated artifacts
+
+```bash
+eloquent make:model User --test
+eloquent make:service User --test
+eloquent make:controller User --test
+eloquent make:migration --all --test
+eloquent migrate:run --test --all-migrations
+```
+
+## Scenario 7: Many-to-many favorites or tags
+
+Use service-level `attach`, `detach`, and `sync` flows for pivot management.
+
+## Scenario 8: Casts, scopes, and serialization
+
+- casts normalize service reads
+- scopes filter `all()` and `find()`
+- `toObject()` gives API-safe output
+
+## Scenario 9: Production-safe migrations
+
+Recommended order:
+
+1. `eloquent migrate:status`
+2. `eloquent db:seed:precheck --all-connections`
+3. `eloquent migrate:run --all-migrations`
+4. destructive flows only with explicit `--force --yes`
+
+## Next detailed guides
+
+- [Usage Guides](./usage-guides)
+- [Cookbook](./cookbook)
+- [Controllers](./controllers)
+- [Services](./services)
+- [Models](../api/models)
+- [Mixin Scenarios](../orm/mixin-scenarios)
+- [Relations](../orm/relations)
+- [NoSQL](../orm/nosql)

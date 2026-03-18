@@ -1,5 +1,7 @@
 # EloquentJS Package Docs
 
+Version: `1.0.0-rc.1`
+
 Last updated: 2026-03-14
 
 ## Start Here
@@ -15,11 +17,21 @@ Last updated: 2026-03-14
 ## Installation and Setup
 - [Installation and Quick Start](./installation-and-quickstart.md)
 - [Usage Guides](./usage-guides.md)
+- [Common Scenarios Guide](./common-scenarios.md)
+- [Cookbook](./cookbook.md)
+- [Controller Usage Guide](./usage-guides-controller.md)
+- [Service Usage Guide](./usage-guides-services.md)
 - [API Reference](./api-reference.md)
+
+## ORM Runtime Patterns
+- [Mixin Scenarios Guide](./mixin-scenarios.md)
+- [Soft Deletes and Restore](./soft-deletes-and-restore.md)
 
 ## SQL and Mongo Usage
 - SQL/general workflow:
   - [Usage Guides](./usage-guides.md)
+- Mixed-driver runtime and per-model connection pinning:
+  - [Multi-Connection Strategy](./multi-connection-strategy.md)
 - Mongo-specific workflow and limits:
   - [NoSQL (Mongo) Usage Guide](./nosql-usage-guide.md)
 

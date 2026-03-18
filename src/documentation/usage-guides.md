@@ -9,6 +9,7 @@ Last updated: 2026-03-10
    - `registerModels([User, Post, ...])`
    - or generate a bootstrap helper with `eloquent make:registry`
 4. Keep strict mode enabled by default unless migration path requires lazy behavior.
+5. Express.js is a recommended requirement for HTTP-based usage and should run without runtime integration issues.
 
 ## 2) Migration Workflow
 Generate migrations:
@@ -46,9 +47,29 @@ Target one connection:
 Target all SQL connections:
 - `--all-connections`
 
+For one app using different drivers at the same time:
+- keep one fallback `DB_CONNECTION`
+- keep one fallback `DB_TEST_CONNECTION`
+- pin `static connectionName` on models that must stay on a specific driver
+
+Example:
+
+```ts
+class User extends SqlModel<{ id?: number; name?: string }> {
+  static connectionName = "mysql";
+}
+
+class GeoLocation extends MongoModel<{ id?: number; name?: string }> {
+  static connectionName = "mongo";
+}
+```
+
 Examples:
 - `eloquent migrate:run --all-connections --all-migrations`
 - `eloquent db:seed --all-connections --class UserSeeder`
+
+Detailed contract:
+- `docs/orm/multi-connection-strategy`
 
 ## 5) Test Mode Workflow
 Use `--test` to isolate test fixtures from app data.
@@ -67,6 +88,11 @@ Examples:
 4. `db:seed` / `db:seed:fresh`
 5. `migrate:status` verification
 
+Detailed runtime guides:
+- `src/documentation/common-scenarios.md`
+- `src/documentation/usage-guides-controller.md`
+- `src/documentation/usage-guides-services.md`
+
 ## 7) NoSQL Workflow (Mongo)
 Use explicit mongo targeting when running NoSQL paths:
 - app mode: `--mongo`
@@ -80,6 +106,85 @@ Key notes:
   - `eloquent db:seed --mongo [--test] --class <Seeder>`
   - `eloquent demo:scenario [--test]`
 
+## 8) Model Scenarios by Driver
+
+### SQL model example
+
+Implement model relations in `static schema` and choose `SqlModel` (or root `Model` alias) when your data needs migrations and SQL semantics.
+
+```ts
+import { column, relation } from "eloquent-orm.js";
+import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+
+type PostAttrs = { id?: number; title?: string; user_id?: number };
+
+class User extends SqlModel<{ id?: number; name?: string }> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+    posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
+  };
+}
+
+class Post extends SqlModel<PostAttrs> {
+  static tableName = "posts";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    title: column("string", 255),
+    user_id: column("int", undefined, { notNull: true }),
+    author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+    favorites: relation("belongsToMany", "Post", {
+      pivotTable: "post_favorites",
+      pivotLocalKey: "user_id",
+      pivotForeignKey: "post_id",
+    }),
+  };
+}
+
+export interface User extends ModelInstance<{ id?: number; name?: string }> {}
+export interface Post extends ModelInstance<PostAttrs> {}
+```
+
+### Mongo model example
+
+Use `MongoModel` for document workflows and explicit mongo targeting:
+
+```ts
+import { column, relation } from "eloquent-orm.js";
+import { MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+
+class GeoLocation extends MongoModel<{ id?: number; name?: string }> {
+  static tableName = "geolocations";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+  };
+}
+
+class Comment extends MongoModel<{ id?: number; body?: string; commentable_id?: number; commentable_type?: string }> {
+  static tableName = "comments";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    body: column("text"),
+    commentable_id: column("int"),
+    commentable_type: column("string", 255),
+    commentable: relation("morphTo", "Photo", { morphName: "commentable" }),
+  };
+}
+```
+
+For Mongo:
+
+- keep relation definitions explicit,
+- use `--mongo [--test]` in commands,
+- avoid SQL-only assumptions (especially FK and pivot guarantees).
+
 Detailed matrix and contract:
 - `src/documentation/nosql-usage-guide.md`
+- `docs/orm/nosql`
 

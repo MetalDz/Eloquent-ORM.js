@@ -1,0 +1,118 @@
+---
+title: Services
+description: Generated service CRUD flow and mixin-aware runtime patterns.
+---
+
+# Service Usage Guide
+
+Services are the main application boundary for CRUD, relation loading, soft-delete restore flows, and cache behavior.
+
+## Generate a service
+
+```bash
+eloquent make:service User
+eloquent make:service User --test
+```
+
+## Generated methods
+
+- `all()`
+- `find(id)`
+- `create(data)`
+- `update(id, data)`
+- `delete(id)`
+- `restore(id)`
+
+## Extend the generated service
+
+```ts
+import { User } from "../models/User";
+
+export class UserService {
+  async all() {
+    return new User().all();
+  }
+
+  async findByEmail(email: string) {
+    return User.findOneBy("email", email);
+  }
+
+  async recentActive(limit = 20) {
+    return User.where("is_active", true)
+      .orderBy("created_at", "desc")
+      .limit(limit)
+      .get();
+  }
+
+  async findWithPosts(id: number | string) {
+    const user = await new User().find(id);
+    if (!user) return null;
+    await (user as { load?: (...relations: string[]) => Promise<unknown> }).load?.("posts");
+    return user;
+  }
+}
+```
+
+Eager-loading note:
+
+- `load()` and `with()` require explicit relation methods on the model instance
+- schema relation metadata alone is not enough for eager-loading calls
+
+## Mixin-aware service patterns
+
+### SoftDeletesMixin
+
+- `restore(id)`
+- `withTrashed()`
+- `onlyTrashed()`
+- `forceDelete(id)`
+
+Keep these flows in the service so controllers stay HTTP-only.
+
+### EagerLoadingMixin
+
+Load relations in service methods, then return hydrated records.
+
+Example model method:
+
+```ts
+posts() {
+  return this.hasMany(Post as any, "user_id");
+}
+```
+
+### SerializeMixin
+
+If you use hidden/appended fields, return `toObject()` from the service for API-safe payloads.
+
+### CastsMixin
+
+Define casts in the model. Service reads then consume already-normalized values.
+
+### ScopeMixin
+
+Global scopes affect `all()` and `find()` automatically. Current behavior is in-memory post-fetch filtering.
+
+### HooksMixin
+
+Services do not call hooks manually. Model hooks fire through `create`, `update`, and `delete`.
+
+### PivotHelperMixin
+
+Use `attach`, `detach`, and `sync` from services for many-to-many workflows.
+
+### Cache
+
+For consumer-facing code, prefer `CacheManager` at the service boundary:
+
+```ts
+import { CacheManager, setupCache } from "eloquent-orm.js";
+
+setupCache();
+```
+
+Wrap read methods with cache lookups and invalidate keys after writes.
+
+## Driver note
+
+The service surface stays the same for SQL and Mongo models. Keep ids as `number | string` and let model choice control driver behavior.

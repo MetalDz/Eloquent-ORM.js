@@ -1,0 +1,199 @@
+---
+title: Mixin Scenarios
+description: Practical runtime scenarios for mixin-backed model behavior.
+---
+
+# Mixin Scenarios
+
+Use this page when you want to apply mixin-backed runtime behavior in real services and controllers.
+
+## SoftDeletes
+
+Use this when deletes should be reversible.
+
+Use one schema declaration:
+
+```ts
+deleted_at: column("softDeletes")
+```
+
+or:
+
+```ts
+softDeletes: mixin("SoftDeletes")
+```
+
+Do not define both.
+
+Service methods:
+
+```ts
+async trashed() {
+  const model = new User() as User & { onlyTrashed?: () => Promise<unknown[]> };
+  return model.onlyTrashed?.() ?? [];
+}
+
+async restore(id: number | string) {
+  const model = new User() as User & { restore?: (value: number | string) => Promise<void> };
+  if (!model.restore) throw new Error("Restore not supported for this model.");
+  await model.restore(id);
+}
+
+async forceDelete(id: number | string) {
+  const model = new User() as User & { forceDelete?: (value: number | string) => Promise<void> };
+  if (!model.forceDelete) throw new Error("Force delete not supported for this model.");
+  await model.forceDelete(id);
+}
+```
+
+## EagerLoading
+
+Use this when one service call should return a model plus its relations.
+
+Important runtime rule:
+
+- eager loading requires explicit relation methods on the model instance
+- schema relation metadata alone does not make `load()` or `with()` available
+
+Example model pattern:
+
+```ts
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+
+  posts() {
+    return this.hasMany(Post as any, "user_id");
+  }
+}
+```
+
+```ts
+async findWithPosts(id: number | string) {
+  const user = await new User().find(id);
+  if (!user) return null;
+
+  const eager = user as User & { load?: (...relations: string[]) => Promise<User> };
+  await eager.load?.("posts", "comments");
+  return user;
+}
+```
+
+## Serialize
+
+Use this when API responses should hide internal fields or append computed fields.
+
+```ts
+const user = await new User().find(id);
+if (!user) return null;
+
+const serializable = user as User & { toObject?: () => Record<string, unknown> };
+return typeof serializable.toObject === "function" ? serializable.toObject() : user;
+```
+
+Prefer `toObject()` in services and controllers. `toJSON()` returns a string.
+
+## Casts
+
+Use this when booleans, dates, and JSON should be normalized automatically after reads.
+
+```ts
+export class User extends SqlModel<UserAttrs> {
+  protected casts = {
+    is_active: "boolean",
+    created_at: "date",
+    settings: "json",
+  } as const;
+}
+```
+
+Service code can then treat read values as normalized runtime data.
+
+## Scope
+
+Use this when some records should be filtered globally from `all()` and `find()`.
+
+```ts
+User.addGlobalScope("active", (records) =>
+  records.filter((record) => record.is_active === true)
+);
+```
+
+Current limitation:
+
+- scope behavior is in-memory post-fetch filtering
+- do not treat it as SQL query optimization
+
+## Hooks
+
+Use this when audit logic, side effects, or invalidation should run around writes.
+
+Preferred model declaration:
+
+```ts
+static modelEvents = {
+  beforeCreate: async (data: Record<string, unknown>) => {
+    console.log("[beforeCreate] User", data);
+  },
+  afterUpdate: async (payload: Record<string, unknown>) => {
+    console.log("[afterUpdate] User", payload);
+  },
+};
+```
+
+Runtime rule:
+
+- register models with `registerModels([...])` before relying on hook flows
+
+## PivotHelper
+
+Use this when many-to-many behavior belongs in the service layer.
+
+```ts
+async syncFavoritePosts(userId: number | string, postIds: Array<number | string>) {
+  const user = new User() as User & {
+    sync?: (
+      pivotTable: string,
+      foreignKey: string,
+      relatedKey: string,
+      id: number | string,
+      relatedIds: Array<number | string>
+    ) => Promise<void>;
+  };
+
+  if (!user.sync) {
+    throw new Error("Pivot sync not supported for this model.");
+  }
+
+  await user.sync("post_user_pivot", "user_id", "post_id", userId, postIds);
+}
+```
+
+## Cache
+
+Use `CacheManager` and `setupCache()` at the service boundary for consumer-facing reads.
+
+```ts
+import { CacheManager, setupCache } from "eloquent-orm.js";
+
+setupCache();
+```
+
+Then cache expensive reads and invalidate after writes:
+
+```ts
+const key = "users:active:v1";
+const cached = await CacheManager.get(key);
+if (cached) return cached;
+
+const users = await User.where("is_active", true).get();
+await CacheManager.set(key, users, 60);
+await CacheManager.delete(key);
+```
+
+## Recommended consumer rule
+
+1. define schema and relations in models
+2. use mixin-backed behavior in services
+3. keep controllers thin
+4. keep cache logic out of controllers

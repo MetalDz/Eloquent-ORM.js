@@ -7,26 +7,33 @@ description: Reference for core ORM and scenario CLI commands.
 
 ## Generators
 
-- `make:model`
-- `make:controller`
-- `make:service`
-- `make:factory`
-- `make:registry`
-- `make:scenario`
+- `make:model`: generate a model file and optionally pair it with migration-ready schema
+- `make:controller`: generate an Express-oriented CRUD controller
+- `make:service`: generate a service layer around model CRUD
+- `make:factory`: generate a factory for seeds, scenarios, and tests
+- `make:registry`: generate model registration bootstrap
+- `make:scenario`: generate coordinated scenario artifacts such as blog or media presets
 
 ## Database commands
 
-- `migrate:run`
-- `migrate:rollback`
-- `migrate:reset`
-- `migrate:fresh`
-- `db:seed`
+- `migrate:run`: apply pending migrations
+- `migrate:rollback`: roll back recent migration batches
+- `migrate:reset`: roll back all applied migrations
+- `migrate:fresh`: drop and rebuild schema from migrations
+- `db:seed`: run a seeder class against the selected target
 
 ## Utilities
 
-- `factory:status`
-- `cache:clear`
-- `seed:status` (scenario flow variants)
+- `factory:status`: inspect factory registration and relationship graph
+- `cache:stats`: inspect runtime cache activity
+- `cache:clear`: clear cache keys and registry state
+- `seed:status`: inspect scenario and seed flow variants
 
 Run `npx eloquent --help` for the full current command matrix.
 
+Use next:
+
+- [Generators](./generators)
+- [Controllers](../getting-started/controllers)
+- [Services](../getting-started/services)
+- [Common Scenarios](../getting-started/common-scenarios)

@@ -1,211 +1,187 @@
-# 🌟 EloquentJS ORM
+# Eloquent ORM JS
 
-A **Laravel-inspired ORM** built for **Node.js + TypeScript** — combining the beauty of Eloquent with the flexibility of modern JavaScript.
+Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime support.
 
----
+Package: `eloquent-orm.js`
 
-## 🏗️ Project Structure
+## What this package gives you
 
-src/
-│
-├── config/
-│ └── database.ts # Loads env vars & exports DatabaseConfig
-│
-├── core/
-│ ├── connection/
-│ │ ├── DatabaseConnection.ts # Handles all DB drivers (MySQL, PG, SQLite, Mongo)
-│ │ ├── ConnectionFactory.ts # Creates, caches & closes connections
-│ │ └── BaseModel.ts # ORM foundation (CRUD, query helpers)
-│ │
-│ └── orm/
-│ ├── Relation.ts # Base relation class
-│ ├── HasOne.ts / HasMany.ts # Example relation classes
-│ └── ... more relations
-│
-├── database/
-│ ├── migrations/ # Database schema definitions
-│ ├── seeders/ # Seeders using factories
-│ └── factories/ # Fake data generators
-│
-├── models/ # Application-level models
-│
-└── testConnection.ts # Verifies DB connectivity
+- SQL and MongoDB model persistence with a Laravel-like runtime API.
+- CLI generators for models, services, controllers, migrations, factories, and scenarios.
+- Migration and seed pipelines across test/CLI environments.
+- Built-in cache manager and cache-clearing utilities.
+- Relationship support (`belongsTo`, `hasMany`, `belongsToMany`, morph*).
 
+## Install
 
-🔌 Connection Flow
-Layer	            File	                Responsibility
-DatabaseConnection	DatabaseConnection.ts	Creates connections for MySQL, PostgreSQL, SQLite, MongoDB
-ConnectionFactory	ConnectionFactory.ts	Caches and returns existing connections
-BaseModel	        BaseModel.ts	        Provides ORM interface (CRUD, query) using the active connection
-Relation	        Relation.ts	            Abstract base for relationships (HasOne, BelongsTo, etc.)
+```bash
+npm i eloquent-orm.js
+```
 
-🧩 Supported Drivers
-Driver	        Library	                Type	        Notes
-MySQL	        mysql2/promise	        SQL	            Full support
-PostgreSQL	    pg	                    SQL	            Full support
-SQLite	        better-sqlite3	        SQL	            Local + test DBs
-MongoDB	        mongodb	                NoSQL	        Document-based ORM support
+Run commands with:
 
+```bash
+npx eloquent
+```
 
-🧮 Migrations & Seeding
-Example Migration
+## Quick start (CLI + runtime)
 
-import { getConnection } from "@/core/connection/ConnectionFactory";
+### 1) Generate a model and migration
 
-export async function up() {
-  const db = await getConnection("sqlite");
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL
-    );
-  `);
-}
+```bash
+npx eloquent make:model User --with-migration
+```
 
-Example Seeder
+Note: command syntax is `eloquent make:model User`, not `eloquent: make: model`.
 
+### 2) Register models in your app bootstrap
 
-import { faker } from "@faker-js/faker";
-import { getConnection } from "@/core/connection/ConnectionFactory";
-
-export async function run() {
-  const db = await getConnection("sqlite");
-  for (let i = 0; i < 10; i++) {
-    await db.run("INSERT INTO users (name, email) VALUES (?, ?)", [
-      faker.person.fullName(),
-      faker.internet.email(),
-    ]);
-  }
-}
-
-
-🧠 Architecture Principles
-
-Principl                    Description
-
-Driver-Agnostic	            ORM works for both SQL and NoSQL connections.
-Separation of Concerns	    Connection handling ≠ ORM logic.
-Lazy Initialization	        Connections created only when required.
-DRY	                        No driver redeclaration in models.
-Extensible	                Easily add new drivers or relations.
-Type-Safe	                Fully typed with interfaces and discriminated unions.
-
-🧭 Roadmap
-Step	    Feature	Description
-✅	       Multi-driver core	MySQL, PG, SQLite, Mongo
-🚧	        Relations	HasOne, HasMany, BelongsTo, MorphOne, etc.
-🚧	        Query Builder	Fluent chaining (where, orderBy, join)
-🚧	        CLI Tool	eloquent migrate, eloquent seed commands
-🚧	        Transactions	Commit/rollback for SQL drivers
-🚧	        Eager Loading	with() for related models
-🚧	        Publish to npm	npm install eloquent-orm.js
-
-✅ Phase 1 — Core Model Architecture
-
-Implemented BaseModel with:
-
-CRUD operations (create, update, delete, find, where)
-
-Connection support (PostgreSQL, MySQL, MongoDB)
-
-Query Builder structure
-
-Added Mixins for:
-
-SoftDeletesMixin
-
-TimestampMixin
-
-JSON casting & attribute hooks
-
-✅ Phase 2 — Relations & Eager Loading
-
-Added support for:
-
-hasOne, hasMany, belongsTo, belongsToMany
-
-EagerLoadingMixin for .with() method
-
-Lazy loading fallback
-
-Query builder optimized for relational joins.
-
-✅ Phase 3 — Migration & Schema Management
-
-Built migration CLI system:
-
-eloquent make:migration
-
-eloquent migrate / eloquent rollback
-
-Schema builder with chainable methods:
-
-table.increments('id').primary()
-table.string('name').notNullable()
-table.timestamps()
-
-
-Added compound primary key support
-
-Fixed type comparison issue with "increments"
-
--------------
-🧠 Migration Management Rules
-
-Only 1 migration file per model (either create_... or update_...).
-
-Each new update:
-
-Deletes the old migration file.
-
-Generates a new update_ file with a fresh timestamp.
-
-down() does not auto-reverse — because migrations are regenerated from the model itself.
-
-Includes clear philosophical comment explaining this in every generated file.
-
-🧩 Smart Features
-
-✅ Auto column order (e.g., created_at, updated_at always at the end).
-✅ Detects and drops missing columns.
-✅ Detects and adds new columns.
-✅ Cleans outdated migrations automatically.
-✅ Supports MySQL / PostgreSQL / SQLite.
-✅ Closes DB connections automatically after execution.
- 
-🧑‍💻 Authors
-Created with ❤️ by ALPHA Consultings who love Laravel, Node.js, and TypeScript.
-## Model Registration and Hook Access
-
-Register your models once at startup:
+Express.js is the required runtime for HTTP-facing usage in this project and integrates without issues.
 
 ```ts
 import { registerModels } from "eloquent-orm.js";
 import { User } from "./app/models/User";
 import { Post } from "./app/models/Post";
 
-registerModels([User, Post]); // strict mode is enabled by default
-
-// Optional: allow lazy auto-registration on first model usage
-registerModels([User, Post], { strict: false });
+registerModels([User, Post]);
 ```
 
-Lifecycle hook access is now gated:
-- In strict mode, hook registration is denied for unregistered models.
-- In strict mode, unregistered models are blocked from lifecycle hook execution paths.
-- In non-strict mode, models are lazily granted on first hook registration or first lifecycle usage.
+### 3) Run migrations
 
-Migration notes:
-- `Model.on(...)` and `model.registerHook(...)` are deprecated and emit warnings.
-- Prefer `static modelEvents` and bootstrap registration with `registerModels([...])`.
-- Full guide: `src/documentation/model-registry-hooks.md`
+```bash
+npx eloquent make:migration --all
+npx eloquent migrate:run --test --all-migrations
+```
 
-## Factory createMany Concurrency Behavior
+### 4) Optional cache bootstrap
 
-`Factory.createMany(count, callback, concurrency > 1)` now fails fast:
-- If any worker or callback fails, the whole call rejects.
-- It no longer resolves with partial/sparse arrays when one task fails.
+```ts
+import { setupCache } from "eloquent-orm.js";
+setupCache(); // Memory/Staging/Production cache selector from env
+```
 
-Migration note:
-- If you need best-effort partial success, use an explicit `Promise.allSettled(...)` strategy or run sequentially and handle per-item errors.
+## Common generator commands (runtime-focused)
+
+- `npx eloquent make:model User --with-migration`
+- `npx eloquent make:service User`
+- `npx eloquent make:controller User`
+- `npx eloquent make:seed User --count 10`
+- `npx eloquent make:migration --all`
+- `npx eloquent migrate:run`
+- `npx eloquent migrate:fresh --force --yes`
+- `npx eloquent db:seed --class BlogScenarioSeeder --test`
+
+## Runtime CRUD with generated models
+
+Model methods are instance-based for persistence and class-based for read/query.
+
+```ts
+import { User } from "./app/models/User";
+
+// List all
+const users = await new User().all();
+
+// Safe finder + query chain
+const recentActiveUsers = await User.where("is_active", true)
+  .orderBy("created_at", "desc")
+  .limit(20)
+  .get();
+
+const oneByEmail = await User.findOneBy("email", "alice@example.com");
+const byId = await new User().find(10);
+
+// Create
+const created = await new User().create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+
+// Update via instance persistence
+if (created) {
+  created.fill({ name: "Alice Johnson" });
+  await created.save();
+}
+
+// Patch directly if already persisted
+const persisted = await User.findOneBy("email", "alice@example.com");
+await persisted?.patch?.({ name: "Alice K." });
+
+// Delete
+await new User().delete(1);
+```
+
+### Soft delete + restore
+
+Soft delete is supported by model mixins, and delete behavior is routed to `deleted_at` when that field is present in your schema/model state.
+
+```ts
+await new User().delete(1);   // marks deleted_at
+await new User().restore(1);  // clears deleted_at
+```
+
+If your model does not currently use soft-delete columns, keep delete/restore aligned with your schema.
+
+## Generating and using services
+
+```bash
+npx eloquent make:service User
+```
+
+Generated service (`app/services/UserService.ts`):
+
+```ts
+const service = new UserService();
+
+await service.all();
+await service.find(1);
+await service.create({ name: "Alice", email: "alice@example.com" });
+await service.update(1, { email: "new@example.com" });
+await service.delete(1);
+await service.restore(1);
+```
+
+This keeps controller code simple and centralizes persistence logic per domain entity.
+
+## Caching inside read/get flows
+
+`setupCache()` configures the active cache driver based on environment.
+For read-heavy endpoints, cache at service/query boundary using `CacheManager` (public API).
+
+```ts
+import { CacheManager, setupCache } from "eloquent-orm.js";
+
+setupCache();
+
+export async function getActiveUsersFromCache() {
+  const key = "users:active:v1";
+  const cached = await CacheManager.get(key);
+  if (cached) return cached;
+
+  const users = await User.where("is_active", true).orderBy("created_at", "desc").get();
+  await CacheManager.set(key, users, 60);
+  return users;
+}
+
+export async function createUser(payload: Record<string, unknown>) {
+  const user = await new User().create(payload);
+  await CacheManager.delete("users:active:v1"); // invalidate read cache after write
+  return user;
+}
+```
+
+CLI cache helpers:
+
+- `npx eloquent cache:stats` (inspect runtime cache stats)
+- `npx eloquent cache:clear` (clear all cache entries)
+
+## Documentation gap plan (immediate)
+
+The usage docs still need targeted expansions for end-to-end scenarios. Planned work:
+
+1. Expand quick-start with a complete `eloquent make:model` -> `make:migration` -> `migrate:run` -> service/controller flow.
+2. Add explicit CRUD examples for:
+   - `create` via instance, `find`/`first`/`where`, `orderBy("...", "asc|desc")`, `all`, `patch`, `save`
+   - soft-delete flow (`delete`, `restore`, `forceDelete` boundaries)
+3. Add service-level templates + full REST examples (`POST/PUT/DELETE` paths).
+4. Add a concrete cache-by-get section (TTL, key naming, invalidation, and cache:clear integration).
+5. Keep README and Mintlify docs (especially `docs/getting-started/*` and `docs/api/*`) aligned with the same command syntax and runtime examples.

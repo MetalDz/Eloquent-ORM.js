@@ -94,10 +94,14 @@ describe("LTS phase 4 consumer documentation suite", () => {
 
     const installSnippets = [
       "# Installation and Quick Start",
-      `npm install ${packageName}`,
+      `npm install ${packageName} express dotenv`,
       "Example SQL-first setup",
       "Example Mongo setup",
+      "## Full `.env` Setup",
+      "## Quick `.env` Key List",
+      "MONGO_TEST_DB",
       "## Quick Start",
+      "Do not place multiple connection names inside one variable.",
       "registerModels",
       "eloquent migrate:run --all-migrations",
       "## First Runtime Example",

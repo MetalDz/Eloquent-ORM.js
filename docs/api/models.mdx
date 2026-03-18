@@ -5,19 +5,230 @@ description: Working with SQL and Mongo models.
 
 # Models
 
-Model classes are the main ORM surface for persistence and relation access.
+Model classes are the primary unit of persistence, query behavior, and relation definitions.
+This section covers concrete implementation patterns for SQL and Mongo drivers.
 
-## SQL models
+## Last updated
 
-Use SQL models for relational flows and SQL migration support.
+2026-03-17
 
-## Mongo models
+## 1) Choose a model base
 
-Use Mongo models for document-oriented persistence with Mongo runtime semantics.
+In most apps, import directly from the package root:
 
-## Tips
+```ts
+import { Model, column, relation, type ModelInstance } from "eloquent-orm.js";
+```
 
-- Keep model classes thin.
-- Register models at application bootstrap for deterministic behavior.
-- Use factory files for reproducible test and demo data.
+The root `Model` alias maps to SQL behavior for backward-compatible Laravel-style ergonomics.
 
+For explicit, driver-specific class imports:
+
+```ts
+import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+```
+
+## 2) SQL model scenario (relational)
+
+Use `SqlModel` (or root `Model`) for any entity backed by SQL migrations and relations.
+
+```ts
+import { column, relation } from "eloquent-orm.js";
+import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+
+type UserAttrs = {
+  id?: number;
+  name?: string;
+  email?: string;
+};
+
+type PostAttrs = {
+  id?: number;
+  title?: string;
+  user_id?: number;
+};
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+  static morphAlias = "users";
+
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+    email: column("string", 255),
+    posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
+    favorites: relation("belongsToMany", "Post", {
+      pivotTable: "user_favorites",
+      pivotLocalKey: "user_id",
+      pivotForeignKey: "post_id",
+    }),
+  };
+
+  constructor() {
+    super("users", process.env.DB_CONNECTION ?? "sqlite");
+  }
+
+  posts() {
+    return this.hasMany(Post as any, "user_id");
+  }
+}
+
+export interface User extends ModelInstance<UserAttrs> {}
+
+export class Post extends SqlModel<PostAttrs> {
+  static tableName = "posts";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    title: column("string", 255),
+    user_id: column("int"),
+    author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+  };
+
+  constructor() {
+    super("posts", process.env.DB_CONNECTION ?? "sqlite");
+  }
+
+  author() {
+    return this.belongsTo(User as any, "user_id");
+  }
+}
+```
+
+Use this when:
+
+- you need migrations and SQL-first consistency,
+- you rely on SQL join semantics (`belongsTo`, `hasMany`, `belongsToMany`),
+- `factory:migration:seed` parity flows are expected to stay deterministic.
+
+## 3) Mongo model scenario (document runtime)
+
+Use `MongoModel` with an explicit mongo connection name (`"mongo"` or `"mongo_test"`).
+
+```ts
+import { column, relation } from "eloquent-orm.js";
+import { MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+
+type GeoLocationAttrs = {
+  id?: number;
+  name?: string;
+  user_id?: string;
+};
+
+type PhotoAttrs = {
+  id?: number;
+  path?: string;
+  imageable_id?: number;
+};
+
+export class GeoLocation extends MongoModel<GeoLocationAttrs> {
+  static tableName = "geolocations";
+  static connectionName = "mongo";
+  static morphAlias = "geolocations";
+
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+    user_id: column("string"),
+  };
+
+  constructor() {
+    super("geolocations", "mongo");
+  }
+}
+
+export class Photo extends MongoModel<PhotoAttrs> {
+  static tableName = "photos";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    path: column("string", 255),
+    imageable_id: column("string"),
+    imageable: relation("morphMany", "GeoLocation", { morphName: "imageable" }),
+  };
+
+  constructor() {
+    super("photos", "mongo");
+  }
+}
+
+export interface GeoLocation extends ModelInstance<GeoLocationAttrs> {}
+export interface Photo extends ModelInstance<PhotoAttrs> {}
+```
+
+Use this when:
+
+- your domain is document-oriented,
+- you do not need SQL constraint-heavy migration workflows,
+- you need runtime parity with `--mongo` or `--mongo --test`.
+
+## 4) Relation patterns in one model
+
+The generated schema DSL supports all relation helpers:
+
+- `belongsTo`
+- `hasOne`
+- `hasMany`
+- `belongsToMany`
+- `morphOne`
+- `morphMany`
+- `morphTo`
+
+Common examples:
+
+- SQL one-to-many:
+  - `posts: relation("hasMany", "Post", { foreignKey: "user_id" })`
+- SQL / Mongo foreign-key:
+  - `author: relation("belongsTo", "User", { foreignKey: "user_id" })`
+- SQL many-to-many:
+  - `favorites: relation("belongsToMany", "Post", { pivotTable: "user_favorites", pivotLocalKey: "user_id", pivotForeignKey: "post_id" })`
+- SQL or Mongo polymorphic:
+  - `commentable: relation("morphTo", "Commentable", { morphName: "commentable" })`
+
+For polymorphic one/many:
+
+- `image: relation("morphOne", "Image", { morphName: "imageable" })`
+- `comments: relation("morphMany", "Comment", { morphName: "commentable" })`
+
+### Driver-aware caveats
+
+- `belongsToMany` with pivot metadata is SQL-first by contract.
+- In Mongo, emulate many-to-many with document references or explicit mapping collections.
+- Keep `morphAlias` and `morphName` consistent for stable polymorphic resolution.
+
+## 5) Runtime usage examples
+
+Simple query flow:
+
+```ts
+import { User, Post } from "./app/models";
+
+const latest = await Post.where("title", "Intro to ORM")
+  .orderBy("created_at", "desc")
+  .limit(10)
+  .get();
+```
+
+If you want eager loading, define explicit relation methods on the model first:
+
+```ts
+const user = await User.findOneBy("email", "alice@example.com");
+await user?.load?.("posts");
+```
+
+Mongo query flow:
+
+```ts
+import { GeoLocation } from "./app/models";
+
+const loc = await GeoLocation.findOneBy("name", "New York");
+console.log(loc?.toJSON?.());
+```
+
+## 6) Related docs
+
+- [Model registry](../orm/model-registry)
+- [Relations](../orm/relations)
+- [NoSQL usage](../orm/nosql)
+- [Compatibility matrix](../orm/compatibility)

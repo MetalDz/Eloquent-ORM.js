@@ -1,0 +1,79 @@
+---
+title: Controllers
+description: Generated controller CRUD flow and mixin-aware runtime behavior.
+---
+
+# Controller Usage Guide
+
+Use generated controllers as thin Express adapters. Keep persistence, relation loading, cache policy, and soft-delete rules in services and models.
+
+## Generate a controller
+
+```bash
+eloquent make:controller User
+eloquent make:controller User --soft
+eloquent make:controller User --test
+```
+
+## Generated methods
+
+- `index()`
+- `show()`
+- `store()`
+- `update()`
+- `destroy()`
+- `restore()` when generated with `--soft`
+
+## Express route wiring
+
+```ts
+import express from "express";
+import { UserController } from "./app/controllers/UserController";
+
+const app = express();
+app.use(express.json());
+
+const controller = new UserController();
+
+app.get("/users", controller.index.bind(controller));
+app.get("/users/:id", controller.show.bind(controller));
+app.post("/users", controller.store.bind(controller));
+app.put("/users/:id", controller.update.bind(controller));
+app.delete("/users/:id", controller.destroy.bind(controller));
+app.patch("/users/:id/restore", controller.restore.bind(controller));
+```
+
+Only add the restore route when the controller was generated with `--soft`.
+
+## Mixin-aware behavior
+
+Controllers do not own mixins. They consume model/service behavior that comes from the composed model stack.
+
+### Soft deletes
+
+If the model supports soft deletes, keep `destroy()` as soft delete and expose `restore()` from the controller.
+
+Use one schema declaration, not both:
+
+```ts
+deleted_at: column("softDeletes")
+```
+
+or:
+
+```ts
+softDeletes: mixin("SoftDeletes")
+```
+
+### Serialization
+
+If the model uses hidden/appended fields, prefer `toObject()` before `res.json(...)`.
+
+### Eager loading and cache
+
+- Keep relation loading in the service layer.
+- Keep cache logic in the service layer.
+
+## Driver note
+
+The controller contract is the same for SQL and Mongo models. Keep driver branching out of route handlers.

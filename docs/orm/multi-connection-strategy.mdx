@@ -1,0 +1,190 @@
+---
+title: Multi-Connection Strategy
+description: How to run SQL and Mongo connections together without breaking the env contract.
+---
+
+# Multi-Connection Strategy
+
+Version: `1.0.0-rc.1`
+
+Use this page when your app needs more than one database connection at the same time.
+
+## Core rule
+
+This ORM supports multiple named connections in one app, but it does not support multiple values inside `DB_CONNECTION`.
+
+Correct:
+
+```env
+DB_CONNECTION=sqlite
+DB_TEST_CONNECTION=sqlite_test
+```
+
+Incorrect:
+
+```env
+DB_CONNECTION=mysql,pg
+```
+
+Incorrect for the current package contract:
+
+```env
+DB_MYSQL_CONNECTION=mysql
+DB_SQLITE_CONNECTION=sqlite
+DB_PG_CONNECTION=pg
+DB_MONGO_CONNECTION=mongo
+```
+
+Those custom keys are not part of the current resolver and will be ignored unless you change the package code.
+
+## What the package actually supports
+
+- one active default app selector: `DB_CONNECTION`
+- one active default test selector: `DB_TEST_CONNECTION`
+- all driver credential blocks can exist in the same `.env`
+- models can pin their own `static connectionName`
+- SQL and Mongo connections can stay open together in one process
+
+## Recommended `.env` pattern
+
+Keep one selector and all driver-specific settings together:
+
+```env
+DB_CONNECTION=sqlite
+DB_TEST_CONNECTION=sqlite_test
+
+# MySQL
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=eloquent_app
+DB_TEST_HOST=127.0.0.1
+DB_TEST_PORT=3306
+DB_TEST_USER=root
+DB_TEST_PASSWORD=
+DB_TEST_NAME=eloquent_app_test
+
+# PostgreSQL
+PG_HOST=127.0.0.1
+PG_PORT=5432
+PG_USER=postgres
+PG_PASSWORD=postgres
+PG_NAME=eloquent_app_pg
+PG_TEST_HOST=127.0.0.1
+PG_TEST_PORT=5432
+PG_TEST_USER=postgres
+PG_TEST_PASSWORD=postgres
+PG_TEST_NAME=eloquent_app_pg_test
+
+# SQLite
+SQLITE_PATH=./storage/app.sqlite
+SQLITE_TEST_PATH=./storage/app.test.sqlite
+
+# MongoDB
+MONGO_URI=mongodb://127.0.0.1:27017
+MONGO_DB=eloquent_app
+MONGO_TEST_URI=mongodb://127.0.0.1:27017
+MONGO_TEST_DB=eloquent_app_test
+```
+
+## How mixed-driver runtime works
+
+When a model defines `static connectionName`, that model can use a different connection from the app default.
+
+```ts
+import { column, registerModels } from "eloquent-orm.js";
+import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+
+type UserAttrs = { id?: number; name?: string };
+type GeoAttrs = { id?: number; name?: string };
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = "mysql";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+  };
+
+  constructor() {
+    super("users", "mysql");
+  }
+}
+
+export class GeoLocation extends MongoModel<GeoAttrs> {
+  static tableName = "geolocations";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+  };
+
+  constructor() {
+    super("geolocations", "mongo");
+  }
+}
+
+export interface User extends ModelInstance<UserAttrs> {}
+export interface GeoLocation extends ModelInstance<GeoAttrs> {}
+
+registerModels([User, GeoLocation]);
+```
+
+In that setup:
+
+- `User` always targets `mysql`
+- `GeoLocation` always targets `mongo`
+- `DB_CONNECTION` still acts as the fallback for models that do not pin `connectionName`
+
+## When to rely on `DB_CONNECTION`
+
+Use `DB_CONNECTION` and `DB_TEST_CONNECTION` when:
+
+- your whole app should run on one default driver
+- generated models should inherit one shared default
+- you only switch targets between environments
+
+## When to pin `connectionName` per model
+
+Use explicit `static connectionName = "mysql"` style declarations when:
+
+- one part of the app is relational
+- another part is document-first
+- you need one process to talk to SQL and Mongo together
+- you want predictable runtime behavior regardless of environment defaults
+
+## CLI behavior
+
+The CLI can target more than one connection, but not all commands treat connections the same way.
+
+- `--all-connections` is SQL-only by design
+- Mongo must be targeted explicitly with `--mongo`
+- test flows use `DB_TEST_CONNECTION` unless a model or command target overrides it
+
+Examples:
+
+```bash
+eloquent migrate:run --all-connections --all-migrations
+eloquent db:seed --all-connections --class UserSeeder
+eloquent db:seed --mongo --class GeoLocationSeeder
+eloquent db:seed --mongo --test --class GeoLocationSeeder
+```
+
+## Stable design recommendation
+
+For most apps, keep this design:
+
+1. one default app selector
+2. one default test selector
+3. all driver credentials present in `.env`
+4. explicit per-model `connectionName` only where mixed-driver runtime is required
+
+That keeps the environment simple while still allowing true multi-connection runtime.
+
+## Related docs
+
+- [Installation and Quick Start](../getting-started/installation)
+- [Usage Guides](../getting-started/usage-guides)
+- [SQL and Mongo Compatibility](./compatibility)
+- [NoSQL usage guide](./nosql)

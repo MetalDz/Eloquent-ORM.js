@@ -12,3 +12,12 @@ src/lab_test
 validation tasks
 *.sqlite
 *.sqlite-journal
+.npm-pack-smoke-cache-shell-*
+.npm-pack-smoke-cache-*
+.npm-pack-smoke-cache-*-log.txt
+.npm-cache
+.mintignore
+.mint-cache
+.mint-cache-*
+.mint-cache-*-log.txt
+*.log

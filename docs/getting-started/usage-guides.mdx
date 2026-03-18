@@ -23,6 +23,8 @@ eloquent make:registry
 
 Keep strict mode enabled by default unless you have migration-specific lazy bootstrap needs.
 
+This project is intended to run with Express.js in request/route-based applications. Use Express.js without changes to run model registration and query workflows reliably.
+
 ## 2) Migration workflow
 
 ```bash
@@ -47,6 +49,21 @@ eloquent db:seed:precheck --all-connections
 - Single target: `--mysql`, `--pg`, `--sqlite`
 - All SQL connections: `--all-connections`
 - Mongo target (SQL-only excluded): `--mongo`, `--mongo --test`
+- For one app talking to different drivers at once, keep one `DB_CONNECTION` fallback and pin `static connectionName` on the models that must stay on a specific driver
+
+Example mixed runtime:
+
+```ts
+export class User extends SqlModel<UserAttrs> {
+  static connectionName = "mysql";
+}
+
+export class GeoLocation extends MongoModel<GeoAttrs> {
+  static connectionName = "mongo";
+}
+```
+
+See the full contract in [Multi-Connection Strategy](../orm/multi-connection-strategy).
 
 ## 5) Test mode workflow
 
@@ -65,6 +82,12 @@ eloquent migrate:run --test --all-migrations
   - `ELOQUENT_DB_ROLE=migration`
 - Keep CLI prechecks in place before `--all-connections` seed runs.
 
+Detailed runtime guides:
+
+- [Common scenarios](./common-scenarios)
+- [Controllers](./controllers)
+- [Services](./services)
+
 ## 7) NoSQL quick path
 
 Use explicit target flags and keep SQL operations out of implicit scopes.
@@ -73,3 +96,163 @@ Use explicit target flags and keep SQL operations out of implicit scopes.
 eloquent db:seed:precheck --mongo --test
 eloquent make:scenario --test --mongo --run
 ```
+
+## 8) Runtime CRUD patterns
+
+### Create
+
+```ts
+const created = await new User().create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+```
+
+### Read
+
+```ts
+const allUsers = await new User().all();
+const byId = await new User().find(1);
+const byEmail = await User.findOneBy("email", "alice@example.com");
+```
+
+### Filtered reads and safe finder
+
+```ts
+const recentActiveUsers = await User.where("is_active", true)
+  .orderBy("created_at", "desc")
+  .limit(20)
+  .get();
+
+const newestUser = await User.orderBy("created_at", "desc").first();
+```
+
+### Update
+
+```ts
+const user = await User.findOneBy("email", "alice@example.com");
+if (user) {
+  user.fill({ name: "Alice Updated" });
+  await user.save();
+}
+```
+
+Patch existing record:
+
+```ts
+await (await User.findOneBy("email", "alice@example.com"))?.patch?.({
+  name: "Alice Patch",
+});
+```
+
+### Delete and restore
+
+```ts
+await new User().delete(1);
+
+const model = new User() as User & { restore?: (id: number | string) => Promise<void> };
+await model.restore?.(1);
+```
+
+See also:
+
+- [Controllers](./controllers)
+- [Services](./services)
+- [Soft Deletes and Restore](../orm/soft-deletes)
+
+## 9) Cache in read paths
+
+Use cache at the service boundary, not in controllers.
+
+```ts
+import { CacheManager, setupCache } from "eloquent-orm.js";
+
+setupCache();
+```
+
+Read-through pattern:
+
+```ts
+async function activeUsers() {
+  const key = "users:active:v1";
+  const cached = await CacheManager.get(key);
+  if (cached) return cached;
+
+  const users = await User.where("is_active", true)
+    .orderBy("created_at", "desc")
+    .limit(20)
+    .get();
+
+  await CacheManager.set(key, users, 60);
+  return users;
+}
+```
+
+Write-through invalidation:
+
+```ts
+async function createUser(data: Record<string, unknown>) {
+  const created = await new User().create(data);
+  await CacheManager.delete("users:active:v1");
+  return created;
+}
+```
+
+Cache operations:
+
+```bash
+eloquent cache:stats
+eloquent cache:clear
+```
+
+## 10) Model implementation by driver
+
+### SQL runtime model
+
+```ts
+import { SqlModel, column, relation, type ModelInstance } from "eloquent-orm.js";
+
+type UserAttrs = { id?: number; name?: string };
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+    posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
+  };
+
+  constructor() {
+    super("users", process.env.DB_CONNECTION ?? "mysql");
+  }
+}
+
+export interface User extends ModelInstance<UserAttrs> {}
+```
+
+### Mongo runtime model
+
+```ts
+import { MongoModel, column, relation, type ModelInstance } from "eloquent-orm.js";
+
+type GeoAttrs = { id?: number; name?: string };
+
+export class GeoLocation extends MongoModel<GeoAttrs> {
+  static tableName = "geolocations";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+  };
+
+  constructor() {
+    super("geolocations", "mongo");
+  }
+}
+
+export interface GeoLocation extends ModelInstance<GeoAttrs> {}
+```
+
+Use SQL classes when you need migrations and relation constraints.
+Use Mongo classes when you need document-first storage and `--mongo` flows.

@@ -77,3 +77,17 @@ eloquent migrate:reset --all-connections --all-migrations --force --yes
 2. Keep migration and seed operations inside CI/CD jobs.
 3. Use least-privilege credentials for runtime vs migration roles.
 4. Keep audit logs enabled around migration/seed windows.
+
+## Cache operations checklist
+
+Use these commands during operational diagnosis or after destructive data resets:
+
+```bash
+eloquent cache:stats
+eloquent cache:clear
+```
+
+Recommended use:
+
+1. inspect cache behavior with `cache:stats`
+2. clear cache after fresh rebuilds, restore tests, or seed resets if stale reads are suspected

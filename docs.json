@@ -18,6 +18,10 @@
           "getting-started/installation",
           "getting-started/quick-start",
           "getting-started/usage-guides",
+          "getting-started/common-scenarios",
+          "getting-started/cookbook",
+          "getting-started/controllers",
+          "getting-started/services",
           "getting-started/upgrade-guide"
         ]
       },
@@ -34,6 +38,9 @@
         "group": "ORM",
         "pages": [
           "orm/relations",
+          "orm/multi-connection-strategy",
+          "orm/mixin-scenarios",
+          "orm/soft-deletes",
           "orm/model-registry",
           "orm/compatibility",
           "orm/migrations",

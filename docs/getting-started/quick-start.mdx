@@ -6,13 +6,52 @@ description: Start with model + migration + seed in one pass.
 
 # Quick Start
 
+Version: `1.0.0-rc.1`
+
+## Quick setup
+
+Install the package, Express.js, and the minimum TypeScript tooling first:
+
 ```bash
-eloquent make:model Post --with-migration
+npm install eloquent-orm.js express dotenv
+npm install -D typescript ts-node @types/express @types/node
 ```
 
-This creates `src/app/models/Post.ts` and a migration file for your configured target.
+Set one active app connection and one active test connection in `.env`.
+Do not place multiple connection names in `DB_CONNECTION`.
+
+Quick `.env` key list:
+
+- `DB_CONNECTION`
+- `DB_TEST_CONNECTION`
+- `DB_*` or `PG_*` or `SQLITE_*` or `MONGO_*`
+
+Minimal SQLite `.env`:
+
+```env
+DB_CONNECTION=sqlite
+DB_TEST_CONNECTION=sqlite_test
+SQLITE_PATH=./storage/app.sqlite
+SQLITE_TEST_PATH=./storage/app.test.sqlite
+```
+
+```bash
+eloquent make:model Post --with-migration
+eloquent make:service Post
+eloquent make:controller Post
+```
+
+This creates:
+
+- `src/app/models/Post.ts`
+- `src/app/services/PostService.ts`
+- `src/app/controllers/PostController.ts`
+- a migration file for your configured target
 
 ## Runtime setup
+
+This ORM is compatible with Express.js and is typically used in Express route handlers.
+In this setup, `registerModels` runs safely at startup and models work without integration issues.
 
 1. Ensure model registration is completed at app bootstrap.
 
@@ -24,7 +63,7 @@ import { Post } from "./app/models/Post";
 registerModels([User, Post]);
 ```
 
-2. Generate and apply migrations.
+2. Generate and apply migrations in order.
 
 ```bash
 eloquent make:migration --all
@@ -38,15 +77,33 @@ eloquent db:seed --test --class BlogScenarioSeeder
 eloquent demo:scenario --test --random
 ```
 
-4. Query and inspect records.
+4. Create, query, update, and delete records.
 
 ```ts
-const user = await User.findOneBy("email", "alice@example.com");
-console.log(user?.toJSON());
+const created = await new Post().create({ title: "Hello ORM JS" });
+const found = await Post.findOneBy("title", "Hello ORM JS");
+
+if (found) {
+  found.fill({ title: "Hello ORM JS Updated" });
+  await found.save();
+}
+
+await new Post().delete(created?.id ?? 1);
+```
+
+5. If the model uses soft deletes, restore instead of recreating.
+
+```ts
+const model = new Post() as Post & { restore?: (id: number | string) => Promise<void> };
+await model.restore?.(1);
 ```
 
 ## Next steps
 
 - [Runtime usage guides](./usage-guides)
+- [Common scenarios](./common-scenarios)
+- [Cookbook](./cookbook)
+- [Controllers](./controllers)
+- [Services](./services)
 - [CLI commands](../cli/commands)
 - [Migration runbook](../orm/migrations)
