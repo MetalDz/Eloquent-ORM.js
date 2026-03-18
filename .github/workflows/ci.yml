@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
   push:
-    branches: [master]
+    branches: [ai_master]
 
 concurrency:
   group: pr-quality-${{ github.event.pull_request.number || github.ref }}
