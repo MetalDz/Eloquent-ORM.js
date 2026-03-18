@@ -5,16 +5,118 @@ description: Safe finder patterns and query execution patterns.
 
 # Querying
 
-Use safe finder APIs for filtered reads and explicit result handling.
+Use safe-finder APIs for filtered reads, explicit result handling, and predictable query composition.
 
-## Typical read flow
+## Important: query contract
 
-- Build constraints via query chain APIs.
-- Prefer explicit null-safe branches.
-- Use safe finder return contracts in services to avoid assumptions.
+The current query surface is intentionally split into:
+
+- static safe-finder reads such as `Model.where(...)`, `Model.orderBy(...)`, `Model.get()`, and `Model.findOneBy(...)`
+- instance reads such as `new Model().find(id)` and `new Model().all()`
+- eager loading through `with(...)` and `load(...)` when explicit relation methods exist
+
+Recommended rule:
+
+1. use static query helpers for filtered reads
+2. use instance `find(id)` for direct primary-key lookups
+3. use `first()` or `findOneBy(...)` for single nullable reads
+4. use `get()` for hydrated arrays
+
+<details>
+<summary><strong>Primary-key and single-record reads</strong></summary>
+
+```ts
+const byId = await new User().find(1);
+const byEmail = await User.findOneBy("email", "alice@example.com");
+const newest = await User.orderBy("created_at", "desc").first();
+```
+
+</details>
+
+<details>
+<summary><strong>Filtered collection reads</strong></summary>
+
+```ts
+const rows = await User.where("status", "active")
+  .orderBy("created_at", "desc")
+  .limit(10)
+  .get();
+```
+
+This is the default pattern for list endpoints and service-level reads.
+
+</details>
+
+<details>
+<summary><strong>Ordering and limits</strong></summary>
+
+```ts
+const ascRows = await User.orderBy("created_at", "asc").limit(10).get();
+const descRows = await User.orderBy("created_at", "desc").limit(10).get();
+```
+
+Rules:
+
+- supported directions are `asc` and `desc`
+- pass the direction explicitly for deterministic output
+- keep limits explicit on user-facing reads
+
+</details>
+
+<details>
+<summary><strong>Eager loading</strong></summary>
+
+```ts
+const user = await (new User()).with("posts", "profile").find(1);
+const users = await User.where("status", "active").with("posts").get();
+```
+
+Important:
+
+- schema relation metadata alone does not make `load()` or `with()` available
+- eager loading requires explicit relation methods on the model instance
+- use eager loading in services where the query shape is controlled
+
+</details>
+
+<details>
+<summary><strong>Scope-driven reads</strong></summary>
+
+```ts
+const active = await User.active().first();
+const inactive = await User.inactive().get();
+const published = await Post.published().limit(10).get();
+```
+
+Scopes are the cleanest way to reuse query intent without duplicating `where(...)` chains.
+
+</details>
+
+<details>
+<summary><strong>Recommended service-layer query pattern</strong></summary>
+
+```ts
+export class UserService {
+  async findByEmail(email: string) {
+    return User.findOneBy("email", email);
+  }
+
+  async recentActive(limit = 20) {
+    return User.where("is_active", true)
+      .orderBy("created_at", "desc")
+      .limit(limit)
+      .get();
+  }
+
+  async detail(id: number | string) {
+    return (new User()).with("posts", "profile").find(id);
+  }
+}
+```
+
+</details>
 
 ## Notes
 
 - Keep query functions deterministic in tests by fixing connection and fixture input.
 - Prefer explicit `orderBy` direction for predictable output.
-

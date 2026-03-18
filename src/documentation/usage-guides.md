@@ -110,7 +110,257 @@ Current runtime behavior:
 - `APP_ENV=staging`: file cache using `CACHE_DIR`
 - `APP_ENV=production`: Memcached, then file cache, then memory cache
 
-## 8) NoSQL Workflow (Mongo)
+## 8) Runtime Querying Patterns
+
+### Important: Runtime Querying Contract
+The runtime read API is more Laravel-like than the write API.
+
+- static safe-finder helpers such as `User.where(...)`, `User.orderBy(...)`, `User.first()`, and `User.findOneBy(...)`
+- instance reads such as `new User().find(id)` and `new User().all()`
+- eager-loading helpers such as `with(...)` and `load(...)` when explicit relation methods exist
+
+Recommended app-level pattern:
+1. use static query helpers for filtered reads
+2. use `findOneBy(...)` or `first()` when you want one record or `null`
+3. use `get()` when you want hydrated arrays
+4. use `with(...)` only when the model exposes explicit relation methods
+
+<details>
+<summary><strong>Single-record reads</strong></summary>
+
+```ts
+const byId = await new User().find(1);
+const byEmail = await User.findOneBy("email", "alice@example.com");
+const newestUser = await User.orderBy("created_at", "desc").first();
+```
+
+</details>
+
+<details>
+<summary><strong>Collection reads</strong></summary>
+
+```ts
+const allUsers = await new User().all();
+
+const recentActiveUsers = await User.where("is_active", true)
+  .orderBy("created_at", "desc")
+  .limit(20)
+  .get();
+```
+
+</details>
+
+<details>
+<summary><strong>Filtering, ordering, and limits</strong></summary>
+
+```ts
+const admins = await User.where("role", "admin")
+  .orderBy("created_at", "asc")
+  .limit(10)
+  .get();
+```
+
+Rules:
+- `where(field, value)` filters by declared schema fields
+- `orderBy(field, direction)` supports only `asc` or `desc`
+- always pass the direction explicitly for predictable output
+- `limit(count)` should be used on user-facing list endpoints
+
+</details>
+
+<details>
+<summary><strong>Eager loading with <code>with(...)</code> and <code>load(...)</code></strong></summary>
+
+```ts
+const users = await User.where("is_active", true)
+  .with("posts")
+  .get();
+
+const user = await (new User()).with("posts", "profile").find(1);
+```
+
+Important rules:
+- schema relation metadata alone is not enough
+- `with(...)` and `load(...)` require explicit relation methods on the model instance
+- use eager loading in services, not controllers
+
+</details>
+
+<details>
+<summary><strong>Scope-based query reads</strong></summary>
+
+```ts
+const active = await User.active().first();
+const inactive = await User.inactive().get();
+const published = await Post.published().limit(10).get();
+```
+
+</details>
+
+<details>
+<summary><strong>Recommended service-layer query pattern</strong></summary>
+
+```ts
+export class UserService {
+  async findByEmail(email: string) {
+    return User.findOneBy("email", email);
+  }
+
+  async recentActive(limit = 20) {
+    return User.where("is_active", true)
+      .orderBy("created_at", "desc")
+      .limit(limit)
+      .get();
+  }
+
+  async detail(id: number | string) {
+    return (new User()).with("posts", "profile").find(id);
+  }
+}
+```
+
+</details>
+
+## 9) Runtime CRUD Patterns
+
+### Important: Runtime CRUD Contract
+The runtime write API is split into three layers:
+
+- `new User().create(data)`
+  - create a new row or document
+- loaded instance methods: `fill()`, `save()`, and `patch()`
+  - update an already loaded model instance
+- low-level by-id methods: `new User().update(id, data)` and `new User().delete(id)`
+  - direct writes when you already know the primary key
+
+Recommended app-level pattern:
+1. read with query helpers
+2. update with `fill() + save()` or `patch()` on a loaded instance
+3. keep `new User().update(id, data)` and `new User().delete(id)` for service-layer or low-level flows
+
+<details>
+<summary><strong>Create: insert a new record</strong></summary>
+
+Use `create()` when you want to insert a new model in one call.
+
+```ts
+const created = await new User().create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+```
+
+</details>
+
+<details>
+<summary><strong>Read: load records before mutation</strong></summary>
+
+```ts
+const allUsers = await new User().all();
+const byId = await new User().find(1);
+const byEmail = await User.findOneBy("email", "alice@example.com");
+```
+
+```ts
+const recentActiveUsers = await User.where("is_active", true)
+  .orderBy("created_at", "desc")
+  .limit(20)
+  .get();
+
+const newestUser = await User.orderBy("created_at", "desc").first();
+```
+
+</details>
+
+<details>
+<summary><strong>Update: preferred loaded-instance flow with <code>fill()</code> and <code>save()</code></strong></summary>
+
+```ts
+const user = await User.findOneBy("email", "alice@example.com");
+if (user) {
+  user.fill({ name: "Alice Updated" });
+  await user.save();
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Patch: partial update on a persisted instance</strong></summary>
+
+```ts
+const user = await User.findOneBy("email", "alice@example.com");
+
+if (user) {
+  await user.patch({ name: "Alice Patch" });
+}
+```
+
+Important rules:
+- `patch()` is for a persisted instance
+- it is not a static method
+- it is the right companion to `save()` for partial updates
+
+</details>
+
+<details>
+<summary><strong>Low-level update by id: direct write without loading first</strong></summary>
+
+```ts
+await new User().update(1, {
+  name: "Alice Updated Directly",
+});
+```
+
+</details>
+
+<details>
+<summary><strong>Delete and restore</strong></summary>
+
+```ts
+await new User().delete(1);
+
+const model = new User() as User & { restore?: (id: number | string) => Promise<void> };
+await model.restore?.(1);
+```
+
+</details>
+
+<details>
+<summary><strong>Recommended service-layer CRUD pattern</strong></summary>
+
+```ts
+export class UserService {
+  async create(data: Record<string, unknown>) {
+    return new User().create(data);
+  }
+
+  async update(id: number | string, data: Record<string, unknown>) {
+    const user = await new User().find(id);
+    if (!user) return null;
+
+    user.fill(data);
+    await user.save();
+    return user;
+  }
+
+  async patch(id: number | string, data: Record<string, unknown>) {
+    const user = await new User().find(id);
+    if (!user) return null;
+
+    await user.patch(data);
+    return user;
+  }
+
+  async delete(id: number | string) {
+    return new User().delete(id);
+  }
+}
+```
+
+</details>
+
+## 10) NoSQL Workflow (Mongo)
 Use explicit mongo targeting when running NoSQL paths:
 - app mode: `--mongo`
 - test mode: `--mongo --test` (targets `mongo_test` when configured)
@@ -123,7 +373,7 @@ Key notes:
   - `eloquent db:seed --mongo [--test] --class <Seeder>`
   - `eloquent demo:scenario [--test]`
 
-## 9) Model Scenarios by Driver
+## 11) Model Scenarios by Driver
 
 ### SQL model example
 

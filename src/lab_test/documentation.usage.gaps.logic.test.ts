@@ -17,6 +17,10 @@ describe("documentation usage gaps smoke coverage", () => {
       path.resolve(rootDir, "docs/getting-started/quick-start.mdx"),
       "utf8",
     );
+    const querying = fs.readFileSync(
+      path.resolve(rootDir, "docs/api/querying.mdx"),
+      "utf8",
+    );
     const usageGuides = fs.readFileSync(
       path.resolve(rootDir, "docs/getting-started/usage-guides.mdx"),
       "utf8",
@@ -53,13 +57,27 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(quickStart).toContain("DB_CONNECTION=sqlite");
     expect(quickStart).toContain("Express.js");
     expect(quickStart).toContain("registerModels([User, Post]);");
+    expect(querying).toContain("## Important: query contract");
+    expect(querying).toContain("<summary><strong>Filtered collection reads</strong></summary>");
+    expect(querying).toContain("<summary><strong>Eager loading</strong></summary>");
+    expect(querying).toContain("const rows = await User.where(\"status\", \"active\")");
+    expect(querying).toContain("const active = await User.active().first();");
 
     expect(usageGuides).toContain("const created = await new User().create");
+    expect(usageGuides).toContain("### Important: runtime querying contract");
+    expect(usageGuides).toContain("<summary><strong>Single-record reads</strong></summary>");
+    expect(usageGuides).toContain("<summary><strong>Eager loading with <code>with(...)</code> and <code>load(...)</code></strong></summary>");
+    expect(usageGuides).toContain("const active = await User.active().first();");
+    expect(usageGuides).toContain("return (new User()).with(\"posts\", \"profile\").find(id);");
     expect(usageGuides).toContain("const byId = await new User().find(1);");
     expect(usageGuides).toContain('const byEmail = await User.findOneBy("email", "alice@example.com");');
     expect(usageGuides).toContain('orderBy("created_at", "desc")');
     expect(usageGuides).toContain("const newestUser = await User.orderBy(\"created_at\", \"desc\").first();");
-    expect(usageGuides).toContain("Patch existing record:");
+    expect(usageGuides).toContain("### Important: runtime CRUD contract");
+    expect(usageGuides).toContain("<summary><strong>Create: insert a new record</strong></summary>");
+    expect(usageGuides).toContain("<summary><strong>Patch: partial update on a persisted instance</strong></summary>");
+    expect(usageGuides).toContain("<summary><strong>Recommended service-layer CRUD pattern</strong></summary>");
+    expect(usageGuides).toContain("await new User().update(1, {");
     expect(usageGuides).toContain("await model.restore?.(1);");
     expect(usageGuides).toContain("Use cache at the service boundary, not in controllers.");
     expect(usageGuides).toContain("MEMCACHED_HOST=127.0.0.1");
