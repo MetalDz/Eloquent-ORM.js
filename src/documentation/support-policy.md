@@ -34,6 +34,22 @@ Last updated: 2026-03-14
   - mongo
 - SQL and Mongo support expectations must remain documented separately where feature parity differs.
 
+## Supported and Tested Prerequisites
+
+<!-- supported-prerequisites:start -->
+The following versions are the current supported and CI-tested prerequisites.
+
+| Component | Supported / tested version |
+| --- | --- |
+| Node.js | `20.x` |
+| TypeScript | `^5.9.3` |
+| MySQL | `8.0` |
+| PostgreSQL | `16` |
+| MongoDB | `7` |
+| SQLite | `SQLite 3.x via better-sqlite3 12.2.0` |
+| Memcached | `1.6+ server, client package ^2.2.2` |
+<!-- supported-prerequisites:end -->
+
 ## Backport Policy
 - Security fixes:
   - backported to all actively supported lines

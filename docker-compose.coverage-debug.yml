@@ -1,0 +1,98 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./docker/coverage/mysql-init:/docker-entrypoint-initdb.d:ro
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./docker/coverage/postgres-init:/docker-entrypoint-initdb.d:ro
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval \"db.adminCommand({ ping: 1 }).ok\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  coverage-debug:
+    build:
+      context: .
+      dockerfile: Dockerfile.coverage-debug
+    working_dir: /workspace
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      CI: "true"
+      FORCE_COLOR: "0"
+      ELOQUENT_RUNTIME_LOG: "false"
+      DOTENV_CONFIG_QUIET: "true"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: eloquentjs
+      DB_CONNECTION: mysql
+      DB_TEST_CONNECTION: mysql_test
+      DB_TEST_HOST: mysql
+      DB_TEST_PORT: "3306"
+      DB_TEST_USER: root
+      DB_TEST_PASSWORD: root
+      DB_TEST_NAME: db_test
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_NAME: eloquentjs_pg
+      PG_TEST_HOST: postgres
+      PG_TEST_PORT: "5432"
+      PG_TEST_USER: postgres
+      PG_TEST_PASSWORD: postgres
+      PG_TEST_NAME: db_test_pg
+      SQLITE_PATH: /tmp/eloquent.app.sqlite
+      SQLITE_TEST_PATH: /tmp/eloquent.test.sqlite
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: eloquentjs_db
+      MONGO_TEST_URI: mongodb://mongo:27017
+      MONGO_TEST_DB: eloquentjs_db_test
+      ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"
+    volumes:
+      - .:/workspace
+      - coverage_debug_node_modules:/workspace/node_modules
+    command: npm run test:coverage
+
+volumes:
+  coverage_debug_node_modules:

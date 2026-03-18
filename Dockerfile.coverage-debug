@@ -1,0 +1,15 @@
+FROM node:20-bookworm
+
+WORKDIR /workspace
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+ENV CI=true
+ENV FORCE_COLOR=0
+ENV ELOQUENT_RUNTIME_LOG=false
+ENV DOTENV_CONFIG_QUIET=true
+
+CMD ["npm", "run", "test:coverage"]

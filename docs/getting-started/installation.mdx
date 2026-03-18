@@ -17,6 +17,22 @@ npm install -D typescript ts-node @types/express @types/node
 
 This package is a TypeScript Eloquent ORM. If your app uses HTTP routes, install Express.js up front because the runtime examples and generated controllers are Express-oriented.
 
+## Prerequisites
+
+{/* supported-prerequisites:start */}
+The following versions are the current supported and CI-tested prerequisites.
+
+| Component | Supported / tested version |
+| --- | --- |
+| Node.js | `20.x` |
+| TypeScript | `^5.9.3` |
+| MySQL | `8.0` |
+| PostgreSQL | `16` |
+| MongoDB | `7` |
+| SQLite | `SQLite 3.x via better-sqlite3 12.2.0` |
+| Memcached | `1.6+ server, client package ^2.2.2` |
+{/* supported-prerequisites:end */}
+
 ## Full `.env` setup
 
 Use one active value in `DB_CONNECTION` and one active value in `DB_TEST_CONNECTION`.

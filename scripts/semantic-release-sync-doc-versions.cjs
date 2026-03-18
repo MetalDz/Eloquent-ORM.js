@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { syncSupportedVersions } = require("./sync-supported-versions.cjs");
 
 const VERSION_LINE_REGEX = /Version:\s*`[^`]+`/g;
 const SEMVER_REGEX = /\b\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\b/g;
@@ -91,10 +92,12 @@ async function prepare(_pluginConfig, context) {
   } = context;
 
   const changedFiles = syncVersionFiles({ cwd, version });
+  const supportSync = syncSupportedVersions({ cwd });
   logger.log(
-    "Synced release version %s into %d file(s).",
+    "Synced release version %s into %d file(s) and refreshed supported-version docs in %d file(s).",
     version,
-    changedFiles.length
+    changedFiles.length,
+    supportSync.changedFiles.length
   );
 }
 

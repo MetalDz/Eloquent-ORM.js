@@ -42,6 +42,7 @@ describe("semantic-release version sync automation", () => {
     try {
       fs.mkdirSync(path.join(tempDir, "docs"), { recursive: true });
       fs.mkdirSync(path.join(tempDir, "src", "documentation"), { recursive: true });
+      fs.mkdirSync(path.join(tempDir, ".github", "workflows"), { recursive: true });
 
       fs.writeFileSync(
         path.join(tempDir, "package.json"),
@@ -50,6 +51,15 @@ describe("semantic-release version sync automation", () => {
             name: "eloquent-orm.js",
             version: "1.0.0-rc.1",
             readme: "Factories seeds integration in 1.0.0-rc.1",
+            engines: { node: "20.x" },
+            docsSupportMatrix: { memcachedServer: "1.6+" },
+            dependencies: {
+              "better-sqlite3": "12.2.0",
+              memcached: "^2.2.2",
+            },
+            devDependencies: {
+              typescript: "^5.9.3",
+            },
           },
           null,
           2,
@@ -66,6 +76,35 @@ describe("semantic-release version sync automation", () => {
         "# Package Docs\n\nVersion: `1.0.0-rc.1`\n",
         "utf8",
       );
+      fs.writeFileSync(
+        path.join(tempDir, ".github", "workflows", "ci.yml"),
+        [
+          "jobs:",
+          "  quality:",
+          "    services:",
+          "      mysql:",
+          "        image: mysql:8.0",
+          "      postgres:",
+          "        image: postgres:16",
+          "      mongo:",
+          "        image: mongo:7",
+        ].join("\n"),
+        "utf8",
+      );
+      for (const target of [
+        path.join(tempDir, "README.md"),
+        path.join(tempDir, "docs", "getting-started", "installation.mdx"),
+        path.join(tempDir, "docs", "support", "support-policy.mdx"),
+        path.join(tempDir, "src", "documentation", "installation-and-quickstart.md"),
+        path.join(tempDir, "src", "documentation", "support-policy.md"),
+      ]) {
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(
+          target,
+          "## Prerequisites\n\n<!-- supported-prerequisites:start -->\nold\n<!-- supported-prerequisites:end -->\n",
+          "utf8",
+        );
+      }
 
       const changedFiles = syncVersionFiles({ cwd: tempDir, version: "1.0.0" });
 
