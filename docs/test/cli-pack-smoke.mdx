@@ -1,0 +1,43 @@
+---
+title: CLI And Pack Smoke
+description: How the CLI, tarball smoke app, and release-level validation prove the shipped package behavior.
+---
+
+# CLI And Pack Smoke
+
+CLI and pack-smoke validation prove the shipped package behavior, not just the source-tree runtime behavior.
+
+## What this layer covers
+
+- CLI command routing
+- generated artifacts in a packaged install
+- tarball import/export validation
+- scenario generation in a real installed package
+- release readiness gates
+
+## Main commands
+
+```bash
+npm run test:pack-smoke
+npm run test:coverage
+```
+
+## CLI coverage map
+
+Use the CLI test matrix for exact command ownership:
+
+- [CLI Test Matrix](../cli/test-matrix)
+
+## When pack smoke is required
+
+- package exports changed
+- generator output changed
+- docs/examples changed in the shipped tarball surface
+- scenario generation changed
+- release validation is being prepared
+
+## Related pages
+
+- [Test Overview](./index)
+- [Release Qualification checklist](../release/qualification-checklist)
+- [Promotion checklist](../release/promotion-checklist)

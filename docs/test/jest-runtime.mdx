@@ -1,0 +1,55 @@
+---
+title: Jest And Runtime Tests
+description: How Jest is used for unit, contract, runtime, and integration validation across the ORM surface.
+---
+
+# Jest And Runtime Tests
+
+Jest is the main test runner for this package.
+
+## What belongs here
+
+- unit and logic tests
+- contract tests
+- runtime integration tests
+- persistence tests
+- query and model behavior tests
+
+## Typical commands
+
+```bash
+npm test
+npm run test:coverage
+```
+
+Target a specific suite:
+
+```bash
+npm test -- --runInBand src/lab_test/instance.persistence.layer.runtime.logic.test.ts
+```
+
+## Recommended test order
+
+1. contract or logic suite
+2. runtime integration suite
+3. scenario or CLI suite only if the change crosses generator or command boundaries
+
+## Main runtime areas that should stay covered
+
+- persistence lifecycle
+- query behavior
+- soft delete and restore
+- relation loading
+- generated model behavior
+- model hooks and dirty tracking
+
+## Coverage rule
+
+Coverage is a release gate. Any public API move should keep statement, branch, function, and line coverage stable or better.
+
+## Related pages
+
+- [Runtime CRUD](../runtime/crud)
+- [Runtime Querying](../runtime/querying)
+- [Factories and seeds](./factories-seeds)
+- [Scenarios](./scenarios)

@@ -1,0 +1,61 @@
+---
+title: Runtime Overview
+description: The runtime contract for model creation, querying, updates, deletes, restore flows, and cache-aware application design.
+---
+
+# Runtime Overview
+
+Use this section when you are already past installation and want the actual runtime contract.
+
+The runtime surface should be read as:
+
+- `new User()` for a transient in-memory model instance
+- `User.create(...)` for one-shot persistence
+- `User.find(...)`, `User.findOneBy(...)`, and safe-finder chains for reads
+- loaded-instance `update(...); save()` and `patch(...)` for readable mutation
+- `User.updateById(...)`, `User.deleteById(...)`, and `User.restoreById(...)` for explicit low-level by-id service paths
+
+## Start with these pages
+
+- [Runtime CRUD](./crud)
+- [Runtime Querying](./querying)
+- [Runtime Models](./models)
+- [Runtime Controllers](./controllers)
+- [Runtime Services](./services)
+- [Runtime Cache](./cache)
+
+## Practical rule
+
+If the code is application-facing and should stay readable:
+
+1. query first
+2. mutate the loaded instance
+3. persist with `save()` or `patch()`
+
+If the code is an intentionally thin service helper and already has the primary key:
+
+1. use `User.updateById(...)`
+2. use `User.deleteById(...)`
+3. use `User.restoreById(...)`
+
+## Quick example
+
+```ts
+const created = await User.create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+
+const found = await User.find(created.id as number);
+if (found) {
+  found.update({ name: "Alice Updated" });
+  await found.save();
+}
+```
+
+## Related pages
+
+- [Runtime Controllers](./controllers)
+- [Runtime Services](./services)
+- [Soft Deletes and Restore](../orm/soft-deletes)
+- [Mixin Scenarios](../orm/mixin-scenarios)

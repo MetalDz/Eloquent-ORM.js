@@ -21,6 +21,18 @@ Last updated: 2026-03-14
 - [Cookbook](./cookbook.md)
 - [Controller Usage Guide](./usage-guides-controller.md)
 - [Service Usage Guide](./usage-guides-services.md)
+- [Runtime Overview](./runtime-index.md)
+- [Runtime CRUD](./runtime-crud.md)
+- [Runtime Querying](./runtime-querying.md)
+- [Runtime Models](./runtime-models.md)
+- [Runtime Controllers](./runtime-controllers.md)
+- [Runtime Services](./runtime-services.md)
+- [Runtime Cache](./runtime-cache.md)
+- [Test Overview](./test-index.md)
+- [Jest and Runtime Tests](./test-jest-runtime.md)
+- [Factories and Seeds](./test-factories-seeds.md)
+- [Scenarios](./test-scenarios.md)
+- [CLI and Pack Smoke](./test-cli-pack-smoke.md)
 - [API Reference](./api-reference.md)
 
 ## ORM Runtime Patterns

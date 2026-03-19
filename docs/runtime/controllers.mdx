@@ -1,0 +1,116 @@
+---
+title: Runtime Controllers
+description: How generated controllers fit into the runtime contract, and how to keep HTTP handlers thin and service-driven.
+---
+
+# Runtime Controllers
+
+Controllers are the HTTP edge of the runtime. They should stay thin.
+
+## Core controller rule
+
+Controllers should:
+
+- bind Express routes
+- read request params and body
+- delegate persistence to services
+- return HTTP responses
+
+Controllers should not:
+
+- implement model persistence directly
+- own cache policy
+- own relation loading policy
+- introduce driver-specific branching
+
+## Recommended controller flow
+
+The preferred runtime contract behind controllers is:
+
+- `User.find(...)` for one-record reads
+- `User.create(...)` for one-shot inserts
+- loaded-instance `update(...); save()` for readable updates
+- `User.deleteById(...)` and `User.restoreById(...)` for explicit by-id writes inside services
+
+## Express wiring
+
+```ts
+import express from "express";
+import { UserController } from "./app/controllers/UserController";
+
+const app = express();
+app.use(express.json());
+
+const controller = new UserController();
+
+app.get("/users", controller.index.bind(controller));
+app.get("/users/:id", controller.show.bind(controller));
+app.post("/users", controller.store.bind(controller));
+app.put("/users/:id", controller.update.bind(controller));
+app.delete("/users/:id", controller.destroy.bind(controller));
+app.patch("/users/:id/restore", controller.restore.bind(controller));
+```
+
+Only expose the restore route when soft-delete recovery is part of the API.
+
+## Recommended service shape behind the controller
+
+```ts
+export class UserService {
+  async create(data: Record<string, unknown>) {
+    return User.create(data);
+  }
+
+  async update(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id);
+    if (!user) return null;
+
+    user.update(data);
+    await user.save();
+    return user;
+  }
+
+  async delete(id: number | string) {
+    return User.deleteById(id);
+  }
+
+  async restore(id: number | string) {
+    return User.restoreById(id);
+  }
+}
+```
+
+## Soft deletes
+
+If the model supports soft deletes:
+
+- `destroy()` should stay a soft delete path
+- `restore()` should be exposed only when recovery is intentional
+
+Use one schema declaration, not both:
+
+```ts
+deleted_at: column("softDeletes")
+```
+
+or:
+
+```ts
+softDeletes: mixin("SoftDeletes")
+```
+
+## Serialization, eager loading, and cache
+
+- keep `toObject()` normalization in the service boundary when needed
+- keep eager loading in services
+- keep cache logic in services
+
+## Driver note
+
+The controller contract stays the same for SQL and Mongo models. Keep driver-specific behavior in the model and service layers.
+
+## Related pages
+
+- [Runtime Services](./services)
+- [Runtime CRUD](./crud)
+- [Getting Started Controllers](../getting-started/controllers)

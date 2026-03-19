@@ -1,0 +1,130 @@
+---
+title: Runtime Models
+description: How to design runtime models for SQL and Mongo, when to choose each driver, and where relations fit into the model contract.
+---
+
+# Runtime Models
+
+Use this page when you are designing real application models, not just reading the API signatures.
+
+## SQL models
+
+Use SQL models when:
+
+- you want migration-backed structure
+- you want relational integrity
+- you need pivot tables and conventional relational workflows
+
+Driver summary:
+
+- MySQL: conventional production web-app default
+- PostgreSQL: stricter relational workloads and richer SQL semantics
+- SQLite: local development, lightweight apps, and test isolation
+
+### MySQL
+
+Use MySQL when:
+
+- you want a conventional production web-app default
+- broad hosting compatibility matters
+- your workload is standard relational CRUD
+
+### PostgreSQL
+
+Use PostgreSQL when:
+
+- you prefer stricter relational workloads
+- advanced SQL semantics matter
+- the system leans on PostgreSQL-native behavior
+
+### SQLite
+
+Use SQLite when:
+
+- local development should stay lightweight
+- tests should be isolated and file-based
+- the app does not need a separate database server
+
+### Example SQL model
+
+```ts
+import { SqlModel, column, relation, type ModelInstance } from "eloquent-orm.js";
+
+type UserAttrs = { id?: number; name?: string };
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "mysql";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+    posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
+  };
+
+  constructor() {
+    super("users", process.env.DB_CONNECTION ?? "mysql");
+  }
+}
+
+export interface User extends ModelInstance<UserAttrs> {}
+```
+
+## Mongo models
+
+Use Mongo models when:
+
+- the domain is document-first
+- shape flexibility matters
+- explicit `--mongo` flows are part of the runtime story
+
+Avoid SQL-only assumptions in Mongo examples, especially:
+
+- foreign-key guarantees
+- pivot-table guarantees
+- migration-backed relational integrity expectations
+
+### Example Mongo model
+
+```ts
+import { MongoModel, column, type ModelInstance } from "eloquent-orm.js";
+
+type GeoAttrs = { id?: number; name?: string };
+
+export class GeoLocation extends MongoModel<GeoAttrs> {
+  static tableName = "geolocations";
+  static connectionName = "mongo";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255),
+  };
+
+  constructor() {
+    super("geolocations", "mongo");
+  }
+}
+
+export interface GeoLocation extends ModelInstance<GeoAttrs> {}
+```
+
+## Relations
+
+Relations belong to model design, but their detailed contract is documented in the ORM pages.
+
+Common relation types:
+
+- `belongsTo`
+- `hasOne`
+- `hasMany`
+- `belongsToMany`
+- `morphOne`
+- `morphMany`
+- `morphTo`
+
+Use SQL when relation integrity and pivot-backed workflows are central.  
+Use Mongo when relation references are explicit and document-first behavior matters more than SQL-style guarantees.
+
+## Related pages
+
+- [Relations](../orm/relations)
+- [NoSQL (Mongo)](../orm/nosql)
+- [Multi-Connection Strategy](../orm/multi-connection-strategy)

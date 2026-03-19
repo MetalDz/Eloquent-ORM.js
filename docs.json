@@ -26,6 +26,18 @@
         ]
       },
       {
+        "group": "Runtime",
+        "pages": [
+          "runtime/index",
+          "runtime/crud",
+          "runtime/querying",
+          "runtime/models",
+          "runtime/controllers",
+          "runtime/services",
+          "runtime/cache"
+        ]
+      },
+      {
         "group": "API",
         "pages": [
           "api/overview",
@@ -55,6 +67,16 @@
           "cli/generators",
           "cli/production-safety",
           "cli/test-matrix"
+        ]
+      },
+      {
+        "group": "Test",
+        "pages": [
+          "test/index",
+          "test/jest-runtime",
+          "test/factories-seeds",
+          "test/scenarios",
+          "test/cli-pack-smoke"
         ]
       },
       {

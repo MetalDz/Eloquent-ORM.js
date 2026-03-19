@@ -1,0 +1,46 @@
+---
+title: Scenarios
+description: How scenario generation, scenario seeders, and demo flows are tested for SQL, Mongo, and test-mode surfaces.
+---
+
+# Scenarios
+
+Scenarios are coordinated artifact and runtime flows. They are heavier than single-model tests and should be used when you need end-to-end proof.
+
+## What scenarios cover
+
+- coordinated model generation
+- services and controllers generated together
+- migration generation
+- factory generation
+- seeders
+- demo flows
+
+## Typical commands
+
+```bash
+eloquent make:scenario blog --test --controllers --services --run --force
+eloquent demo:scenario --test --random
+eloquent make:scenario --test --mongo --run
+```
+
+## When to use scenario tests
+
+- generated artifact sets changed together
+- relations or preset flows changed
+- SQL and Mongo parity must be validated
+- demo output and scenario seed paths changed
+
+## Scenario test layers
+
+- generator integration tests
+- scenario lifecycle integration tests
+- runtime scenario persistence tests
+- demo and factory-status validation
+- tarball smoke for real-package behavior
+
+## Related pages
+
+- [Factories and seeds](./factories-seeds)
+- [CLI and pack smoke](./cli-pack-smoke)
+- [Common scenarios](../getting-started/common-scenarios)

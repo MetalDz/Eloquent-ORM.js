@@ -1,0 +1,234 @@
+---
+title: Runtime CRUD
+description: The recommended create, read, update, patch, delete, restore, and by-id helper contract for application runtime code.
+---
+
+# Runtime CRUD
+
+This page defines the recommended CRUD contract for application code.
+
+## Core rule
+
+Use one of these two creation paths:
+
+```ts
+const user = new User();
+user.fill({
+  name: "Alice",
+  email: "alice@example.com",
+});
+await user.save();
+```
+
+```ts
+const created = await User.create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+```
+
+Interpretation:
+
+- `new User()` means a transient in-memory model instance
+- `save()` persists the current instance state
+- `User.create(...)` persists immediately and returns the created model
+
+Do not treat `User.create(...)` and `save()` as the same step.
+
+## Create
+
+### Use `new User()` when
+
+- you want to build the model gradually
+- you want to call `fill(...)` before persistence
+- the code reads better as an explicit instance lifecycle
+
+```ts
+const user = new User();
+user.fill({
+  name: "Alice",
+  email: "alice@example.com",
+});
+await user.save();
+```
+
+### Use `User.create(...)` when
+
+- the payload is already validated
+- you want a one-shot insert
+- you want a concise service method
+
+```ts
+const created = await User.create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+```
+
+Do not immediately call `save()` after `User.create(...)` unless you changed the model again.
+
+## Read
+
+Use primary-key and safe-finder reads before mutation:
+
+```ts
+const found = await User.find(1);
+const one = await User.findOneBy("email", "alice@example.com");
+const rows = await User.where("is_active", true)
+  .orderBy("created_at", "desc")
+  .limit(20)
+  .get();
+```
+
+Use `new User().all()` when you explicitly want the instance collection-read path:
+
+```ts
+const allUsers = await new User().all();
+```
+
+## Update
+
+### Recommended loaded-instance update
+
+This is the preferred public runtime path:
+
+```ts
+const found = await User.find(1);
+if (found) {
+  found.update({ name: "Alice Updated" });
+  await found.save();
+}
+```
+
+Why this is the preferred path:
+
+- the record is loaded first
+- the code reads like a model lifecycle
+- it works well with dirty tracking, hooks, and service-level decisions
+
+### Partial update with `patch()`
+
+Use `patch()` when the instance already exists and you are intentionally updating a subset of fields.
+
+```ts
+const found = await User.find(1);
+if (found) {
+  await found.patch({ name: "Alice Patch" });
+}
+```
+
+Use `patch()` when:
+
+- the row is already loaded
+- the service is applying a narrow change
+- you do not want the full `update(...); save()` flow
+
+## Delete
+
+### Recommended loaded-instance delete
+
+```ts
+const found = await User.find(1);
+if (found) {
+  await found.delete();
+}
+```
+
+This is the cleanest public path because:
+
+- the code reads as “load then delete”
+- soft-delete behavior stays attached to the model runtime
+- service logic can branch on “record exists” before deletion
+
+## Restore
+
+Restore applies only when the model supports soft deletes.
+
+### Recommended loaded-instance restore
+
+```ts
+const found = await User.find(1);
+if (found) {
+  await found.restore();
+}
+```
+
+Use restore when:
+
+- the model includes soft-delete behavior
+- the service is intentionally exposing record recovery
+- the controller is generated with or supports a restore route
+
+## Explicit by-id helpers
+
+Use these helpers only when you intentionally want a direct by-id service path:
+
+```ts
+await User.updateById(1, { name: "Alice Direct" });
+await User.deleteById(1);
+await User.restoreById(1);
+```
+
+Use them when:
+
+- the service already owns the target primary key
+- you do not want the full loaded-instance lifecycle
+- the code is intentionally thin and explicit
+
+Do not use these helpers as the first-choice teaching path for most application logic.
+
+## Recommended service pattern
+
+```ts
+export class UserService {
+  async create(data: Record<string, unknown>) {
+    return User.create(data);
+  }
+
+  async find(id: number | string) {
+    return User.find(id);
+  }
+
+  async update(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id);
+    if (!user) return null;
+
+    user.update(data);
+    await user.save();
+    return user;
+  }
+
+  async patch(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id);
+    if (!user) return null;
+
+    await user.patch(data);
+    return user;
+  }
+
+  async delete(id: number | string) {
+    return User.deleteById(id);
+  }
+
+  async restore(id: number | string) {
+    return User.restoreById(id);
+  }
+}
+```
+
+## What is not the recommended shape
+
+Do not treat these as the primary public teaching path:
+
+- `new User().create(...)`
+- `new User().update(id, data)`
+- `new User().delete(id)`
+
+They may exist for compatibility or lower-level flows, but they are not the preferred runtime contract for consumer-facing code.
+
+## Related pages
+
+- [Runtime Querying](./querying)
+- [Runtime Models](./models)
+- [Controllers](../getting-started/controllers)
+- [Services](../getting-started/services)

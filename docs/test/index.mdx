@@ -1,0 +1,38 @@
+---
+title: Test Overview
+description: The full test surface for runtime validation, CLI validation, scenarios, factories, seeds, coverage, and release smoke checks.
+---
+
+# Test Overview
+
+Use this section when you want the testing contract, not just the runtime contract.
+
+This package uses multiple test layers:
+
+- Jest unit and logic tests
+- runtime integration tests
+- CLI integration tests
+- factory and seed validation
+- scenario generation and scenario runtime tests
+- pack-smoke and coverage gates
+
+## Start with these pages
+
+- [Jest and runtime tests](./jest-runtime)
+- [Factories and seeds](./factories-seeds)
+- [Scenarios](./scenarios)
+- [CLI and pack smoke](./cli-pack-smoke)
+
+## Practical rule
+
+Use the smallest test layer that proves the behavior you changed:
+
+1. logic and contract test first
+2. runtime integration test second
+3. CLI or pack-smoke only when generated artifacts or command flows changed
+
+## Related pages
+
+- [CLI Test Matrix](../cli/test-matrix)
+- [Runtime Overview](../runtime/index)
+- [Release Qualification checklist](../release/qualification-checklist)

@@ -1,0 +1,149 @@
+---
+title: Runtime Services
+description: The service-layer contract for CRUD, query composition, eager loading, soft deletes, hooks, and cache-aware runtime behavior.
+---
+
+# Runtime Services
+
+Services are the main application boundary for runtime behavior.
+
+## Core service rule
+
+Services should own:
+
+- CRUD orchestration
+- query composition
+- eager loading decisions
+- soft-delete restore flows
+- cache reads and invalidation
+
+Controllers should delegate to services. Services should delegate to models.
+
+## Recommended CRUD service contract
+
+```ts
+export class UserService {
+  async all() {
+    return new User().all();
+  }
+
+  async find(id: number | string) {
+    return User.find(id);
+  }
+
+  async create(data: Record<string, unknown>) {
+    return User.create(data);
+  }
+
+  async update(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id);
+    if (!user) return null;
+
+    user.update(data);
+    await user.save();
+    return user;
+  }
+
+  async patch(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id);
+    if (!user) return null;
+
+    await user.patch(data);
+    return user;
+  }
+
+  async delete(id: number | string) {
+    return User.deleteById(id);
+  }
+
+  async restore(id: number | string) {
+    return User.restoreById(id);
+  }
+}
+```
+
+## Query composition
+
+```ts
+export class UserService {
+  async findByEmail(email: string) {
+    return User.findOneBy("email", email);
+  }
+
+  async recentActive(limit = 20) {
+    return User.where("is_active", true)
+      .orderBy("created_at", "desc")
+      .limit(limit)
+      .get();
+  }
+
+  async findWithPosts(id: number | string) {
+    const user = await User.find(id);
+    if (!user) return null;
+    await (user as { load?: (...relations: string[]) => Promise<unknown> }).load?.("posts");
+    return user;
+  }
+}
+```
+
+`load()` and `with()` require explicit relation methods on the model instance.
+
+## Soft deletes
+
+Use service methods to centralize soft-delete behavior:
+
+- restore flows
+- trashed views
+- force-delete boundaries
+
+The service layer is where recovery policy belongs.
+
+## Hooks, casts, scopes, and serialization
+
+- hooks fire through normal create/update/delete paths
+- casts normalize model values before the service consumes them
+- scopes keep repeated query rules named and reusable
+- serialization should be normalized in or just before the service response boundary
+
+## Cache
+
+Keep cache at the service boundary:
+
+```ts
+import { CacheManager, setupCache } from "eloquent-orm.js";
+
+setupCache();
+
+export class UserService {
+  async activeList() {
+    const key = "users:active:v1";
+    const cached = await CacheManager.get(key);
+    if (cached) return cached;
+
+    const users = await User.where("is_active", true)
+      .orderBy("created_at", "desc")
+      .limit(20)
+      .get();
+
+    await CacheManager.set(key, users, 60);
+    return users;
+  }
+
+  async create(data: Record<string, unknown>) {
+    const created = await User.create(data);
+    await CacheManager.delete("users:active:v1");
+    return created;
+  }
+}
+```
+
+## Driver note
+
+The service surface stays the same for SQL and Mongo models. Keep ids typed as `number | string` and let the model choice control driver behavior.
+
+## Related pages
+
+- [Runtime Controllers](./controllers)
+- [Runtime CRUD](./crud)
+- [Runtime Querying](./querying)
+- [Getting Started Services](../getting-started/services)

@@ -1,0 +1,136 @@
+---
+title: Runtime Querying
+description: The Laravel-like runtime read contract for primary-key reads, safe-finder chains, scopes, eager loading, and service-level query composition.
+---
+
+# Runtime Querying
+
+The read side of the runtime is Laravel-like and should stay predictable.
+
+## Primary query shapes
+
+```ts
+const byId = await User.find(1);
+const byEmail = await User.findOneBy("email", "alice@example.com");
+const newestUser = await User.orderBy("created_at", "desc").first();
+```
+
+```ts
+const rows = await User.where("is_active", true)
+  .orderBy("created_at", "desc")
+  .limit(20)
+  .get();
+```
+
+```ts
+const allUsers = await new User().all();
+```
+
+## When to use each read path
+
+### `User.find(id)`
+
+Use this when:
+
+- you already have the primary key
+- the service needs one record or `null`
+- the next step is update, patch, delete, or restore
+
+### `User.findOneBy(field, value)`
+
+Use this when:
+
+- the lookup key is not the primary key
+- the service expects one record or `null`
+- the code should read like “find the user by email”
+
+### `where(...).orderBy(...).limit(...).get()`
+
+Use this when:
+
+- you are building list endpoints
+- ordering matters
+- limits should be explicit
+
+### `new User().all()`
+
+Use this when:
+
+- you want the plain instance collection-read path
+- you are intentionally reading the full collection
+- you are not expressing filter semantics
+
+## Safe-finder chain
+
+```ts
+const admins = await User.where("role", "admin")
+  .orderBy("created_at", "asc")
+  .limit(10)
+  .get();
+```
+
+Rules:
+
+- `where(field, value)` filters by declared schema fields
+- `orderBy(field, direction)` supports `asc` and `desc`
+- always pass the direction explicitly
+- `limit(count)` should be explicit on user-facing list endpoints
+
+## Eager loading
+
+Use eager loading only when the model defines explicit relation methods.
+
+```ts
+const users = await User.where("is_active", true)
+  .with("posts")
+  .get();
+
+const user = await (new User()).with("posts", "profile").find(1);
+```
+
+Important rules:
+
+- schema relation metadata alone is not enough
+- `with(...)` and `load(...)` require explicit relation methods
+- eager loading belongs in services, not controllers
+
+## Scopes
+
+```ts
+const active = await User.active().first();
+const inactive = await User.inactive().get();
+const published = await Post.published().limit(10).get();
+```
+
+Use scopes when:
+
+- a query pattern repeats
+- you want a named query contract
+- you want controllers to stay thin
+
+## Recommended service query pattern
+
+```ts
+export class UserService {
+  async findByEmail(email: string) {
+    return User.findOneBy("email", email);
+  }
+
+  async recentActive(limit = 20) {
+    return User.where("is_active", true)
+      .orderBy("created_at", "desc")
+      .limit(limit)
+      .get();
+  }
+
+  async detail(id: number | string) {
+    return (new User()).with("posts", "profile").find(id);
+  }
+}
+```
+
+## Related pages
+
+- [Runtime CRUD](./crud)
+- [API Querying Reference](../api/querying)
+- [Mixin Scenarios](../orm/mixin-scenarios)

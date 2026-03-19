@@ -169,6 +169,54 @@ describe("documentation usage gaps smoke coverage", () => {
       path.resolve(rootDir, "docs/getting-started/package-docs.mdx"),
       "utf8",
     );
+    const runtimeIndex = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/index.mdx"),
+      "utf8",
+    );
+    const runtimeCrud = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/crud.mdx"),
+      "utf8",
+    );
+    const runtimeQuerying = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/querying.mdx"),
+      "utf8",
+    );
+    const runtimeModels = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/models.mdx"),
+      "utf8",
+    );
+    const runtimeControllers = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/controllers.mdx"),
+      "utf8",
+    );
+    const runtimeServices = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/services.mdx"),
+      "utf8",
+    );
+    const runtimeCache = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/cache.mdx"),
+      "utf8",
+    );
+    const testIndex = fs.readFileSync(
+      path.resolve(rootDir, "docs/test/index.mdx"),
+      "utf8",
+    );
+    const testJestRuntime = fs.readFileSync(
+      path.resolve(rootDir, "docs/test/jest-runtime.mdx"),
+      "utf8",
+    );
+    const testFactoriesSeeds = fs.readFileSync(
+      path.resolve(rootDir, "docs/test/factories-seeds.mdx"),
+      "utf8",
+    );
+    const testScenarios = fs.readFileSync(
+      path.resolve(rootDir, "docs/test/scenarios.mdx"),
+      "utf8",
+    );
+    const testCliPackSmoke = fs.readFileSync(
+      path.resolve(rootDir, "docs/test/cli-pack-smoke.mdx"),
+      "utf8",
+    );
     const docsConfig = fs.readFileSync(path.resolve(rootDir, "docs.json"), "utf8");
 
     expect(commonScenarios).toContain("Scenario 1: First SQL CRUD API");
@@ -209,17 +257,73 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(productionSafety).toContain("cache:clear");
     expect(productionSafety).toContain("clear cache after fresh rebuilds, restore tests, or seed resets if stale reads are suspected");
     expect(indexDoc).toContain("Version: `1.0.0-rc.1`");
+    expect(indexDoc).toContain("runtime/index");
+    expect(indexDoc).toContain("runtime/crud");
+    expect(indexDoc).toContain("runtime/controllers");
+    expect(indexDoc).toContain("runtime/services");
+    expect(indexDoc).toContain("test/index");
     expect(indexDoc).toContain("orm/multi-connection-strategy");
     expect(indexDoc).toContain("orm/soft-deletes");
     expect(indexDoc).toContain("getting-started/cookbook");
     expect(packageDocs).toContain("Version: `1.0.0-rc.1`");
+    expect(packageDocs).toContain("../runtime/index");
+    expect(packageDocs).toContain("../runtime/crud");
+    expect(packageDocs).toContain("../runtime/querying");
+    expect(packageDocs).toContain("../runtime/controllers");
+    expect(packageDocs).toContain("../runtime/services");
+    expect(packageDocs).toContain("../test/index");
+    expect(packageDocs).toContain("../test/jest-runtime");
+    expect(packageDocs).toContain("../test/factories-seeds");
+    expect(packageDocs).toContain("../test/scenarios");
+    expect(packageDocs).toContain("../test/cli-pack-smoke");
     expect(packageDocs).toContain("../orm/multi-connection-strategy");
     expect(packageDocs).toContain("../orm/soft-deletes");
     expect(packageDocs).toContain("./common-scenarios");
     expect(packageDocs).toContain("./controllers");
     expect(packageDocs).toContain("./services");
+    expect(runtimeIndex).toContain("[Runtime CRUD](./crud)");
+    expect(runtimeIndex).toContain("[Runtime Querying](./querying)");
+    expect(runtimeIndex).toContain("[Runtime Controllers](./controllers)");
+    expect(runtimeIndex).toContain("[Runtime Services](./services)");
+    expect(runtimeCrud).toContain("Use one of these two creation paths:");
+    expect(runtimeCrud).toContain("const created = await User.create({");
+    expect(runtimeCrud).toContain("found.update({ name: \"Alice Updated\" });");
+    expect(runtimeCrud).toContain("await User.updateById(1, { name: \"Alice Direct\" });");
+    expect(runtimeCrud).toContain("Do not treat these as the primary public teaching path:");
+    expect(runtimeQuerying).toContain("const byId = await User.find(1);");
+    expect(runtimeQuerying).toContain("const allUsers = await new User().all();");
+    expect(runtimeModels).toContain("MySQL: conventional production web-app default");
+    expect(runtimeModels).toContain("Mongo models");
+    expect(runtimeControllers).toContain("Controllers are the HTTP edge of the runtime.");
+    expect(runtimeControllers).toContain("User.deleteById(...)");
+    expect(runtimeServices).toContain("Services are the main application boundary for runtime behavior.");
+    expect(runtimeServices).toContain("return User.create(data);");
+    expect(runtimeServices).toContain("return User.restoreById(id);");
+    expect(runtimeCache).toContain("MEMCACHED_HOST=127.0.0.1");
+    expect(runtimeCache).toContain("const created = await User.create(data);");
+    expect(testIndex).toContain("Jest unit and logic tests");
+    expect(testIndex).toContain("[Factories and seeds](./factories-seeds)");
+    expect(testJestRuntime).toContain("npm run test:coverage");
+    expect(testFactoriesSeeds).toContain("eloquent make:factory User --test");
+    expect(testFactoriesSeeds).toContain("eloquent db:seed --test --class BlogScenarioSeeder");
+    expect(testScenarios).toContain("eloquent make:scenario blog --test --controllers --services --run --force");
+    expect(testScenarios).toContain("eloquent demo:scenario --test --random");
+    expect(testCliPackSmoke).toContain("npm run test:pack-smoke");
+    expect(testCliPackSmoke).toContain("[CLI Test Matrix](../cli/test-matrix)");
     expect(docsConfig).toContain('"orm/soft-deletes"');
     expect(docsConfig).toContain('"orm/multi-connection-strategy"');
+    expect(docsConfig).toContain('"runtime/index"');
+    expect(docsConfig).toContain('"runtime/crud"');
+    expect(docsConfig).toContain('"runtime/querying"');
+    expect(docsConfig).toContain('"runtime/models"');
+    expect(docsConfig).toContain('"runtime/controllers"');
+    expect(docsConfig).toContain('"runtime/services"');
+    expect(docsConfig).toContain('"runtime/cache"');
+    expect(docsConfig).toContain('"test/index"');
+    expect(docsConfig).toContain('"test/jest-runtime"');
+    expect(docsConfig).toContain('"test/factories-seeds"');
+    expect(docsConfig).toContain('"test/scenarios"');
+    expect(docsConfig).toContain('"test/cli-pack-smoke"');
     expect(docsConfig).toContain('"getting-started/common-scenarios"');
     expect(docsConfig).toContain('"getting-started/cookbook"');
     expect(docsConfig).toContain('"orm/mixin-scenarios"');

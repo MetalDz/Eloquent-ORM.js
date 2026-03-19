@@ -1,0 +1,50 @@
+---
+title: Factories And Seeds
+description: How factories, seeders, and factory status fit into test and scenario validation.
+---
+
+# Factories And Seeds
+
+Factories and seeds are part of the test and scenario workflow.
+
+## What factories are for
+
+Factories are used for:
+
+- seed generation
+- scenario generation
+- test fixtures
+- runtime demo and validation flows
+
+They are not the primary public CRUD surface.
+
+## Typical commands
+
+```bash
+eloquent make:factory User --test
+eloquent make:seed User --count 10 --test
+eloquent db:seed --test --class BlogScenarioSeeder
+eloquent factory:status --details --test
+eloquent factory:status --graph --test
+```
+
+## What should be validated
+
+- factory registration
+- generated seed output
+- graph/status output
+- test-targeted paths under `src/test`
+- driver-targeted seed behavior for SQL and Mongo flows
+
+## Factory and seed tests usually matter when
+
+- model schema changed
+- seed output changed
+- scenario generation changed
+- factory registration or import behavior changed
+
+## Related pages
+
+- [Scenarios](./scenarios)
+- [CLI Test Matrix](../cli/test-matrix)
+- [NoSQL (Mongo)](../orm/nosql)
