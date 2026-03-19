@@ -12,9 +12,14 @@ const repoRoot = process.cwd();
 const docsDir = path.join(repoRoot, "docs");
 const mintHome = path.join(repoRoot, ".mintlify-home");
 const mintConfigPath = path.join(docsDir, "mint.json");
+const rootDocsJsonPath = path.join(repoRoot, "docs.json");
 
 if (!fs.existsSync(mintConfigPath)) {
-  throw new Error("docs/mint.json not found. Run docs:prepare-config first.");
+  throw new Error("docs/mint.json not found. Run docs:sync-config first.");
+}
+
+if (!fs.existsSync(rootDocsJsonPath)) {
+  throw new Error("docs.json not found at repository root. Run docs:sync-config first.");
 }
 
 fs.mkdirSync(mintHome, { recursive: true });
