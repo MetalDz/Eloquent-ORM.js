@@ -217,7 +217,7 @@ describe("documentation usage gaps smoke coverage", () => {
       path.resolve(rootDir, "docs/test/cli-pack-smoke.mdx"),
       "utf8",
     );
-    const docsConfig = fs.readFileSync(path.resolve(rootDir, "docs.json"), "utf8");
+    const docsConfig = fs.readFileSync(path.resolve(rootDir, "mint.json"), "utf8");
 
     expect(commonScenarios).toContain("Scenario 1: First SQL CRUD API");
     expect(commonScenarios).toContain("Scenario 2: Mongo document app");
