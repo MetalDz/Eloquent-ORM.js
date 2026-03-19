@@ -2,7 +2,7 @@
 
 Last updated: 2026-03-18
 Owner: ORM core maintainers
-Status: PLANNED
+Status: IN PROGRESS
 
 ## Goal
 
@@ -84,10 +84,10 @@ if (foundToRestore) {
 
 ## Required pre-change checklist
 
-- [ ] Capture the current `npm run test:coverage` baseline before the first API hot-fix change.
-- [ ] Capture the current `npm run test:pack-smoke` baseline before the first API hot-fix change.
-- [ ] List the exact public methods, aliases, and examples that will change.
-- [ ] Mark the change as additive, deprecating, or breaking before implementation starts.
+- [x] Capture the current `npm run test:coverage` baseline before the first API hot-fix change.
+- [x] Capture the current `npm run test:pack-smoke` baseline before the first API hot-fix change.
+- [x] List the exact public methods, aliases, and examples that will change.
+- [x] Mark the change as additive, deprecating, or breaking before implementation starts.
 - [ ] Freeze the docs files and generated templates that must move together with the code.
 - [ ] Do not start debugging unrelated failures during this checklist phase.
 

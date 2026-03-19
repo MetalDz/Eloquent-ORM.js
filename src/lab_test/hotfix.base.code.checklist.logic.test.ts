@@ -10,7 +10,7 @@ describe("Hot Fix base code checklist", () => {
 
     const requiredSnippets = [
       "# Hot Fix Base Code Checklist",
-      "Status: PLANNED",
+      "Status: IN PROGRESS",
       "consistent Laravel-like design",
       "This phase is planning and guard-rail setup only.",
       "Keep query reads Laravel-like",
