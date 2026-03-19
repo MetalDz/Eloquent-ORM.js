@@ -38,6 +38,16 @@
         ]
       },
       {
+        "group": "Test",
+        "pages": [
+          "test/index",
+          "test/jest-runtime",
+          "test/factories-seeds",
+          "test/scenarios",
+          "test/cli-pack-smoke"
+        ]
+      },
+      {
         "group": "API",
         "pages": [
           "api/overview",
@@ -67,16 +77,6 @@
           "cli/generators",
           "cli/production-safety",
           "cli/test-matrix"
-        ]
-      },
-      {
-        "group": "Test",
-        "pages": [
-          "test/index",
-          "test/jest-runtime",
-          "test/factories-seeds",
-          "test/scenarios",
-          "test/cli-pack-smoke"
         ]
       },
       {
