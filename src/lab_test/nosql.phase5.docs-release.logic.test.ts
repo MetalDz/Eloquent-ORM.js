@@ -41,7 +41,7 @@ describe("NoSQL phase 5 documentation and release closure", () => {
       "utf8"
     );
 
-    expect(usage).toContain("## 7) NoSQL Workflow (Mongo)");
+    expect(usage).toContain("## 10) NoSQL Workflow (Mongo)");
     expect(usage).toContain("Detailed matrix and contract:");
     expect(usage).toContain("src/documentation/nosql-usage-guide.md");
 

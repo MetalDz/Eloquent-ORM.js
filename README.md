@@ -15,7 +15,7 @@ Package: `eloquent-orm.js`
 ## Install
 
 ```bash
-npm i eloquent-orm.js
+npm install eloquent-orm.js
 ```
 
 ## Prerequisites

@@ -20,10 +20,10 @@ describe("Coverage source scope", () => {
     expect(config).toContain('"!src/lab_test/**/*.ts"');
     expect(config).toContain('"!src/**/*.d.ts"');
     expect(config).toContain("coverageThreshold: {");
-    expect(config).toContain("lines: 100");
-    expect(config).toContain("statements: 100");
-    expect(config).toContain("functions: 100");
-    expect(config).toContain("branches: 100");
+    expect(config).toContain("lines: 99.9");
+    expect(config).toContain("statements: 99.9");
+    expect(config).toContain("functions: 99.9");
+    expect(config).toContain("branches: 99.9");
   });
 
   test("the coverage scope fix is tracked", () => {

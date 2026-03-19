@@ -25,7 +25,7 @@ Out of scope:
 ## Reporting a Vulnerability
 
 1. Do not open a public issue with exploit details.
-2. Open a private advisory for this repository.
+2. Open a private advisory through GitHub Security Advisories for this repository.
 3. Include:
    - affected package version
    - impact and reproduction steps
@@ -44,4 +44,3 @@ Out of scope:
 
 - Maintainers reserve time to reproduce, patch, and validate before public release.
 - Public disclosure should follow after fix release or an official mitigation announcement.
-

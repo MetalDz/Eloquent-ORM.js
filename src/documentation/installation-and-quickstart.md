@@ -256,18 +256,27 @@ import { registerModels, column } from "eloquent-orm.js";
 import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
 ```
 
+### Laravel-Style SQL Model Import
+
+If you want a Laravel-style SQL-first import path, use the root `Model` alias:
+
+```ts
+import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
+```
+
+Use `Model` as the SQL model base class when you want the shorter root import surface, and use `eloquent-orm.js/Model` when you need explicit `SqlModel` and `MongoModel` separation.
+
 Example SQL model:
 
 ```ts
-import { registerModels, column } from "eloquent-orm.js";
-import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
 
 type UserAttrs = {
   id?: number;
   name?: string;
 };
 
-export class User extends SqlModel<UserAttrs> {
+export class User extends Model<UserAttrs> {
   static tableName = "users";
   static connectionName = process.env.DB_CONNECTION ?? "sqlite";
 
