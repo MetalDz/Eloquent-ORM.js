@@ -80,22 +80,24 @@ eloquent demo:scenario --test --random
 4. Create, query, update, and delete records.
 
 ```ts
-const created = await new Post().create({ title: "Hello ORM JS" });
-const found = await Post.findOneBy("title", "Hello ORM JS");
+const created = await Post.create({ title: "Hello ORM JS" });
+const found = await Post.find(created.id as number);
 
 if (found) {
-  found.fill({ title: "Hello ORM JS Updated" });
+  found.update({ title: "Hello ORM JS Updated" });
   await found.save();
 }
 
-await new Post().delete(created?.id ?? 1);
+await Post.deleteById(created.id as number);
 ```
 
 5. If the model uses soft deletes, restore instead of recreating.
 
 ```ts
-const model = new Post() as Post & { restore?: (id: number | string) => Promise<void> };
-await model.restore?.(1);
+const deleted = await Post.find(1);
+if (deleted) {
+  await deleted.restore();
+}
 ```
 
 ## Next steps

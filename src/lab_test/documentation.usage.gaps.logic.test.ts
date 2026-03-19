@@ -57,6 +57,15 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(quickStart).toContain("DB_CONNECTION=sqlite");
     expect(quickStart).toContain("Express.js");
     expect(quickStart).toContain("registerModels([User, Post]);");
+    expect(quickStart).toContain("const created = await Post.create({ title: \"Hello ORM JS\" });");
+    expect(quickStart).toContain("const found = await Post.find(created.id as number);");
+    expect(quickStart).toContain("found.update({ title: \"Hello ORM JS Updated\" });");
+    expect(quickStart).toContain("await Post.deleteById(created.id as number);");
+    expect(quickStart).toContain("await deleted.restore();");
+    expect(quickStart).not.toContain("await new Post().create");
+    expect(quickStart).not.toContain("found.fill({ title: \"Hello ORM JS Updated\" });");
+    expect(quickStart).not.toContain("await new Post().delete");
+    expect(quickStart).not.toContain("await model.restore?.(1);");
     expect(querying).toContain("## Important: query contract");
     expect(querying).toContain("<summary><strong>Filtered collection reads</strong></summary>");
     expect(querying).toContain("<summary><strong>Eager loading</strong></summary>");

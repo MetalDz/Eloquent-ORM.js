@@ -340,17 +340,18 @@ eloquent demo:scenario --random
 ## First Runtime Example
 
 ```ts
-const user = new User();
-
-user.fill({
+const created = await User.create({
   name: "Alice",
   email: "alice@example.com",
 });
 
-await user.save();
+const found = await User.find(created.id as number);
+if (found) {
+  found.update({ name: "Alice Updated" });
+  await found.save();
+}
 
-const stored = await User.findOneBy("email", "alice@example.com");
-console.log(stored?.toJSON());
+await User.deleteById(created.id as number);
 ```
 
 ## Where to Go Next
