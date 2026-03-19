@@ -38,7 +38,9 @@ import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFi
 
 export type ModelBaseContract = new (...args: any[]) => {
   create(data: Record<string, unknown>): Promise<unknown | null>;
+  update(data: Record<string, unknown>, pk?: string): unknown;
   update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+  delete(): Promise<void>;
   delete(id: number | string, pk?: string): Promise<void>;
   find(id: number | string, pk?: string): Promise<unknown>;
   all(): Promise<unknown[]>;
@@ -203,6 +205,23 @@ export abstract class CoreModel<
     value: unknown
   ): Promise<InstanceType<T> | null> {
     return this.where(field, value).first();
+  }
+
+  static create<T extends typeof CoreModel>(
+    this: T,
+    data: Record<string, unknown>
+  ): Promise<InstanceType<T> | null> {
+    const instance = this.newInstance();
+    return instance.create(data) as Promise<InstanceType<T> | null>;
+  }
+
+  static find<T extends typeof CoreModel>(
+    this: T,
+    id: number | string,
+    pk: string = "id"
+  ): Promise<InstanceType<T> | null> {
+    const instance = this.newInstance();
+    return instance.find(id, pk) as Promise<InstanceType<T> | null>;
   }
 
   static findAllBy<T extends typeof CoreModel>(
@@ -575,11 +594,28 @@ export abstract class CoreModel<
   /* -----------------------------------------------------
    * UPDATE (by ID)
    * ----------------------------------------------------- */
-  async update(
+  update(data: Record<string, unknown>, pk?: string): this;
+  update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+  update(
+    idOrData: number | string | Record<string, unknown>,
+    dataOrPk?: Record<string, unknown> | string,
+    pk: string = "id"
+  ): Promise<void> | this {
+    if (typeof idOrData === "object" && idOrData !== null && !Array.isArray(idOrData)) {
+      return this.fill(idOrData);
+    }
+
+    const id = idOrData as number | string;
+    const data = dataOrPk as Record<string, unknown>;
+    return this.performCorePersistedUpdate(id, data, pk);
+  }
+
+  private async performCorePersistedUpdate(
     id: number | string,
     data: Record<string, unknown>,
-    pk: string = "id"
+    pk: string
   ): Promise<void> {
+
     // 1) Validate
     await this.validateDataInternal(data, { partial: true });
 
@@ -629,9 +665,21 @@ export abstract class CoreModel<
   /* -----------------------------------------------------
    * DELETE (by ID)
    * ----------------------------------------------------- */
-  async delete(id: number | string, pk: string = "id"): Promise<void> {
+  delete(): Promise<void>;
+  delete(id: number | string, pk?: string): Promise<void>;
+  async delete(id?: number | string, pk: string = "id"): Promise<void> {
+    const primaryKey = pk ?? this.resolvePrimaryKey();
+    const targetId =
+      id ?? (this.getOriginalPrimaryKeyValue(primaryKey) as number | string | undefined);
+
+    if (targetId === undefined || targetId === null) {
+      throw new Error(
+        `Cannot delete ${this.constructor.name} without primary key '${primaryKey}'.`
+      );
+    }
+
     // 1) beforeDelete (can cancel)
-    const canDelete = await this.fireEvent("beforeDelete", id);
+    const canDelete = await this.fireEvent("beforeDelete", targetId);
     if (!canDelete) return;
 
     const db = await this.getDB();
@@ -646,14 +694,14 @@ export abstract class CoreModel<
         const table = adapter.wrapId(this.tableName);
         const pkCol = adapter.wrapId(pk);
         const sql = `DELETE FROM ${table} WHERE ${pkCol} = ${adapter.placeholder(1)}`;
-        await adapter.execute(sql, [id]);
+        await adapter.execute(sql, [targetId]);
         break;
       }
 
       case "mongo":
         await (db as any)
           .collection(this.tableName)
-          .deleteOne(this.buildMongoPrimaryFilter(pk, id));
+          .deleteOne(this.buildMongoPrimaryFilter(primaryKey, targetId));
         break;
 
       default:
@@ -661,7 +709,12 @@ export abstract class CoreModel<
     }
 
     // 3) afterDelete
-    await this.fireEvent("afterDelete", id);
+    if (this.getOriginalPrimaryKeyValue(primaryKey) === targetId) {
+      this._exists = false;
+      this._originalAttributes = {};
+    }
+
+    await this.fireEvent("afterDelete", targetId);
   }
 }
 

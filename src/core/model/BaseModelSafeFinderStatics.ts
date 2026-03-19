@@ -14,6 +14,68 @@ export function BaseModelSafeFinderStaticsMixin<
   Base: TBase,
 ) {
   abstract class BaseModelSafeFinderStatics extends Base {
+    static create(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      data: Record<string, unknown>,
+    ): Promise<SafeFinderModelInstance | null> {
+      const instance = new this() as SafeFinderModelInstance & {
+        create(payload: Record<string, unknown>): Promise<SafeFinderModelInstance | null>;
+      };
+      return instance.create(data);
+    }
+
+    static find(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      id: number | string,
+      pk: string = "id",
+    ): Promise<SafeFinderModelInstance | null> {
+      const instance = new this() as SafeFinderModelInstance & {
+        find(value: number | string, key?: string): Promise<SafeFinderModelInstance | null>;
+      };
+      return instance.find(id, pk);
+    }
+
+    static updateById(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      id: number | string,
+      data: Record<string, unknown>,
+      pk: string = "id",
+    ): Promise<void> {
+      const instance = new this() as SafeFinderModelInstance & {
+        update(value: number | string, payload: Record<string, unknown>, key?: string): Promise<void>;
+      };
+      return instance.update(id, data, pk);
+    }
+
+    static deleteById(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      id: number | string,
+      pk: string = "id",
+    ): Promise<void> {
+      const instance = new this() as SafeFinderModelInstance & {
+        delete(value: number | string, key?: string): Promise<void>;
+      };
+      return instance.delete(id, pk);
+    }
+
+    static restoreById(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      id: number | string,
+      pk: string = "id",
+    ): Promise<void> {
+      const instance = new this() as SafeFinderModelInstance & {
+        restore?: (value: number | string, key?: string) => Promise<void>;
+      };
+
+      if (typeof instance.restore !== "function") {
+        return Promise.reject(
+          new Error(`${this.name || "Model"} does not support restoreById().`)
+        );
+      }
+
+      return instance.restore(id, pk);
+    }
+
     static where<T extends typeof BaseModelSafeFinderStatics>(
       this: T,
       field: string,

@@ -76,6 +76,31 @@ describe("Instance persistence layer runtime", () => {
     }
   }
 
+  class SoftUserModel extends BaseModel {
+    static schema = {
+      id: column("increments", undefined, { primary: true }),
+      name: column("string", 255),
+      status: column("string", 255),
+      deleted_at: column("timestamp"),
+    };
+
+    constructor() {
+      super("users", "mysql");
+    }
+  }
+
+  class SoftGeoModel extends BaseModel {
+    static schema = {
+      _id: column("string", 255, { primary: true }),
+      name: column("string", 255),
+      deleted_at: column("timestamp"),
+    };
+
+    constructor() {
+      super("geo_locations", "mongo" as any);
+    }
+  }
+
   test("fill() assigns schema-backed column fields only", () => {
     const user = new UserModel() as UserModel & Record<string, unknown>;
 
@@ -114,7 +139,7 @@ describe("Instance persistence layer runtime", () => {
     );
     expect((user as unknown as Record<string, unknown>).id).toBe(11);
 
-    user.fill({ name: "Alice 2" });
+    user.update({ name: "Alice 2" });
     await user.save();
     expect(adapter.execute).toHaveBeenNthCalledWith(
       1,
@@ -124,6 +149,56 @@ describe("Instance persistence layer runtime", () => {
 
     await user.save();
     expect(adapter.execute).toHaveBeenCalledTimes(1);
+  });
+
+  test("static create() and static find() expose Laravel-like SQL runtime entry points", async () => {
+    const adapter = makeSqlAdapter();
+    adapter.insert.mockResolvedValue({
+      id: 19,
+      row: {
+        id: 19,
+        name: "Taylor",
+        email: "taylor@example.com",
+      },
+    });
+    adapter.queryOne.mockResolvedValue({
+      id: 19,
+      name: "Taylor",
+      email: "taylor@example.com",
+    });
+    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+    const created = await UserModel.create({
+      name: "Taylor",
+      email: "taylor@example.com",
+    });
+    expect(created).toBeInstanceOf(UserModel);
+
+    const found = await UserModel.find(19);
+    expect(found).toBeInstanceOf(UserModel);
+    expect(adapter.queryOne).toHaveBeenCalledWith(
+      "SELECT * FROM `users` WHERE `id` = ?",
+      [19]
+    );
+  });
+
+  test("static updateById() and deleteById() expose explicit SQL low-level helpers", async () => {
+    const adapter = makeSqlAdapter();
+    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+    await SoftUserModel.updateById(21, { status: "inactive" });
+    await SoftUserModel.deleteById(21);
+
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      1,
+      "UPDATE `users` SET `status` = ? WHERE `id` = ?",
+      ["inactive", 21]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      2,
+      "UPDATE `users` SET `deleted_at` = ? WHERE `id` = ?",
+      [expect.any(String), 21]
+    );
   });
 
   test("patch() updates only provided fields and blocks persisted primary-key mutation", async () => {
@@ -182,7 +257,7 @@ describe("Instance persistence layer runtime", () => {
     expect(collection.insertOne).toHaveBeenCalledWith({ name: "Geo Point" });
     expect((geo as unknown as Record<string, unknown>).id).toBe("mongo-geo-1");
 
-    geo.fill({ name: "Geo Point 2" });
+    geo.update({ name: "Geo Point 2" });
     await geo.save();
     expect(collection.updateOne).toHaveBeenNthCalledWith(
       1,
@@ -198,6 +273,50 @@ describe("Instance persistence layer runtime", () => {
     );
   });
 
+  test("static create() and static find() expose Laravel-like Mongo runtime entry points", async () => {
+    const collection = {
+      insertOne: jest.fn(async () => ({ insertedId: "mongo-geo-9" })),
+      findOne: jest.fn(async () => ({ id: "mongo-geo-9", name: "Geo Static" })),
+    };
+    const mongoDb = {
+      collection: jest.fn(() => collection),
+    };
+    mockedGetConnection.mockResolvedValue(mongoDb as never);
+
+    const created = await GeoModel.create({ name: "Geo Static" });
+    expect(created).toBeInstanceOf(GeoModel);
+
+    const found = await GeoModel.find("mongo-geo-9");
+    expect(found).toBeInstanceOf(GeoModel);
+    expect(collection.findOne).toHaveBeenCalledWith({
+      $or: [{ id: "mongo-geo-9" }, { _id: "mongo-geo-9" }],
+    });
+  });
+
+  test("static updateById() and deleteById() expose explicit Mongo low-level helpers", async () => {
+    const collection = {
+      updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
+    };
+    const mongoDb = {
+      collection: jest.fn(() => collection),
+    };
+    mockedGetConnection.mockResolvedValue(mongoDb as never);
+
+    await SoftGeoModel.updateById("mongo-geo-5", { name: "Geo Update" }, "_id");
+    await SoftGeoModel.deleteById("mongo-geo-5", "_id");
+
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      1,
+      { _id: "mongo-geo-5" },
+      { $set: { name: "Geo Update" } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      2,
+      { _id: "mongo-geo-5" },
+      { $set: { deleted_at: expect.any(String) } }
+    );
+  });
+
   test("save()/patch() require schema and persisted patch targets", async () => {
     const adapter = makeSqlAdapter();
     mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
@@ -209,4 +328,16 @@ describe("Instance persistence layer runtime", () => {
       "patch() requires a persisted model instance for UserModel."
     );
   });
+
+  test("restoreById() works for soft-deletable models", async () => {
+    const adapter = makeSqlAdapter();
+    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+    await SoftUserModel.restoreById(44);
+    expect(adapter.execute).toHaveBeenCalledWith(
+      "UPDATE `users` SET `deleted_at` = ? WHERE `id` = ?",
+      [null, 44]
+    );
+  });
+
 });

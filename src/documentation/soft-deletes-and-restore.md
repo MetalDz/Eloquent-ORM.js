@@ -25,8 +25,10 @@ Do not define both at once.
 `restore()` clears `deleted_at` and makes the record visible again to normal reads.
 
 ```ts
-const model = new User() as User & { restore?: (id: number | string) => Promise<void> };
-await model.restore?.(1);
+const user = await User.find(1);
+if (user) {
+  await user.restore();
+}
 ```
 
 ## Query deleted records

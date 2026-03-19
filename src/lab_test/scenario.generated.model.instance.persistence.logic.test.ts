@@ -176,7 +176,7 @@ describe("Scenario-generated model instance persistence", () => {
     }
   });
 
-  test("SQL make:scenario models inherit fill(), save(), and patch()", async () => {
+  test("SQL make:scenario models inherit create/find helpers plus fill(), update(), save(), and patch()", async () => {
     const adapter = makeSqlAdapter();
     adapter.insert.mockResolvedValue({
       id: 51,
@@ -200,18 +200,21 @@ describe("Scenario-generated model instance persistence", () => {
       const userFile = path.join(ctx.modelsDir, "User.ts");
       const content = fs.readFileSync(userFile, "utf8");
       expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
-      expect(content).toContain('await model.patch({ name: "Example 2" });');
+      expect(content).toContain('model.update({ name: "Example 2" });');
+      expect(content).toContain('await model.patch({ name: "Example 3" });');
 
       clearModule(userFile);
       const generatedModule = loadModule(userFile);
       const UserModel = generatedModule.User as {
         new (): {
           fill(data: Record<string, unknown>): unknown;
+          update(data: Record<string, unknown>): unknown;
           save(): Promise<void>;
           patch(data: Record<string, unknown>): Promise<void>;
           id?: unknown;
           name?: unknown;
         };
+        create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
         tableName: string;
       };
 
@@ -225,19 +228,23 @@ describe("Scenario-generated model instance persistence", () => {
       );
       expect(user.id).toBe(51);
 
-      await user.patch({ name: "Scenario SQL Beta" });
+      user.update({ name: "Scenario SQL Beta" });
+      await user.save();
       expect(adapter.execute).toHaveBeenCalledWith(
         `UPDATE \`${UserModel.tableName}\` SET \`name\` = ? WHERE \`id\` = ?`,
         ["Scenario SQL Beta", 51]
       );
       expect(user.name).toBe("Scenario SQL Beta");
+
+      const created = await UserModel.create({ name: "Scenario SQL Static" });
+      expect(created).toBeInstanceOf(UserModel);
     } finally {
       clearModule(path.join(ctx.modelsDir, "User.ts"));
       removeDir(ctx.root);
     }
   });
 
-  test("Mongo make:scenario models inherit fill(), save(), and patch()", async () => {
+  test("Mongo make:scenario models inherit create/find helpers plus fill(), update(), save(), and patch()", async () => {
     const collection = {
       insertOne: jest.fn(async () => ({ insertedId: "scenario-mongo-51" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
@@ -267,11 +274,13 @@ describe("Scenario-generated model instance persistence", () => {
       const UserModel = generatedModule.User as {
         new (): {
           fill(data: Record<string, unknown>): unknown;
+          update(data: Record<string, unknown>): unknown;
           save(): Promise<void>;
           patch(data: Record<string, unknown>): Promise<void>;
           id?: unknown;
           name?: unknown;
         };
+        create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
       };
 
       const user = new UserModel();
@@ -281,12 +290,16 @@ describe("Scenario-generated model instance persistence", () => {
       expect(collection.insertOne).toHaveBeenCalledWith({ name: "Scenario Mongo Alpha" });
       expect(user.id).toBe("scenario-mongo-51");
 
-      await user.patch({ name: "Scenario Mongo Beta" });
+      user.update({ name: "Scenario Mongo Beta" });
+      await user.save();
       expect(collection.updateOne).toHaveBeenCalledWith(
         { $or: [{ id: "scenario-mongo-51" }, { _id: "scenario-mongo-51" }] },
         { $set: { name: "Scenario Mongo Beta" } }
       );
       expect(user.name).toBe("Scenario Mongo Beta");
+
+      const created = await UserModel.create({ name: "Scenario Mongo Static" });
+      expect(created).toBeInstanceOf(UserModel);
     } finally {
       clearModule(path.join(ctx.modelsDir, "User.ts"));
       removeDir(ctx.root);

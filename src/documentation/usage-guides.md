@@ -113,10 +113,11 @@ Current runtime behavior:
 ## 8) Runtime Querying Patterns
 
 ### Important: Runtime Querying Contract
-The runtime read API is more Laravel-like than the write API.
+The runtime read API is Laravel-like and should stay aligned with the public CRUD contract.
 
 - static safe-finder helpers such as `User.where(...)`, `User.orderBy(...)`, `User.first()`, and `User.findOneBy(...)`
-- instance reads such as `new User().find(id)` and `new User().all()`
+- static primary-key reads such as `User.find(id)`
+- instance collection reads such as `new User().all()`
 - eager-loading helpers such as `with(...)` and `load(...)` when explicit relation methods exist
 
 Recommended app-level pattern:
@@ -129,7 +130,7 @@ Recommended app-level pattern:
 <summary><strong>Single-record reads</strong></summary>
 
 ```ts
-const byId = await new User().find(1);
+const byId = await User.find(1);
 const byEmail = await User.findOneBy("email", "alice@example.com");
 const newestUser = await User.orderBy("created_at", "desc").first();
 ```
@@ -226,17 +227,17 @@ export class UserService {
 ### Important: Runtime CRUD Contract
 The runtime write API is split into three layers:
 
-- `new User().create(data)`
+- `User.create(data)`
   - create a new row or document
-- loaded instance methods: `fill()`, `save()`, and `patch()`
+- loaded instance methods: `update()`, `fill()`, `save()`, `delete()`, `restore()`, and `patch()`
   - update an already loaded model instance
-- low-level by-id methods: `new User().update(id, data)` and `new User().delete(id)`
+- explicit low-level by-id methods: `User.updateById(id, data)`, `User.deleteById(id)`, and `User.restoreById(id)`
   - direct writes when you already know the primary key
 
 Recommended app-level pattern:
 1. read with query helpers
-2. update with `fill() + save()` or `patch()` on a loaded instance
-3. keep `new User().update(id, data)` and `new User().delete(id)` for service-layer or low-level flows
+2. update with `update() + save()` or `patch()` on a loaded instance
+3. use `User.updateById(...)`, `User.deleteById(...)`, and `User.restoreById(...)` only when you intentionally want a direct by-id service path
 
 <details>
 <summary><strong>Create: insert a new record</strong></summary>
@@ -244,7 +245,7 @@ Recommended app-level pattern:
 Use `create()` when you want to insert a new model in one call.
 
 ```ts
-const created = await new User().create({
+const created = await User.create({
   name: "Alice",
   email: "alice@example.com",
 });
@@ -257,7 +258,7 @@ const created = await new User().create({
 
 ```ts
 const allUsers = await new User().all();
-const byId = await new User().find(1);
+const byId = await User.find(1);
 const byEmail = await User.findOneBy("email", "alice@example.com");
 ```
 
@@ -273,12 +274,12 @@ const newestUser = await User.orderBy("created_at", "desc").first();
 </details>
 
 <details>
-<summary><strong>Update: preferred loaded-instance flow with <code>fill()</code> and <code>save()</code></strong></summary>
+<summary><strong>Update: preferred loaded-instance flow with <code>update()</code> and <code>save()</code></strong></summary>
 
 ```ts
 const user = await User.findOneBy("email", "alice@example.com");
 if (user) {
-  user.fill({ name: "Alice Updated" });
+  user.update({ name: "Alice Updated" });
   await user.save();
 }
 ```
@@ -304,12 +305,15 @@ Important rules:
 </details>
 
 <details>
-<summary><strong>Low-level update by id: direct write without loading first</strong></summary>
+<summary><strong>Low-level by-id helpers</strong></summary>
 
 ```ts
-await new User().update(1, {
+await User.updateById(1, {
   name: "Alice Updated Directly",
 });
+
+await User.deleteById(1);
+await User.restoreById(1);
 ```
 
 </details>
@@ -318,10 +322,15 @@ await new User().update(1, {
 <summary><strong>Delete and restore</strong></summary>
 
 ```ts
-await new User().delete(1);
+const user = await User.find(1);
+if (user) {
+  await user.delete();
+}
 
-const model = new User() as User & { restore?: (id: number | string) => Promise<void> };
-await model.restore?.(1);
+const trashed = await User.find(1);
+if (trashed) {
+  await trashed.restore();
+}
 ```
 
 </details>
@@ -332,20 +341,20 @@ await model.restore?.(1);
 ```ts
 export class UserService {
   async create(data: Record<string, unknown>) {
-    return new User().create(data);
+    return User.create(data);
   }
 
   async update(id: number | string, data: Record<string, unknown>) {
-    const user = await new User().find(id);
+    const user = await User.find(id);
     if (!user) return null;
 
-    user.fill(data);
+    user.update(data);
     await user.save();
     return user;
   }
 
   async patch(id: number | string, data: Record<string, unknown>) {
-    const user = await new User().find(id);
+    const user = await User.find(id);
     if (!user) return null;
 
     await user.patch(data);
@@ -353,7 +362,11 @@ export class UserService {
   }
 
   async delete(id: number | string) {
-    return new User().delete(id);
+    return User.deleteById(id);
+  }
+
+  async restore(id: number | string) {
+    return User.restoreById(id);
   }
 }
 ```

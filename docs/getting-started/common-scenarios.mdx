@@ -40,6 +40,21 @@ registerModels([User]);
 
 Wire Express routes with the generated controller and keep CRUD in the service layer.
 
+Recommended service CRUD shape:
+
+```ts
+const created = await User.create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+
+const found = await User.find(created.id as number);
+if (found) {
+  found.update({ name: "Alice Updated" });
+  await found.save();
+}
+```
+
 ## Scenario 2: Mongo document app
 
 ```bash
@@ -90,6 +105,16 @@ setupCache();
 
 Read from cache before query execution and invalidate after writes.
 
+Recommended write-side invalidation:
+
+```ts
+async createUser(data: Record<string, unknown>) {
+  const created = await User.create(data);
+  await CacheManager.delete("users:active:v1");
+  return created;
+}
+```
+
 ## Scenario 6: Test-isolated artifacts
 
 ```bash
@@ -109,6 +134,13 @@ Use service-level `attach`, `detach`, and `sync` flows for pivot management.
 - casts normalize service reads
 - scopes filter `all()` and `find()`
 - `toObject()` gives API-safe output
+
+Example:
+
+```ts
+const user = await User.find(id);
+return user?.toObject?.() ?? user;
+```
 
 ## Scenario 9: Production-safe migrations
 

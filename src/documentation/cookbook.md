@@ -65,19 +65,23 @@ export class UserService {
   }
 
   async find(id: number | string) {
-    return new User().find(id);
+    return User.find(id);
   }
 
   async create(data: Record<string, unknown>) {
-    return new User().create(data);
+    return User.create(data);
   }
 
   async update(id: number | string, data: Record<string, unknown>) {
-    return new User().update(id, data);
+    const user = await User.find(id);
+    if (!user) return null;
+    user.update(data);
+    await user.save();
+    return user;
   }
 
   async delete(id: number | string) {
-    return new User().delete(id);
+    return User.deleteById(id);
   }
 }
 ```
@@ -205,11 +209,11 @@ async trashed() {
 }
 
 async restore(id: number | string) {
-  const model = new User() as User & { restore?: (value: number | string) => Promise<void> };
-  if (!model.restore) {
-    throw new Error("Restore not supported for this model.");
+  const user = await User.find(id);
+  if (!user) {
+    return;
   }
-  await model.restore(id);
+  await user.restore();
 }
 ```
 
@@ -248,7 +252,7 @@ export class DashboardService {
   }
 
   async publishPost(id: number | string) {
-    await new Post().update(id, { published: true });
+    await Post.updateById(id, { published: true });
     await CacheManager.delete("dashboard:overview:v1");
   }
 }

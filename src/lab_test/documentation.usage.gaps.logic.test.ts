@@ -63,13 +63,13 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(querying).toContain("const rows = await User.where(\"status\", \"active\")");
     expect(querying).toContain("const active = await User.active().first();");
 
-    expect(usageGuides).toContain("const created = await new User().create");
+    expect(usageGuides).toContain("const created = await User.create");
     expect(usageGuides).toContain("### Important: runtime querying contract");
     expect(usageGuides).toContain("<summary><strong>Single-record reads</strong></summary>");
     expect(usageGuides).toContain("<summary><strong>Eager loading with <code>with(...)</code> and <code>load(...)</code></strong></summary>");
     expect(usageGuides).toContain("const active = await User.active().first();");
     expect(usageGuides).toContain("return (new User()).with(\"posts\", \"profile\").find(id);");
-    expect(usageGuides).toContain("const byId = await new User().find(1);");
+    expect(usageGuides).toContain("const byId = await User.find(1);");
     expect(usageGuides).toContain('const byEmail = await User.findOneBy("email", "alice@example.com");');
     expect(usageGuides).toContain('orderBy("created_at", "desc")');
     expect(usageGuides).toContain("const newestUser = await User.orderBy(\"created_at\", \"desc\").first();");
@@ -77,8 +77,15 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(usageGuides).toContain("<summary><strong>Create: insert a new record</strong></summary>");
     expect(usageGuides).toContain("<summary><strong>Patch: partial update on a persisted instance</strong></summary>");
     expect(usageGuides).toContain("<summary><strong>Recommended service-layer CRUD pattern</strong></summary>");
-    expect(usageGuides).toContain("await new User().update(1, {");
-    expect(usageGuides).toContain("await model.restore?.(1);");
+    expect(usageGuides).toContain("user.update({ name: \"Alice Updated\" });");
+    expect(usageGuides).toContain("await user.delete();");
+    expect(usageGuides).toContain("await trashed.restore();");
+    expect(usageGuides).toContain("await User.updateById(1, {");
+    expect(usageGuides).toContain("await User.deleteById(1);");
+    expect(usageGuides).toContain("await User.restoreById(1);");
+    expect(usageGuides).not.toContain("await new User().update(1, {");
+    expect(usageGuides).not.toContain("await new User().delete(1);");
+    expect(usageGuides).not.toContain("await model.restore?.(1);");
     expect(usageGuides).toContain("Use cache at the service boundary, not in controllers.");
     expect(usageGuides).toContain("MEMCACHED_HOST=127.0.0.1");
     expect(usageGuides).toContain("MEMCACHED_PORT=11211");
@@ -116,9 +123,17 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(controllers).toContain("eloquent make:controller User --soft");
     expect(controllers).toContain("app.patch(\"/users/:id/restore\", controller.restore.bind(controller));");
     expect(controllers).toContain("Keep cache logic in the service layer.");
+    expect(controllers).toContain("services use `User.find(...)`, `User.create(...)`");
+    expect(controllers).toContain("return User.deleteById(id);");
+    expect(controllers).toContain("return User.restoreById(id);");
     expect(services).toContain("eloquent make:service User");
     expect(services).toContain("`load()` and `with()` require explicit relation methods on the model instance");
     expect(services).toContain("Wrap read methods with cache lookups and invalidate keys after writes.");
+    expect(services).toContain("return User.create(data);");
+    expect(services).toContain("const user = await User.find(id);");
+    expect(services).toContain("user.update(data);");
+    expect(services).toContain("return User.deleteById(id);");
+    expect(services).toContain("return User.restoreById(id);");
   });
 
   test("scenario, cookbook, mixin, and soft delete docs stay published", () => {
@@ -159,9 +174,18 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(commonScenarios).toContain("Scenario 1: First SQL CRUD API");
     expect(commonScenarios).toContain("Scenario 2: Mongo document app");
     expect(commonScenarios).toContain("Scenario 5: Cache GET endpoints");
+    expect(commonScenarios).toContain("const created = await User.create({");
+    expect(commonScenarios).toContain("const found = await User.find(created.id as number);");
+    expect(commonScenarios).toContain("found.update({ name: \"Alice Updated\" });");
+    expect(commonScenarios).toContain("const created = await User.create(data);");
+    expect(commonScenarios).toContain("const user = await User.find(id);");
     expect(cookbook).toContain("Recipe 1: SQL User CRUD API");
     expect(cookbook).toContain("Recipe 4: Soft Delete Admin Restore Flow");
     expect(cookbook).toContain("Recipe 5: Cache-First Dashboard Service");
+    expect(cookbook).toContain("return User.create(data);");
+    expect(cookbook).toContain("return User.deleteById(id);");
+    expect(cookbook).toContain("await user.restore();");
+    expect(cookbook).toContain("await Post.updateById(id, { published: true });");
     expect(multiConnection).toContain("This ORM supports multiple named connections in one app");
     expect(multiConnection).toContain("DB_CONNECTION=mysql,pg");
     expect(multiConnection).toContain("static connectionName = \"mysql\"");
@@ -179,6 +203,8 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(softDeletes).toContain("When `delete()` is soft");
     expect(softDeletes).toContain("restore()");
     expect(softDeletes).toContain("forceDelete()");
+    expect(softDeletes).toContain("await user.delete();");
+    expect(softDeletes).toContain("await user.restore();");
     expect(productionSafety).toContain("cache:stats");
     expect(productionSafety).toContain("cache:clear");
     expect(productionSafety).toContain("clear cache after fresh rebuilds, restore tests, or seed resets if stale reads are suspected");

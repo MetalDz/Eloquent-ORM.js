@@ -43,6 +43,13 @@ The generated controller delegates to the paired service:
 - `destroy()` -> delete by `req.params.id`
 - `restore()` -> restore soft-deleted record when generated with `--soft`
 
+Preferred service contract behind that controller:
+
+- `User.find(id)` for one-record reads
+- `User.create(data)` for one-shot inserts
+- loaded-instance `user.update(data); await user.save();` for readable update flows
+- `User.deleteById(id)` and `User.restoreById(id)` for explicit by-id write paths
+
 ## Express Route Wiring
 
 Bind controller methods so `this.service` stays intact:
@@ -87,6 +94,31 @@ async store(req: Request, res: Response): Promise<void> {
 async destroy(req: Request, res: Response): Promise<void> {
   await this.service.delete(req.params.id);
   res.json({ message: "User deleted successfully" });
+}
+```
+
+Recommended service implementation:
+
+```ts
+async create(data: Record<string, unknown>) {
+  return User.create(data);
+}
+
+async update(id: number | string, data: Record<string, unknown>) {
+  const user = await User.find(id);
+  if (!user) return null;
+
+  user.update(data);
+  await user.save();
+  return user;
+}
+
+async delete(id: number | string) {
+  return User.deleteById(id);
+}
+
+async restore(id: number | string) {
+  return User.restoreById(id);
 }
 ```
 

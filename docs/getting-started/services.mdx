@@ -33,6 +33,10 @@ export class UserService {
     return new User().all();
   }
 
+  async find(id: number | string) {
+    return User.find(id);
+  }
+
   async findByEmail(email: string) {
     return User.findOneBy("email", email);
   }
@@ -45,10 +49,30 @@ export class UserService {
   }
 
   async findWithPosts(id: number | string) {
-    const user = await new User().find(id);
+    const user = await User.find(id);
     if (!user) return null;
     await (user as { load?: (...relations: string[]) => Promise<unknown> }).load?.("posts");
     return user;
+  }
+
+  async create(data: Record<string, unknown>) {
+    return User.create(data);
+  }
+
+  async update(id: number | string, data: Record<string, unknown>) {
+    const user = await User.find(id);
+    if (!user) return null;
+    user.update(data);
+    await user.save();
+    return user;
+  }
+
+  async delete(id: number | string) {
+    return User.deleteById(id);
+  }
+
+  async restore(id: number | string) {
+    return User.restoreById(id);
   }
 }
 ```
@@ -62,7 +86,7 @@ Eager-loading note:
 
 ### SoftDeletesMixin
 
-- `restore(id)`
+- `restore(id)` via `User.restoreById(id)` or loaded-instance restore flows
 - `withTrashed()`
 - `onlyTrashed()`
 - `forceDelete(id)`
@@ -95,7 +119,7 @@ Global scopes affect `all()` and `find()` automatically. Current behavior is in-
 
 ### HooksMixin
 
-Services do not call hooks manually. Model hooks fire through `create`, `update`, and `delete`.
+Services do not call hooks manually. Model hooks fire through `User.create(...)`, loaded-instance `update(...); save()`, and delete paths.
 
 ### PivotHelperMixin
 

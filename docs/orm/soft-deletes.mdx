@@ -32,7 +32,10 @@ Soft delete updates `deleted_at` instead of permanently removing the record.
 Typical service call:
 
 ```ts
-await new User().delete(1);
+const user = await User.find(1);
+if (user) {
+  await user.delete();
+}
 ```
 
 ## How `restore()` works
@@ -40,8 +43,10 @@ await new User().delete(1);
 `restore()` clears `deleted_at` and makes the record visible again to normal reads.
 
 ```ts
-const model = new User() as User & { restore?: (id: number | string) => Promise<void> };
-await model.restore?.(1);
+const user = await User.find(1);
+if (user) {
+  await user.restore();
+}
 ```
 
 ## Hard delete after soft delete

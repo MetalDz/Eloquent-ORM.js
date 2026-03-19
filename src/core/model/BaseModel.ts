@@ -51,7 +51,9 @@ export interface ORMCoreContract {
   save(pk?: string): Promise<void>;
   patch(data: ORMRecord, pk?: string): Promise<void>;
   create(data: ORMRecord): Promise<unknown | null>;
+  update(data: ORMRecord, pk?: string): this;
   update(id: string | number, data: ORMRecord, pk?: string): Promise<void>;
+  delete(): Promise<void>;
   delete(id: string | number, pk?: string): Promise<void>;
   find(id: string | number, pk?: string): Promise<unknown | null>;
   all(): Promise<unknown[]>;

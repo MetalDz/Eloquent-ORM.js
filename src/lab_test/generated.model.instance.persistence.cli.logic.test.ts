@@ -106,7 +106,7 @@ describe("Generated model instance persistence via make:model", () => {
     }
   });
 
-  test("generated SQL app models inherit fill(), save(), and patch()", async () => {
+  test("generated SQL app models inherit create/find helpers plus fill(), update(), save(), and patch()", async () => {
     const adapter = makeSqlAdapter();
     adapter.insert.mockResolvedValue({
       id: 41,
@@ -123,23 +123,28 @@ describe("Generated model instance persistence via make:model", () => {
     const content = fs.readFileSync(sqlModelFile, "utf8");
     expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
     expect(content).toContain(`const model = new ${sqlModelName}();`);
-    expect(content).toContain('await model.patch({ name: "Example 2" });');
+    expect(content).toContain('model.update({ name: "Example 2" });');
+    expect(content).toContain('await model.patch({ name: "Example 3" });');
 
     const generatedModule = loadModule(path.resolve(sqlModelFile));
     const GeneratedSqlModel = generatedModule[sqlModelName] as {
       new (): {
         fill(data: Record<string, unknown>): unknown;
+        update(data: Record<string, unknown>): unknown;
         save(): Promise<void>;
         patch(data: Record<string, unknown>): Promise<void>;
         id?: unknown;
         name?: unknown;
       };
+      create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+      find(id: number | string): Promise<Record<string, unknown> | null>;
       tableName: string;
     };
 
     const model = new GeneratedSqlModel();
 
     expect(typeof model.fill).toBe("function");
+    expect(typeof model.update).toBe("function");
     expect(typeof model.save).toBe("function");
     expect(typeof model.patch).toBe("function");
 
@@ -152,19 +157,23 @@ describe("Generated model instance persistence via make:model", () => {
     );
     expect(model.id).toBe(41);
 
-    await model.patch({ name: "SQL Beta" });
+    model.update({ name: "SQL Beta" });
+    await model.save();
     expect(adapter.execute).toHaveBeenCalledWith(
       `UPDATE \`${GeneratedSqlModel.tableName}\` SET \`name\` = ? WHERE \`id\` = ?`,
       ["SQL Beta", 41]
     );
     expect(model.name).toBe("SQL Beta");
 
+    const created = await GeneratedSqlModel.create({ name: "SQL Static" });
+    expect(created).toBeInstanceOf(GeneratedSqlModel);
+
     expect(() => model.fill({ role: "admin" })).toThrow(
       `Unknown fill field 'role' on ${sqlModelName}.`
     );
   });
 
-  test("generated Mongo app models inherit fill(), save(), and patch()", async () => {
+  test("generated Mongo app models inherit create/find helpers plus fill(), update(), save(), and patch()", async () => {
     const collection = {
       insertOne: jest.fn(async () => ({ insertedId: "mongo-generated-41" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
@@ -186,27 +195,35 @@ describe("Generated model instance persistence via make:model", () => {
     const GeneratedMongoModel = generatedModule[mongoModelName] as {
       new (): {
         fill(data: Record<string, unknown>): unknown;
+        update(data: Record<string, unknown>): unknown;
         save(): Promise<void>;
         patch(data: Record<string, unknown>): Promise<void>;
         id?: unknown;
         name?: unknown;
       };
+      create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+      find(id: number | string): Promise<Record<string, unknown> | null>;
       tableName: string;
     };
 
     const model = new GeneratedMongoModel();
 
+    expect(typeof model.update).toBe("function");
     model.fill({ name: "Mongo Alpha" });
     await model.save();
 
     expect(collection.insertOne).toHaveBeenCalledWith({ name: "Mongo Alpha" });
     expect(model.id).toBe("mongo-generated-41");
 
-    await model.patch({ name: "Mongo Beta" });
+    model.update({ name: "Mongo Beta" });
+    await model.save();
     expect(collection.updateOne).toHaveBeenCalledWith(
       { $or: [{ id: "mongo-generated-41" }, { _id: "mongo-generated-41" }] },
       { $set: { name: "Mongo Beta" } }
     );
     expect(model.name).toBe("Mongo Beta");
+
+    const created = await GeneratedMongoModel.create({ name: "Mongo Static" });
+    expect(created).toBeInstanceOf(GeneratedMongoModel);
   });
 });

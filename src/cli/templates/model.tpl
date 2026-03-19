@@ -44,7 +44,9 @@ export class {{ModelName}} extends {{modelBaseClass}}<{{ModelName}}Attrs> {
    *   const model = new {{ModelName}}();
    *   model.fill({ name: "Example" });
    *   await model.save();
-   *   await model.patch({ name: "Example 2" });
+   *   model.update({ name: "Example 2" });
+   *   await model.save();
+   *   await model.patch({ name: "Example 3" });
    * -------------------------------------------------
    */
 

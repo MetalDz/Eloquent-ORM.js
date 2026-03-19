@@ -7,6 +7,12 @@ description: Generated controller CRUD flow and mixin-aware runtime behavior.
 
 Use generated controllers as thin Express adapters. Keep persistence, relation loading, cache policy, and soft-delete rules in services and models.
 
+Preferred CRUD flow:
+
+- controllers delegate to service methods
+- services use `User.find(...)`, `User.create(...)`, loaded-instance `update(...); save()`, and explicit `User.deleteById(...)` / `User.restoreById(...)`
+- controllers should not introduce their own persistence logic
+
 ## Generate a controller
 
 ```bash
@@ -52,6 +58,18 @@ Controllers do not own mixins. They consume model/service behavior that comes fr
 ### Soft deletes
 
 If the model supports soft deletes, keep `destroy()` as soft delete and expose `restore()` from the controller.
+
+Recommended service shape behind the controller:
+
+```ts
+async destroy(id: number | string) {
+  return User.deleteById(id);
+}
+
+async restore(id: number | string) {
+  return User.restoreById(id);
+}
+```
 
 Use one schema declaration, not both:
 

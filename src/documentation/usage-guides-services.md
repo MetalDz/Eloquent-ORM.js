@@ -46,27 +46,27 @@ export class UserService {
   }
 
   async find(id: number | string) {
-    return new User().find(id);
+    return User.find(id);
   }
 
   async create(data: Record<string, unknown>) {
-    return new User().create(data);
+    return User.create(data);
   }
 
   async update(id: number | string, data: Record<string, unknown>) {
-    return new User().update(id, data);
+    const user = await User.find(id);
+    if (!user) return null;
+    user.update(data);
+    await user.save();
+    return user;
   }
 
   async delete(id: number | string) {
-    return new User().delete(id);
+    return User.deleteById(id);
   }
 
   async restore(id: number | string) {
-    const model = new User() as unknown as { restore?: (value: number | string) => unknown };
-    if (typeof model.restore === "function") {
-      return model.restore(id);
-    }
-    throw new Error("Restore not supported for this model.");
+    return User.restoreById(id);
   }
 }
 ```
@@ -84,7 +84,7 @@ export class UserService {
   }
 
   async find(id: number | string) {
-    return new User().find(id);
+    return User.find(id);
   }
 
   async findByEmail(email: string) {
@@ -99,7 +99,7 @@ export class UserService {
   }
 
   async findWithPosts(id: number | string) {
-    const user = await new User().find(id);
+    const user = await User.find(id);
     if (!user) return null;
     await (user as { load?: (...relations: string[]) => Promise<unknown> }).load?.("posts");
     return user;
@@ -162,7 +162,7 @@ posts() {
 
 ```ts
 async showProfile(id: number | string) {
-  const user = await new User().find(id);
+  const user = await User.find(id);
   if (!user) return null;
 
   const eager = user as User & { load?: (...relations: string[]) => Promise<User> };
@@ -177,7 +177,7 @@ If your model hides fields or appends computed values, normalize at the service 
 
 ```ts
 async publicProfile(id: number | string) {
-  const user = await new User().find(id);
+  const user = await User.find(id);
   if (!user) return null;
 
   const serializable = user as User & { toObject?: () => Record<string, unknown> };
@@ -218,7 +218,7 @@ Use this with care:
 
 ### HooksMixin
 
-Services do not need to call hooks manually. `create`, `update`, and `delete` already trigger lifecycle hooks and `static modelEvents`.
+Services do not need to call hooks manually. `User.create(...)`, loaded-instance `update(...); save()`, and delete paths already trigger lifecycle hooks and `static modelEvents`.
 
 Use services to keep write paths consistent so hooks fire through one path.
 
@@ -274,7 +274,7 @@ export class UserService {
   }
 
   async create(data: Record<string, unknown>) {
-    const created = await new User().create(data);
+    const created = await User.create(data);
     await CacheManager.delete("users:active:v1");
     return created;
   }

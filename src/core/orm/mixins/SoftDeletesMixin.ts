@@ -12,8 +12,12 @@ export interface SoftDeletable {
 
   find(id: number | string, pk?: string): Promise<this | null>;
   all(): Promise<this[]>;
+  update(data: Record<string, unknown>, pk?: string): this;
   update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+  delete(): Promise<void>;
   delete(id: number | string, pk?: string): Promise<void>;
+  restore(): Promise<void>;
+  restore(id: number | string, pk?: string): Promise<void>;
 }
 
 /** Generic constructor helper */
@@ -81,28 +85,48 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
     /**
      * 🚫 Override delete() to perform soft delete instead of hard remove
      */
-    async delete(id: number | string, pk: string = "id"): Promise<void> {
+    delete(): Promise<void>;
+    delete(id: number | string, pk?: string): Promise<void>;
+    async delete(id?: number | string, pk: string = "id"): Promise<void> {
       const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
       }
 
+      const targetId =
+        id ?? (this.getTrackedPrimaryValue(pk) as number | string | undefined);
+      if (targetId === undefined || targetId === null) {
+        throw new Error(
+          `Cannot delete ${this.constructor.name} without primary key '${pk}'.`
+        );
+      }
+
       const timestamp = new Date().toISOString();
-      await baseUpdate(id, { [this.deletedAtColumn]: timestamp }, pk);
-      this.syncSoftDeleteState(id, pk, timestamp);
+      await baseUpdate(targetId, { [this.deletedAtColumn]: timestamp }, pk);
+      this.syncSoftDeleteState(targetId, pk, timestamp);
     }
 
     /**
      * ♻️ Restore a soft-deleted record
      */
-    async restore(id: number | string, pk: string = "id"): Promise<void> {
+    restore(): Promise<void>;
+    restore(id: number | string, pk?: string): Promise<void>;
+    async restore(id?: number | string, pk: string = "id"): Promise<void> {
       const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
       }
 
-      await baseUpdate(id, { [this.deletedAtColumn]: null }, pk);
-      this.syncSoftDeleteState(id, pk, null);
+      const targetId =
+        id ?? (this.getTrackedPrimaryValue(pk) as number | string | undefined);
+      if (targetId === undefined || targetId === null) {
+        throw new Error(
+          `Cannot restore ${this.constructor.name} without primary key '${pk}'.`
+        );
+      }
+
+      await baseUpdate(targetId, { [this.deletedAtColumn]: null }, pk);
+      this.syncSoftDeleteState(targetId, pk, null);
     }
 
     /**
@@ -184,12 +208,23 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
     /**
      * 🧩 TypeScript satisfaction: ensure update() exists
      */
-    async update(id: number | string, data: Record<string, unknown>, pk: string = "id"): Promise<void> {
+    update(data: Record<string, unknown>, pk?: string): this;
+    update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+    update(
+      idOrData: number | string | Record<string, unknown>,
+      dataOrPk?: Record<string, unknown> | string,
+      pk: string = "id"
+    ): Promise<void> | this {
       const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
       }
-      await baseUpdate(id, data, pk);
+
+      if (typeof idOrData === "object" && idOrData !== null && !Array.isArray(idOrData)) {
+        return baseUpdate(idOrData, dataOrPk) as this;
+      }
+
+      return baseUpdate(idOrData, dataOrPk, pk) as Promise<void>;
     }
   }
 

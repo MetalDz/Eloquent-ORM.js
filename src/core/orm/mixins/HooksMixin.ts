@@ -17,7 +17,9 @@ export type HookHandler<TPayload> = (payload: TPayload) => Promise<void> | void;
  */
 export interface HookableModel {
   create(data: Record<string, unknown>): Promise<unknown>;
+  update(data: Record<string, unknown>, pk?: string): unknown;
   update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+  delete(): Promise<void>;
   delete(id: number | string, pk?: string): Promise<void>;
 }
 
@@ -88,22 +90,41 @@ export function HooksMixin<TBase extends Constructor>(Base: TBase) {
       return record;
     }
 
-    async update(
-      id: number | string,
-      data: Record<string, unknown>,
+    update(data: Record<string, unknown>, pk?: string): this;
+    update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+    update(
+      idOrData: number | string | Record<string, unknown>,
+      dataOrPk?: Record<string, unknown> | string,
       pk: string = "id"
-    ): Promise<void> {
+    ): Promise<void> | this {
       const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for HooksMixin.");
       }
 
+      if (typeof idOrData === "object" && idOrData !== null && !Array.isArray(idOrData)) {
+        return baseUpdate(idOrData, dataOrPk) as this;
+      }
+
+      const id = idOrData as number | string;
+      const data = dataOrPk as Record<string, unknown>;
+      return this.performHookedPersistedUpdate(baseUpdate, id, data, pk);
+    }
+
+    private async performHookedPersistedUpdate(
+      baseUpdate: (...args: unknown[]) => unknown,
+      id: number | string,
+      data: Record<string, unknown>,
+      pk: string
+    ): Promise<void> {
       await this.fire("updating", { id, data });
       await baseUpdate(id, data, pk);
       await this.fire("updated", { id, data });
     }
 
-    async delete(id: number | string, pk: string = "id"): Promise<void> {
+    delete(): Promise<void>;
+    delete(id: number | string, pk?: string): Promise<void>;
+    async delete(id?: number | string, pk: string = "id"): Promise<void> {
       const baseDelete = resolveBaseMethod(this, "delete");
       if (typeof baseDelete !== "function") {
         throw new Error("Base 'delete' method not found for HooksMixin.");

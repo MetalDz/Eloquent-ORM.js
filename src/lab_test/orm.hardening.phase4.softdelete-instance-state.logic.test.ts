@@ -73,7 +73,7 @@ describe("ORM hardening phase 4 soft-delete instance state", () => {
     model.fill({ name: "Soft SQL User" });
     await model.save();
 
-    await model.delete(31);
+    await model.delete();
     expect(typeof model.deleted_at).toBe("string");
     expect(adapter.execute).toHaveBeenNthCalledWith(
       1,
@@ -84,7 +84,7 @@ describe("ORM hardening phase 4 soft-delete instance state", () => {
     await model.save();
     expect(adapter.execute).toHaveBeenCalledTimes(1);
 
-    await (model as any).restore(31);
+    await (model as any).restore();
     expect(model.deleted_at).toBeNull();
     expect(adapter.execute).toHaveBeenNthCalledWith(
       2,
@@ -122,7 +122,7 @@ describe("ORM hardening phase 4 soft-delete instance state", () => {
     model.fill({ name: "Soft Mongo User" });
     await model.save();
 
-    await model.delete("soft-mongo-31", "_id");
+    await model.delete(undefined as never, "_id");
     expect(typeof model.deleted_at).toBe("string");
     expect(collection.updateOne).toHaveBeenNthCalledWith(
       1,
@@ -133,7 +133,7 @@ describe("ORM hardening phase 4 soft-delete instance state", () => {
     await model.save("_id");
     expect(collection.updateOne).toHaveBeenCalledTimes(1);
 
-    await (model as any).restore("soft-mongo-31", "_id");
+    await (model as any).restore(undefined, "_id");
     expect(model.deleted_at).toBeNull();
     expect(collection.updateOne).toHaveBeenNthCalledWith(
       2,

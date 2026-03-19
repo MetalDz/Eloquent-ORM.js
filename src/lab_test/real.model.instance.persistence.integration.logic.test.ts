@@ -14,9 +14,12 @@ function loadAppSmokeModel() {
   return loadAppModel<{
     new (): Record<string, unknown> & {
       fill(data: Record<string, unknown>): unknown;
+      update(data: Record<string, unknown>): unknown;
       save(): Promise<void>;
       patch(data: Record<string, unknown>): Promise<void>;
     };
+    create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+    find(id: number | string): Promise<Record<string, unknown> | null>;
   }>("AppSmoke").exported;
 }
 
@@ -24,9 +27,12 @@ function loadGeoLocalisationModel() {
   return loadAppModel<{
     new (): Record<string, unknown> & {
       fill(data: Record<string, unknown>): unknown;
+      update(data: Record<string, unknown>): unknown;
       save(): Promise<void>;
       patch(data: Record<string, unknown>): Promise<void>;
     };
+    create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+    find(id: number | string): Promise<Record<string, unknown> | null>;
   }>("GeoLocalisation").exported;
 }
 
@@ -106,7 +112,7 @@ describe("Real model instance persistence integration", () => {
     );
     expect(model.id).toBe(21);
 
-    model.fill({ name: "Smoke Beta" });
+    model.update({ name: "Smoke Beta" });
     await model.save();
 
     expect(adapter.execute).toHaveBeenNthCalledWith(
@@ -126,6 +132,13 @@ describe("Real model instance persistence integration", () => {
 
     model.fill({ name: "ab" });
     await expect(model.save()).rejects.toThrow("Validation failed for appsmokes");
+
+    const created = await AppSmoke.create({ name: "Smoke Static" });
+    expect(created).toBeInstanceOf(AppSmoke);
+
+    adapter.queryOne.mockResolvedValueOnce({ id: 21, name: "Smoke Gamma" });
+    const found = await AppSmoke.find(21);
+    expect(found).toBeInstanceOf(AppSmoke);
   });
 
   test("GeoLocalisation supports fill().save().patch() through the Mongo runtime path", async () => {
@@ -147,7 +160,7 @@ describe("Real model instance persistence integration", () => {
     expect(collection.insertOne).toHaveBeenCalledWith({ name: "Geo Alpha" });
     expect(model.id).toBe("mongo-geo-21");
 
-    model.fill({ name: "Geo Beta" });
+    model.update({ name: "Geo Beta" });
     await model.save();
 
     expect(collection.updateOne).toHaveBeenNthCalledWith(
@@ -167,5 +180,16 @@ describe("Real model instance persistence integration", () => {
 
     model.fill({ name: "ab" });
     await expect(model.save()).rejects.toThrow("Validation failed for geolocalisations");
+
+    const created = await GeoLocalisation.create({ name: "Geo Static" });
+    expect(created).toBeInstanceOf(GeoLocalisation);
+
+    const findOne = jest.fn(async () => ({ id: "mongo-geo-21", name: "Geo Found" }));
+    mongoDb.collection = jest.fn(() => ({
+      ...collection,
+      findOne,
+    }));
+    const found = await GeoLocalisation.find("mongo-geo-21");
+    expect(found).toBeInstanceOf(GeoLocalisation);
   });
 });

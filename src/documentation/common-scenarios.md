@@ -60,6 +60,21 @@ Use next:
 - `src/documentation/usage-guides-controller.md`
 - `src/documentation/usage-guides-services.md`
 
+Recommended service CRUD shape:
+
+```ts
+const created = await User.create({
+  name: "Alice",
+  email: "alice@example.com",
+});
+
+const found = await User.find(created.id as number);
+if (found) {
+  found.update({ name: "Alice Updated" });
+  await found.save();
+}
+```
+
 ## Scenario 2: Build a Mongo Document App
 
 Use this when your app is Mongo-first and should avoid SQL-only assumptions.
@@ -214,7 +229,7 @@ async activeUsers() {
 }
 
 async createUser(data: Record<string, unknown>) {
-  const created = await new User().create(data);
+  const created = await User.create(data);
   await CacheManager.delete("users:active:v1");
   return created;
 }
@@ -304,7 +319,7 @@ User.addGlobalScope("active", (records) =>
 Serialization:
 
 ```ts
-const user = await new User().find(id);
+const user = await User.find(id);
 return user?.toObject?.() ?? user;
 ```
 

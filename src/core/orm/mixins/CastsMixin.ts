@@ -11,6 +11,7 @@ export interface Castable {
   find(id: number | string, pk?: string): Promise<this | null>;
   all(): Promise<this[]>;
   create(data: Record<string, unknown>): Promise<this>;
+  update(data: Record<string, unknown>, pk?: string): this;
   update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
 }
 
@@ -127,12 +128,23 @@ export function CastsMixin<TBase extends Constructor>(Base: TBase) {
       return record;
     }
 
-    async update(id: number | string, data: Record<string, unknown>, pk: string = "id"): Promise<void> {
+    update(data: Record<string, unknown>, pk?: string): this;
+    update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
+    update(
+      idOrData: number | string | Record<string, unknown>,
+      dataOrPk?: Record<string, unknown> | string,
+      pk: string = "id"
+    ): Promise<void> | this {
       const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found in CastsMixin chain.");
       }
-      await baseUpdate(id, data, pk);
+
+      if (typeof idOrData === "object" && idOrData !== null && !Array.isArray(idOrData)) {
+        return baseUpdate(idOrData, dataOrPk) as this;
+      }
+
+      return baseUpdate(idOrData, dataOrPk, pk) as Promise<void>;
     }
   }
 
