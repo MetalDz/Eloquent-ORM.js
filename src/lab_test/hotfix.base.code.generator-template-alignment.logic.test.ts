@@ -66,14 +66,14 @@ describe("Hot Fix base code generator template alignment", () => {
     expect(controllerTemplate).not.toContain('import { {{PascalCase}} } from "{{modelImportPath}}";');
   });
 
-  test("checklist records the generator template freeze as complete once the task exists", () => {
+  test("checklist records the generator template freeze as complete once the task is closed", () => {
     const checklist = fs.readFileSync(checklistPath, "utf8");
 
     expect(checklist).toContain(
       "[done] Freeze the docs files and generated templates that must move together with the code.",
     );
     expect(checklist).toContain(
-      "[pending] If a generated artifact changes, add generator test coverage and pack-smoke validation.",
+      "[done] If a generated artifact changes, add generator test coverage and pack-smoke validation.",
     );
     expect(checklist).toContain("Generator/template alignment status:");
   });

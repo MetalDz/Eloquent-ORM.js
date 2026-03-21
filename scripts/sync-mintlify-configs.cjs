@@ -20,6 +20,16 @@ const canonical = JSON.parse(canonicalRaw);
 
 function mapMintThemeToDocsTheme(theme) {
   switch (theme) {
+    case "mint":
+    case "maple":
+    case "palm":
+    case "willow":
+    case "linden":
+    case "almond":
+    case "aspen":
+    case "luma":
+    case "sequoia":
+      return theme;
     case "venus":
       return "palm";
     case "quill":
