@@ -68,4 +68,12 @@ describe("LTS phase 5 ModelIntrospector coverage", () => {
     });
     expect(mockedLoadModule).toHaveBeenCalledWith(modelPath);
   });
+
+  test("clearModelModuleCache tolerates unresolved paths through the catch branch", () => {
+    expect(() =>
+      (ModelIntrospector as any).clearModelModuleCache(
+        path.resolve(process.cwd(), "missing-model-cache-entry.ts"),
+      ),
+    ).not.toThrow();
+  });
 });
