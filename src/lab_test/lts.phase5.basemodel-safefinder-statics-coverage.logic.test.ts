@@ -255,7 +255,13 @@ describe("LTS phase 5 BaseModelSafeFinderStatics coverage", () => {
 
     await expect(Model.create({ name: "Ada" })).resolves.toEqual({ id: 1, name: "Ada" });
     await expect(Model.createMany([{ id: 1 }, { id: 2 }])).resolves.toEqual([{ id: 1 }, { id: 2 }]);
+    await expect(Model.find(7)).resolves.toEqual({ id: 7, pk: "id" });
     await expect(Model.find(7, "uuid")).resolves.toEqual({ id: 7, pk: "uuid" });
+    await expect(Model.updateById(8, { active: true })).resolves.toEqual([
+      8,
+      { active: true },
+      "id",
+    ]);
     await expect(Model.updateById(7, { active: false }, "uuid")).resolves.toEqual([
       7,
       { active: false },
@@ -263,10 +269,12 @@ describe("LTS phase 5 BaseModelSafeFinderStatics coverage", () => {
     ]);
     await expect(Model.updateMany([1, 2], { active: false })).resolves.toBeUndefined();
     await expect(Model.patchMany([{ id: 1, name: "Ada" }])).resolves.toBeUndefined();
+    await expect(Model.deleteById(8)).resolves.toEqual({ id: 8, pk: "id" });
     await expect(Model.deleteById(7, "uuid")).resolves.toEqual({ id: 7, pk: "uuid" });
     await expect(Model.deleteMany([1, 2])).resolves.toBeUndefined();
 
     FinderModel.prototype.restore = jest.fn(async () => undefined);
+    await expect(Model.restoreById(8)).resolves.toBeUndefined();
     await expect(Model.restoreById(7, "uuid")).resolves.toBeUndefined();
     await expect(Model.restoreMany([1, 2])).resolves.toBeUndefined();
 

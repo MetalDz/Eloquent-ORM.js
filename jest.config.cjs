@@ -2,6 +2,7 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
+  coverageProvider: "v8",
   roots: ["<rootDir>/src"],
   testMatch: ["**/lab_test/**/*.test.ts"],
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
