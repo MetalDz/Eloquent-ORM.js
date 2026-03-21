@@ -44,28 +44,79 @@ const mintlifyBin = path.join(
   "index.js",
 );
 
-const result =
-  process.platform === "win32"
-    ? spawnSync(process.execPath, [mintlifyBin, command], {
-        cwd: docsDir,
-        stdio: "inherit",
-        env,
-        shell: false,
-      })
-    : spawnSync(process.execPath, [mintlifyBin, command], {
-        cwd: docsDir,
-        stdio: "inherit",
-        env,
-        shell: false,
-      });
+function formatZodIssues(label, issues) {
+  const lines = issues.map((issue) => {
+    const pathLabel = issue.path && issue.path.length > 0 ? `#.${issue.path.join(".")}` : "#";
+    return `${pathLabel}: ${issue.message}`;
+  });
 
-if (result.error) {
-  console.error(result.error.message);
+  return `🚨 Invalid ${label}:\n${lines.join("\n")}`;
+}
+
+async function validateDocsConfig() {
+  const { docsConfigSchema } = await import(
+    "@mintlify/validation/dist/mint-config/schemas/v2/index.js"
+  );
+  const { upgradeToDocsConfig } = await import(
+    "@mintlify/validation/dist/mint-config/upgrades/upgradeToDocsConfig.js"
+  );
+
+  const rootDocsJson = JSON.parse(fs.readFileSync(rootDocsJsonPath, "utf8"));
+  const docsMintJson = JSON.parse(fs.readFileSync(mintConfigPath, "utf8"));
+
+  const rootResult = docsConfigSchema.safeParse(rootDocsJson);
+  if (!rootResult.success) {
+    throw new Error(formatZodIssues("docs.json", rootResult.error.issues));
+  }
+
+  const upgradedDocsConfig = upgradeToDocsConfig(docsMintJson, {
+    shouldUpgradeTheme: true,
+  });
+  const mintResult = docsConfigSchema.safeParse(upgradedDocsConfig);
+  if (!mintResult.success) {
+    throw new Error(formatZodIssues("mint.json", mintResult.error.issues));
+  }
+
+  console.log("success docs config validated");
+}
+
+async function main() {
+  if (command === "validate") {
+    try {
+      await validateDocsConfig();
+      process.exit(0);
+    } catch (error) {
+      console.error("error build validation failed");
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  }
+
+  const result =
+    process.platform === "win32"
+      ? spawnSync(process.execPath, [mintlifyBin, command], {
+          cwd: docsDir,
+          stdio: "inherit",
+          env,
+          shell: false,
+        })
+      : spawnSync(process.execPath, [mintlifyBin, command], {
+          cwd: docsDir,
+          stdio: "inherit",
+          env,
+          shell: false,
+        });
+
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
+
+  if (typeof result.status === "number") {
+    process.exit(result.status);
+  }
+
   process.exit(1);
 }
 
-if (typeof result.status === "number") {
-  process.exit(result.status);
-}
-
-process.exit(1);
+void main();

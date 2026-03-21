@@ -33,6 +33,15 @@ Interpretation:
 Use `new User()` when you want to build an instance before persistence.
 Use `User.create(...)` when you want a one-shot insert.
 
+Bulk create:
+
+```ts
+const createdMany = await User.createMany([
+  { name: "Alice", email: "alice@example.com" },
+  { name: "Bob", email: "bob@example.com" },
+]);
+```
+
 ## Read
 
 ```ts
@@ -65,6 +74,16 @@ if (found) {
 }
 ```
 
+Bulk update across explicit ids:
+
+```ts
+await User.updateMany([1, 2], { status: "inactive" });
+await User.patchMany([
+  { id: 1, email: "alice+1@example.com" },
+  { id: 2, email: "bob+1@example.com" },
+]);
+```
+
 ## Delete
 
 ```ts
@@ -85,6 +104,13 @@ if (found) {
 
 Restore requires soft-delete support on the model.
 
+Bulk delete and restore:
+
+```ts
+await User.deleteMany([1, 2]);
+await User.restoreMany([1, 2]);
+```
+
 ## Explicit by-id helpers
 
 ```ts
@@ -94,3 +120,5 @@ await User.restoreById(1);
 ```
 
 Use them only when the service intentionally wants a direct by-id path.
+
+Do not treat bulk helpers or by-id helpers as the primary teaching path when a loaded-instance flow reads better.

@@ -229,8 +229,12 @@ The runtime write API is split into three layers:
 
 - `User.create(data)`
   - create a new row or document
+- `User.createMany(rows)`
+  - create multiple rows or documents in one explicit bulk call
 - loaded instance methods: `update()`, `fill()`, `save()`, `delete()`, `restore()`, and `patch()`
   - update an already loaded model instance
+- explicit bulk methods: `User.updateMany(ids, data)`, `User.patchMany(rows)`, `User.deleteMany(ids)`, and `User.restoreMany(ids)`
+  - direct bulk writes across explicit primary keys
 - explicit low-level by-id methods: `User.updateById(id, data)`, `User.deleteById(id)`, and `User.restoreById(id)`
   - direct writes when you already know the primary key
 
@@ -238,6 +242,7 @@ Recommended app-level pattern:
 1. read with query helpers
 2. update with `update() + save()` or `patch()` on a loaded instance
 3. use `User.updateById(...)`, `User.deleteById(...)`, and `User.restoreById(...)` only when you intentionally want a direct by-id service path
+4. use bulk helpers only when the service already owns a concrete list of ids or row payloads
 
 <details>
 <summary><strong>Create: insert a new record</strong></summary>
@@ -249,6 +254,15 @@ const created = await User.create({
   name: "Alice",
   email: "alice@example.com",
 });
+```
+
+Bulk create:
+
+```ts
+const createdMany = await User.createMany([
+  { name: "Alice", email: "alice@example.com" },
+  { name: "Bob", email: "bob@example.com" },
+]);
 ```
 
 </details>
@@ -305,6 +319,35 @@ Important rules:
 </details>
 
 <details>
+<summary><strong>Bulk create, update, patch, delete, and restore</strong></summary>
+
+Use bulk helpers only when the service already has an explicit target list.
+
+```ts
+const createdMany = await User.createMany([
+  { name: "Alice", email: "alice@example.com" },
+  { name: "Bob", email: "bob@example.com" },
+]);
+
+await User.updateMany([1, 2], { status: "inactive" });
+
+await User.patchMany([
+  { id: 1, email: "alice+1@example.com" },
+  { id: 2, email: "bob+1@example.com" },
+]);
+
+await User.deleteMany([1, 2]);
+await User.restoreMany([1, 2]);
+```
+
+Rules:
+- `createMany(...)` returns hydrated models in input order
+- `updateMany(...)`, `deleteMany(...)`, and `restoreMany(...)` require explicit primary-key lists
+- `patchMany(...)` requires the primary key on every item
+
+</details>
+
+<details>
 <summary><strong>Low-level by-id helpers</strong></summary>
 
 ```ts
@@ -344,6 +387,10 @@ export class UserService {
     return User.create(data);
   }
 
+  async createMany(rows: Record<string, unknown>[]) {
+    return User.createMany(rows);
+  }
+
   async update(id: number | string, data: Record<string, unknown>) {
     const user = await User.find(id);
     if (!user) return null;
@@ -367,6 +414,10 @@ export class UserService {
 
   async restore(id: number | string) {
     return User.restoreById(id);
+  }
+
+  async deactivateMany(ids: Array<number | string>) {
+    await User.updateMany(ids, { status: "inactive" });
   }
 }
 ```

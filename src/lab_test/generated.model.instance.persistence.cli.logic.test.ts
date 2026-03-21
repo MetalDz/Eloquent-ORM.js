@@ -137,7 +137,12 @@ describe("Generated model instance persistence via make:model", () => {
         name?: unknown;
       };
       create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+      createMany(data: Record<string, unknown>[]): Promise<Record<string, unknown>[]>;
       find(id: number | string): Promise<Record<string, unknown> | null>;
+      updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+      patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+      deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+      restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
       tableName: string;
     };
 
@@ -164,6 +169,35 @@ describe("Generated model instance persistence via make:model", () => {
       ["SQL Beta", 41]
     );
     expect(model.name).toBe("SQL Beta");
+
+    adapter.insert
+      .mockResolvedValueOnce({
+        id: 42,
+        row: {
+          id: 42,
+          name: "SQL Bulk A",
+        },
+      })
+      .mockResolvedValueOnce({
+        id: 43,
+        row: {
+          id: 43,
+          name: "SQL Bulk B",
+        },
+      });
+    const createdMany = await GeneratedSqlModel.createMany([
+      { name: "SQL Bulk A" },
+      { name: "SQL Bulk B" },
+    ]);
+    expect(createdMany).toHaveLength(2);
+
+    await GeneratedSqlModel.updateMany([42, 43], { name: "SQL Bulk Updated" });
+    await GeneratedSqlModel.patchMany([
+      { id: 42, name: "SQL Patch A" },
+      { id: 43, name: "SQL Patch B" },
+    ]);
+    await GeneratedSqlModel.deleteMany([42, 43]);
+    await GeneratedSqlModel.restoreMany([42, 43]);
 
     const created = await GeneratedSqlModel.create({ name: "SQL Static" });
     expect(created).toBeInstanceOf(GeneratedSqlModel);
@@ -202,7 +236,12 @@ describe("Generated model instance persistence via make:model", () => {
         name?: unknown;
       };
       create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+      createMany(data: Record<string, unknown>[]): Promise<Record<string, unknown>[]>;
       find(id: number | string): Promise<Record<string, unknown> | null>;
+      updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+      patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+      deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+      restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
       tableName: string;
     };
 
@@ -222,6 +261,26 @@ describe("Generated model instance persistence via make:model", () => {
       { $set: { name: "Mongo Beta" } }
     );
     expect(model.name).toBe("Mongo Beta");
+
+    collection.insertOne
+      .mockImplementationOnce(async () => ({ insertedId: "mongo-generated-42" }))
+      .mockImplementationOnce(async () => ({ insertedId: "mongo-generated-43" }));
+    const createdMany = await GeneratedMongoModel.createMany([
+      { name: "Mongo Bulk A" },
+      { name: "Mongo Bulk B" },
+    ]);
+    expect(createdMany).toHaveLength(2);
+
+    await GeneratedMongoModel.updateMany(
+      ["mongo-generated-42", "mongo-generated-43"],
+      { name: "Mongo Bulk Updated" }
+    );
+    await GeneratedMongoModel.patchMany([
+      { id: "mongo-generated-42", name: "Mongo Patch A" },
+      { id: "mongo-generated-43", name: "Mongo Patch B" },
+    ]);
+    await GeneratedMongoModel.deleteMany(["mongo-generated-42", "mongo-generated-43"]);
+    await GeneratedMongoModel.restoreMany(["mongo-generated-42", "mongo-generated-43"]);
 
     const created = await GeneratedMongoModel.create({ name: "Mongo Static" });
     expect(created).toBeInstanceOf(GeneratedMongoModel);

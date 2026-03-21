@@ -114,7 +114,7 @@ const created = await new User().create({
 
 // Update via instance persistence
 if (created) {
-  created.fill({ name: "Alice Johnson" });
+  created.update({ name: "Alice Johnson" });
   await created.save();
 }
 
@@ -123,7 +123,15 @@ const persisted = await User.findOneBy("email", "alice@example.com");
 await persisted?.patch?.({ name: "Alice K." });
 
 // Delete
-await new User().delete(1);
+await User.deleteById(1);
+
+// Bulk helpers
+await User.createMany([
+  { name: "Bob", email: "bob@example.com" },
+  { name: "Carol", email: "carol@example.com" },
+]);
+await User.updateMany([1, 2], { is_active: false });
+await User.deleteMany([1, 2]);
 ```
 
 ### Soft delete + restore
@@ -131,8 +139,8 @@ await new User().delete(1);
 Soft delete is supported by model mixins, and delete behavior is routed to `deleted_at` when that field is present in your schema/model state.
 
 ```ts
-await new User().delete(1);   // marks deleted_at
-await new User().restore(1);  // clears deleted_at
+await User.deleteById(1);     // marks deleted_at
+await User.restoreById(1);    // clears deleted_at
 ```
 
 If your model does not currently use soft-delete columns, keep delete/restore aligned with your schema.

@@ -215,6 +215,11 @@ describe("Scenario-generated model instance persistence", () => {
           name?: unknown;
         };
         create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+        createMany(data: Record<string, unknown>[]): Promise<Record<string, unknown>[]>;
+        updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+        patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+        deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+        restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
         tableName: string;
       };
 
@@ -235,6 +240,29 @@ describe("Scenario-generated model instance persistence", () => {
         ["Scenario SQL Beta", 51]
       );
       expect(user.name).toBe("Scenario SQL Beta");
+
+      adapter.insert
+        .mockResolvedValueOnce({
+          id: 52,
+          row: { id: 52, name: "Scenario SQL Bulk A" },
+        })
+        .mockResolvedValueOnce({
+          id: 53,
+          row: { id: 53, name: "Scenario SQL Bulk B" },
+        });
+      const createdMany = await UserModel.createMany([
+        { name: "Scenario SQL Bulk A" },
+        { name: "Scenario SQL Bulk B" },
+      ]);
+      expect(createdMany).toHaveLength(2);
+
+      await UserModel.updateMany([52, 53], { name: "Scenario SQL Bulk Updated" });
+      await UserModel.patchMany([
+        { id: 52, name: "Scenario SQL Patch A" },
+        { id: 53, name: "Scenario SQL Patch B" },
+      ]);
+      await UserModel.deleteMany([52, 53]);
+      await UserModel.restoreMany([52, 53]);
 
       const created = await UserModel.create({ name: "Scenario SQL Static" });
       expect(created).toBeInstanceOf(UserModel);
@@ -281,6 +309,11 @@ describe("Scenario-generated model instance persistence", () => {
           name?: unknown;
         };
         create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+        createMany(data: Record<string, unknown>[]): Promise<Record<string, unknown>[]>;
+        updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+        patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+        deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+        restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
       };
 
       const user = new UserModel();
@@ -297,6 +330,25 @@ describe("Scenario-generated model instance persistence", () => {
         { $set: { name: "Scenario Mongo Beta" } }
       );
       expect(user.name).toBe("Scenario Mongo Beta");
+
+      collection.insertOne
+        .mockImplementationOnce(async () => ({ insertedId: "scenario-mongo-52" }))
+        .mockImplementationOnce(async () => ({ insertedId: "scenario-mongo-53" }));
+      const createdMany = await UserModel.createMany([
+        { name: "Scenario Mongo Bulk A" },
+        { name: "Scenario Mongo Bulk B" },
+      ]);
+      expect(createdMany).toHaveLength(2);
+
+      await UserModel.updateMany(["scenario-mongo-52", "scenario-mongo-53"], {
+        name: "Scenario Mongo Bulk Updated",
+      });
+      await UserModel.patchMany([
+        { id: "scenario-mongo-52", name: "Scenario Mongo Patch A" },
+        { id: "scenario-mongo-53", name: "Scenario Mongo Patch B" },
+      ]);
+      await UserModel.deleteMany(["scenario-mongo-52", "scenario-mongo-53"]);
+      await UserModel.restoreMany(["scenario-mongo-52", "scenario-mongo-53"]);
 
       const created = await UserModel.create({ name: "Scenario Mongo Static" });
       expect(created).toBeInstanceOf(UserModel);

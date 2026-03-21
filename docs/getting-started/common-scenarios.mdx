@@ -53,6 +53,8 @@ if (found) {
   found.update({ name: "Alice Updated" });
   await found.save();
 }
+
+await User.updateMany([1, 2], { status: "inactive" });
 ```
 
 ## Scenario 2: Mongo document app

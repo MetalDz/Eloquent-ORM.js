@@ -11,8 +11,10 @@ The runtime surface should be read as:
 
 - `new User()` for a transient in-memory model instance
 - `User.create(...)` for one-shot persistence
+- `User.createMany(...)` for explicit bulk inserts
 - `User.find(...)`, `User.findOneBy(...)`, and safe-finder chains for reads
 - loaded-instance `update(...); save()` and `patch(...)` for readable mutation
+- `User.updateMany(...)`, `User.patchMany(...)`, `User.deleteMany(...)`, and `User.restoreMany(...)` for explicit bulk writes
 - `User.updateById(...)`, `User.deleteById(...)`, and `User.restoreById(...)` for explicit low-level by-id service paths
 
 ## Start with these pages
@@ -37,6 +39,12 @@ If the code is an intentionally thin service helper and already has the primary 
 1. use `User.updateById(...)`
 2. use `User.deleteById(...)`
 3. use `User.restoreById(...)`
+
+If the code is an explicit bulk service flow and already has the target ids or rows:
+
+1. use `User.createMany(...)`
+2. use `User.updateMany(...)` or `User.patchMany(...)`
+3. use `User.deleteMany(...)` or `User.restoreMany(...)`
 
 ## Quick example
 

@@ -56,6 +56,17 @@ This step names the concrete suites, the assertions that must change, and the co
   - `await found.restore();`
 - direct by-id restore remains a compatibility path until the deprecation slice lands
 
+### Bulk runtime targets
+
+- freeze the first runtime bulk signatures as:
+  - `await User.createMany([{ ... }, { ... }])`
+  - `await User.updateMany([1, 2], { status: "inactive" })`
+  - `await User.patchMany([{ id: 1, ... }, { id: 2, ... }])`
+  - `await User.deleteMany([1, 2])`
+  - `await User.restoreMany([1, 2])`
+- do not implement or document alternate bulk signatures during the hot fix
+- bulk runtime assertions land only after the single-record CRUD runtime slice stays green
+
 ## Generated artifact alignment in this slice
 
 - generated model examples must stop centering `patch()` as the only post-create update example

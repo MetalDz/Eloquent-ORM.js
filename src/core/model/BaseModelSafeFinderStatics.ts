@@ -24,6 +24,13 @@ export function BaseModelSafeFinderStaticsMixin<
       return instance.create(data);
     }
 
+    static async createMany(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      rows: Record<string, unknown>[],
+    ): Promise<SafeFinderModelInstance[]> {
+      return (CoreModel.createMany as any).call(this, rows);
+    }
+
     static find(
       this: new (...args: any[]) => SafeFinderModelInstance,
       id: number | string,
@@ -47,6 +54,23 @@ export function BaseModelSafeFinderStaticsMixin<
       return instance.update(id, data, pk);
     }
 
+    static updateMany(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      ids: Array<number | string>,
+      data: Record<string, unknown>,
+      pk: string = "id",
+    ): Promise<void> {
+      return (CoreModel.updateMany as any).call(this, ids, data, pk);
+    }
+
+    static patchMany(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      rows: Record<string, unknown>[],
+      pk: string = "id",
+    ): Promise<void> {
+      return (CoreModel.patchMany as any).call(this, rows, pk);
+    }
+
     static deleteById(
       this: new (...args: any[]) => SafeFinderModelInstance,
       id: number | string,
@@ -56,6 +80,14 @@ export function BaseModelSafeFinderStaticsMixin<
         delete(value: number | string, key?: string): Promise<void>;
       };
       return instance.delete(id, pk);
+    }
+
+    static deleteMany(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      ids: Array<number | string>,
+      pk: string = "id",
+    ): Promise<void> {
+      return (CoreModel.deleteMany as any).call(this, ids, pk);
     }
 
     static restoreById(
@@ -74,6 +106,14 @@ export function BaseModelSafeFinderStaticsMixin<
       }
 
       return instance.restore(id, pk);
+    }
+
+    static restoreMany(
+      this: new (...args: any[]) => SafeFinderModelInstance,
+      ids: Array<number | string>,
+      pk: string = "id",
+    ): Promise<void> {
+      return (CoreModel.restoreMany as any).call(this, ids, pk);
     }
 
     static where<T extends typeof BaseModelSafeFinderStatics>(

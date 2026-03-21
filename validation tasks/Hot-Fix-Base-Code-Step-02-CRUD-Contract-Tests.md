@@ -56,12 +56,16 @@ This step keeps the API transition controlled by locking which tests move, which
 
 ### Bulk contract targets
 
-- track, but do not silently imply implementation of:
-  - `createMany`
-  - `updateMany`
-  - `patchMany`
-  - `deleteMany`
-  - `restoreMany`
+- freeze the additive bulk signatures before runtime work starts:
+  - `await User.createMany([{ ... }, { ... }])`
+  - `await User.updateMany([1, 2], { status: "inactive" })`
+  - `await User.patchMany([{ id: 1, ... }, { id: 2, ... }])`
+  - `await User.deleteMany([1, 2])`
+  - `await User.restoreMany([1, 2])`
+- `createMany(...)` returns hydrated model instances in input order
+- `updateMany(...)`, `deleteMany(...)`, and `restoreMany(...)` apply one payload or action across explicit primary keys
+- `patchMany(...)` applies row-specific partial payloads and requires a primary-key field in each item
+- this signature freeze is additive planning only; runtime support is still pending
 
 ## Generated artifact contract follow-up
 

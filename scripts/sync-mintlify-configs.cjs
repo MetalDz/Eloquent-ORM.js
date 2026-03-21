@@ -18,9 +18,22 @@ if (!fs.existsSync(docsDir)) {
 const canonicalRaw = fs.readFileSync(canonicalPath, "utf8");
 const canonical = JSON.parse(canonicalRaw);
 
+function mapMintThemeToDocsTheme(theme) {
+  switch (theme) {
+    case "venus":
+      return "palm";
+    case "quill":
+      return "willow";
+    case "prism":
+      return "mint";
+    default:
+      return "mint";
+  }
+}
+
 const docsJson = {
   $schema: "https://mintlify.com/docs.json",
-  theme: "mint",
+  theme: mapMintThemeToDocsTheme(canonical.theme),
   name: canonical.name,
   colors: canonical.colors,
   favicon: canonical.favicon,

@@ -92,6 +92,11 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(usageGuides).toContain("await User.updateById(1, {");
     expect(usageGuides).toContain("await User.deleteById(1);");
     expect(usageGuides).toContain("await User.restoreById(1);");
+    expect(usageGuides).toContain("const createdMany = await User.createMany([");
+    expect(usageGuides).toContain("await User.updateMany([1, 2], { status: \"inactive\" });");
+    expect(usageGuides).toContain("await User.patchMany([");
+    expect(usageGuides).toContain("await User.deleteMany([1, 2]);");
+    expect(usageGuides).toContain("await User.restoreMany([1, 2]);");
     expect(usageGuides).not.toContain("await new User().update(1, {");
     expect(usageGuides).not.toContain("await new User().delete(1);");
     expect(usageGuides).not.toContain("await model.restore?.(1);");
@@ -234,6 +239,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(commonScenarios).toContain("const created = await User.create({");
     expect(commonScenarios).toContain("const found = await User.find(created.id as number);");
     expect(commonScenarios).toContain("found.update({ name: \"Alice Updated\" });");
+    expect(commonScenarios).toContain("await User.updateMany([1, 2], { status: \"inactive\" });");
     expect(commonScenarios).toContain("const created = await User.create(data);");
     expect(commonScenarios).toContain("const user = await User.find(id);");
     expect(cookbook).toContain("Recipe 1: SQL User CRUD API");
@@ -294,9 +300,14 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(runtimeIndex).toContain("[Runtime Querying](./querying)");
     expect(runtimeIndex).toContain("[Runtime Controllers](./controllers)");
     expect(runtimeIndex).toContain("[Runtime Services](./services)");
+    expect(runtimeIndex).toContain("User.createMany(...)");
     expect(runtimeCrud).toContain("Use one of these two creation paths:");
     expect(runtimeCrud).toContain("const created = await User.create({");
     expect(runtimeCrud).toContain("found.update({ name: \"Alice Updated\" });");
+    expect(runtimeCrud).toContain("const createdMany = await User.createMany([");
+    expect(runtimeCrud).toContain("await User.updateMany([1, 2], { status: \"inactive\" });");
+    expect(runtimeCrud).toContain("await User.deleteMany([1, 2]);");
+    expect(runtimeCrud).toContain("await User.restoreMany([1, 2]);");
     expect(runtimeCrud).toContain("await User.updateById(1, { name: \"Alice Direct\" });");
     expect(runtimeCrud).toContain("Do not treat these as the primary public teaching path:");
     expect(runtimeQuerying).toContain("const byId = await User.find(1);");
@@ -307,6 +318,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(runtimeControllers).toContain("User.deleteById(...)");
     expect(runtimeServices).toContain("Services are the main application boundary for runtime behavior.");
     expect(runtimeServices).toContain("return User.create(data);");
+    expect(runtimeServices).toContain("return User.createMany(rows);");
     expect(runtimeServices).toContain("return User.restoreById(id);");
     expect(runtimeCache).toContain("MEMCACHED_HOST=127.0.0.1");
     expect(runtimeCache).toContain("const created = await User.create(data);");
@@ -319,6 +331,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(testScenarios).toContain("eloquent demo:scenario --test --random");
     expect(testCliPackSmoke).toContain("npm run test:pack-smoke");
     expect(testCliPackSmoke).toContain("[CLI Test Matrix](../cli/test-matrix)");
+    expect(docsConfig).toContain('"theme": "prism"');
     expect(docsConfig).toContain('"orm/soft-deletes"');
     expect(docsConfig).toContain('"orm/multi-connection-strategy"');
     expect(docsConfig).toContain('"runtime/index"');

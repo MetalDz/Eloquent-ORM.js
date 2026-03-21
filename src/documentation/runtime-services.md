@@ -26,6 +26,10 @@ export class UserService {
     return User.create(data);
   }
 
+  async createMany(rows: Record<string, unknown>[]) {
+    return User.createMany(rows);
+  }
+
   async update(id: number | string, data: Record<string, unknown>) {
     const user = await User.find(id);
     if (!user) return null;
@@ -40,6 +44,10 @@ export class UserService {
 
   async restore(id: number | string) {
     return User.restoreById(id);
+  }
+
+  async deactivateMany(ids: Array<number | string>) {
+    await User.updateMany(ids, { status: "inactive" });
   }
 }
 ```

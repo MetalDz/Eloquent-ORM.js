@@ -67,6 +67,19 @@ const created = await User.create({
 
 Do not immediately call `save()` after `User.create(...)` unless you changed the model again.
 
+### Use `User.createMany(...)` when
+
+- you already have multiple validated payloads
+- the service owns an explicit bulk insert operation
+- you want hydrated created models back in input order
+
+```ts
+const createdMany = await User.createMany([
+  { name: "Alice", email: "alice@example.com" },
+  { name: "Bob", email: "bob@example.com" },
+]);
+```
+
 ## Read
 
 Use primary-key and safe-finder reads before mutation:
@@ -123,6 +136,19 @@ Use `patch()` when:
 - the service is applying a narrow change
 - you do not want the full `update(...); save()` flow
 
+### Bulk update and patch
+
+Use bulk helpers only when the service already owns an explicit list of ids or patch rows.
+
+```ts
+await User.updateMany([1, 2], { status: "inactive" });
+
+await User.patchMany([
+  { id: 1, email: "alice+1@example.com" },
+  { id: 2, email: "bob+1@example.com" },
+]);
+```
+
 ## Delete
 
 ### Recommended loaded-instance delete
@@ -159,6 +185,13 @@ Use restore when:
 - the service is intentionally exposing record recovery
 - the controller is generated with or supports a restore route
 
+### Bulk delete and restore
+
+```ts
+await User.deleteMany([1, 2]);
+await User.restoreMany([1, 2]);
+```
+
 ## Explicit by-id helpers
 
 Use these helpers only when you intentionally want a direct by-id service path:
@@ -177,12 +210,18 @@ Use them when:
 
 Do not use these helpers as the first-choice teaching path for most application logic.
 
+Bulk helpers and by-id helpers are both explicit service paths. Prefer loaded-instance flows when the service already reads the record first.
+
 ## Recommended service pattern
 
 ```ts
 export class UserService {
   async create(data: Record<string, unknown>) {
     return User.create(data);
+  }
+
+  async createMany(rows: Record<string, unknown>[]) {
+    return User.createMany(rows);
   }
 
   async find(id: number | string) {
@@ -212,6 +251,10 @@ export class UserService {
 
   async restore(id: number | string) {
     return User.restoreById(id);
+  }
+
+  async deactivateMany(ids: Array<number | string>) {
+    await User.updateMany(ids, { status: "inactive" });
   }
 }
 ```

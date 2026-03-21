@@ -20,6 +20,11 @@ function loadAppSmokeModel() {
     };
     create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
     find(id: number | string): Promise<Record<string, unknown> | null>;
+    createMany(data: Record<string, unknown>[]): Promise<Record<string, unknown>[]>;
+    updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+    patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+    deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+    restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
   }>("AppSmoke").exported;
 }
 
@@ -33,6 +38,11 @@ function loadGeoLocalisationModel() {
     };
     create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
     find(id: number | string): Promise<Record<string, unknown> | null>;
+    createMany(data: Record<string, unknown>[]): Promise<Record<string, unknown>[]>;
+    updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+    patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+    deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+    restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
   }>("GeoLocalisation").exported;
 }
 
@@ -92,13 +102,35 @@ describe("Real model instance persistence integration", () => {
   test("AppSmoke supports fill().save().patch() through the SQL runtime path", async () => {
     const AppSmoke = loadAppSmokeModel();
     const adapter = makeSqlAdapter();
-    adapter.insert.mockResolvedValue({
-      id: 21,
-      row: {
+    adapter.insert
+      .mockResolvedValueOnce({
         id: 21,
-        name: "Smoke Alpha",
-      },
-    });
+        row: {
+          id: 21,
+          name: "Smoke Alpha",
+        },
+      })
+      .mockResolvedValueOnce({
+        id: 22,
+        row: {
+          id: 22,
+          name: "Smoke Bulk A",
+        },
+      })
+      .mockResolvedValueOnce({
+        id: 23,
+        row: {
+          id: 23,
+          name: "Smoke Bulk B",
+        },
+      })
+      .mockResolvedValue({
+        id: 24,
+        row: {
+          id: 24,
+          name: "Smoke Static",
+        },
+      });
     mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
 
     const model = new AppSmoke();
@@ -133,6 +165,22 @@ describe("Real model instance persistence integration", () => {
     model.fill({ name: "ab" });
     await expect(model.save()).rejects.toThrow("Validation failed for appsmokes");
 
+    const createdMany = await AppSmoke.createMany([
+      { name: "Smoke Bulk A" },
+      { name: "Smoke Bulk B" },
+    ]);
+    expect(createdMany).toHaveLength(2);
+    expect(createdMany[0].id).toBe(22);
+    expect(createdMany[1].id).toBe(23);
+
+    await AppSmoke.updateMany([22, 23], { name: "Smoke Bulk Updated" });
+    await AppSmoke.patchMany([
+      { id: 22, name: "Smoke Patch A" },
+      { id: 23, name: "Smoke Patch B" },
+    ]);
+    await AppSmoke.deleteMany([22, 23]);
+    await AppSmoke.restoreMany([22, 23]);
+
     const created = await AppSmoke.create({ name: "Smoke Static" });
     expect(created).toBeInstanceOf(AppSmoke);
 
@@ -144,7 +192,12 @@ describe("Real model instance persistence integration", () => {
   test("GeoLocalisation supports fill().save().patch() through the Mongo runtime path", async () => {
     const GeoLocalisation = loadGeoLocalisationModel();
     const collection = {
-      insertOne: jest.fn(async () => ({ insertedId: "mongo-geo-21" })),
+      insertOne: jest
+        .fn(async () => ({ insertedId: "mongo-geo-21" }))
+        .mockImplementationOnce(async () => ({ insertedId: "mongo-geo-21" }))
+        .mockImplementationOnce(async () => ({ insertedId: "mongo-geo-22" }))
+        .mockImplementationOnce(async () => ({ insertedId: "mongo-geo-23" }))
+        .mockImplementation(async () => ({ insertedId: "mongo-geo-24" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
     };
     const mongoDb = {
@@ -180,6 +233,22 @@ describe("Real model instance persistence integration", () => {
 
     model.fill({ name: "ab" });
     await expect(model.save()).rejects.toThrow("Validation failed for geolocalisations");
+
+    const createdMany = await GeoLocalisation.createMany([
+      { name: "Geo Bulk A" },
+      { name: "Geo Bulk B" },
+    ]);
+    expect(createdMany).toHaveLength(2);
+    expect(createdMany[0].id).toBe("mongo-geo-22");
+    expect(createdMany[1].id).toBe("mongo-geo-23");
+
+    await GeoLocalisation.updateMany(["mongo-geo-22", "mongo-geo-23"], { name: "Geo Bulk Updated" });
+    await GeoLocalisation.patchMany([
+      { id: "mongo-geo-22", name: "Geo Patch A" },
+      { id: "mongo-geo-23", name: "Geo Patch B" },
+    ]);
+    await GeoLocalisation.deleteMany(["mongo-geo-22", "mongo-geo-23"]);
+    await GeoLocalisation.restoreMany(["mongo-geo-22", "mongo-geo-23"]);
 
     const created = await GeoLocalisation.create({ name: "Geo Static" });
     expect(created).toBeInstanceOf(GeoLocalisation);

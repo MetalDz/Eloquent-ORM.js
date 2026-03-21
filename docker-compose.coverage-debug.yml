@@ -43,6 +43,12 @@ services:
       timeout: 5s
       retries: 10
 
+  memcached:
+    image: memcached:1.6-alpine
+    ports:
+      - "11211:11211"
+    command: ["memcached", "-m", "64", "-p", "11211", "-vv"]
+
   coverage-debug:
     build:
       context: .
@@ -55,11 +61,15 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
+      memcached:
+        condition: service_started
     environment:
       CI: "true"
       FORCE_COLOR: "0"
       ELOQUENT_RUNTIME_LOG: "false"
       DOTENV_CONFIG_QUIET: "true"
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: "11211"
       DB_HOST: mysql
       DB_PORT: "3306"
       DB_USER: root
@@ -89,10 +99,4 @@ services:
       MONGO_TEST_URI: mongodb://mongo:27017
       MONGO_TEST_DB: eloquentjs_db_test
       ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"
-    volumes:
-      - .:/workspace
-      - coverage_debug_node_modules:/workspace/node_modules
     command: npm run test:coverage
-
-volumes:
-  coverage_debug_node_modules:

@@ -215,6 +215,25 @@ export abstract class CoreModel<
     return instance.create(data) as Promise<InstanceType<T> | null>;
   }
 
+  static async createMany<T extends typeof CoreModel>(
+    this: T,
+    rows: Record<string, unknown>[]
+  ): Promise<InstanceType<T>[]> {
+    if (!Array.isArray(rows)) {
+      throw new Error(`${this.name}.createMany() expects an array of payload objects.`);
+    }
+
+    const created: InstanceType<T>[] = [];
+    for (const row of rows) {
+      const record = await this.create(row);
+      if (record) {
+        created.push(record);
+      }
+    }
+
+    return created;
+  }
+
   static find<T extends typeof CoreModel>(
     this: T,
     id: number | string,
@@ -222,6 +241,84 @@ export abstract class CoreModel<
   ): Promise<InstanceType<T> | null> {
     const instance = this.newInstance();
     return instance.find(id, pk) as Promise<InstanceType<T> | null>;
+  }
+
+  static async updateMany<T extends typeof CoreModel>(
+    this: T,
+    ids: Array<number | string>,
+    data: Record<string, unknown>,
+    pk: string = "id"
+  ): Promise<void> {
+    if (!Array.isArray(ids)) {
+      throw new Error(`${this.name}.updateMany() expects an array of primary keys.`);
+    }
+
+    const instance = this.newInstance();
+    for (const id of ids) {
+      await instance.update(id, data, pk);
+    }
+  }
+
+  static async patchMany<T extends typeof CoreModel>(
+    this: T,
+    rows: Record<string, unknown>[],
+    pk: string = "id"
+  ): Promise<void> {
+    if (!Array.isArray(rows)) {
+      throw new Error(`${this.name}.patchMany() expects an array of partial payload objects.`);
+    }
+
+    const instance = this.newInstance();
+    for (const row of rows) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) {
+        throw new Error(`${this.name}.patchMany() expects plain object items.`);
+      }
+
+      const id = row[pk];
+      if (id === undefined || id === null) {
+        throw new Error(`${this.name}.patchMany() requires primary key '${pk}' on every item.`);
+      }
+
+      const { [pk]: _ignored, ...patch } = row;
+      await instance.update(id as string | number, patch, pk);
+    }
+  }
+
+  static async deleteMany<T extends typeof CoreModel>(
+    this: T,
+    ids: Array<number | string>,
+    pk: string = "id"
+  ): Promise<void> {
+    if (!Array.isArray(ids)) {
+      throw new Error(`${this.name}.deleteMany() expects an array of primary keys.`);
+    }
+
+    const instance = this.newInstance();
+    for (const id of ids) {
+      await instance.delete(id, pk);
+    }
+  }
+
+  static async restoreMany<T extends typeof CoreModel>(
+    this: T,
+    ids: Array<number | string>,
+    pk: string = "id"
+  ): Promise<void> {
+    if (!Array.isArray(ids)) {
+      throw new Error(`${this.name}.restoreMany() expects an array of primary keys.`);
+    }
+
+    const instance = this.newInstance() as InstanceType<T> & {
+      restore?: (id: number | string, key?: string) => Promise<void>;
+    };
+
+    if (typeof instance.restore !== "function") {
+      throw new Error(`${this.name} does not support restoreMany().`);
+    }
+
+    for (const id of ids) {
+      await instance.restore(id, pk);
+    }
   }
 
   static findAllBy<T extends typeof CoreModel>(

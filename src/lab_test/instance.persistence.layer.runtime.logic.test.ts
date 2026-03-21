@@ -340,4 +340,163 @@ describe("Instance persistence layer runtime", () => {
     );
   });
 
+  test("bulk SQL helpers preserve order and per-id execution contracts", async () => {
+    const adapter = makeSqlAdapter();
+    adapter.insert
+      .mockResolvedValueOnce({
+        id: 31,
+        row: { id: 31, name: "Alice", email: "alice@example.com", status: "active" },
+      })
+      .mockResolvedValueOnce({
+        id: 32,
+        row: { id: 32, name: "Bob", email: "bob@example.com", status: "active" },
+      });
+    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+    const created = await UserModel.createMany([
+      { name: "Alice", email: "alice@example.com", status: "active" },
+      { name: "Bob", email: "bob@example.com", status: "active" },
+    ]);
+    expect(created).toHaveLength(2);
+    expect(created[0]).toBeInstanceOf(UserModel);
+    expect((created[0] as unknown as Record<string, unknown>).id).toBe(31);
+    expect((created[1] as unknown as Record<string, unknown>).id).toBe(32);
+
+    await SoftUserModel.updateMany([31, 32], { status: "inactive" });
+    await UserModel.patchMany([
+      { id: 31, email: "alice+1@example.com" },
+      { id: 32, email: "bob+1@example.com" },
+    ]);
+    await SoftUserModel.deleteMany([31, 32]);
+    await SoftUserModel.restoreMany([31, 32]);
+
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      1,
+      "UPDATE `users` SET `status` = ? WHERE `id` = ?",
+      ["inactive", 31]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      2,
+      "UPDATE `users` SET `status` = ? WHERE `id` = ?",
+      ["inactive", 32]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      3,
+      "UPDATE `users` SET `email` = ? WHERE `id` = ?",
+      ["alice+1@example.com", 31]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      4,
+      "UPDATE `users` SET `email` = ? WHERE `id` = ?",
+      ["bob+1@example.com", 32]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      5,
+      "UPDATE `users` SET `deleted_at` = ? WHERE `id` = ?",
+      [expect.any(String), 31]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      6,
+      "UPDATE `users` SET `deleted_at` = ? WHERE `id` = ?",
+      [expect.any(String), 32]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      7,
+      "UPDATE `users` SET `deleted_at` = ? WHERE `id` = ?",
+      [null, 31]
+    );
+    expect(adapter.execute).toHaveBeenNthCalledWith(
+      8,
+      "UPDATE `users` SET `deleted_at` = ? WHERE `id` = ?",
+      [null, 32]
+    );
+  });
+
+  test("bulk helper guardrails reject malformed payloads and unsupported restore", async () => {
+    const adapter = makeSqlAdapter();
+    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+
+    await expect(UserModel.patchMany([{ email: "missing-id@example.com" }])).rejects.toThrow(
+      "UserModel.patchMany() requires primary key 'id' on every item."
+    );
+    await expect(UserModel.restoreMany({} as never)).rejects.toThrow(
+      "UserModel.restoreMany() expects an array of primary keys."
+    );
+    await expect(UserModel.createMany({} as never)).rejects.toThrow(
+      "UserModel.createMany() expects an array of payload objects."
+    );
+  });
+
+  test("bulk Mongo helpers reuse native per-record execution paths", async () => {
+    const collection = {
+      insertOne: jest
+        .fn(async () => ({ insertedId: "mongo-geo-31" }))
+        .mockImplementationOnce(async () => ({ insertedId: "mongo-geo-31" }))
+        .mockImplementationOnce(async () => ({ insertedId: "mongo-geo-32" })),
+      updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
+    };
+    const mongoDb = {
+      collection: jest.fn(() => collection),
+    };
+    mockedGetConnection.mockResolvedValue(mongoDb as never);
+
+    const created = await GeoModel.createMany([{ name: "Geo A" }, { name: "Geo B" }]);
+    expect(created).toHaveLength(2);
+    expect(created[0]).toBeInstanceOf(GeoModel);
+    expect((created[0] as unknown as Record<string, unknown>).id).toBe("mongo-geo-31");
+    expect((created[1] as unknown as Record<string, unknown>).id).toBe("mongo-geo-32");
+
+    await SoftGeoModel.updateMany(["mongo-geo-31", "mongo-geo-32"], { name: "Geo Updated" }, "_id");
+    await GeoModel.patchMany(
+      [
+        { _id: "mongo-geo-31", name: "Geo Patch A" },
+        { _id: "mongo-geo-32", name: "Geo Patch B" },
+      ],
+      "_id"
+    );
+    await SoftGeoModel.deleteMany(["mongo-geo-31", "mongo-geo-32"], "_id");
+    await SoftGeoModel.restoreMany(["mongo-geo-31", "mongo-geo-32"], "_id");
+
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      1,
+      { _id: "mongo-geo-31" },
+      { $set: { name: "Geo Updated" } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      2,
+      { _id: "mongo-geo-32" },
+      { $set: { name: "Geo Updated" } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      3,
+      { _id: "mongo-geo-31" },
+      { $set: { name: "Geo Patch A" } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      4,
+      { _id: "mongo-geo-32" },
+      { $set: { name: "Geo Patch B" } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      5,
+      { _id: "mongo-geo-31" },
+      { $set: { deleted_at: expect.any(String) } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      6,
+      { _id: "mongo-geo-32" },
+      { $set: { deleted_at: expect.any(String) } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      7,
+      { _id: "mongo-geo-31" },
+      { $set: { deleted_at: null } }
+    );
+    expect(collection.updateOne).toHaveBeenNthCalledWith(
+      8,
+      { _id: "mongo-geo-32" },
+      { $set: { deleted_at: null } }
+    );
+  });
+
 });

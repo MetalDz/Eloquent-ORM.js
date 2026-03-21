@@ -1,7 +1,6 @@
 {
   "name": "Eloquent ORM JS",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
-  "theme": "prism",
   "favicon": "/favicon.ico",
   "colors": {
     "primary": "#0f766e",
