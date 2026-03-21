@@ -43,5 +43,7 @@ describe("Docker coverage env hardening", () => {
     expect(dockerignore).toContain("node_modules");
     expect(dockerignore).toContain("coverage");
     expect(dockerignore).toContain("dist");
+    expect(dockerignore).not.toContain(".github");
+    expect(dockerignore).not.toContain(".npmignore");
   });
 });

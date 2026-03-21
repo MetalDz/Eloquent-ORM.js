@@ -1,7 +1,7 @@
 # LTS Phase 5 CLI Entrypoint Coverage Plan
 
 Last updated: 2026-03-16 12:48  
-Status: IN PROGRESS
+Status: COMPLETED
 
 ## Goal
 - Close the remaining LTS Phase 5 coverage gap in `src/cli/eloquent.ts`.
@@ -17,6 +17,11 @@ Status: IN PROGRESS
 - program construction and registration delegation
 - `runCli(...)` environment setup, parse, and help-output flow
 - entrypoint placeholder fallback
+- top-level CLI auto-run behavior when loaded as the main module
+
+## Completion Notes
+- Replaced the top-level `require.main === module` side-effect branch with an exported `autoRunCliIfMain(...)` helper.
+- Runtime behavior is unchanged, but the main-module path is now directly testable under Jest and Docker `v8` coverage.
 
 ## Validation
 - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/lts.phase5.cli-entrypoint-coverage.logic.test.ts`

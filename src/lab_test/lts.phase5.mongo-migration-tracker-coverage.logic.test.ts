@@ -1,6 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { acquireMigrationLock } from "../cli/utils/migrations/MongoMigrationTracker";
 import {
   ensureMigrationCollection,
   readAppliedMigrations,
@@ -177,6 +178,68 @@ describe("LTS phase 5 MongoMigrationTracker coverage", () => {
         throw "already exists";
       }),
       collection: jest.fn(() => collection),
+    };
+
+    await expect(ensureMigrationCollection(db as never)).resolves.toBeUndefined();
+  });
+
+  test("ensureMigrationCollection tolerates safe Error bootstrap failures and lock insert races", async () => {
+    const collection = {
+      createIndex: jest
+        .fn()
+        .mockRejectedValueOnce(new Error("equivalent index already exists"))
+        .mockRejectedValueOnce(new Error("already exists")),
+      findOne: jest
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ owner: "owner-1" }),
+      insertOne: jest.fn().mockRejectedValueOnce(new Error("duplicate key")),
+      deleteOne: jest.fn(async () => ({ acknowledged: true })),
+      updateOne: jest.fn(async () => ({ acknowledged: true })),
+      find: jest.fn(() => ({
+        sort: () => ({
+          toArray: async () => [],
+          limit: () => ({ next: async () => null }),
+        }),
+      })),
+    };
+    const db = {
+      createCollection: jest.fn(async () => {
+        throw new Error("already exists");
+      }),
+      collection: jest.fn(() => collection),
+      listCollections: jest.fn(() => ({
+        toArray: async () => [],
+      })),
+    };
+
+    await expect(ensureMigrationCollection(db as never)).resolves.toBeUndefined();
+    await expect(acquireMigrationLock(db as never, "owner-1")).resolves.toBeUndefined();
+  });
+
+  test("ensureMigrationCollection covers safe Error handling when collection creation succeeds", async () => {
+    const collection = {
+      createIndex: jest
+        .fn()
+        .mockRejectedValueOnce(new Error("equivalent index already exists"))
+        .mockResolvedValueOnce("ok"),
+      findOne: jest.fn(),
+      insertOne: jest.fn(),
+      deleteOne: jest.fn(),
+      updateOne: jest.fn(),
+      find: jest.fn(() => ({
+        sort: () => ({
+          toArray: async () => [],
+          limit: () => ({ next: async () => null }),
+        }),
+      })),
+    };
+    const db = {
+      createCollection: jest.fn(async () => ({ collectionName: "migrations" })),
+      collection: jest.fn(() => collection),
+      listCollections: jest.fn(() => ({
+        toArray: async () => [],
+      })),
     };
 
     await expect(ensureMigrationCollection(db as never)).resolves.toBeUndefined();

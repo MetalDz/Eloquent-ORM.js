@@ -249,9 +249,7 @@ async function runMigrationsForConnection(
       console.warn(chalk.yellow("Rolling back partial changes..."));
       return false;
     } finally {
-      if (!dryRun) {
-        await releaseMongoMigrationLock(db, lockOwner);
-      }
+      await releaseMongoMigrationLock(db, lockOwner);
       await closeAllConnections();
       console.log(chalk.gray("\nAll database connections closed.\n"));
     }
@@ -366,9 +364,7 @@ async function runMigrationsForConnection(
     console.warn(chalk.yellow("Rolling back partial changes..."));
     return false;
   } finally {
-    if (!dryRun) {
-      await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
-    }
+    await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
     await closeAllConnections();
     console.log(chalk.gray("\nAll database connections closed.\n"));
   }

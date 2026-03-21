@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { readCoverageSummaryForContractTests } from "./support/coverageSummary";
 
 describe("Branch coverage 100% plan contract", () => {
   const rootDir = process.cwd();
@@ -30,8 +31,7 @@ describe("Branch coverage 100% plan contract", () => {
   });
 
   test("coverage summary has valid branch totals and percentage math", () => {
-    const summaryPath = path.resolve(rootDir, "coverage/coverage-summary.json");
-    const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8")) as {
+    const summary = readCoverageSummaryForContractTests(rootDir) as {
       total?: { branches?: { total?: number; covered?: number; pct?: number } };
     };
 

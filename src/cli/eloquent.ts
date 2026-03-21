@@ -227,11 +227,18 @@ export async function runCli(
   }
 }
 
-/* istanbul ignore next */
-if (require.main === module) {
-  void runCli();
+export function autoRunCliIfMain(
+  mainModule: NodeJS.Module | undefined = require.main,
+  entryModule: NodeJS.Module = module,
+  runner: () => Promise<void> = runCli,
+): void {
+  if (mainModule === entryModule) {
+    void runner();
+  }
 }
 
 export async function placeholder(): Promise<void> {
   console.log("This command is not yet implemented.");
 }
+
+autoRunCliIfMain();

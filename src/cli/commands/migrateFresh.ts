@@ -35,7 +35,24 @@ async function getMongoConnection(connectionName: ConnectionName): Promise<Db> {
   )) as Db;
 }
 
+async function finalizeDropAllTables(
+  connectionName: ConnectionName,
+  success: boolean,
+  error?: unknown
+): Promise<boolean> {
+  if (!success) {
+    console.error(chalk.red(`Error while dropping tables for ${connectionName}:`));
+    console.error(error);
+  }
+
+  await closeAllConnections();
+  return success;
+}
+
 async function dropAllTablesForConnection(connectionName: ConnectionName): Promise<boolean> {
+  let success = false;
+  let failure: unknown;
+
   try {
     const driver = dbConfig.connections[connectionName]?.driver;
 
@@ -98,14 +115,12 @@ async function dropAllTablesForConnection(connectionName: ConnectionName): Promi
     }
 
     console.log(chalk.yellow(`All tables dropped for ${connectionName}.`));
-    return true;
+    success = true;
   } catch (err) {
-    console.error(chalk.red(`Error while dropping tables for ${connectionName}:`));
-    console.error(err);
-    return false;
-  } finally {
-    await closeAllConnections();
+    failure = err;
   }
+
+  return await finalizeDropAllTables(connectionName, success, failure);
 }
 
 export async function migrateFresh(options: MigrateFreshOptions = {}): Promise<void> {

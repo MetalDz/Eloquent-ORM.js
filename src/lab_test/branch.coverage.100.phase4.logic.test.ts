@@ -353,5 +353,15 @@ describe("Branch coverage 100% - phase 4 migration tracker and locking edges", (
     await expect(
       strategy.release(sqliteRollbackFail, "owner-rollback", { success: false })
     ).resolves.toBeUndefined();
+
+    const sqliteCommitRollbackFail = makeAdapter("sqlite_test");
+    sqliteCommitRollbackFail.execute
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("commit-fail"))
+      .mockRejectedValueOnce(new Error("rollback-fail-too"));
+    await strategy.acquire(sqliteCommitRollbackFail, "owner-commit-fail");
+    await expect(
+      strategy.release(sqliteCommitRollbackFail, "owner-commit-fail", { success: true })
+    ).resolves.toBeUndefined();
   });
 });

@@ -32,6 +32,20 @@ async function getMongoConnection(connectionName: ConnectionName): Promise<Db> {
   )) as Db;
 }
 
+async function finalizeStatusResult(
+  connectionName: ConnectionName,
+  success: boolean,
+  error?: unknown
+): Promise<boolean> {
+  if (!success) {
+    console.error(chalk.red(`Failed to fetch migration status for "${connectionName}".`));
+    console.error(error);
+  }
+
+  await closeAllConnections();
+  return success;
+}
+
 async function showStatusForConnection(
   connectionName: ConnectionName,
   isTest: boolean
@@ -43,6 +57,9 @@ async function showStatusForConnection(
       console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
       return true;
     }
+
+    let success = false;
+    let failure: unknown;
 
     try {
       const db = await getMongoConnection(connectionName);
@@ -65,15 +82,12 @@ async function showStatusForConnection(
           RunAt: applied.find((row) => row.name === file)?.run_at ?? "-",
         }))
       );
-
-      return true;
+      success = true;
     } catch (error) {
-      console.error(chalk.red(`Failed to fetch migration status for "${connectionName}".`));
-      console.error(error);
-      return false;
-    } finally {
-      await closeAllConnections();
+      failure = error;
     }
+
+    return await finalizeStatusResult(connectionName, success, failure);
   }
 
   if (!["mysql", "pg", "sqlite"].includes(driver)) {
@@ -91,6 +105,9 @@ async function showStatusForConnection(
     console.log(chalk.yellow(`No migrations directory found for ${connectionName}.`));
     return true;
   }
+
+  let success = false;
+  let failure: unknown;
 
   try {
     const db = await getAdapter(connectionName);
@@ -123,15 +140,12 @@ async function showStatusForConnection(
         RunAt: applied.find((row) => row.name === file)?.run_at ?? "-",
       }))
     );
-
-    return true;
+    success = true;
   } catch (error) {
-    console.error(chalk.red(`Failed to fetch migration status for "${connectionName}".`));
-    console.error(error);
-    return false;
-  } finally {
-    await closeAllConnections();
+    failure = error;
   }
+
+  return await finalizeStatusResult(connectionName, success, failure);
 }
 
 export async function migrateStatus(options: MigrateStatusOptions | boolean = {}): Promise<void> {

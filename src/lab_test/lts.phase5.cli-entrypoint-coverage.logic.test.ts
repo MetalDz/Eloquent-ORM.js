@@ -60,7 +60,7 @@ describe("LTS phase 5 CLI entrypoint coverage", () => {
       "utf8",
     );
 
-    expect(content).toContain("Status: IN PROGRESS");
+    expect(content).toContain("Status: COMPLETED");
     expect(content).toContain("src/cli/eloquent.ts");
     expect(content).toContain("src/lab_test/lts.phase5.cli-entrypoint-coverage.logic.test.ts");
   });
@@ -615,5 +615,32 @@ describe("LTS phase 5 CLI entrypoint coverage", () => {
 
     await runCli();
     expect(applyCliTestConnectionOverride).toHaveBeenCalled();
+  });
+
+  test("autoRunCliIfMain covers both main-module and imported-module paths", () => {
+    jest.doMock("chalk", () => identityChalkMock);
+
+    let autoRunCliIfMain!: (
+      mainModule?: NodeJS.Module,
+      entryModule?: NodeJS.Module,
+      runner?: () => Promise<void>,
+    ) => void;
+
+    jest.isolateModules(() => {
+      const cli = require("../cli/eloquent") as {
+        autoRunCliIfMain: typeof autoRunCliIfMain;
+      };
+      autoRunCliIfMain = cli.autoRunCliIfMain;
+    });
+
+    const mainModule = { id: "main" } as NodeJS.Module;
+    const importedModule = { id: "imported" } as NodeJS.Module;
+    const runCliSpy = jest.fn(async () => undefined);
+
+    autoRunCliIfMain(mainModule, importedModule, runCliSpy);
+    expect(runCliSpy).not.toHaveBeenCalled();
+
+    autoRunCliIfMain(mainModule, mainModule, runCliSpy);
+    expect(runCliSpy).toHaveBeenCalledTimes(1);
   });
 });

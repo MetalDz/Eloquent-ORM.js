@@ -229,9 +229,7 @@ async function rollbackConnection(
       console.error(err);
       return false;
     } finally {
-      if (lockAcquired) {
-        await releaseMongoMigrationLock(db, lockOwner);
-      }
+      await releaseMongoMigrationLock(db, lockOwner);
       await closeAllConnections();
       console.log(chalk.gray("All database connections closed.\n"));
     }
@@ -364,9 +362,7 @@ async function rollbackConnection(
     console.error(err);
     return false;
   } finally {
-    if (lockAcquired) {
-      await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
-    }
+    await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
     await closeAllConnections();
     console.log(chalk.gray("All database connections closed.\n"));
   }

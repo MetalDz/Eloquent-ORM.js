@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { readCoverageSummaryForContractTests } from "./support/coverageSummary";
 
 describe("ORM hardening execution plan contract", () => {
   const rootDir = process.cwd();
@@ -57,8 +58,7 @@ describe("ORM hardening execution plan contract", () => {
   });
 
   test("coverage summary still has sane totals and bounded percentages", () => {
-    const summaryPath = path.resolve(rootDir, "coverage/coverage-summary.json");
-    const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8")) as {
+    const summary = readCoverageSummaryForContractTests(rootDir) as {
       total?: {
         statements?: { total?: number; covered?: number; pct?: number };
         branches?: { total?: number; covered?: number; pct?: number };

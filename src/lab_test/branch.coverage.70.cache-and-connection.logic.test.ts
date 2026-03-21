@@ -87,6 +87,30 @@ describe("Branch coverage 70% - Phase 2 cache and connection", () => {
     );
   });
 
+  test("CacheFallbackManager tryChain calls onFailure when a driver fails", async () => {
+    const failed = makeDriver("FailedDriver", {
+      get: async () => {
+        throw new Error("failed-driver");
+      },
+    });
+    const passed = makeDriver("PassedDriver", {
+      get: async () => "ok",
+    });
+    CacheFallbackManager.useChain([failed, passed]);
+
+    const manager = CacheFallbackManager as unknown as {
+      tryChain<T>(
+        fn: (driver: CacheDriver) => Promise<T>,
+        onFailure?: (err: unknown, driver: CacheDriver) => void,
+      ): Promise<T>;
+    };
+    const onFailure = jest.fn();
+
+    const value = await manager.tryChain((driver) => driver.get("key"), onFailure);
+    expect(value).toBe("ok");
+    expect(onFailure).toHaveBeenCalledWith(expect.any(Error), failed);
+  });
+
   test("CacheFallbackManager clearAllDrivers and shutdownDrivers cover timeout/error/close paths", async () => {
     const managerAny = CacheFallbackManager as unknown as { opTimeoutMs: number };
     const previousTimeout = managerAny.opTimeoutMs;

@@ -581,4 +581,53 @@ describe("LTS phase 5 migrateRun coverage", () => {
 
     fs.rmSync(harness.root, { recursive: true, force: true });
   });
+
+  test("releases Mongo and SQL locks on failure after lock acquisition", async () => {
+    const mongoHarness = await setupMigrateRunHarness({
+      connectionName: "mongo" as ConnectionName,
+      migrationFiles: ["202603150112_fail.ts"],
+      loadModuleImpl: () => ({
+        up: async () => {
+          throw new Error("mongo apply failed");
+        },
+      }),
+    });
+
+    await mongoHarness.migrateRun(false, undefined, false, false, {
+      connectionNames: [mongoHarness.connectionName],
+      auditCommand: "lts:migrate:run",
+    });
+
+    expect(mongoHarness.mocks.acquireMongoMigrationLock).toHaveBeenCalled();
+    expect(mongoHarness.mocks.releaseMongoMigrationLock).toHaveBeenCalledWith(
+      mongoHarness.mongoDb as never,
+      expect.any(String),
+    );
+    fs.rmSync(mongoHarness.root, { recursive: true, force: true });
+    process.exitCode = 0;
+
+    const sqlHarness = await setupMigrateRunHarness({
+      connectionName: "sqlite" as ConnectionName,
+      driver: "sqlite",
+      migrationFiles: ["202603150113_fail.ts"],
+      loadModuleImpl: () => ({
+        up: async () => {
+          throw new Error("sql apply failed");
+        },
+      }),
+    });
+
+    await sqlHarness.migrateRun(false, undefined, false, false, {
+      connectionNames: [sqlHarness.connectionName],
+      auditCommand: "lts:migrate:run",
+    });
+
+    expect(sqlHarness.mocks.acquireMigrationLock).toHaveBeenCalled();
+    expect(sqlHarness.mocks.releaseMigrationLock).toHaveBeenCalledWith(
+      sqlHarness.sqlDb as never,
+      expect.any(String),
+      expect.objectContaining({ success: false }),
+    );
+    fs.rmSync(sqlHarness.root, { recursive: true, force: true });
+  });
 });

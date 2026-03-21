@@ -28,6 +28,9 @@ type MigrateStatusHarnessOptions = {
   omitGetConnection?: boolean;
   omitConnectionConfig?: boolean;
   mongoError?: Error | null;
+  closeError?: Error | null;
+  sqlRows?: Array<{ name: string; batch: number; run_at: string }>;
+  sqlError?: Error | null;
 };
 
 async function setupMigrateStatusHarness(options: MigrateStatusHarnessOptions = {}) {
@@ -46,9 +49,19 @@ async function setupMigrateStatusHarness(options: MigrateStatusHarnessOptions = 
   }
 
   const mongoDb = { tag: `${connectionName}-db` };
+  const sqlDb = {
+    query: jest.fn(async () => {
+      if (options.sqlError) throw options.sqlError;
+      return options.sqlRows ?? [];
+    }),
+  };
   const getAdapter = jest.fn(async () => {
-    if (options.mongoError) throw options.mongoError;
-    return mongoDb;
+    if (driver === "mongo") {
+      if (options.mongoError) throw options.mongoError;
+      return mongoDb;
+    }
+    if (options.sqlError) throw options.sqlError;
+    return sqlDb;
   });
   const getConnection = options.omitGetConnection
     ? undefined
@@ -56,7 +69,9 @@ async function setupMigrateStatusHarness(options: MigrateStatusHarnessOptions = 
         if (options.mongoError) throw options.mongoError;
         return mongoDb;
       });
-  const closeAllConnections = jest.fn(async () => undefined);
+  const closeAllConnections = jest.fn(async () => {
+    if (options.closeError) throw options.closeError;
+  });
   const resolveConnectionName = jest.fn(() => connectionName);
   const ensureMigrationCollection = jest.fn(async () => {
     if (options.mongoError) throw options.mongoError;
@@ -99,6 +114,7 @@ async function setupMigrateStatusHarness(options: MigrateStatusHarnessOptions = 
     root,
     migrationsDir,
     mongoDb,
+    sqlDb,
     migrateStatus: migrateStatusModule.migrateStatus,
     mocks: {
       getAdapter,
@@ -268,5 +284,40 @@ describe("LTS phase 5 migrateStatus coverage", () => {
     expect(process.exitCode).toBe(1);
 
     fs.rmSync(harness.root, { recursive: true, force: true });
+  });
+
+  test("cleanup failures propagate from Mongo and SQL finally blocks", async () => {
+    const mongoHarness = await setupMigrateStatusHarness({
+      connectionName: "mongo_status_close_fail" as ConnectionName,
+      migrationFiles: ["202603150204_create_fail.ts"],
+      closeError: new Error("mongo close failed"),
+    });
+
+    await expect(
+      mongoHarness.migrateStatus({
+        connectionNames: ["mongo_status_close_fail" as ConnectionName],
+      }),
+    ).rejects.toThrow("mongo close failed");
+    expect(mongoHarness.mocks.closeAllConnections).toHaveBeenCalledTimes(1);
+    fs.rmSync(mongoHarness.root, { recursive: true, force: true });
+
+    const sqlHarness = await setupMigrateStatusHarness({
+      connectionName: "sqlite_status_close_fail" as ConnectionName,
+      driver: "sqlite",
+      migrationFiles: ["202603150205_create_users.ts"],
+      sqlRows: [],
+      closeError: new Error("sql close failed"),
+    });
+
+    await expect(
+      sqlHarness.migrateStatus({
+        connectionNames: ["sqlite_status_close_fail" as ConnectionName],
+      }),
+    ).rejects.toThrow("sql close failed");
+    expect(sqlHarness.sqlDb.query).toHaveBeenCalledWith(
+      "SELECT name, batch, run_at FROM migrations ORDER BY batch, id",
+    );
+    expect(sqlHarness.mocks.closeAllConnections).toHaveBeenCalledTimes(1);
+    fs.rmSync(sqlHarness.root, { recursive: true, force: true });
   });
 });

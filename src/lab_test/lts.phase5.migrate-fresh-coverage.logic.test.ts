@@ -203,4 +203,52 @@ describe("LTS phase 5 migrateFresh coverage", () => {
     expect(errorSpy).toHaveBeenCalledWith(expect.any(Error));
     expect(process.exitCode).toBe(1);
   });
+
+  test("migrateFresh propagates cleanup failure from dropAllTables finally", async () => {
+    jest.resetModules();
+
+    const getAdapter = jest.fn(async () => {
+      throw new Error("adapter failed");
+    });
+    const getConnection = jest.fn(async () => ({}));
+    const closeAllConnections = jest.fn(async () => {
+      throw new Error("close failed");
+    });
+    const migrateRun = jest.fn(async () => undefined);
+    const makeMigration = jest.fn(async () => undefined);
+
+    jest.doMock("chalk", () => passthroughChalk);
+    jest.doMock("../core/connection/ConnectionFactory", () => ({
+      getAdapter,
+      getConnection,
+      closeAllConnections,
+    }));
+    jest.doMock("../config/database", () => ({
+      dbConfig: {
+        connections: {
+          mysql: { driver: "mysql" },
+        },
+      },
+    }));
+    jest.doMock("../cli/commands/migrateRun", () => ({
+      migrateRun,
+    }));
+    jest.doMock("../cli/commands/makeMigration", () => ({
+      makeMigration,
+    }));
+
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    await expect(
+      migrateFresh({
+        force: true,
+        connectionNames: ["mysql" as never],
+      }),
+    ).rejects.toThrow("close failed");
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Error while dropping tables for mysql:"),
+    );
+  });
 });
