@@ -3,9 +3,12 @@ import os from "os";
 import path from "path";
 import { acquireMigrationLock } from "../cli/utils/migrations/MongoMigrationTracker";
 import {
+  deleteAppliedMigration,
   ensureMigrationCollection,
-  readAppliedMigrations,
   readLastBatch,
+  readAppliedMigrations,
+  recordAppliedMigration,
+  releaseMigrationLock,
   validateMigrationHistory,
 } from "../cli/utils/migrations/MongoMigrationTracker";
 
@@ -269,6 +272,59 @@ describe("LTS phase 5 MongoMigrationTracker coverage", () => {
       },
     ]);
     await expect(readLastBatch(db as never)).resolves.toBe(0);
+  });
+
+  test("history readers and writers cover Date normalization and mutation helpers", async () => {
+    const db = makeMongoDb({
+      collections: new Set<string>(["migrations"]),
+      docs: [
+        {
+          _id: "history-1",
+          kind: "history",
+          name: "20260315000000006_create_metrics_table.ts",
+          checksum: "checksum-1",
+          batch: 4,
+          run_at: new Date("2026-03-15T01:02:03.000Z"),
+        },
+      ],
+      createIndexErrors: [],
+    });
+
+    await expect(readAppliedMigrations(db as never)).resolves.toEqual([
+      {
+        id: "history-1",
+        name: "20260315000000006_create_metrics_table.ts",
+        batch: 4,
+        checksum: "checksum-1",
+        run_at: "2026-03-15T01:02:03.000Z",
+      },
+    ]);
+    await expect(readLastBatch(db as never)).resolves.toBe(4);
+
+    await expect(
+      recordAppliedMigration(
+        db as never,
+        "20260315000000007_create_more_metrics_table.ts",
+        5,
+        "checksum-2",
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      deleteAppliedMigration(db as never, "20260315000000007_create_more_metrics_table.ts"),
+    ).resolves.toBeUndefined();
+    await expect(releaseMigrationLock(db as never, "owner-cleanup")).resolves.toBeUndefined();
+  });
+
+  test("acquireMigrationLock throws when another owner holds the lock", async () => {
+    const db = makeMongoDb({
+      collections: new Set<string>(["migrations"]),
+      docs: [{ _id: "__eloquent_migration_lock__", kind: "lock", owner: "owner-a" }],
+      createIndexErrors: [],
+    });
+
+    await expect(acquireMigrationLock(db as never, "owner-b")).rejects.toThrow(
+      "Another migration process is already running.",
+    );
   });
 
   test("validateMigrationHistory prunes stale generated create migrations during checksum backfill", async () => {

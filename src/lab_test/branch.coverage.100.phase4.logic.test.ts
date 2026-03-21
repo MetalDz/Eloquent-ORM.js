@@ -364,4 +364,50 @@ describe("Branch coverage 100% - phase 4 migration tracker and locking edges", (
       strategy.release(sqliteCommitRollbackFail, "owner-commit-fail", { success: true })
     ).resolves.toBeUndefined();
   });
+
+  test("NativeSqlMigrationLockStrategy covers unsupported and lock-conflict branches", async () => {
+    const strategy = new NativeSqlMigrationLockStrategy();
+
+    const unsupported = makeAdapter("sql_ghost" as ConnectionName);
+    await expect(strategy.acquire(unsupported, "owner-ghost")).rejects.toThrow(
+      "Unsupported SQL driver for migration lock strategy: sql_ghost"
+    );
+
+    dbConfig.connections.sqlite.driver = "mongo" as any;
+    const sqliteByName = makeAdapter("sqlite");
+    sqliteByName.execute.mockResolvedValue(undefined);
+    await expect(strategy.acquire(sqliteByName, "owner-sqlite-name")).resolves.toBeUndefined();
+
+    await expect(strategy.acquire(sqliteByName, "owner-sqlite-name")).resolves.toBeUndefined();
+    await expect(strategy.acquire(sqliteByName, "owner-other")).rejects.toThrow(
+      "Another migration process is already running."
+    );
+
+    await expect(strategy.release(sqliteByName, "owner-mismatch")).resolves.toBeUndefined();
+    await expect(strategy.release(sqliteByName, "owner-sqlite-name")).resolves.toBeUndefined();
+  });
+
+  test("NativeSqlMigrationLockStrategy covers pg/mysql rejection and cleanup swallow branches", async () => {
+    const strategy = new NativeSqlMigrationLockStrategy();
+
+    const pgRejected = makeAdapter("pg_test");
+    pgRejected.queryOne.mockResolvedValueOnce({ acquired: false });
+    await expect(strategy.acquire(pgRejected, "owner-pg-fail")).rejects.toThrow(
+      "Another migration process is already running."
+    );
+
+    const mysqlRejected = makeAdapter("mysql_test");
+    mysqlRejected.queryOne.mockResolvedValueOnce({ acquired: null });
+    await expect(strategy.acquire(mysqlRejected, "owner-mysql-fail")).rejects.toThrow(
+      "Another migration process is already running."
+    );
+
+    const pgCleanup = makeAdapter("pg_test");
+    pgCleanup.queryOne.mockRejectedValueOnce(new Error("pg unlock failed"));
+    await expect(strategy.release(pgCleanup, "owner-pg-cleanup")).resolves.toBeUndefined();
+
+    const mysqlCleanup = makeAdapter("mysql_test");
+    mysqlCleanup.queryOne.mockRejectedValueOnce(new Error("mysql unlock failed"));
+    await expect(strategy.release(mysqlCleanup, "owner-mysql-cleanup")).resolves.toBeUndefined();
+  });
 });

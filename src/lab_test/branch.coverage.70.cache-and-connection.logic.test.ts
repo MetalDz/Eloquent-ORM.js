@@ -159,6 +159,35 @@ describe("Branch coverage 70% - Phase 2 cache and connection", () => {
     managerAny.opTimeoutMs = previousTimeout;
   });
 
+  test("CacheFallbackManager formats non-Error clear and shutdown failures", async () => {
+    const clearStringDriver = makeDriver("ClearStringDriver", {
+      clear: async () => {
+        throw "clear-string-failure";
+      },
+    });
+    const closeStringDriver = makeDriver("CloseStringDriver", {
+      close: async () => {
+        throw "close-string-failure";
+      },
+    });
+
+    CacheFallbackManager.useChain([clearStringDriver, closeStringDriver]);
+
+    const clearResults = await CacheFallbackManager.clearAllDrivers();
+    expect(clearResults).toContainEqual({
+      driver: "ClearStringDriver",
+      ok: false,
+      error: "clear-string-failure",
+    });
+
+    const shutdownResults = await CacheFallbackManager.shutdownDrivers();
+    expect(shutdownResults).toContainEqual({
+      driver: "CloseStringDriver",
+      closed: false,
+      error: "close-string-failure",
+    });
+  });
+
   test("CacheRegistry covers model/group key management and clear operations", async () => {
     const deleteSpy = jest.spyOn(CacheManager, "delete").mockResolvedValue(undefined);
     const clearSpy = jest.spyOn(CacheManager, "clear").mockResolvedValue(undefined);
