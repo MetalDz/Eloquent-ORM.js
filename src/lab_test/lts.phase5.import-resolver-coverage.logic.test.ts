@@ -105,4 +105,16 @@ describe("LTS phase 5 ImportResolver coverage", () => {
       ),
     ).toBe("../index");
   });
+
+  test("inside the repo same-directory imports are normalized with a leading ./ prefix", async () => {
+    jest.spyOn(process, "cwd").mockReturnValue(rootDir);
+
+    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+
+    expect(
+      ImportResolver.publicApiImportPath(
+        path.join(rootDir, "src", "registerModels.ts"),
+      ),
+    ).toBe("./index");
+  });
 });

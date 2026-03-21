@@ -189,4 +189,96 @@ describe("LTS phase 5 BaseModelSafeFinderStatics coverage", () => {
     expect(findAllBySpy).toHaveBeenCalledTimes(1);
     expect(existsBySpy).toHaveBeenCalledTimes(1);
   });
+
+  test("instance-backed static CRUD helpers and bulk delegates cover create/find/update/delete/restore paths", async () => {
+    abstract class DummyBase {
+      create = jest.fn(async (data: Record<string, unknown>) => ({ id: 1, ...data }));
+      find = jest.fn(async (id: number | string, pk = "id") => ({ id, pk }));
+      update = jest.fn(async (...args: unknown[]) => args);
+      delete = jest.fn(async (id: number | string, pk = "id") => ({ id, pk }));
+    }
+
+    const MixedBase = BaseModelSafeFinderStaticsMixin(DummyBase as any);
+
+    class FinderModel extends MixedBase {
+      restore?: (id: number | string, pk?: string) => Promise<void>;
+    }
+
+    const createManySpy = jest
+      .spyOn(CoreModel, "createMany")
+      .mockImplementation(async function (this: unknown, rows: Record<string, unknown>[]) {
+        expect(this).toBe(FinderModel);
+        return rows as any;
+      });
+    const updateManySpy = jest
+      .spyOn(CoreModel, "updateMany")
+      .mockImplementation(async function (this: unknown, ids: Array<number | string>, data: Record<string, unknown>, pk = "id") {
+        expect(this).toBe(FinderModel);
+        expect(ids).toEqual([1, 2]);
+        expect(data).toEqual({ active: false });
+        expect(pk).toBe("id");
+      });
+    const patchManySpy = jest
+      .spyOn(CoreModel, "patchMany")
+      .mockImplementation(async function (this: unknown, rows: Record<string, unknown>[], pk = "id") {
+        expect(this).toBe(FinderModel);
+        expect(rows).toEqual([{ id: 1, name: "Ada" }]);
+        expect(pk).toBe("id");
+      });
+    const deleteManySpy = jest
+      .spyOn(CoreModel, "deleteMany")
+      .mockImplementation(async function (this: unknown, ids: Array<number | string>, pk = "id") {
+        expect(this).toBe(FinderModel);
+        expect(ids).toEqual([1, 2]);
+        expect(pk).toBe("id");
+      });
+    const restoreManySpy = jest
+      .spyOn(CoreModel, "restoreMany")
+      .mockImplementation(async function (this: unknown, ids: Array<number | string>, pk = "id") {
+        expect(this).toBe(FinderModel);
+        expect(ids).toEqual([1, 2]);
+        expect(pk).toBe("id");
+      });
+
+    const Model = FinderModel as typeof FinderModel & {
+      create(data: Record<string, unknown>): Promise<unknown>;
+      createMany(rows: Record<string, unknown>[]): Promise<unknown[]>;
+      find(id: number | string, pk?: string): Promise<unknown>;
+      updateById(id: number | string, data: Record<string, unknown>, pk?: string): Promise<unknown>;
+      updateMany(ids: Array<number | string>, data: Record<string, unknown>, pk?: string): Promise<void>;
+      patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+      deleteById(id: number | string, pk?: string): Promise<unknown>;
+      deleteMany(ids: Array<number | string>, pk?: string): Promise<void>;
+      restoreById(id: number | string, pk?: string): Promise<void>;
+      restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
+    };
+
+    await expect(Model.create({ name: "Ada" })).resolves.toEqual({ id: 1, name: "Ada" });
+    await expect(Model.createMany([{ id: 1 }, { id: 2 }])).resolves.toEqual([{ id: 1 }, { id: 2 }]);
+    await expect(Model.find(7, "uuid")).resolves.toEqual({ id: 7, pk: "uuid" });
+    await expect(Model.updateById(7, { active: false }, "uuid")).resolves.toEqual([
+      7,
+      { active: false },
+      "uuid",
+    ]);
+    await expect(Model.updateMany([1, 2], { active: false })).resolves.toBeUndefined();
+    await expect(Model.patchMany([{ id: 1, name: "Ada" }])).resolves.toBeUndefined();
+    await expect(Model.deleteById(7, "uuid")).resolves.toEqual({ id: 7, pk: "uuid" });
+    await expect(Model.deleteMany([1, 2])).resolves.toBeUndefined();
+
+    FinderModel.prototype.restore = jest.fn(async () => undefined);
+    await expect(Model.restoreById(7, "uuid")).resolves.toBeUndefined();
+    await expect(Model.restoreMany([1, 2])).resolves.toBeUndefined();
+
+    delete FinderModel.prototype.restore;
+    await expect(Model.restoreById(9)).rejects.toThrow(
+      "FinderModel does not support restoreById().",
+    );
+
+    expect(createManySpy).toHaveBeenCalledTimes(1);
+    expect(updateManySpy).toHaveBeenCalledTimes(1);
+    expect(patchManySpy).toHaveBeenCalledTimes(1);
+    expect(deleteManySpy).toHaveBeenCalledTimes(1);
+    expect(restoreManySpy).toHaveBeenCalledTimes(1);
+  });
 });

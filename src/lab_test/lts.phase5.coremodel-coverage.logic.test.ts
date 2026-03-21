@@ -211,4 +211,135 @@ describe("LTS phase 5 CoreModel coverage", () => {
     expect((noOpPatchModel as any).update).not.toHaveBeenCalled();
     expect(noOpPatchModel.name).toBe("Ada");
   });
+
+  test("bulk static helpers cover invalid payloads, restore guards, and null-skipping createMany", async () => {
+    class BulkModel extends CoreModel {
+      static schema = {
+        id: column("increments"),
+        name: column("string", 255),
+      };
+
+      id?: number;
+      name?: string;
+
+      constructor() {
+        super("users", "mysql");
+      }
+    }
+
+    const createSpy = jest
+      .spyOn(BulkModel, "create")
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce({ id: 2, name: "Grace" } as never);
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        createMany(rows: Record<string, unknown>[]): Promise<Array<Record<string, unknown>>>;
+      }).createMany([{ name: "Ada" }, { name: "Grace" }]),
+    ).resolves.toEqual([{ id: 2, name: "Grace" }]);
+    expect(createSpy).toHaveBeenCalledTimes(2);
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        createMany(rows: unknown): Promise<unknown>;
+      }).createMany("bad-input"),
+    ).rejects.toThrow("BulkModel.createMany() expects an array of payload objects.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        updateMany(ids: unknown, data: Record<string, unknown>, pk?: string): Promise<void>;
+      }).updateMany("bad-input", { active: false }),
+    ).rejects.toThrow("BulkModel.updateMany() expects an array of primary keys.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        patchMany(rows: unknown, pk?: string): Promise<void>;
+      }).patchMany("bad-input"),
+    ).rejects.toThrow("BulkModel.patchMany() expects an array of partial payload objects.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+      }).patchMany([null as unknown as Record<string, unknown>]),
+    ).rejects.toThrow("BulkModel.patchMany() expects plain object items.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        patchMany(rows: Record<string, unknown>[], pk?: string): Promise<void>;
+      }).patchMany([{ name: "Ada" }]),
+    ).rejects.toThrow("BulkModel.patchMany() requires primary key 'id' on every item.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        deleteMany(ids: unknown, pk?: string): Promise<void>;
+      }).deleteMany("bad-input"),
+    ).rejects.toThrow("BulkModel.deleteMany() expects an array of primary keys.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        restoreMany(ids: unknown, pk?: string): Promise<void>;
+      }).restoreMany("bad-input"),
+    ).rejects.toThrow("BulkModel.restoreMany() expects an array of primary keys.");
+
+    await expect(
+      (BulkModel as typeof BulkModel & {
+        restoreMany(ids: Array<number | string>, pk?: string): Promise<void>;
+      }).restoreMany([1]),
+    ).rejects.toThrow("BulkModel does not support restoreMany().");
+  });
+
+  test("private CoreModel wrapper helpers cover validation, persistence snapshots, mongo filters, and event passthrough", async () => {
+    class WrapperModel extends CoreModel {
+      static schema = {
+        id: column("increments"),
+        name: column("string", 255),
+      };
+
+      static modelEvents = {
+        beforeCreate: jest.fn(() => true),
+      };
+
+      id?: number;
+      _id?: string;
+      name?: string;
+
+      constructor() {
+        super("users", "mongo");
+      }
+    }
+
+    const model = new WrapperModel() as any;
+
+    model.id = 7;
+    model._id = "mongo-7";
+    model.name = "Ada";
+    (model as any)._originalAttributes = { id: 7, name: "Ada" };
+    (model as any)._exists = true;
+
+    expect(model.buildMongoPrimaryFilter("id", 7)).toEqual({ $or: [{ id: 7 }, { _id: 7 }] });
+    expect(model.getPersistenceSchema()).toEqual(WrapperModel.schema);
+    expect(model.getColumnFieldNames()).toEqual(["id", "name"]);
+    expect(model.resolvePrimaryKey()).toBe("id");
+    expect(model.getPrimaryKeyValue("id")).toBe(7);
+    expect(model.getOriginalPrimaryKeyValue("id")).toBe(7);
+    expect(model.createSnapshot({ _id: "mongo-7", name: "Ada" })).toEqual({
+      id: "mongo-7",
+      name: "Ada",
+    });
+
+    model.syncPersistedState({ id: 7, name: "Ada" });
+    expect((model as any)._exists).toBe(true);
+    expect((model as any)._originalAttributes).toEqual({ id: 7, name: "Ada" });
+
+    expect(model.sanitizeAssignableData({ name: "Grace" }, "fill")).toEqual({ name: "Grace" });
+    expect(model.extractPersistableAttributes()).toEqual({ id: 7, name: "Ada" });
+    expect(() => model.assertPrimaryKeyNotMutated("id")).not.toThrow();
+    expect(model.getDirtyAttributes("id")).toEqual({});
+
+    await expect(model.validateData({ name: "Ada" })).resolves.toBeUndefined();
+    await expect(
+      model.validateDataInternal({ name: "Ada" }, { partial: true }),
+    ).resolves.toBeUndefined();
+    await expect(model.fireEvent("beforeCreate", { name: "Ada" })).resolves.toBe(true);
+  });
 });

@@ -331,7 +331,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(testScenarios).toContain("eloquent demo:scenario --test --random");
     expect(testCliPackSmoke).toContain("npm run test:pack-smoke");
     expect(testCliPackSmoke).toContain("[CLI Test Matrix](../cli/test-matrix)");
-    expect(docsConfig).toContain('"theme": "prism"');
+    expect(docsConfig).toContain('"theme": "mint"');
     expect(docsConfig).toContain('"orm/soft-deletes"');
     expect(docsConfig).toContain('"orm/multi-connection-strategy"');
     expect(docsConfig).toContain('"runtime/index"');

@@ -281,4 +281,74 @@ describe("LTS phase 5 residual ORM mixin coverage", () => {
     await noSyncModel.restore(9);
     expect(noSyncModel.deleted_at).toBeNull();
   });
+
+  test("SoftDeletesMixin tracks mongo fallback ids and keeps non-matching forceDelete state untouched", async () => {
+    const deletes: Array<[number | string, string]> = [];
+
+    class SoftBase {
+      async all(): Promise<Array<Record<string, unknown>>> {
+        return [];
+      }
+
+      async find(): Promise<Record<string, unknown> | null> {
+        return null;
+      }
+
+      async update(): Promise<void> {
+        return undefined;
+      }
+
+      async delete(id: number | string, pk = "id"): Promise<void> {
+        deletes.push([id, pk]);
+      }
+    }
+
+    class SoftModel extends SoftDeletesMixin(
+      SoftBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      public id = undefined;
+      public _id = "mongo-1";
+      public _exists = true;
+      public _originalAttributes = { _id: "mongo-1" };
+    }
+
+    const tracked = new (SoftModel as any)();
+    await tracked.forceDelete("other-id", "_id");
+    expect(deletes.at(-1)).toEqual(["other-id", "_id"]);
+    expect(tracked._exists).toBe(true);
+    expect(tracked._originalAttributes).toEqual({ _id: "mongo-1" });
+
+    await tracked.forceDelete("mongo-1", "_id");
+    expect(tracked._exists).toBe(false);
+    expect(tracked._originalAttributes).toEqual({});
+  });
+
+  test("SoftDeletesMixin covers tracked id fallback for id keys and object-style delegated update", async () => {
+    class SoftBase {
+      update = jest.fn((payload: Record<string, unknown>) => payload);
+      async all(): Promise<Array<Record<string, unknown>>> {
+        return [];
+      }
+      async find(): Promise<Record<string, unknown> | null> {
+        return null;
+      }
+      async delete(): Promise<void> {
+        return undefined;
+      }
+    }
+
+    class SoftModel extends SoftDeletesMixin(
+      SoftBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      public id = undefined;
+      public _id = "mongo-7";
+      public _originalAttributes = { _id: "mongo-7", id: "legacy-id" };
+    }
+
+    const model = new (SoftModel as any)();
+
+    expect(model.getTrackedPrimaryValue("id")).toBe("mongo-7");
+    expect(model.update({ name: "Ada" })).toEqual({ name: "Ada" });
+    expect((model as any).update).toHaveBeenCalledWith({ name: "Ada" });
+  });
 });
