@@ -139,7 +139,7 @@ describe("Branch coverage 100% - phase 23 ORM mixin deep edge closure", () => {
     await expect(model.onlyTrashed()).rejects.toThrow(
       "Base 'all' method not found for SoftDeletesMixin."
     );
-    await expect(model.update(1, { name: "x" })).rejects.toThrow(
+    expect(() => model.update(1, { name: "x" })).toThrow(
       "Base 'update' method not found for SoftDeletesMixin."
     );
   });

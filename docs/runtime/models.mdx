@@ -21,6 +21,8 @@ Driver summary:
 - PostgreSQL: stricter relational workloads and richer SQL semantics
 - SQLite: local development, lightweight apps, and test isolation
 
+Choose SQL when constraints, pivot tables, and migration-backed integrity should be preferred over document flexibility.
+
 ### MySQL
 
 Use MySQL when:
@@ -76,6 +78,7 @@ Use Mongo models when:
 - the domain is document-first
 - shape flexibility matters
 - explicit `--mongo` flows are part of the runtime story
+- relation support depends on explicit model methods instead of SQL constraints
 
 Avoid SQL-only assumptions in Mongo examples, especially:
 

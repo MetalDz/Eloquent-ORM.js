@@ -1,8 +1,8 @@
 # Hot Fix Base Code Checklist
 
-Last updated: 2026-03-18
+Last updated: 2026-03-21
 Owner: ORM core maintainers
-Status: IN PROGRESS
+Status: COMPLETED
 
 ## Status Legend
 
@@ -25,8 +25,8 @@ This phase is planning and guard-rail setup only. Do not start debugging unrelat
 
 ## Design direction to validate
 
-- [pending] Keep query reads Laravel-like: `Model.where(...).orderBy(...).limit(...).get()` and `Model.findOneBy(...)`.
-- [pending] Lock the public CRUD shape before implementation:
+- [done] Keep query reads Laravel-like: `Model.where(...).orderBy(...).limit(...).get()` and `Model.findOneBy(...)`.
+- [done] Lock the public CRUD shape before implementation:
   - create with `new User(); user.fill(...); await user.save();`
   - optional static create with `await User.create(...)`
   - read with `await User.find(...)`, `await User.findOneBy(...)`, and safe-finder chains
@@ -34,7 +34,7 @@ This phase is planning and guard-rail setup only. Do not start debugging unrelat
   - persisted-instance partial update with `await found.patch({...});`
   - loaded-instance delete with `await found.delete();`
   - loaded soft-delete restore with `await found.restore();`
-- [pending] Add Laravel-like bulk targets:
+- [done] Add Laravel-like bulk targets:
   - `createMany`
   - `updateMany`
   - `patchMany`
@@ -46,11 +46,11 @@ This phase is planning and guard-rail setup only. Do not start debugging unrelat
   - `await User.patchMany([{ id: 1, email: "a@example.com" }, { id: 2, email: "b@example.com" }])`
   - `await User.deleteMany([1, 2])`
   - `await User.restoreMany([1, 2])`
-- [pending] Add direct by-id public targets:
+- [done] Add direct by-id public targets:
   - `updateById`
   - `deleteById`
   - `restoreById`
-- [pending] Do not ship mixed examples that recommend both old and new public CRUD shapes without deprecation notes.
+- [done] Do not ship mixed examples that recommend both old and new public CRUD shapes without deprecation notes.
 
 ## Public target API snapshot
 
@@ -113,120 +113,97 @@ await User.restoreMany([1, 2]);
 - [done] Capture the current `npm run test:pack-smoke` baseline before the first API hot-fix change.
 - [done] List the exact public methods, aliases, and examples that will change.
 - [done] Mark the change as additive, deprecating, or breaking before implementation starts.
-- [pending] Freeze the docs files and generated templates that must move together with the code.
-- [pending] Do not start debugging unrelated failures during this checklist phase.
+- [done] Freeze the docs files and generated templates that must move together with the code.
+- [done] Do not start debugging unrelated failures during this checklist phase.
 
 ## Previous tests that must stay green or be updated intentionally
 
-- [exists-but-unreviewed] `src/lab_test/instance.persistence.layer.contract.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/instance.persistence.layer.runtime.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/real.model.instance.persistence.integration.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/generated.model.instance.persistence.cli.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/scenario.generated.model.instance.persistence.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/orm.hardening.phase4.real-model-read-persistence.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/orm.hardening.phase4.hydrated-dirty-tracking.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/safe.finder.api.contract.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/safe.finder.api.runtime.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/laravel.query-builder.contract.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/documentation.usage.gaps.logic.test.ts`
+- [done] `src/lab_test/instance.persistence.layer.contract.logic.test.ts`
+- [done] `src/lab_test/instance.persistence.layer.runtime.logic.test.ts`
+- [done] `src/lab_test/real.model.instance.persistence.integration.logic.test.ts`
+- [done] `src/lab_test/generated.model.instance.persistence.cli.logic.test.ts`
+- [done] `src/lab_test/scenario.generated.model.instance.persistence.logic.test.ts`
+- [done] `src/lab_test/orm.hardening.phase4.real-model-read-persistence.logic.test.ts`
+- [done] `src/lab_test/orm.hardening.phase4.hydrated-dirty-tracking.logic.test.ts`
+- [done] `src/lab_test/safe.finder.api.contract.logic.test.ts`
+- [done] `src/lab_test/safe.finder.api.runtime.logic.test.ts`
+- [done] `src/lab_test/laravel.query-builder.contract.logic.test.ts`
 - [done] `src/lab_test/documentation.usage.gaps.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/lts.phase4.consumer-documentation-suite.logic.test.ts`
-- [exists-but-unreviewed] `src/lab_test/package.docs-and-examples.rename.logic.test.ts`
-- [pending] `npm run test:pack-smoke`
+- [done] `src/lab_test/lts.phase4.consumer-documentation-suite.logic.test.ts`
+- [done] `src/lab_test/package.docs-and-examples.rename.logic.test.ts`
+- [done] `npm run test:pack-smoke`
 
 ## Documentation files that must be reviewed together
 
-- [exists-but-unreviewed] `README.md`
-- [exists-but-unreviewed] `docs/getting-started/installation.mdx`
-- [exists-but-unreviewed] `docs/getting-started/quick-start.mdx`
-- [exists-but-unreviewed] `docs/getting-started/usage-guides.mdx`
-- [exists-but-unreviewed] `docs/getting-started/controllers.mdx`
-- [exists-but-unreviewed] `docs/getting-started/services.mdx`
-- [exists-but-unreviewed] `docs/api/querying.mdx`
-- [exists-but-unreviewed] `docs/api/models.mdx`
-- [exists-but-unreviewed] `docs/orm/soft-deletes.mdx`
-- [exists-but-unreviewed] `src/documentation/installation-and-quickstart.md`
-- [exists-but-unreviewed] `src/documentation/usage-guides.md`
-- [exists-but-unreviewed] `src/documentation/usage-guides-controller.md`
-- [exists-but-unreviewed] `src/documentation/usage-guides-services.md`
+- [done] `README.md`
+- [done] `docs/getting-started/installation.mdx`
+- [done] `docs/getting-started/quick-start.mdx`
+- [done] `docs/getting-started/usage-guides.mdx`
+- [done] `docs/getting-started/controllers.mdx`
+- [done] `docs/getting-started/services.mdx`
+- [done] `docs/api/querying.mdx`
+- [done] `docs/api/models.mdx`
+- [done] `docs/orm/soft-deletes.mdx`
+- [done] `src/documentation/installation-and-quickstart.md`
+- [done] `src/documentation/usage-guides.md`
+- [done] `src/documentation/usage-guides-controller.md`
+- [done] `src/documentation/usage-guides-services.md`
 
 ## Runtime section to publish during the hot fix
 
-- [pending] Add a dedicated `Runtime CRUD patterns` section to consumer docs before finalizing the public CRUD shape.
-- [pending] Add a dedicated `Runtime querying patterns` section alongside CRUD so read-path guidance stays consistent with the write-path design.
+- [done] Add a dedicated `Runtime CRUD patterns` section to consumer docs before finalizing the public CRUD shape.
+- [done] Add a dedicated `Runtime querying patterns` section alongside CRUD so read-path guidance stays consistent with the write-path design.
 - [done] Add bulk helper guidance to runtime CRUD docs with one frozen signature set.
-- [pending] Under `Querying`, explain:
+- [done] Under `Querying`, explain:
   - `find(id)` vs `findOneBy(field, value)`
   - collection reads with `all()` and `get()`
   - safe-finder chaining with `where(...)`, `orderBy(...)`, and `limit(...)`
   - eager loading with `with(...)` / `load(...)`
   - scope-based querying
   - recommended service-layer query composition
-- [pending] Under `Create`, explain:
-  - when to use `create(data)`
-  - when to use `fill(...) + save()`
-  - when to use `createMany(...)`
-  - what `new Model()` means in memory vs persistence
 - [done] Under `Create`, explain:
   - when to use `create(data)`
   - when to use `fill(...) + save()`
   - when to use `createMany(...)`
   - what `new Model()` means in memory vs persistence
-- [pending] Under `Update`, explain:
-  - loaded-instance updates with `update(...) + save()`
-  - partial updates with `patch(...)`
-  - direct by-id update via `updateById(...)`
-  - bulk updates via `updateMany(...)`
 - [done] Under `Update`, explain:
   - loaded-instance updates with `update(...) + save()`
   - partial updates with `patch(...)`
   - direct by-id update via `updateById(...)`
   - bulk updates via `updateMany(...)`
-- [pending] Under `Delete`, explain:
-  - loaded-instance delete semantics
-  - direct delete by primary key via `deleteById(...)`
-  - bulk deletes via `deleteMany(...)`
-  - hard delete vs soft delete expectations
 - [done] Under `Delete`, explain:
   - loaded-instance delete semantics
   - direct delete by primary key via `deleteById(...)`
   - bulk deletes via `deleteMany(...)`
   - hard delete vs soft delete expectations
-- [pending] Under `Restore`, explain:
-  - soft-delete requirement
-  - restore flow and service/controller use
-  - direct restore by primary key via `restoreById(...)`
-  - bulk restore via `restoreMany(...)`
-  - when restore is unavailable
 - [done] Under `Restore`, explain:
   - soft-delete requirement
   - restore flow and service/controller use
   - direct restore by primary key via `restoreById(...)`
   - bulk restore via `restoreMany(...)`
   - when restore is unavailable
-- [pending] Ensure the runtime section uses one consistent Laravel-like recommendation and does not leave conflicting examples behind.
 - [done] Ensure the runtime section uses one consistent Laravel-like recommendation and does not leave conflicting examples behind.
 
 ## Model section to publish during the hot fix
 
-- [pending] Add a dedicated `Model` section that explains model design before CRUD examples are finalized.
-- [pending] Separate SQL and Mongo model guidance clearly.
+- [done] Add a dedicated `Model` section that explains model design before CRUD examples are finalized.
+- [done] Separate SQL and Mongo model guidance clearly.
 
 ### SQL model documentation scope
 
-- [pending] Explain MySQL use cases:
+- [done] Explain MySQL use cases:
   - typical production web apps
   - broad hosting availability
   - conventional relational CRUD workloads
-- [pending] Explain PostgreSQL use cases:
+- [done] Explain PostgreSQL use cases:
   - stricter relational workloads
   - advanced SQL features and richer query semantics
   - systems that prefer PostgreSQL-native operations
-- [pending] Explain SQLite use cases:
+- [done] Explain SQLite use cases:
   - local development
   - lightweight apps
   - test isolation and file-based workflows
-- [pending] Explain relation types in SQL models:
+- [done] Explain relation types in SQL models:
   - `belongsTo`
   - `hasOne`
   - `hasMany`
@@ -234,15 +211,15 @@ await User.restoreMany([1, 2]);
   - `morphOne`
   - `morphMany`
   - `morphTo`
-- [pending] Explain when SQL constraints, pivot tables, and migration-backed integrity should be preferred.
+- [done] Explain when SQL constraints, pivot tables, and migration-backed integrity should be preferred.
 
 ### Mongo model documentation scope
 
-- [pending] Explain Mongo use cases:
+- [done] Explain Mongo use cases:
   - document-first workloads
   - flexible shapes
   - NoSQL scenario generation and explicit `--mongo` flows
-- [pending] Explain relation handling in Mongo models:
+- [done] Explain relation handling in Mongo models:
   - `belongsTo`
   - `hasOne`
   - `hasMany`
@@ -250,22 +227,28 @@ await User.restoreMany([1, 2]);
   - `morphOne`
   - `morphMany`
   - `morphTo`
-- [pending] Explain Mongo-specific caveats:
+- [done] Explain Mongo-specific caveats:
   - no SQL foreign-key guarantees
   - relation support depends on explicit model methods
   - avoid documenting SQL-only assumptions in Mongo examples
-- [pending] Explain when Mongo is the better fit than SQL and when it is not.
+- [done] Explain when Mongo is the better fit than SQL and when it is not.
 
 ## Coverage guard
 
 - [done] Record the pre-hot-fix coverage snapshot.
-- [pending] No public CRUD hot fix merges with lower statement, branch, function, or line coverage than the captured baseline.
-- [pending] Every added alias or behavior branch gets a matching runtime regression.
-- [pending] Every removed or redirected public path gets a contract test and a doc update.
-- [pending] If a generated artifact changes, add generator test coverage and pack-smoke validation.
-- [pending] Final verification must include `npm run test:coverage`, `npm run test:pack-smoke`, `npm run docs:lint`, and `npm run docs:build`.
-- [pending] Final verification must include `npm run test:coverage`, `npm run test:pack-smoke`, `npm run docs:lint`, and `npm run docs:build`.
-  - Current blocker: `docs:lint` and `docs:build` fail because local `@mintlify/cli` is missing from `node_modules`.
+- [done] No public CRUD hot fix merges with lower statement, branch, function, or line coverage than the captured baseline.
+- [done] Every added alias or behavior branch gets a matching runtime regression.
+- [done] Every removed or redirected public path gets a contract test and a doc update.
+- [done] If a generated artifact changes, add generator test coverage and pack-smoke validation.
+- Generator/template alignment status: `Hot-Fix-Base-Code-Generator-Template-Alignment.md` is added and generator/runtime coverage remains part of the hot-fix slice.
+- [done] Final verification includes `npm run test:coverage`, `npm run test:pack-smoke`, `npm run docs:lint`, and `npm run docs:build`.
+  - Docker validation status: `docs:lint`, `docs:build`, and `test:pack-smoke` are passing in the containerized environment.
+  - Final gate evidence:
+    - `npm run test:coverage` -> PASS
+    - `docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke` -> PASS
+    - `docker compose -f docker-compose.coverage-debug.yml run --rm --no-deps coverage-debug npm run docs:lint` -> PASS
+    - `docker compose -f docker-compose.coverage-debug.yml run --rm --no-deps coverage-debug npm run docs:build` -> PASS
+    - `npm run typecheck` -> PASS
 
 ## Execution order
 

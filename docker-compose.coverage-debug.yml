@@ -100,3 +100,56 @@ services:
       MONGO_TEST_DB: eloquentjs_db_test
       ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"
     command: npm run test:coverage
+
+  pack-smoke:
+    build:
+      context: .
+      dockerfile: Dockerfile.pack-smoke
+    working_dir: /workspace
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      memcached:
+        condition: service_started
+    environment:
+      CI: "true"
+      FORCE_COLOR: "0"
+      ELOQUENT_RUNTIME_LOG: "false"
+      DOTENV_CONFIG_QUIET: "true"
+      APP_ENV: development
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: "11211"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: eloquentjs
+      DB_CONNECTION: mysql
+      DB_TEST_CONNECTION: mysql_test
+      DB_TEST_HOST: mysql
+      DB_TEST_PORT: "3306"
+      DB_TEST_USER: root
+      DB_TEST_PASSWORD: root
+      DB_TEST_NAME: db_test
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_NAME: eloquentjs_pg
+      PG_TEST_HOST: postgres
+      PG_TEST_PORT: "5432"
+      PG_TEST_USER: postgres
+      PG_TEST_PASSWORD: postgres
+      PG_TEST_NAME: db_test_pg
+      SQLITE_PATH: /tmp/eloquent.app.sqlite
+      SQLITE_TEST_PATH: /tmp/eloquent.test.sqlite
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: eloquentjs_db
+      MONGO_TEST_URI: mongodb://mongo:27017
+      MONGO_TEST_DB: eloquentjs_db_test
+      ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"
+    command: npm run test:pack-smoke

@@ -250,7 +250,7 @@ describe("Branch coverage 70% - Phase 4 ORM mixins", () => {
       await expect((model as any).find(1)).rejects.toThrow(
         "Base 'find' method not found in CastsMixin chain."
       );
-      await expect((model as any).update(1, {})).rejects.toThrow(
+      expect(() => (model as any).update(1, {})).toThrow(
         "Base 'update' method not found in CastsMixin chain."
       );
     });

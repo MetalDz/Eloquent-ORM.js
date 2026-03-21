@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import { {{PascalCase}}Service } from "{{serviceImportPath}}";
-import { {{PascalCase}} } from "{{modelImportPath}}";
 
 export class {{PascalCase}}Controller {
   private service = new {{PascalCase}}Service();

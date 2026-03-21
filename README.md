@@ -89,7 +89,7 @@ setupCache(); // Memory/Staging/Production cache selector from env
 
 ## Runtime CRUD with generated models
 
-Model methods are instance-based for persistence and class-based for read/query.
+Use static safe-finders for targeted reads and creation, and use loaded instances for persistence updates.
 
 ```ts
 import { User } from "./app/models/User";
@@ -104,10 +104,10 @@ const recentActiveUsers = await User.where("is_active", true)
   .get();
 
 const oneByEmail = await User.findOneBy("email", "alice@example.com");
-const byId = await new User().find(10);
+const byId = await User.find(10);
 
 // Create
-const created = await new User().create({
+const created = await User.create({
   name: "Alice",
   email: "alice@example.com",
 });
@@ -187,7 +187,7 @@ export async function getActiveUsersFromCache() {
 }
 
 export async function createUser(payload: Record<string, unknown>) {
-  const user = await new User().create(payload);
+  const user = await User.create(payload);
   await CacheManager.delete("users:active:v1"); // invalidate read cache after write
   return user;
 }

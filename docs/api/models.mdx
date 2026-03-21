@@ -32,6 +32,12 @@ import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model"
 
 Use `SqlModel` (or root `Model`) for any entity backed by SQL migrations and relations.
 
+Driver guidance:
+
+- MySQL: typical production web apps, broad hosting availability, conventional relational CRUD workloads
+- PostgreSQL: stricter relational workloads, advanced SQL features, richer query semantics
+- SQLite: local development, lightweight apps, and test isolation
+
 ```ts
 import { column, relation } from "eloquent-orm.js";
 import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
@@ -101,6 +107,7 @@ Use this when:
 - you need migrations and SQL-first consistency,
 - you rely on SQL join semantics (`belongsTo`, `hasMany`, `belongsToMany`),
 - `factory:migration:seed` parity flows are expected to stay deterministic.
+- constraints, pivot tables, and migration-backed integrity should be preferred.
 
 ## 3) Mongo model scenario (document runtime)
 
@@ -162,6 +169,7 @@ Use this when:
 - your domain is document-oriented,
 - you do not need SQL constraint-heavy migration workflows,
 - you need runtime parity with `--mongo` or `--mongo --test`.
+- relation support depends on explicit model methods, not SQL foreign-key guarantees.
 
 ## 4) Relation patterns in one model
 
@@ -196,6 +204,7 @@ For polymorphic one/many:
 - `belongsToMany` with pivot metadata is SQL-first by contract.
 - In Mongo, emulate many-to-many with document references or explicit mapping collections.
 - Keep `morphAlias` and `morphName` consistent for stable polymorphic resolution.
+- Avoid documenting SQL-only assumptions for Mongo relations.
 
 ## 5) Runtime usage examples
 

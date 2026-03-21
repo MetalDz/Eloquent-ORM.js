@@ -10,7 +10,7 @@ describe("Hot Fix base code checklist", () => {
 
     const requiredSnippets = [
       "# Hot Fix Base Code Checklist",
-      "Status: IN PROGRESS",
+      "Status: COMPLETED",
       "consistent Laravel-like design",
       "This phase is planning and guard-rail setup only.",
       "Keep query reads Laravel-like",
@@ -98,6 +98,8 @@ describe("Hot Fix base code checklist", () => {
       "npm run test:coverage",
       "npm run docs:lint",
       "npm run docs:build",
+      "Docker validation status: `docs:lint`, `docs:build`, and `test:pack-smoke` are passing in the containerized environment.",
+      "Final gate evidence:",
     ];
 
     for (const snippet of requiredSnippets) {

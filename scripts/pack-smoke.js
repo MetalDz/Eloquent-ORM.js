@@ -62,9 +62,11 @@ function run(command, args, options = {}) {
 
 function runNpm(args, options = {}) {
   fs.mkdirSync(npmCacheDir, { recursive: true });
-  const command = process.platform === "win32" ? "cmd.exe" : nodeCmd;
-  const commandArgs =
-    process.platform === "win32"
+  const canUseNodeCli = typeof npmCliPath === "string" && npmCliPath.length > 0 && fs.existsSync(npmCliPath);
+  const command = canUseNodeCli ? nodeCmd : process.platform === "win32" ? "cmd.exe" : nodeCmd;
+  const commandArgs = canUseNodeCli
+    ? [npmCliPath, ...args]
+    : process.platform === "win32"
       ? ["/d", "/s", "/c", "npm.cmd", ...args]
       : [npmCliPath, ...args];
   return run(command, commandArgs, {
@@ -187,7 +189,9 @@ function resolveTarballName(packOutput) {
 }
 
 function listTarballEntries(tarballFilePath) {
-  const listed = run("tar", ["-tf", tarballFilePath], { cwd: repoRoot });
+  const tarCommand =
+    process.platform === "win32" ? path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe") : "tar";
+  const listed = run(tarCommand, ["-tf", tarballFilePath], { cwd: repoRoot });
   assertSuccess("tarball listing", listed);
   return listed.combined
     .split(/\r?\n/)

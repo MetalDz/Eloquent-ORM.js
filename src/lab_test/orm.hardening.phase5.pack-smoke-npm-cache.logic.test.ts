@@ -8,9 +8,11 @@ describe("ORM hardening phase 5 pack-smoke npm cache", () => {
 
     expect(content).toContain('const npmCacheDir = path.join(repoRoot, ".npm-pack-smoke-cache");');
     expect(content).toContain("fs.mkdirSync(npmCacheDir, { recursive: true });");
-    expect(content).toContain('const command = process.platform === "win32" ? "cmd.exe" : nodeCmd;');
+    expect(content).toContain("const canUseNodeCli = typeof npmCliPath === \"string\"");
+    expect(content).toContain("fs.existsSync(npmCliPath)");
+    expect(content).toContain("const command = canUseNodeCli ? nodeCmd : process.platform === \"win32\" ? \"cmd.exe\" : nodeCmd;");
+    expect(content).toContain("? [npmCliPath, ...args]");
     expect(content).toContain('? ["/d", "/s", "/c", "npm.cmd", ...args]');
-    expect(content).toContain(": [npmCliPath, ...args];");
     expect(content).toContain("return run(command, commandArgs, {");
     expect(content).toContain("npm_config_cache: npmCacheDir,");
     expect(content).toContain("NPM_CONFIG_CACHE: npmCacheDir,");

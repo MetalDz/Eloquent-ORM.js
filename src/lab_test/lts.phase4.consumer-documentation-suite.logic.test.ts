@@ -105,7 +105,7 @@ describe("LTS phase 4 consumer documentation suite", () => {
       "registerModels",
       "eloquent migrate:run --all-migrations",
       "## First Runtime Example",
-      "await user.save();",
+      "await found.save();",
       "Where to Go Next",
       "./support-policy.md",
     ];

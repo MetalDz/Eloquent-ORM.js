@@ -220,7 +220,7 @@ describe("Branch coverage 100% - phase 5 cache/config/hooks closures", () => {
     await expect(new (MissingCreateModel as any)().create({})).rejects.toThrow(
       "Base 'create' method not found for HooksMixin."
     );
-    await expect(new (MissingUpdateModel as any)().update(1, {})).rejects.toThrow(
+    expect(() => new (MissingUpdateModel as any)().update(1, {})).toThrow(
       "Base 'update' method not found for HooksMixin."
     );
     await expect(new (MissingDeleteModel as any)().delete(1)).rejects.toThrow(

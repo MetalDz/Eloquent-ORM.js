@@ -10,21 +10,25 @@ describe("Hot Fix base code step 01 freeze and baseline", () => {
   );
   const baselinePath = path.resolve(rootDir, "validation tasks/Hot-Fix-Base-Code-Baseline.md");
 
-  test("checklist status and pre-change gates move from planned to in-progress with captured baselines", () => {
+  test("checklist status and pre-change gates are fully closed with captured baselines", () => {
     const checklist = fs.readFileSync(checklistPath, "utf8");
 
-    expect(checklist).toContain("Status: IN PROGRESS");
+    expect(checklist).toContain("Status: COMPLETED");
     expect(checklist).toContain(
-      "- [x] Capture the current `npm run test:coverage` baseline before the first API hot-fix change."
+      "- [done] Capture the current `npm run test:coverage` baseline before the first API hot-fix change."
     );
     expect(checklist).toContain(
-      "- [x] Capture the current `npm run test:pack-smoke` baseline before the first API hot-fix change."
+      "- [done] Capture the current `npm run test:pack-smoke` baseline before the first API hot-fix change."
     );
     expect(checklist).toContain(
-      "- [x] List the exact public methods, aliases, and examples that will change."
+      "- [done] List the exact public methods, aliases, and examples that will change."
     );
     expect(checklist).toContain(
-      "- [x] Mark the change as additive, deprecating, or breaking before implementation starts."
+      "- [done] Mark the change as additive, deprecating, or breaking before implementation starts."
+    );
+    expect(checklist).toContain("- [done] `npm run test:pack-smoke`");
+    expect(checklist).toContain(
+      "- [done] Final verification includes `npm run test:coverage`, `npm run test:pack-smoke`, `npm run docs:lint`, and `npm run docs:build`."
     );
   });
 

@@ -12,13 +12,14 @@ Use safe-finder APIs for filtered reads, explicit result handling, and predictab
 The current query surface is intentionally split into:
 
 - static safe-finder reads such as `Model.where(...)`, `Model.orderBy(...)`, `Model.get()`, and `Model.findOneBy(...)`
-- instance reads such as `new Model().find(id)` and `new Model().all()`
+- static primary-key reads such as `Model.find(id)`
+- instance collection reads such as `new Model().all()`
 - eager loading through `with(...)` and `load(...)` when explicit relation methods exist
 
 Recommended rule:
 
 1. use static query helpers for filtered reads
-2. use instance `find(id)` for direct primary-key lookups
+2. use static `find(id)` for direct primary-key lookups
 3. use `first()` or `findOneBy(...)` for single nullable reads
 4. use `get()` for hydrated arrays
 
@@ -26,7 +27,7 @@ Recommended rule:
 <summary><strong>Primary-key and single-record reads</strong></summary>
 
 ```ts
-const byId = await new User().find(1);
+const byId = await User.find(1);
 const byEmail = await User.findOneBy("email", "alice@example.com");
 const newest = await User.orderBy("created_at", "desc").first();
 ```
@@ -67,7 +68,11 @@ Rules:
 <summary><strong>Eager loading</strong></summary>
 
 ```ts
-const user = await (new User()).with("posts", "profile").find(1);
+const user = await User.find(1);
+if (user) {
+  await (user as { load?: (...relations: string[]) => Promise<unknown> }).load?.("posts", "profile");
+}
+
 const users = await User.where("status", "active").with("posts").get();
 ```
 
@@ -109,7 +114,10 @@ export class UserService {
   }
 
   async detail(id: number | string) {
-    return (new User()).with("posts", "profile").find(id);
+    const user = await User.find(id);
+    if (!user) return null;
+    await (user as { load?: (...relations: string[]) => Promise<unknown> }).load?.("posts", "profile");
+    return user;
   }
 }
 ```
