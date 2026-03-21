@@ -68,6 +68,8 @@ services:
       FORCE_COLOR: "0"
       ELOQUENT_RUNTIME_LOG: "false"
       DOTENV_CONFIG_QUIET: "true"
+      APP_ENV: "development"
+      NODE_ENV: "test"
       MEMCACHED_HOST: memcached
       MEMCACHED_PORT: "11211"
       DB_HOST: mysql

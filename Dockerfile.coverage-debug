@@ -11,6 +11,7 @@ ENV CI=true
 ENV FORCE_COLOR=0
 ENV ELOQUENT_RUNTIME_LOG=false
 ENV DOTENV_CONFIG_QUIET=true
-ENV APP_ENV=production
+ENV APP_ENV=development
+ENV NODE_ENV=test
 
 CMD ["npm", "run", "test:coverage"]

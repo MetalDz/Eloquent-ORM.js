@@ -342,4 +342,78 @@ describe("LTS phase 5 CoreModel coverage", () => {
     ).resolves.toBeUndefined();
     await expect(model.fireEvent("beforeCreate", { name: "Ada" })).resolves.toBe(true);
   });
+
+  test("direct CoreModel static create/find and delete state guards cover remaining branches", async () => {
+    class StaticDirectModel extends CoreModel {
+      static schema = {
+        id: column("increments"),
+        name: column("string", 255),
+      };
+
+      constructor() {
+        super("users", "mysql");
+      }
+    }
+
+    jest
+      .spyOn(StaticDirectModel.prototype, "create")
+      .mockImplementation(
+        async (data: Record<string, unknown>) =>
+          ({ id: 11, ...data }) as unknown as StaticDirectModel | null,
+      );
+    jest
+      .spyOn(StaticDirectModel.prototype, "find")
+      .mockImplementation(
+        async (id: number | string, pk = "id") =>
+          ({ id, pk }) as unknown as StaticDirectModel | null,
+      );
+
+    await expect(
+      (StaticDirectModel as typeof StaticDirectModel & {
+        create(data: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+      }).create({ name: "Ada" }),
+    ).resolves.toEqual({ id: 11, name: "Ada" });
+
+    await expect(
+      (StaticDirectModel as typeof StaticDirectModel & {
+        find(id: number | string, pk?: string): Promise<Record<string, unknown> | null>;
+      }).find(9, "uuid"),
+    ).resolves.toEqual({ id: 9, pk: "uuid" });
+
+    const missingPk = new StaticDirectModel() as any;
+    missingPk._exists = true;
+    missingPk._originalAttributes = {};
+    await expect(missingPk.delete()).rejects.toThrow(
+      "Cannot delete StaticDirectModel without primary key 'id'.",
+    );
+
+    const persisted = new StaticDirectModel() as any;
+    persisted.id = 77;
+    persisted._exists = true;
+    persisted._originalAttributes = { id: 77, name: "Ada" };
+
+    const fireEventSpy = jest.spyOn(persisted, "fireEvent").mockResolvedValue(true);
+    const adapter = {
+      wrapId: jest.fn((value: string) => `\`${value}\``),
+      placeholder: jest.fn(() => "?"),
+      execute: jest.fn(async () => undefined),
+    };
+    jest.spyOn(persisted, "getDB").mockResolvedValue(adapter as any);
+
+    await expect(persisted.delete()).resolves.toBeUndefined();
+    expect(fireEventSpy).toHaveBeenNthCalledWith(1, "beforeDelete", 77);
+    expect(fireEventSpy).toHaveBeenNthCalledWith(2, "afterDelete", 77);
+    expect(persisted._exists).toBe(false);
+    expect(persisted._originalAttributes).toEqual({});
+
+    const fallbackPkModel = new StaticDirectModel() as any;
+    fallbackPkModel.id = 91;
+    fallbackPkModel._exists = true;
+    fallbackPkModel._originalAttributes = { id: 91 };
+    jest.spyOn(fallbackPkModel, "fireEvent").mockResolvedValue(true);
+    jest.spyOn(fallbackPkModel, "getDB").mockResolvedValue(adapter as any);
+
+    await expect(fallbackPkModel.delete(91, null as any)).resolves.toBeUndefined();
+    expect(adapter.execute).toHaveBeenLastCalledWith("DELETE FROM `users` WHERE `id` = ?", [91]);
+  });
 });

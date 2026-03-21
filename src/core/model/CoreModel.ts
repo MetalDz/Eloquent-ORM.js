@@ -789,7 +789,7 @@ export abstract class CoreModel<
       case "pg": {
         const adapter = db as DriverAdapter;
         const table = adapter.wrapId(this.tableName);
-        const pkCol = adapter.wrapId(pk);
+        const pkCol = adapter.wrapId(primaryKey);
         const sql = `DELETE FROM ${table} WHERE ${pkCol} = ${adapter.placeholder(1)}`;
         await adapter.execute(sql, [targetId]);
         break;

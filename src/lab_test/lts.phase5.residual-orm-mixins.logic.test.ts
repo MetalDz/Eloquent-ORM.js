@@ -351,4 +351,41 @@ describe("LTS phase 5 residual ORM mixin coverage", () => {
     expect(model.update({ name: "Ada" })).toEqual({ name: "Ada" });
     expect((model as any).update).toHaveBeenCalledWith({ name: "Ada" });
   });
+
+  test("SoftDeletesMixin throws delete and restore errors when no tracked primary key is available", async () => {
+    class SoftBase {
+      async update(): Promise<void> {
+        return undefined;
+      }
+
+      async all(): Promise<Array<Record<string, unknown>>> {
+        return [];
+      }
+
+      async find(): Promise<Record<string, unknown> | null> {
+        return null;
+      }
+
+      async delete(): Promise<void> {
+        return undefined;
+      }
+    }
+
+    class SoftModel extends SoftDeletesMixin(
+      SoftBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      public id = undefined;
+      public _id = undefined;
+      public _originalAttributes = {};
+    }
+
+    const model = new (SoftModel as any)();
+
+    await expect(model.delete()).rejects.toThrow(
+      "Cannot delete SoftModel without primary key 'id'.",
+    );
+    await expect(model.restore()).rejects.toThrow(
+      "Cannot restore SoftModel without primary key 'id'.",
+    );
+  });
 });

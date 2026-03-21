@@ -289,4 +289,23 @@ describe("LTS phase 5 BaseModelSafeFinderStatics coverage", () => {
     expect(deleteManySpy).toHaveBeenCalledTimes(1);
     expect(restoreManySpy).toHaveBeenCalledTimes(1);
   });
+
+  test("restoreById falls back to the generic Model label when the constructor name is empty", async () => {
+    abstract class DummyBase {
+      restore?: (id: number | string, pk?: string) => Promise<void>;
+    }
+
+    const MixedBase = BaseModelSafeFinderStaticsMixin(DummyBase as any);
+    class FinderModel extends MixedBase {}
+
+    Object.defineProperty(FinderModel, "name", { value: "" });
+
+    const Model = FinderModel as typeof FinderModel & {
+      restoreById(id: number | string, pk?: string): Promise<void>;
+    };
+
+    await expect(Model.restoreById(1)).rejects.toThrow(
+      "Model does not support restoreById().",
+    );
+  });
 });
