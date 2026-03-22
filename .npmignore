@@ -9,7 +9,7 @@ node_modules
 src/app
 src/test
 src/lab_test
-validation tasks
+src/validation tasks
 *.sqlite
 *.sqlite-journal
 .npm-pack-smoke-cache-shell-*
