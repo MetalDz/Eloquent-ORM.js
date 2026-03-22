@@ -107,6 +107,7 @@ class NativeSqlMigrationLockStrategy implements MigrationLockStrategy {
         );
       } catch {
         // Do not mask real migration errors with lock cleanup noise.
+        return;
       }
       return;
     }
@@ -119,6 +120,7 @@ class NativeSqlMigrationLockStrategy implements MigrationLockStrategy {
         );
       } catch {
         // Do not mask real migration errors with lock cleanup noise.
+        return;
       }
       return;
     }

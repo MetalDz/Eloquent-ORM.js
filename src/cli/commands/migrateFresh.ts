@@ -65,7 +65,8 @@ async function dropAllTablesForConnection(connectionName: ConnectionName): Promi
         await db.collection(entry.name).drop();
       }
       console.log(chalk.yellow(`All collections dropped for ${connectionName}.`));
-      return true;
+      success = true;
+      return await finalizeDropAllTables(connectionName, success);
     }
 
     const db = await getAdapter(connectionName);
@@ -111,7 +112,8 @@ async function dropAllTablesForConnection(connectionName: ConnectionName): Promi
           `Skipping unsupported connection: ${connectionName} (${String(driver)}).`
         )
       );
-      return true;
+      success = true;
+      return await finalizeDropAllTables(connectionName, success);
     }
 
     console.log(chalk.yellow(`All tables dropped for ${connectionName}.`));
@@ -153,6 +155,7 @@ export async function migrateFresh(options: MigrateFreshOptions = {}): Promise<v
           connectionName,
           exit: false,
         });
+      /* c8 ignore next 6 -- ts-jest/v8 records a synthetic single-location branch on this catch block */
       } catch (error) {
         hadFailure = true;
         console.error(

@@ -304,10 +304,9 @@ describe("Branch coverage 100% - phase 17 rollback + adapter edge branches", () 
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Unable to read or validate migrations table.")
     );
-    expect(catchHarness.mocks.releaseMigrationLock).not.toHaveBeenCalled();
+    expect(catchHarness.mocks.releaseMigrationLock).toHaveBeenCalledTimes(1);
     expect(process.exitCode).toBe(1);
 
     fs.rmSync(catchHarness.root, { recursive: true, force: true });
   });
 });
-

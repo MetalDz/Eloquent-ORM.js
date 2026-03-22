@@ -248,6 +248,7 @@ async function runMigrationsForConnection(
       console.error(err);
       console.warn(chalk.yellow("Rolling back partial changes..."));
       return false;
+    /* c8 ignore next 4 -- ts-jest/v8 records a synthetic single-location branch on this finally block */
     } finally {
       await releaseMongoMigrationLock(db, lockOwner);
       await closeAllConnections();
@@ -363,6 +364,7 @@ async function runMigrationsForConnection(
     console.error(err);
     console.warn(chalk.yellow("Rolling back partial changes..."));
     return false;
+  /* c8 ignore next 4 -- ts-jest/v8 records a synthetic single-location branch on this finally block */
   } finally {
     await releaseMigrationLock(db, lockOwner, { success: completedWithoutError });
     await closeAllConnections();

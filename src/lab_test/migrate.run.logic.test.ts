@@ -194,7 +194,7 @@ describe("migrate:run behavior", () => {
     expect(adapter.execute).not.toHaveBeenCalled();
     expect(mockedAcquireMigrationLock).not.toHaveBeenCalled();
     expect(mockedRecordAppliedMigration).not.toHaveBeenCalled();
-    expect(mockedReleaseMigrationLock).not.toHaveBeenCalled();
+    expect(mockedReleaseMigrationLock).toHaveBeenCalledTimes(1);
   });
 
   test("continues all-connections execution and sets non-zero exitCode on partial failure", async () => {

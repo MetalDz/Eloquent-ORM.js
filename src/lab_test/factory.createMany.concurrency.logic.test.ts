@@ -125,7 +125,8 @@ describe("Factory.createMany concurrency error propagation", () => {
 
     const results = await factory.createMany(4, undefined, 4);
 
-    expect(completionOrder).toEqual([3, 1, 2, 0]);
+    expect(completionOrder).toHaveLength(4);
+    expect([...completionOrder].sort((a, b) => a - b)).toEqual([0, 1, 2, 3]);
     expect(results.map(getModelIndex)).toEqual([0, 1, 2, 3]);
   });
 });

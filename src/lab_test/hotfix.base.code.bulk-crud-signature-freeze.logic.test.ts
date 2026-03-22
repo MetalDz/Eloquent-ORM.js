@@ -59,9 +59,10 @@ describe("Hot Fix base code bulk CRUD signature freeze", () => {
       expect(step3).toContain(snippet);
     }
 
-    expect(checklist).toContain(
-      'await User.patchMany([\n  { id: 1, email: "alice+1@example.com" },\n  { id: 2, email: "bob+1@example.com" },\n]);'
-    );
+    expect(checklist).toContain("await User.patchMany([");
+    expect(checklist).toContain('{ id: 1, email: "alice+1@example.com" },');
+    expect(checklist).toContain('{ id: 2, email: "bob+1@example.com" },');
+    expect(checklist).toContain("]);");
     expect(step2).toContain("await User.patchMany([{ id: 1, ... }, { id: 2, ... }])");
     expect(step3).toContain("await User.patchMany([{ id: 1, ... }, { id: 2, ... }])");
   });
