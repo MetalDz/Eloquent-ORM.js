@@ -14,7 +14,7 @@ services:
       - ./docker/coverage/mysql-init:/docker-entrypoint-initdb.d:ro
 
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

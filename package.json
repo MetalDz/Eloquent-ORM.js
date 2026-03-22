@@ -1,6 +1,6 @@
 {
   "name": "eloquent-orm.js",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
   "engines": {
     "node": "20.x"
