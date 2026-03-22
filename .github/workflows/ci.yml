@@ -12,10 +12,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality-gate:
-    name: Typecheck, Build, Test (MySQL)
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  test-mysql-smoke:
+    name: Test (MySQL Smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       mysql:
         image: mysql:8.0
@@ -73,20 +115,42 @@ jobs:
           });
           NODE
 
-      - name: Typecheck
-        run: npm run typecheck
-
       - name: Build
         run: npm run build
 
-      - name: Test
-        timeout-minutes: 15
+      - name: Run MySQL smoke subset
         env:
           CI: "true"
           FORCE_COLOR: "0"
           ELOQUENT_RUNTIME_LOG: "false"
           DOTENV_CONFIG_QUIET: "true"
-        run: npm run test:coverage
+        run: npm run test:mysql-smoke
+
+  test-docker-coverage:
+    name: Test (Docker Coverage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full Docker coverage gate
+        env:
+          CI: "true"
+          FORCE_COLOR: "0"
+          ELOQUENT_RUNTIME_LOG: "false"
+          DOTENV_CONFIG_QUIET: "true"
+        run: docker compose -f docker-compose.coverage-debug.yml run --rm coverage-debug
 
   critical-stability:
     name: Critical Stability Re-runs (MySQL)
@@ -203,6 +267,48 @@ jobs:
 
       - name: Run tarball smoke
         run: npm run test:pack-smoke
+
+  docs-lint:
+    name: Docs Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint docs
+        run: npm run docs:lint
+
+  docs-build:
+    name: Docs Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build docs
+        run: npm run docs:build
 
   package-smoke-windows:
     name: Package Smoke (Windows Tarball)

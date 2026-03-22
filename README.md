@@ -198,14 +198,18 @@ CLI cache helpers:
 - `npx eloquent cache:stats` (inspect runtime cache stats)
 - `npx eloquent cache:clear` (clear all cache entries)
 
-## Documentation gap plan (immediate)
+## Documentation
 
-The usage docs still need targeted expansions for end-to-end scenarios. Planned work:
+The full consumer documentation is organized around the main usage paths:
 
-1. Expand quick-start with a complete `eloquent make:model` -> `make:migration` -> `migrate:run` -> service/controller flow.
-2. Add explicit CRUD examples for:
-   - `create` via instance, `find`/`first`/`where`, `orderBy("...", "asc|desc")`, `all`, `patch`, `save`
-   - soft-delete flow (`delete`, `restore`, `forceDelete` boundaries)
-3. Add service-level templates + full REST examples (`POST/PUT/DELETE` paths).
-4. Add a concrete cache-by-get section (TTL, key naming, invalidation, and cache:clear integration).
-5. Keep README and Mintlify docs (especially `docs/getting-started/*` and `docs/api/*`) aligned with the same command syntax and runtime examples.
+- `Get Started`: installation, quick start, common scenarios, and cookbook guides
+- `Runtime`: CRUD, querying, models, controllers, services, and cache
+- `Test`: Jest/runtime testing, factories, seeds, scenarios, and pack smoke
+- `ORM`: relations, mixins, soft deletes, migrations, multi-connection strategy, and Mongo guidance
+- `CLI`: commands, generators, production-safety rules, and test matrix guidance
+
+Start with:
+
+- [docs/getting-started/quick-start.mdx](docs/getting-started/quick-start.mdx)
+- [docs/runtime/crud.mdx](docs/runtime/crud.mdx)
+- [docs/runtime/querying.mdx](docs/runtime/querying.mdx)

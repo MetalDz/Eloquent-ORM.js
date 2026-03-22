@@ -2,7 +2,6 @@
   "name": "eloquent-orm.js",
   "version": "1.0.0-rc.1",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
-  "readme": "Factories seeds integration in 1.0.0-rc.1",
   "engines": {
     "node": "20.x"
   },
@@ -50,6 +49,7 @@
     "docs:lint": "npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs broken-links",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
+    "test:mysql-smoke": "jest --runInBand --runTestsByPath src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
     "coverage:misses": "npm run test:coverage && node scripts/coverage-misses.cjs",
     "test:critical": "jest --runInBand src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
     "test:pack-smoke": "node scripts/pack-smoke.js",
