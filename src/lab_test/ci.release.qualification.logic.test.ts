@@ -11,9 +11,14 @@ describe("CI release qualification gates", () => {
     );
 
     const requiredSnippets = [
-      "quality-gate:",
+      "typecheck:",
+      "build:",
+      "test-mysql-smoke:",
+      "test-docker-coverage:",
       "critical-stability:",
       "package-smoke:",
+      "docs-lint:",
+      "docs-build:",
       "package-smoke-windows:",
       "scenario-matrix:",
       "driver: mysql",
@@ -38,6 +43,12 @@ describe("CI release qualification gates", () => {
       expect(workflow).toContain(snippet);
     }
 
+    expect(workflow).toMatch(
+      /test-mysql-smoke:\s+name:\s+Test \(MySQL Smoke\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+15/s
+    );
+    expect(workflow).toMatch(
+      /test-docker-coverage:\s+name:\s+Test \(Docker Coverage\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+30/s
+    );
     expect(workflow).toMatch(
       /critical-stability:\s+name:\s+Critical Stability Re-runs \(MySQL\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+25/s
     );
