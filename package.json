@@ -1,7 +1,7 @@
 {
   "name": "@alpha.consultings/eloquent-orm.js",
   "version": "1.0.0",
-  "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+  "description": "A Laravel Eloquent-inspired ORM Multi Driver SQL & NoSQL and Cache System and Artisan CLI like for Node.js Lovers",
   "publishConfig": {
     "access": "public"
   },
