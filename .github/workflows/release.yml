@@ -12,13 +12,51 @@ concurrency:
 
 jobs:
   semantic-release:
-    name: Semantic Release 
+    name: Semantic Release
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: write
       issues: write
       pull-requests: write
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --quiet --eval \"db.adminCommand({ ping: 1 }).ok\""
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: eloquentjs
+      DB_TEST_CONNECTION: mysql_test
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_PORT: 3306
+      DB_TEST_USER: root
+      DB_TEST_PASSWORD: root
+      DB_TEST_NAME: db_test
+      ELOQUENT_PACK_SMOKE_ENABLE_MONGO_RUNTIME: "1"
+      MONGO_URI: mongodb://127.0.0.1:27017/eloquent_pack_smoke
+      MONGO_TEST_URI: mongodb://127.0.0.1:27017/eloquent_pack_smoke_test
+      MONGO_DB: eloquent_pack_smoke
+      MONGO_TEST_DB: eloquent_pack_smoke_test
 
     steps:
       - name: Checkout
@@ -36,6 +74,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Initialize MySQL databases
+        run: |
+          node <<'NODE'
+          const mysql = require("mysql2/promise");
+          (async () => {
+            const conn = await mysql.createConnection({
+              host: "127.0.0.1",
+              user: "root",
+              password: "root",
+              port: 3306,
+            });
+            await conn.query("CREATE DATABASE IF NOT EXISTS `eloquentjs`");
+            await conn.query("CREATE DATABASE IF NOT EXISTS `db_test`");
+            await conn.end();
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -50,6 +108,17 @@ jobs:
 
       - name: Verify npm pack surface
         run: npm pack --dry-run --cache .npm-cache
+
+      - name: Run MySQL smoke subset
+        env:
+          CI: "true"
+          FORCE_COLOR: "0"
+          ELOQUENT_RUNTIME_LOG: "false"
+          DOTENV_CONFIG_QUIET: "true"
+        run: npm run test:mysql-smoke
+
+      - name: Run tarball smoke
+        run: npm run test:pack-smoke
 
       - name: Run semantic-release
         env:

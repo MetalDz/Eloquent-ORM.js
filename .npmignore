@@ -1,23 +1,18 @@
 .env
 .git
 .github
-.cache
-.cache-phase32
 coverage
-custom-cache-dir
 node_modules
+docs
 src/app
 src/test
 src/lab_test
-src/validation tasks
+src/documentation
+validation tasks
+docker
+*.log
 *.sqlite
 *.sqlite-journal
-.npm-pack-smoke-cache-shell-*
-.npm-pack-smoke-cache-*
-.npm-pack-smoke-cache-*-log.txt
 .npm-cache
-.mintignore
 .mint-cache
-.mint-cache-*
-.mint-cache-*-log.txt
-*.log
+.cache
