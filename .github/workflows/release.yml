@@ -129,6 +129,13 @@ jobs:
       - name: Run tarball smoke
         run: npm run test:pack-smoke
 
+      - name: Verify npm auth
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          npm whoami
+
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
