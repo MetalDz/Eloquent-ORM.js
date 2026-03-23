@@ -174,7 +174,7 @@ async syncFavoritePosts(userId: number | string, postIds: Array<number | string>
 Use `CacheManager` and `setupCache()` at the service boundary for consumer-facing apps.
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 
 setupCache();
 ```

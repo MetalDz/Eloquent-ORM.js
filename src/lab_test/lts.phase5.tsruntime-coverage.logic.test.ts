@@ -141,7 +141,7 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   test("package self resolution falls back when repo source entrypoints are unavailable", () => {
     const packageName = (
       JSON.parse(fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8")) as { name?: string }
-    ).name ?? "eloquent-orm.js";
+    ).name ?? "@alpha.consultings/eloquent-orm.js";
     const indexPath = path.resolve(rootDir, "src", "index.ts");
     const modelPath = path.resolve(rootDir, "src", "Model.ts");
     const originalExistsSync = fs.existsSync.bind(fs);
@@ -195,7 +195,7 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     const packageJson = JSON.parse(
       fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
     ) as { name?: string };
-    const packageName = packageJson.name ?? "eloquent-orm.js";
+    const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
     const tempRoot = fs.mkdtempSync(
       path.join(rootDir, "src", "lab_test", "support", "tsruntime-selfref-"),
     );

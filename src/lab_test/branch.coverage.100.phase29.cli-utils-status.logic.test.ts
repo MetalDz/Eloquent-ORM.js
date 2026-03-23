@@ -14,6 +14,12 @@ import {
 import { PathMap } from "../cli/utils/PathMap";
 
 describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure", () => {
+  const packageName = (
+    JSON.parse(fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8")) as {
+      name?: string;
+    }
+  ).name ?? "@alpha.consultings/eloquent-orm.js";
+
   afterEach(() => {
     jest.restoreAllMocks();
     jest.resetModules();
@@ -99,7 +105,7 @@ describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure",
     else process.env.APP_ENV = oldAppEnv;
   });
 
-  test("ImportResolver falls back to eloquent-orm.js when package name is blank", async () => {
+  test("ImportResolver falls back to the published package name when package name is blank", async () => {
     const fsModule = require("fs") as typeof import("fs");
     const readSpy = jest
       .spyOn(fsModule, "readFileSync")
@@ -109,8 +115,8 @@ describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure",
     jest.resetModules();
     const { ImportResolver } = await import("../cli/utils/ImportResolver");
 
-    expect(ImportResolver.coreImportPath(true)).toBe("eloquent-orm.js");
-    expect(ImportResolver.schemaImportPath(false)).toBe("eloquent-orm.js");
+    expect(ImportResolver.coreImportPath(true)).toBe(packageName);
+    expect(ImportResolver.schemaImportPath(false)).toBe(packageName);
 
     readSpy.mockRestore();
     cwdSpy.mockRestore();

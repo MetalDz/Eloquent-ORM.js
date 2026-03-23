@@ -24,8 +24,8 @@ eloquent migrate:run --all-migrations
 Model:
 
 ```ts
-import { column } from "eloquent-orm.js";
-import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type UserAttrs = {
   id?: number;
@@ -153,8 +153,8 @@ eloquent make:controller GeoLocation
 Model:
 
 ```ts
-import { column } from "eloquent-orm.js";
-import { MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column } from "@alpha.consultings/eloquent-orm.js";
+import { MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type GeoLocationAttrs = {
   id?: number;
@@ -232,7 +232,7 @@ app.patch("/admin/users/:id/restore", controller.restore.bind(controller));
 Use this when read endpoints are expensive and the consumer wants deterministic invalidation.
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 
 setupCache();
 

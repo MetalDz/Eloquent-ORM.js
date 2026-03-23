@@ -6,7 +6,7 @@ describe("ORM hardening phase 3 pack-smoke generated artifact lifecycle", () => 
     const packageJson = JSON.parse(
       fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"),
     ) as { name?: string };
-    const packageName = packageJson.name ?? "eloquent-orm.js";
+    const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
     const scriptPath = path.resolve(process.cwd(), "scripts/pack-smoke.js");
     const content = fs.readFileSync(scriptPath, "utf8");
 

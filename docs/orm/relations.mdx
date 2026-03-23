@@ -29,8 +29,8 @@ Options are validated at runtime and fed into migration/graph tooling.
 ## Scenario 1: SQL relational model
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { SqlModel } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type UserAttrs = { id?: number; name?: string };
 type PostAttrs = { id?: number; title?: string; user_id?: number };
@@ -73,8 +73,8 @@ Use this model style when you need SQL migrations and relational constraints.
 ## Scenario 2: Mongo model runtime
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { MongoModel } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { MongoModel } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type CommentAttrs = {
   id?: number;

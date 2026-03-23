@@ -8,10 +8,10 @@ description: Public package and model exports with compatibility guarantees.
 ## Stability contract
 
 - Only exports from `src/index.ts` are public and semver-tracked.
-- The model subpath `src/Model.ts` is public and semver-tracked as `eloquent-orm.js/Model`.
+- The model subpath `src/Model.ts` is public and semver-tracked as `@alpha.consultings/eloquent-orm.js/Model`.
 - Deep imports from `src/*` or `dist/*` internals are private.
 
-## Root package: `eloquent-orm.js`
+## Root package: `@alpha.consultings/eloquent-orm.js`
 
 ### ORM Core
 - `BaseModel`
@@ -45,7 +45,7 @@ description: Public package and model exports with compatibility guarantees.
 - `PlainObject`, `ModelCtor`, `FactoryCtor`, `ModelEventHooks`
 - schema and validation types used by schema builders and factories
 
-## Subpath export: `eloquent-orm.js/Model`
+## Subpath export: `@alpha.consultings/eloquent-orm.js/Model`
 
 ### Named exports
 
@@ -56,19 +56,19 @@ description: Public package and model exports with compatibility guarantees.
 
 ### Subpath rules
 
-- `eloquent-orm.js/Model` has no default export.
+- `@alpha.consultings/eloquent-orm.js/Model` has no default export.
 - It does not expose the root `Model` alias.
 - Use root import for Laravel-style SQL models:
 
 ```ts
-import { Model } from "eloquent-orm.js";
+import { Model } from "@alpha.consultings/eloquent-orm.js";
 ```
 
 ## Common usage
 
 ```ts
-import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
-import { SqlModel, MongoModel, type ModelInstance as MongoInstance } from "eloquent-orm.js/Model";
+import { Model, column, registerModels, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, MongoModel, type ModelInstance as MongoInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 ```
 
 ## Notes

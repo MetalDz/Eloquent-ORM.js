@@ -16,6 +16,12 @@ export type CliResult = SpawnSyncReturns<string> & {
 };
 
 export const rootDir = process.cwd();
+const repoRootDir = path.resolve(__dirname, "..", "..", "..");
+const packageName = (
+  JSON.parse(fs.readFileSync(path.resolve(repoRootDir, "package.json"), "utf8")) as {
+    name?: string;
+  }
+).name ?? "@alpha.consultings/eloquent-orm.js";
 export const cliPath = path.resolve(rootDir, "dist/cli/eloquent.js");
 const spawnProbe = spawnSync(process.execPath, ["-v"], { encoding: "utf8" });
 export const appRootDir = path.resolve(rootDir, "src/app");
@@ -434,7 +440,7 @@ export interface Comment extends ModelInstance<CommentAttrs> {}
 
   writeFixture(
     path.join(appFactoriesDir, "UserFactory.ts"),
-    `import { Factory } from "eloquent-orm.js";
+    `import { Factory } from "${packageName}";
 import { User } from "../../models/User";
 
 export class UserFactory extends Factory<User> {
@@ -451,7 +457,7 @@ export class UserFactory extends Factory<User> {
 
   writeFixture(
     path.join(appFactoriesDir, "PostFactory.ts"),
-    `import { Factory } from "eloquent-orm.js";
+    `import { Factory } from "${packageName}";
 import { Post } from "../../models/Post";
 
 export class PostFactory extends Factory<Post> {
@@ -468,7 +474,7 @@ export class PostFactory extends Factory<Post> {
 
   writeFixture(
     path.join(appFactoriesDir, "CommentFactory.ts"),
-    `import { Factory } from "eloquent-orm.js";
+    `import { Factory } from "${packageName}";
 import { Comment } from "../../models/Comment";
 
 export class CommentFactory extends Factory<Comment> {

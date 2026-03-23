@@ -253,7 +253,7 @@ Use this in services, not controllers, so pivot-table policy stays centralized.
 For consumer-facing code, prefer `CacheManager` in the service layer:
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "../models/User";
 
 setupCache();

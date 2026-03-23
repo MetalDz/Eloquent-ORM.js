@@ -50,7 +50,7 @@ Use SQLite when:
 ### Example SQL model
 
 ```ts
-import { SqlModel, column, relation, type ModelInstance } from "eloquent-orm.js";
+import { SqlModel, column, relation, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 
 type UserAttrs = { id?: number; name?: string };
 
@@ -89,7 +89,7 @@ Avoid SQL-only assumptions in Mongo examples, especially:
 ### Example Mongo model
 
 ```ts
-import { MongoModel, column, type ModelInstance } from "eloquent-orm.js";
+import { MongoModel, column, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 
 type GeoAttrs = { id?: number; name?: string };
 

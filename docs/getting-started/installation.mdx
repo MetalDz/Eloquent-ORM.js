@@ -6,12 +6,12 @@ description: Install and configure Eloquent ORM JS in your Node.js project.
 
 # Installation and Quick Start
 
-Version: `1.0.0-rc.1`
+Version: `1.0.0`
 
 ## Install
 
 ```bash
-npm install eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express dotenv
 npm install -D typescript ts-node @types/express @types/node
 ```
 
@@ -240,7 +240,7 @@ MONGO_TEST_DB=eloquent_app_test
 5. Seed data and run a scenario check.
 
 ```bash
-npm install eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express dotenv
 eloquent make:model User --with-migration
 eloquent make:service User
 eloquent make:controller User
@@ -263,7 +263,7 @@ This ORM runtime is designed to work smoothly with Express.js in HTTP applicatio
 If your app exposes routes, keep Express.js at runtime; examples assume this setup.
 
 ```ts
-import { registerModels } from "eloquent-orm.js";
+import { registerModels } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "./app/models/User";
 
 registerModels([User]);
@@ -272,8 +272,8 @@ registerModels([User]);
 For explicit model base classes:
 
 ```ts
-import { registerModels, column } from "eloquent-orm.js";
-import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { registerModels, column } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 ```
 
 Use `SqlModel` for SQL-backed models and `MongoModel` for Mongo-backed models.
@@ -281,8 +281,8 @@ Use `SqlModel` for SQL-backed models and `MongoModel` for Mongo-backed models.
 Example SQL model:
 
 ```ts
-import { registerModels, column } from "eloquent-orm.js";
-import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { registerModels, column } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type UserAttrs = {
   id?: number;

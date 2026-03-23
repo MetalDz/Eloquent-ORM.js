@@ -3,6 +3,11 @@ import path from "path";
 
 describe("documentation usage gaps smoke coverage", () => {
   const rootDir = process.cwd();
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
+  ) as { name?: string; version?: string };
+  const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
+  const packageVersion = packageJson.version ?? "1.0.0";
 
   test("quick start and usage guides keep the required runtime command patterns", () => {
     const intro = fs.readFileSync(
@@ -27,8 +32,8 @@ describe("documentation usage gaps smoke coverage", () => {
     );
 
     expect(intro).toContain("TypeScript Eloquent ORM");
-    expect(intro).toContain("Version: `1.0.0-rc.1`");
-    expect(installation).toContain("npm install eloquent-orm.js express dotenv");
+    expect(intro).toContain(`Version: \`${packageVersion}\``);
+    expect(installation).toContain(`npm install ${packageName} express dotenv`);
     expect(installation).toContain("## Full `.env` setup");
     expect(installation).toContain("## Quick `.env` key list");
     expect(installation).toContain("## `.env` constant reference");
@@ -53,7 +58,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(quickStart).toContain("eloquent make:migration --all");
     expect(quickStart).toContain("eloquent migrate:run --test --all-migrations");
     expect(quickStart).toContain("eloquent db:seed --test --class BlogScenarioSeeder");
-    expect(quickStart).toContain("npm install eloquent-orm.js express dotenv");
+    expect(quickStart).toContain(`npm install ${packageName} express dotenv`);
     expect(quickStart).toContain("DB_CONNECTION=sqlite");
     expect(quickStart).toContain("Express.js");
     expect(quickStart).toContain("registerModels([User, Post]);");
@@ -271,7 +276,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(productionSafety).toContain("cache:stats");
     expect(productionSafety).toContain("cache:clear");
     expect(productionSafety).toContain("clear cache after fresh rebuilds, restore tests, or seed resets if stale reads are suspected");
-    expect(indexDoc).toContain("Version: `1.0.0-rc.1`");
+    expect(indexDoc).toContain(`Version: \`${packageVersion}\``);
     expect(indexDoc).toContain("runtime/index");
     expect(indexDoc).toContain("runtime/crud");
     expect(indexDoc).toContain("runtime/controllers");
@@ -280,7 +285,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(indexDoc).toContain("orm/multi-connection-strategy");
     expect(indexDoc).toContain("orm/soft-deletes");
     expect(indexDoc).toContain("getting-started/cookbook");
-    expect(packageDocs).toContain("Version: `1.0.0-rc.1`");
+    expect(packageDocs).toContain(`Version: \`${packageVersion}\``);
     expect(packageDocs).toContain("../runtime/index");
     expect(packageDocs).toContain("../runtime/crud");
     expect(packageDocs).toContain("../runtime/querying");

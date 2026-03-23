@@ -2,7 +2,7 @@
 
 Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime support.
 
-Package: `eloquent-orm.js`
+Package: `@alpha.consultings/eloquent-orm.js`
 
 ## What this package gives you
 
@@ -15,7 +15,7 @@ Package: `eloquent-orm.js`
 ## Install
 
 ```bash
-npm install eloquent-orm.js
+npm install @alpha.consultings/eloquent-orm.js
 ```
 
 ## Prerequisites
@@ -55,7 +55,7 @@ Note: command syntax is `eloquent make:model User`, not `eloquent: make: model`.
 Express.js is the required runtime for HTTP-facing usage in this project and integrates without issues.
 
 ```ts
-import { registerModels } from "eloquent-orm.js";
+import { registerModels } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "./app/models/User";
 import { Post } from "./app/models/Post";
 
@@ -72,7 +72,7 @@ npx eloquent migrate:run --test --all-migrations
 ### 4) Optional cache bootstrap
 
 ```ts
-import { setupCache } from "eloquent-orm.js";
+import { setupCache } from "@alpha.consultings/eloquent-orm.js";
 setupCache(); // Memory/Staging/Production cache selector from env
 ```
 
@@ -172,7 +172,7 @@ This keeps controller code simple and centralizes persistence logic per domain e
 For read-heavy endpoints, cache at service/query boundary using `CacheManager` (public API).
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 
 setupCache();
 

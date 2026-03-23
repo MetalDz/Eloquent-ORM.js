@@ -41,7 +41,7 @@ describe("Public Model alias and subpath entry", () => {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
       name?: string;
     };
-    const packageName = packageJson.name ?? "eloquent-orm.js";
+    const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
     const apiDoc = fs.readFileSync(
       path.resolve(process.cwd(), "src/documentation/api-reference.md"),
       "utf8"

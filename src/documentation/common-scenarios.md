@@ -32,7 +32,7 @@ eloquent migrate:run --all-migrations
 Register the model at app startup:
 
 ```ts
-import { registerModels } from "eloquent-orm.js";
+import { registerModels } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "./app/models/User";
 
 registerModels([User]);
@@ -98,7 +98,7 @@ MONGO_DB_NAME=eloquent_app
 Model base:
 
 ```ts
-import { MongoModel, column } from "eloquent-orm.js";
+import { MongoModel, column } from "@alpha.consultings/eloquent-orm.js";
 
 export class GeoLocation extends MongoModel<{ id?: number; name?: string }> {
   static tableName = "geolocations";
@@ -206,7 +206,7 @@ Use this when you have expensive GET endpoints or dashboard queries.
 Runtime setup:
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 
 setupCache();
 ```

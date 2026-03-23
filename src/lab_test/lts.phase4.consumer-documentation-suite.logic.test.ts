@@ -88,7 +88,7 @@ describe("LTS phase 4 consumer documentation suite", () => {
     const packageJson = JSON.parse(
       fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
     ) as { name?: string };
-    const packageName = packageJson.name ?? "eloquent-orm.js";
+    const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
     const install = fs.readFileSync(installPath, "utf8");
     const troubleshooting = fs.readFileSync(troubleshootingPath, "utf8");
 

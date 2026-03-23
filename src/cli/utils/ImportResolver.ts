@@ -9,7 +9,7 @@ export class ImportResolver {
     "index",
   );
 
-  private static readonly FALLBACK_PACKAGE_NAME = "eloquent-orm.js";
+  private static readonly FALLBACK_PACKAGE_NAME = "@alpha.consultings/eloquent-orm.js";
 
   private static readonly PACKAGE_NAME = ImportResolver.readPackageName();
 

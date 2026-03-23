@@ -496,7 +496,7 @@ See also:
 Use cache at the service boundary, not in controllers.
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 
 setupCache();
 ```
@@ -556,7 +556,7 @@ eloquent cache:clear
 ### SQL runtime model
 
 ```ts
-import { SqlModel, column, relation, type ModelInstance } from "eloquent-orm.js";
+import { SqlModel, column, relation, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 
 type UserAttrs = { id?: number; name?: string };
 
@@ -580,7 +580,7 @@ export interface User extends ModelInstance<UserAttrs> {}
 ### Mongo runtime model
 
 ```ts
-import { MongoModel, column, relation, type ModelInstance } from "eloquent-orm.js";
+import { MongoModel, column, relation, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 
 type GeoAttrs = { id?: number; name?: string };
 
