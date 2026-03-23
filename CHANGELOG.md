@@ -1,3 +1,16 @@
+# 1.0.0 (2026-03-23)
+
+
+### Bug Fixes
+
+* minor ([500edb3](https://github.com/MetalDz/Eloquent-ORM.js/commit/500edb3d834cbef454423eadc01c408efbc0daa1))
+* minor ([bba6fd9](https://github.com/MetalDz/Eloquent-ORM.js/commit/bba6fd93a5a2c5166aba9abac3751586a68ef63d))
+
+
+### Features
+
+* **cli,api:** add model registry generator and clean up model exports ([d51da62](https://github.com/MetalDz/Eloquent-ORM.js/commit/d51da629b1d31a2930c048a15526f7187360bc31))
+
 # Changelog
 
 ## Unreleased
