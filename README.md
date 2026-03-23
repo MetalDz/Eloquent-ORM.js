@@ -208,8 +208,26 @@ The full consumer documentation is organized around the main usage paths:
 - `ORM`: relations, mixins, soft deletes, migrations, multi-connection strategy, and Mongo guidance
 - `CLI`: commands, generators, production-safety rules, and test matrix guidance
 
+Official documentation:
+
+- https://alphaconsultings.mintlify.app/
+
 Start with:
 
-- [docs/getting-started/quick-start.mdx](docs/getting-started/quick-start.mdx)
-- [docs/runtime/crud.mdx](docs/runtime/crud.mdx)
-- [docs/runtime/querying.mdx](docs/runtime/querying.mdx)
+- [Package docs index](https://alphaconsultings.mintlify.app/getting-started/package-docs)
+- [Quick start](https://alphaconsultings.mintlify.app/getting-started/quick-start)
+- [Runtime CRUD](https://alphaconsultings.mintlify.app/runtime/crud)
+- [Runtime querying](https://alphaconsultings.mintlify.app/runtime/querying)
+
+## Security / Runtime Behavior
+
+Some package scanners flag this package for network access and eval-like behavior. Those signals are expected for this runtime shape and should be read in context:
+
+- Outbound DB/cache connections are by design. This package opens runtime connections to MySQL, PostgreSQL, MongoDB, SQLite, and Memcached when those drivers are configured.
+- Mongo SRV mode may use custom DNS resolvers when configured. If you use a `mongodb+srv://` URI and set `MONGO_DNS_SERVERS`, the runtime may call Node's in-process DNS resolver override for Mongo SRV lookups.
+- Eval-like behavior is not part of this package's own runtime source. Scanner warnings usually come from the `mysql2` dependency, which generates row parsers dynamically for performance.
+
+For the current hosted docs and security guidance:
+
+- Documentation: https://alphaconsultings.mintlify.app/
+- Security policy: https://github.com/MetalDz/Eloquent-ORM.js/blob/main/SECURITY.md
