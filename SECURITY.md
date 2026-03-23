@@ -56,3 +56,8 @@ This repository's hosted documentation is available at:
 
 - Maintainers reserve time to reproduce, patch, and validate before public release.
 - Public disclosure should follow after fix release or an official mitigation announcement.
+
+For the current hosted docs and security guidance:
+
+- Official Documentation website: https://alphaconsultings.mintlify.app/
+- Security policy: https://github.com/MetalDz/Eloquent-ORM.js/blob/main/SECURITY.md
