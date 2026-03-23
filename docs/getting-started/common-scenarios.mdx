@@ -32,7 +32,7 @@ eloquent migrate:run --all-migrations
 Register models:
 
 ```ts
-import { registerModels } from "eloquent-orm.js";
+import { registerModels } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "./app/models/User";
 
 registerModels([User]);
@@ -100,7 +100,7 @@ softDeletes: mixin("SoftDeletes")
 Keep cache logic in services:
 
 ```ts
-import { CacheManager, setupCache } from "eloquent-orm.js";
+import { CacheManager, setupCache } from "@alpha.consultings/eloquent-orm.js";
 
 setupCache();
 ```

@@ -9,6 +9,12 @@ describe("semantic-release version sync automation", () => {
     rootDir,
     "scripts/semantic-release-sync-doc-versions.cjs",
   );
+  const repoPackageJson = JSON.parse(
+    fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
+  ) as { name?: string; version?: string };
+  const packageName = repoPackageJson.name ?? "@alpha.consultings/eloquent-orm.js";
+  const releaseVersion = repoPackageJson.version ?? "1.0.0";
+  const previousVersion = "0.9.0-rc.1";
 
   test("release config syncs docs before the git release commit", () => {
     const releaseConfig = JSON.parse(fs.readFileSync(releaseConfigPath, "utf8")) as {
@@ -25,6 +31,7 @@ describe("semantic-release version sync automation", () => {
     expect(gitPlugin).toBeDefined();
     expect(gitPlugin?.[1].assets).toEqual(
       expect.arrayContaining([
+        "README.md",
         "package.json",
         "docs/**/*.mdx",
         "src/documentation/**/*.md",
@@ -48,9 +55,8 @@ describe("semantic-release version sync automation", () => {
         path.join(tempDir, "package.json"),
         JSON.stringify(
           {
-            name: "eloquent-orm.js",
-            version: "1.0.0-rc.1",
-            readme: "Factories seeds integration in 1.0.0-rc.1",
+            name: packageName,
+            version: previousVersion,
             engines: { node: "20.x" },
             docsSupportMatrix: { memcachedServer: "1.6+" },
             dependencies: {
@@ -68,12 +74,12 @@ describe("semantic-release version sync automation", () => {
       );
       fs.writeFileSync(
         path.join(tempDir, "docs", "index.mdx"),
-        "# Eloquent ORM JS\n\nVersion: `1.0.0-rc.1`\n",
+        `# Eloquent ORM JS\n\nVersion: \`${previousVersion}\`\n`,
         "utf8",
       );
       fs.writeFileSync(
         path.join(tempDir, "src", "documentation", "package-docs-index.md"),
-        "# Package Docs\n\nVersion: `1.0.0-rc.1`\n",
+        `# Package Docs\n\nVersion: \`${previousVersion}\`\n`,
         "utf8",
       );
       fs.writeFileSync(
@@ -106,7 +112,7 @@ describe("semantic-release version sync automation", () => {
         );
       }
 
-      const changedFiles = syncVersionFiles({ cwd: tempDir, version: "1.0.0" });
+      const changedFiles = syncVersionFiles({ cwd: tempDir, version: releaseVersion });
 
       expect(changedFiles).toEqual(
         expect.arrayContaining([
@@ -118,9 +124,8 @@ describe("semantic-release version sync automation", () => {
 
       const updatedPackageJson = JSON.parse(
         fs.readFileSync(path.join(tempDir, "package.json"), "utf8"),
-      ) as { version: string; readme: string };
-      expect(updatedPackageJson.version).toBe("1.0.0");
-      expect(updatedPackageJson.readme).toBe("Factories seeds integration in 1.0.0");
+      ) as { version: string };
+      expect(updatedPackageJson.version).toBe(releaseVersion);
 
       const updatedDocs = fs.readFileSync(path.join(tempDir, "docs", "index.mdx"), "utf8");
       const updatedSourceDocs = fs.readFileSync(
@@ -128,8 +133,8 @@ describe("semantic-release version sync automation", () => {
         "utf8",
       );
 
-      expect(updatedDocs).toContain("Version: `1.0.0`");
-      expect(updatedSourceDocs).toContain("Version: `1.0.0`");
+      expect(updatedDocs).toContain(`Version: \`${releaseVersion}\``);
+      expect(updatedSourceDocs).toContain(`Version: \`${releaseVersion}\``);
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }

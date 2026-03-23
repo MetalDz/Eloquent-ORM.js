@@ -1,7 +1,10 @@
 {
-  "name": "eloquent-orm.js",
+  "name": "@alpha.consultings/eloquent-orm.js",
   "version": "1.0.0",
   "description": "A Laravel Eloquent-inspired ORM and Artisan CLI for Node.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": "20.x"
   },
@@ -38,15 +41,16 @@
     "CHANGELOG.md"
   ],
   "scripts": {
+    "docs:sync-package-metadata": "node scripts/sync-package-metadata.cjs",
     "docs:sync-supported": "node scripts/sync-supported-versions.cjs",
     "docs:sync-config": "node scripts/sync-mintlify-configs.cjs",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "npm run docs:sync-supported && npm run clean && tsc -p tsconfig.build.json",
+    "build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run clean && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
-    "docs:dev": "npm run docs:sync-config && node scripts/run-mintlify.cjs dev",
-    "docs:build": "npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
-    "docs:validate": "npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
-    "docs:lint": "npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs broken-links",
+    "docs:dev": "npm run docs:sync-package-metadata && npm run docs:sync-config && node scripts/run-mintlify.cjs dev",
+    "docs:build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
+    "docs:validate": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
+    "docs:lint": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs broken-links",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
     "test:mysql-smoke": "jest --runInBand --runTestsByPath src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
@@ -56,7 +60,7 @@
     "test:pack-smoke:docker": "docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
-    "release": "npm run docs:sync-supported && semantic-release"
+    "release": "npm run docs:sync-package-metadata && npm run docs:sync-supported && semantic-release"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",

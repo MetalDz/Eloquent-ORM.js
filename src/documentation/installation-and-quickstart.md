@@ -6,7 +6,7 @@ Last updated: 2026-03-16
 Install the package from npm:
 
 ```bash
-npm install eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express dotenv
 npm install -D typescript ts-node @types/express @types/node
 ```
 
@@ -218,7 +218,7 @@ MONGO_TEST_DB=eloquent_app_test
 1. Install the package and Express.js:
 
 ```bash
-npm install eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express dotenv
 ```
 
 2. Add the `.env` keys for your selected driver. SQLite minimum:
@@ -241,7 +241,7 @@ Express.js is the recommended HTTP layer for runtime route usage. The ORM works 
 4. Register your models at app startup:
 
 ```ts
-import { registerModels } from "eloquent-orm.js";
+import { registerModels } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "./app/models/User";
 
 registerModels([User]);
@@ -252,8 +252,8 @@ registerModels([User]);
 For runtime model classes, use explicit named exports:
 
 ```ts
-import { registerModels, column } from "eloquent-orm.js";
-import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { registerModels, column } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 ```
 
 ### Laravel-Style SQL Model Import
@@ -261,15 +261,15 @@ import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model"
 If you want a Laravel-style SQL-first import path, use the root `Model` alias:
 
 ```ts
-import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
+import { Model, column, registerModels, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 ```
 
-Use `Model` as the SQL model base class when you want the shorter root import surface, and use `eloquent-orm.js/Model` when you need explicit `SqlModel` and `MongoModel` separation.
+Use `Model` as the SQL model base class when you want the shorter root import surface, and use `@alpha.consultings/eloquent-orm.js/Model` when you need explicit `SqlModel` and `MongoModel` separation.
 
 Example SQL model:
 
 ```ts
-import { Model, column, registerModels, type ModelInstance } from "eloquent-orm.js";
+import { Model, column, registerModels, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 
 type UserAttrs = {
   id?: number;
@@ -302,8 +302,8 @@ Use `SqlModel` for SQL-backed models and `MongoModel` for Mongo-backed models.
 Build relations in `static schema` and keep connection-specific behavior explicit.
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { SqlModel } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel } from "@alpha.consultings/eloquent-orm.js/Model";
 
 class User extends SqlModel<{ id?: number; name?: string }> {
   static tableName = "users";

@@ -2,11 +2,12 @@ import fs from "fs";
 import path from "path";
 
 describe("API reference refresh", () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"),
+  ) as { name?: string };
+  const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
+
   test("api reference documents root exports and the named model subpath clearly", () => {
-    const packageJson = JSON.parse(
-      fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"),
-    ) as { name?: string };
-    const packageName = packageJson.name ?? "eloquent-orm.js";
     const content = fs.readFileSync(
       path.resolve(process.cwd(), "src/documentation/api-reference.md"),
       "utf8",
@@ -37,7 +38,7 @@ describe("API reference refresh", () => {
 
     expect(plan).toContain("# API Reference Refresh Plan");
     expect(plan).toContain("Status: COMPLETED");
-    expect(plan).toContain("`eloquent-orm.js/Model` has named exports only.");
+    expect(plan).toContain("has named exports only.");
     expect(plan).toContain("`src/lab_test/api.reference.refresh.logic.test.ts`");
   });
 });

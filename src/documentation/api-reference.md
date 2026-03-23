@@ -4,10 +4,10 @@ Last updated: 2026-03-16
 
 ## Stability Contract
 - Only exports from `src/index.ts` are public and semver-tracked.
-- The dedicated model subpath `src/Model.ts` is also public and semver-tracked as `eloquent-orm.js/Model`.
+- The dedicated model subpath `src/Model.ts` is also public and semver-tracked as `@alpha.consultings/eloquent-orm.js/Model`.
 - Deep imports from `src/*` or `dist/*` internals are private and may break without notice.
 
-## Root Package: `eloquent-orm.js`
+## Root Package: `@alpha.consultings/eloquent-orm.js`
 
 ### Models and ORM Core
 - `BaseModel`
@@ -68,7 +68,7 @@ Last updated: 2026-03-16
 - `SchemaBuildResult`
 - `RegisterModelsOptions`
 
-## Model Subpath: `eloquent-orm.js/Model`
+## Model Subpath: `@alpha.consultings/eloquent-orm.js/Model`
 
 ### Named Exports
 - `SqlModel`
@@ -77,23 +77,23 @@ Last updated: 2026-03-16
 - `ModelAttrs`
 
 ### Subpath Rules
-- `eloquent-orm.js/Model` does not expose a default export.
-- `eloquent-orm.js/Model` does not expose the root `Model` alias.
+- `@alpha.consultings/eloquent-orm.js/Model` does not expose a default export.
+- `@alpha.consultings/eloquent-orm.js/Model` does not expose the root `Model` alias.
 - Use the root package for the Laravel-style SQL alias:
-  - `import { Model } from "eloquent-orm.js"`
+  - `import { Model } from "@alpha.consultings/eloquent-orm.js"`
 
 ### Examples
 
 Root SQL alias:
 
 ```ts
-import { Model } from "eloquent-orm.js";
+import { Model } from "@alpha.consultings/eloquent-orm.js";
 ```
 
 Explicit model bases:
 
 ```ts
-import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { SqlModel, MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 ```
 
 ## Extension Points

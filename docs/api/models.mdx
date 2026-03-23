@@ -17,7 +17,7 @@ This section covers concrete implementation patterns for SQL and Mongo drivers.
 In most apps, import directly from the package root:
 
 ```ts
-import { Model, column, relation, type ModelInstance } from "eloquent-orm.js";
+import { Model, column, relation, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 ```
 
 The root `Model` alias maps to SQL behavior for backward-compatible Laravel-style ergonomics.
@@ -25,7 +25,7 @@ The root `Model` alias maps to SQL behavior for backward-compatible Laravel-styl
 For explicit, driver-specific class imports:
 
 ```ts
-import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { SqlModel, MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 ```
 
 ## 2) SQL model scenario (relational)
@@ -39,8 +39,8 @@ Driver guidance:
 - SQLite: local development, lightweight apps, and test isolation
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type UserAttrs = {
   id?: number;
@@ -114,8 +114,8 @@ Use this when:
 Use `MongoModel` with an explicit mongo connection name (`"mongo"` or `"mongo_test"`).
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type GeoLocationAttrs = {
   id?: number;

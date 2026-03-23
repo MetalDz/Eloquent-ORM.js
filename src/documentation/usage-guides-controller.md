@@ -133,7 +133,7 @@ If the model supports soft deletes, `destroy()` should remain a soft delete and 
 Model schema pattern:
 
 ```ts
-import { SqlModel, column } from "eloquent-orm.js";
+import { SqlModel, column } from "@alpha.consultings/eloquent-orm.js";
 
 export class User extends SqlModel<{ id?: number; deleted_at?: string | null }> {
   static tableName = "users";

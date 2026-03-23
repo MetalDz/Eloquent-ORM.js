@@ -11,7 +11,7 @@ describe("Model subpath named exports", () => {
   const packageJson = JSON.parse(
     fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"),
   ) as { name?: string };
-  const packageName = packageJson.name ?? "eloquent-orm.js";
+  const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
 
   test(`${packageName}/Model exposes named SQL and Mongo model bases`, () => {
     expect(ModelSubpath.SqlModel).toBe(SqlModel);

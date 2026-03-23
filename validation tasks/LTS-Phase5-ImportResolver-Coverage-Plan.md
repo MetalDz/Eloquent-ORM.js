@@ -20,7 +20,7 @@ Status: COMPLETED
   - installed-package resolution with a custom package name
   - `publicApiImportPath()` outside the repo
   - `publicApiImportPath()` inside the repo
-  - fallback to `eloquent-orm.js` when `package.json` cannot be read
+  - fallback to the published package name when `package.json` cannot be read
 
 ## Validation
 - `npm.cmd test -- --runInBand --runTestsByPath src/lab_test/lts.phase5.import-resolver-coverage.logic.test.ts src/lab_test/branch.coverage.70.utilities.logic.test.ts src/lab_test/branch.coverage.100.phase29.cli-utils-status.logic.test.ts src/lab_test/package.surface.logic.test.ts src/lab_test/lts.phase5.coverage-to-100.logic.test.ts src/lab_test/lts.trust.building.plan.logic.test.ts`

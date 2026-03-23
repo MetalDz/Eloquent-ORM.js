@@ -5,6 +5,11 @@ import path from "path";
 describe("supported versions docs sync", () => {
   const rootDir = process.cwd();
   const syncScriptPath = path.resolve(rootDir, "scripts/sync-supported-versions.cjs");
+  const repoPackageJson = JSON.parse(
+    fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
+  ) as { name?: string; version?: string };
+  const packageName = repoPackageJson.name ?? "@alpha.consultings/eloquent-orm.js";
+  const packageVersion = repoPackageJson.version ?? "1.0.0";
 
   test("sync helper derives the support matrix from package.json and ci workflow", () => {
     const { buildSupportMatrix } = require(syncScriptPath) as {
@@ -43,8 +48,8 @@ describe("supported versions docs sync", () => {
         path.join(tempDir, "package.json"),
         JSON.stringify(
           {
-            name: "eloquent-orm.js",
-            version: "1.0.0-rc.1",
+            name: packageName,
+            version: packageVersion,
             engines: { node: "22.x" },
             docsSupportMatrix: { memcachedServer: "1.6.22" },
             dependencies: {

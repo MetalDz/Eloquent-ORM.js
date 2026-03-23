@@ -55,12 +55,12 @@
 ### Breaking package-surface changes in `0.9.x`
 
 - Root exports were narrowed to the supported public API in [src/index.ts](/src/index.ts).
-- Deep imports into internal paths such as `eloquent-orm.js/dist/core/*`, `eloquent-orm.js/dist/cli/*`, or repo source paths are private and unsupported.
+- Deep imports into internal paths such as `@alpha.consultings/eloquent-orm.js/dist/core/*`, `@alpha.consultings/eloquent-orm.js/dist/cli/*`, or repo source paths are private and unsupported.
 - Internal connection helpers and config objects are no longer part of the root package surface.
   - Removed from public root usage: `getConnection`, `getAdapter`, `closeAllConnections`, `resolveConnectionName`, `DriverAdapter`, `dbConfig`, and cache internals.
-- Generated consumer code now imports from `eloquent-orm.js` package root instead of internal relative source paths.
+- Generated consumer code now imports from `@alpha.consultings/eloquent-orm.js` package root instead of internal relative source paths.
 
 ### Consumer action
 
-- Update app imports to use only documented root exports from `eloquent-orm.js`.
+- Update app imports to use only documented root exports from `@alpha.consultings/eloquent-orm.js`.
 - Regenerate CLI-created models/factories/scenarios if they were produced before the package-surface hardening work.

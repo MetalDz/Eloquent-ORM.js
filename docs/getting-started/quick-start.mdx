@@ -13,7 +13,7 @@ Version: `1.0.0`
 Install the package, Express.js, and the minimum TypeScript tooling first:
 
 ```bash
-npm install eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express dotenv
 npm install -D typescript ts-node @types/express @types/node
 ```
 
@@ -56,7 +56,7 @@ In this setup, `registerModels` runs safely at startup and models work without i
 1. Ensure model registration is completed at app bootstrap.
 
 ```ts
-import { registerModels } from "eloquent-orm.js";
+import { registerModels } from "@alpha.consultings/eloquent-orm.js";
 import { User } from "./app/models/User";
 import { Post } from "./app/models/Post";
 

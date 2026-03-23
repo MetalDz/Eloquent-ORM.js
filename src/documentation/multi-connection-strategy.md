@@ -80,8 +80,8 @@ MONGO_TEST_DB=eloquent_app_test
 ## Mixed-driver runtime example
 
 ```ts
-import { column, registerModels } from "eloquent-orm.js";
-import { SqlModel, MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column, registerModels } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type UserAttrs = { id?: number; name?: string };
 type GeoAttrs = { id?: number; name?: string };

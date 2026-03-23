@@ -4,6 +4,11 @@ import path from "path";
 
 describe("LTS phase 5 ImportResolver coverage", () => {
   const rootDir = process.cwd();
+  const packageName = (
+    JSON.parse(fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8")) as {
+      name?: string;
+    }
+  ).name ?? "@alpha.consultings/eloquent-orm.js";
 
   afterEach(() => {
     jest.restoreAllMocks();
@@ -50,7 +55,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
     fs.rmSync(outsideRepo, { recursive: true, force: true });
   });
 
-  test("package-name read failures fall back to eloquent-orm.js for installed-package imports", async () => {
+  test("package-name read failures fall back to the published package name for installed-package imports", async () => {
     const outsideRepo = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-import-resolver-fallback-"));
     const fsModule = require("fs") as typeof import("fs");
     const originalReadFileSync = fsModule.readFileSync.bind(fsModule);
@@ -67,9 +72,9 @@ describe("LTS phase 5 ImportResolver coverage", () => {
 
     const { ImportResolver } = await import("../cli/utils/ImportResolver");
 
-    expect(ImportResolver.coreImportPath(false)).toBe("eloquent-orm.js");
-    expect(ImportResolver.schemaImportPath(true)).toBe("eloquent-orm.js");
-    expect(ImportResolver.publicApiImportPath()).toBe("eloquent-orm.js");
+    expect(ImportResolver.coreImportPath(false)).toBe(packageName);
+    expect(ImportResolver.schemaImportPath(true)).toBe(packageName);
+    expect(ImportResolver.publicApiImportPath()).toBe(packageName);
 
     readSpy.mockRestore();
     cwdSpy.mockRestore();

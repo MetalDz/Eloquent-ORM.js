@@ -444,8 +444,8 @@ Key notes:
 Implement model relations in `static schema` and choose `SqlModel` (or root `Model` alias) when your data needs migrations and SQL semantics.
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { SqlModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { SqlModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 type PostAttrs = { id?: number; title?: string; user_id?: number };
 
@@ -484,8 +484,8 @@ export interface Post extends ModelInstance<PostAttrs> {}
 Use `MongoModel` for document workflows and explicit mongo targeting:
 
 ```ts
-import { column, relation } from "eloquent-orm.js";
-import { MongoModel, type ModelInstance } from "eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+import { MongoModel, type ModelInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 
 class GeoLocation extends MongoModel<{ id?: number; name?: string }> {
   static tableName = "geolocations";
