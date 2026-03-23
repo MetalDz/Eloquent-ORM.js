@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.0...v1.0.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* align scoped package publish surface ([9b37348](https://github.com/MetalDz/Eloquent-ORM.js/commit/9b373489534325358d7c47b19cbe283687a51f48))
+
 # 1.0.0 (2026-03-23)
 
 
