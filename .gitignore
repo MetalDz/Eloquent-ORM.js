@@ -25,3 +25,4 @@ yarn-error.log
 *.tar
 *.tar.bz2
 .npm-cache
+to-do.md

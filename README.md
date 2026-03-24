@@ -239,4 +239,4 @@ Some package scanners flag this package for network access and eval-like behavio
 For the current hosted docs and security guidance:
 
 - Official Documentation website: https://alphaconsultings.mintlify.app/
-- Security policy: https://github.com/MetalDz/Eloquent-ORM.js/blob/main/SECURITY.md
+- Security policy: https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/SECURITY.md
