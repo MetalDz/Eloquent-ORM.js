@@ -219,6 +219,15 @@ Start with:
 - [Runtime CRUD](https://alphaconsultings.mintlify.app/runtime/crud)
 - [Runtime querying](https://alphaconsultings.mintlify.app/runtime/querying)
 
+## Published npm Package Notes
+
+- The published npm package intentionally excludes `.map` files to keep the install surface smaller.
+- Runtime behavior is unchanged. This affects debug metadata only, not ORM logic, CLI behavior, or public API contracts.
+- Reverse navigation from published JavaScript back to the original TypeScript source is therefore not included in the npm tarball.
+- Full TypeScript source remains available in the GitHub repository for collaboration, source review, and deeper debugging.
+- Official docs: https://alphaconsultings.mintlify.app/
+- GitHub source: https://github.com/MetalDz/Eloquent-ORM.js
+
 ## Security / Runtime Behavior
 
 Some package scanners flag this package for network access and eval-like behavior. Those signals are expected for this runtime shape and should be read in context:
@@ -229,5 +238,5 @@ Some package scanners flag this package for network access and eval-like behavio
 
 For the current hosted docs and security guidance:
 
-- Documentation: https://alphaconsultings.mintlify.app/
+- Official Documentation website: https://alphaconsultings.mintlify.app/
 - Security policy: https://github.com/MetalDz/Eloquent-ORM.js/blob/main/SECURITY.md

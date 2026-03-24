@@ -11,11 +11,34 @@ Version: `1.0.1`
 ## Install
 
 ```bash
-npm install @alpha.consultings/eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express
 npm install -D typescript ts-node @types/express @types/node
 ```
 
 This package is a TypeScript Eloquent ORM. If your app uses HTTP routes, install Express.js up front because the runtime examples and generated controllers are Express-oriented.
+
+`dotenv` and `@faker-js/faker` stay in the package runtime dependencies because the published runtime uses them:
+
+- `dotenv` is used by the default database config bootstrap.
+- `@faker-js/faker` is used by the factory runtime surface and generated factory flow.
+
+You do not need to install them separately unless your own app imports them directly.
+
+If your app bootstrap calls `dotenv.config()` or your own code imports faker directly, add them in your app too:
+
+```bash
+npm install dotenv @faker-js/faker
+```
+
+## npm package discovery
+
+These npm metadata commands now resolve directly to the hosted docs, GitHub repository, and issue tracker:
+
+```bash
+npm docs @alpha.consultings/eloquent-orm.js
+npm repo @alpha.consultings/eloquent-orm.js
+npm bugs @alpha.consultings/eloquent-orm.js
+```
 
 ## Prerequisites
 

@@ -33,7 +33,9 @@ describe("documentation usage gaps smoke coverage", () => {
 
     expect(intro).toContain("TypeScript Eloquent ORM");
     expect(intro).toContain(`Version: \`${packageVersion}\``);
-    expect(installation).toContain(`npm install ${packageName} express dotenv`);
+    expect(installation).toContain(`npm install ${packageName} express`);
+    expect(installation).toContain("`dotenv` and `@faker-js/faker` stay in the package runtime dependencies");
+    expect(installation).toContain("npm install dotenv @faker-js/faker");
     expect(installation).toContain("## Full `.env` setup");
     expect(installation).toContain("## Quick `.env` key list");
     expect(installation).toContain("## `.env` constant reference");
@@ -58,7 +60,9 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(quickStart).toContain("eloquent make:migration --all");
     expect(quickStart).toContain("eloquent migrate:run --test --all-migrations");
     expect(quickStart).toContain("eloquent db:seed --test --class BlogScenarioSeeder");
-    expect(quickStart).toContain(`npm install ${packageName} express dotenv`);
+    expect(quickStart).toContain(`npm install ${packageName} express`);
+    expect(quickStart).toContain("`dotenv` and `@faker-js/faker` are already included by the package runtime.");
+    expect(quickStart).toContain("npm install dotenv @faker-js/faker");
     expect(quickStart).toContain("DB_CONNECTION=sqlite");
     expect(quickStart).toContain("Express.js");
     expect(quickStart).toContain("registerModels([User, Post]);");

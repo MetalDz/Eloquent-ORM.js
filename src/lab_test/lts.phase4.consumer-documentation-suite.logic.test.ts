@@ -77,6 +77,9 @@ describe("LTS phase 4 consumer documentation suite", () => {
       "./public-api-freeze-policy.md",
       "## Troubleshooting and Security",
       "./troubleshooting.md",
+      "npm docs @alpha.consultings/eloquent-orm.js",
+      "npm repo @alpha.consultings/eloquent-orm.js",
+      "npm bugs @alpha.consultings/eloquent-orm.js",
     ];
 
     for (const snippet of requiredSnippets) {
@@ -94,7 +97,11 @@ describe("LTS phase 4 consumer documentation suite", () => {
 
     const installSnippets = [
       "# Installation and Quick Start",
-      `npm install ${packageName} express dotenv`,
+      `npm install ${packageName} express`,
+      "npm install dotenv @faker-js/faker",
+      "npm docs @alpha.consultings/eloquent-orm.js",
+      "npm repo @alpha.consultings/eloquent-orm.js",
+      "npm bugs @alpha.consultings/eloquent-orm.js",
       "Example SQL-first setup",
       "Example Mongo setup",
       "## Full `.env` Setup",

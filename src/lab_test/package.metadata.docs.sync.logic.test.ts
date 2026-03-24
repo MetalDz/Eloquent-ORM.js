@@ -60,7 +60,7 @@ describe("package metadata docs sync", () => {
           "Version: `0.9.0-rc.1`",
           "",
           "```bash",
-          "npm install eloquent-orm.js express dotenv",
+          "npm install eloquent-orm.js express",
           "```",
           "",
         ].join("\n"),
@@ -117,9 +117,7 @@ describe("package metadata docs sync", () => {
 
       const updatedDocsIndex = fs.readFileSync(path.join(tempDir, "docs", "index.mdx"), "utf8");
       expect(updatedDocsIndex).toContain("Version: `1.2.3`");
-      expect(updatedDocsIndex).toContain(
-        "npm install @alpha.consultings/eloquent-orm.js express dotenv",
-      );
+      expect(updatedDocsIndex).toContain("npm install @alpha.consultings/eloquent-orm.js express");
 
       const updatedApiDoc = fs.readFileSync(
         path.join(tempDir, "docs", "api", "reference.mdx"),

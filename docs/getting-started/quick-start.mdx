@@ -13,8 +13,14 @@ Version: `1.0.1`
 Install the package, Express.js, and the minimum TypeScript tooling first:
 
 ```bash
-npm install @alpha.consultings/eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express
 npm install -D typescript ts-node @types/express @types/node
+```
+
+`dotenv` and `@faker-js/faker` are already included by the package runtime. Install them separately only if your own app imports them directly:
+
+```bash
+npm install dotenv @faker-js/faker
 ```
 
 Set one active app connection and one active test connection in `.env`.

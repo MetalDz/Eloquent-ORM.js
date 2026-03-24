@@ -63,6 +63,20 @@ Last updated: 2026-03-14
 - [Troubleshooting Guide](./troubleshooting.md)
 - [SECURITY.md](../../SECURITY.md)
 
+## Published npm Package Notes
+- The published npm package intentionally excludes `.map` files to reduce package size.
+- This does not change ORM runtime behavior, CLI behavior, or the public API. It only removes published debug metadata.
+- Reverse mapping from published JavaScript back to TypeScript source is therefore not shipped in the npm tarball.
+- Full TypeScript source remains available in the GitHub repository for collaboration, source review, and deeper debugging.
+- Hosted docs: https://alphaconsultings.mintlify.app/
+- GitHub source: https://github.com/MetalDz/Eloquent-ORM.js
+- npm docs command:
+  - `npm docs @alpha.consultings/eloquent-orm.js`
+- npm repository command:
+  - `npm repo @alpha.consultings/eloquent-orm.js`
+- npm issues command:
+  - `npm bugs @alpha.consultings/eloquent-orm.js`
+
 ## Consumer Navigation Contract
 - Installation -> runtime setup -> usage -> operations -> upgrade/support should be navigable from this entry page.
 - This page is the package-level doc entry point for the LTS trust-building track.

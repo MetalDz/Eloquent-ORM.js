@@ -6,11 +6,33 @@ Last updated: 2026-03-16
 Install the package from npm:
 
 ```bash
-npm install @alpha.consultings/eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express
 npm install -D typescript ts-node @types/express @types/node
 ```
 
 This package is a TypeScript Eloquent ORM. If your app serves HTTP routes, install Express.js up front because the runtime examples and generated controllers are Express-oriented.
+
+`dotenv` and `@faker-js/faker` remain runtime dependencies of the published package:
+
+- `dotenv` is used by the default database config bootstrap.
+- `@faker-js/faker` is used by the factory runtime surface and generated factory flow.
+
+You do not need to install them separately unless your own app imports them directly.
+
+If your own app bootstrap calls `dotenv.config()` or your code imports faker directly, add them explicitly:
+
+```bash
+npm install dotenv @faker-js/faker
+```
+
+## npm Package Discovery
+These npm metadata commands now resolve directly to the hosted docs, GitHub repository, and issue tracker:
+
+```bash
+npm docs @alpha.consultings/eloquent-orm.js
+npm repo @alpha.consultings/eloquent-orm.js
+npm bugs @alpha.consultings/eloquent-orm.js
+```
 
 ## Prerequisites
 
@@ -218,7 +240,13 @@ MONGO_TEST_DB=eloquent_app_test
 1. Install the package and Express.js:
 
 ```bash
-npm install @alpha.consultings/eloquent-orm.js express dotenv
+npm install @alpha.consultings/eloquent-orm.js express
+```
+
+If your own app bootstrap imports `dotenv` or your own code imports faker directly, install them in the app too:
+
+```bash
+npm install dotenv @faker-js/faker
 ```
 
 2. Add the `.env` keys for your selected driver. SQLite minimum:
