@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.1...v1.0.2) (2026-03-24)
+
+
+### Bug Fixes
+
+* finalize publish metadata, docs discovery, and package trim ([2bfff0e](https://github.com/MetalDz/Eloquent-ORM.js/commit/2bfff0e9b266fc4c96b8efce7f13c217ea663db0))
+
 ## [1.0.1](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.0...v1.0.1) (2026-03-23)
 
 
