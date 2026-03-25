@@ -199,6 +199,7 @@ describe("Real model instance persistence integration", () => {
         .mockImplementationOnce(async () => ({ insertedId: "mongo-geo-23" }))
         .mockImplementation(async () => ({ insertedId: "mongo-geo-24" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
+      deleteOne: jest.fn(async () => ({ deletedCount: 1 })),
     };
     const mongoDb = {
       collection: jest.fn(() => collection),

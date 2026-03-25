@@ -1,13 +1,13 @@
 # Eloquent ORM JS
 
-[![npm version](https://img.shields.io/npm/v/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?logo=npm&label=npm)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
-[![downloads](https://img.shields.io/npm/dm/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=downloads)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
-[![node](https://img.shields.io/node/v/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=node)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![npm version](https://img.shields.io/npm/v/%40alpha.consultings%2Feloquent-orm.js?logo=npm&label=npm)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![downloads](https://img.shields.io/npm/dm/%40alpha.consultings%2Feloquent-orm.js?label=downloads)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![node](https://img.shields.io/node/v/%40alpha.consultings%2Feloquent-orm.js?label=node)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
 [![ci](https://img.shields.io/github/actions/workflow/status/MetalDz/Eloquent-ORM.js/ci.yml?branch=ai_master&label=ci)](https://github.com/MetalDz/Eloquent-ORM.js/actions/workflows/ci.yml)
 [![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/MetalDz/Eloquent-ORM.js)
-[![license](https://img.shields.io/npm/l/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=license)](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/LICENSE)
+[![license](https://img.shields.io/npm/l/%40alpha.consultings%2Feloquent-orm.js?label=license)](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/LICENSE)
 [![docs](https://img.shields.io/badge/docs-official-blue)](https://alphaconsultings.mintlify.app/)
-[![Socket Badge](https://badge.socket.dev/npm/package/@alpha.consultings/eloquent-orm.js/1.0.3)](https://badge.socket.dev/npm/package/@alpha.consultings/eloquent-orm.js/1.0.3)
+[![Socket Badge](https://badge.socket.dev/npm/package/@alpha.consultings/eloquent-orm.js)](https://socket.dev/npm/package/@alpha.consultings/eloquent-orm.js)
 
 Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime support.
 

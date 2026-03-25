@@ -211,6 +211,7 @@ describe("Generated model instance persistence via make:model", () => {
     const collection = {
       insertOne: jest.fn(async () => ({ insertedId: "mongo-generated-41" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
+      deleteOne: jest.fn(async () => ({ deletedCount: 1 })),
     };
     const mongoDb = {
       collection: jest.fn(() => collection),

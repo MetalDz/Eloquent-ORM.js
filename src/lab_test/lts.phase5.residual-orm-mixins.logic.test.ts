@@ -200,6 +200,8 @@ describe("LTS phase 5 residual ORM mixin coverage", () => {
     class SoftModel extends SoftDeletesMixin(
       SoftBase as unknown as abstract new (...args: any[]) => object,
     ) {
+      static softDeletes = true;
+
       public id = 5;
       public _id = "mongo-5";
       public uuid = "uuid-5";

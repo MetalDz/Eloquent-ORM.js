@@ -62,6 +62,8 @@ function makeAdapter(name: SqlConnection): DriverAdapter & {
 }
 
 class SoftDeleteModel extends BaseModel {
+  static softDeletes = true;
+
   constructor(connectionName: SqlConnection) {
     super("users", connectionName);
   }

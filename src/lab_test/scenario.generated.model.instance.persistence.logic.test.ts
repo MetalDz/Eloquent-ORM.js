@@ -276,6 +276,7 @@ describe("Scenario-generated model instance persistence", () => {
     const collection = {
       insertOne: jest.fn(async () => ({ insertedId: "scenario-mongo-51" })),
       updateOne: jest.fn(async () => ({ matchedCount: 1, modifiedCount: 1 })),
+      deleteOne: jest.fn(async () => ({ deletedCount: 1 })),
     };
     const mongoDb = {
       collection: jest.fn(() => collection),
