@@ -1,0 +1,284 @@
+---
+title: Advanced Integration / Real Backend Harness
+description: A documented consumer-project validation harness that exercises @alpha.consultings/eloquent-orm.js in a full Express backend with JWT auth, refresh tokens, PostgreSQL, Memcached, and Docker-backed tests.
+---
+
+# Advanced Integration / Real Backend Harness
+
+This page documents a real consumer-project validation harness built around `@alpha.consultings/eloquent-orm.js`.
+
+The goal was not a toy CRUD demo. The goal was to prove the package in a realistic backend system, catch runtime issues early, and document what a clean integration looks like when you combine:
+
+- Express routing
+- a dedicated router layer
+- service-layer ORM usage
+- JWT access tokens
+- refresh token rotation
+- PostgreSQL runtime validation
+- Memcached-backed cache reads
+- Docker-backed integration tests
+
+This harness lives outside the package repo as a separate consumer app. That matters because it validates the package the same way a real adopter would use it.
+
+## What we achieved
+
+This consumer-project pass now proves that `@alpha.consultings/eloquent-orm.js` can hold a realistic backend shape with:
+
+- Express routing and clean router/service boundaries
+- JWT access tokens and refresh token rotation
+- authenticated user and post APIs
+- PostgreSQL migrations, seeding, and runtime CRUD
+- Memcached-backed cache reads for public post routes
+- Docker-backed integration validation
+- harness-local API docs with one JSON metadata file per documented endpoint
+
+Consumer harness repo:
+
+- https://github.com/MetalDz/eloquent-orm-js-advanced-integration
+
+Consumer harness API docs:
+
+- https://github.com/MetalDz/eloquent-orm-js-advanced-integration/blob/main/docs/api/README.md
+
+## Architecture overview
+
+The harness uses a clean backend layout:
+
+- `src/app/http/createBlogApiApp.ts`: builds the Express application and registers models once
+- `src/app/router/index.ts`: API composition point
+- `src/app/router/authRouter.ts`: auth endpoints
+- `src/app/router/postRouter.ts`: REST endpoints for blog posts
+- `src/app/services/AuthService.ts`: register, login, refresh, and logout logic
+- `src/app/services/BlogPostService.ts`: service-layer read/write behavior and cache invalidation
+- `src/app/cache/MemcachedPostCache.ts`: shared cache adapter
+- `src/app/middleware/authenticateAccessToken.ts`: Bearer token middleware
+- `src/app/middleware/errorHandler.ts`: HTTP error normalization
+
+The architectural rule was simple:
+
+1. controllers and routers stay thin
+2. the service layer owns ORM calls and cache strategy
+3. authentication stays in dedicated auth services and middleware
+4. Docker owns external infrastructure for repeatable tests
+
+## Folder structure
+
+Typical consumer-project layout:
+
+```text
+src/
+  app/
+    auth/
+    cache/
+    config/
+    http/
+    middleware/
+    models/
+    router/
+    services/
+    database/
+      migrations/pg/
+      seeds/
+  tests/
+    support/
+scripts/
+docs/
+  plans/
+docker-compose.blog-api-test.yml
+```
+
+Important generated and hand-written pieces work together:
+
+- generated models, services, controllers, factories, and migrations came from CLI scenario generation
+- hand-written auth, cache, middleware, router composition, and test harness code wrapped those generated artifacts into a real backend
+
+## Step-by-step integration flow
+
+### 1. Consumer project setup
+
+The consumer app pins the package as a normal dependency:
+
+```json
+{
+  "dependencies": {
+    "@alpha.consultings/eloquent-orm.js": "^1.0.4"
+  }
+}
+```
+
+The app then adds its own runtime concerns:
+
+- `express`
+- `jsonwebtoken`
+- `dotenv`
+- `@faker-js/faker`
+
+### 2. Scenario generation
+
+The harness started from generated scenario artifacts:
+
+```bash
+eloquent make:scenario blog --controllers --services --force
+eloquent make:migration --all --pg --force
+```
+
+Those commands produced the first-pass:
+
+- models
+- services
+- controllers
+- factories
+- PostgreSQL migrations
+- scenario seed structure
+
+### 3. Backend shaping
+
+After generation, the backend was hardened into a real REST API:
+
+- the generated service/controller surface was wrapped in explicit Express routers
+- a dedicated auth layer was added for login, refresh, and logout
+- JWT access tokens protected write routes
+- refresh tokens were stored and rotated through a `RefreshToken` model
+- public post reads were cached through Memcached
+
+### 4. PostgreSQL-first validation
+
+The first serious runtime target was PostgreSQL.
+
+That validation sequence was:
+
+```bash
+eloquent migrate:fresh --pg --force --yes
+eloquent db:seed --pg --class BlogScenarioSeeder
+```
+
+The seeded test user then authenticated through the API and exercised protected writes.
+
+### 5. Docker-backed infrastructure
+
+The consumer app used Docker Compose to run:
+
+- PostgreSQL 16
+- Memcached 1.6
+
+That keeps the integration environment reproducible and close to CI behavior.
+
+## Auth flow
+
+The harness uses a practical auth model:
+
+1. `POST /api/auth/login`
+2. access token is returned for protected route access
+3. refresh token is stored server-side through the `RefreshToken` model
+4. `POST /api/auth/refresh` rotates the refresh token and issues a new access token
+5. `POST /api/auth/logout` revokes the current refresh token
+
+This validates that the ORM is usable in:
+
+- credential lookup
+- persisted refresh token sessions
+- token revocation checks
+- protected service-layer writes
+
+The protected routes in the harness are:
+
+- `POST /api/posts`
+- `PATCH /api/posts/:id`
+- `DELETE /api/posts/:id`
+
+This is important because it proves the ORM inside real authorization paths, not only anonymous demo routes.
+
+## Cache strategy
+
+The harness uses Memcached for public post reads.
+
+Design rules:
+
+- reads are cache-first
+- writes invalidate cache keys
+- cache failure is non-fatal for correctness
+- the service layer, not the router, owns cache policy
+
+The public routes under cache validation are:
+
+- `GET /api/posts`
+- `GET /api/posts/:slug`
+
+Expected runtime pattern:
+
+1. first read returns `x-cache: MISS`
+2. second read returns `x-cache: HIT`
+
+The harness also keeps a same-process hot cache mirror in front of Memcached so the consumer app can remain deterministic during same-process integration tests while still exercising the Memcached adapter and invalidation path.
+
+## Docker test flow
+
+The consumer app ships a Docker-backed integration runner:
+
+```bash
+npm run test:docker
+```
+
+The flow is:
+
+1. start PostgreSQL and Memcached through Docker Compose
+2. wait for infrastructure ports
+3. run the Node integration suite
+4. tear down containers and volumes
+
+This keeps infrastructure validation close to CI while still staying readable for local debugging.
+
+## Key test files
+
+The harness is intentionally documented through the exact files that matter:
+
+- `src/tests/blog-auth-cache.test.ts`
+  - verifies password hashing and token behavior
+- `src/tests/blog-api-pg.integration.test.ts`
+  - validates login, JWT-protected writes, refresh rotation, logout, and cache-hit behavior
+- `src/tests/support/testHarness.ts`
+  - owns server boot, CLI execution, request helpers, and cleanup
+- `docs/plans/Blog-Backend-Main-Plan.md`
+  - top-level planning document
+- `docs/plans/Blog-Backend-Auth-Plan.md`
+  - auth-focused planning slice
+- `docs/plans/Blog-Backend-Data-Cache-Docker-Plan.md`
+  - PostgreSQL, Memcached, and Docker slice
+
+That combination gives both executable proof and architectural documentation.
+
+## Lessons and bugs found while integrating
+
+This is the main reason to document the harness: it caught real package-facing integration issues.
+
+Examples from the consumer-project pass:
+
+- a stale seeded password hash no longer matched the runtime password verifier
+- cache invalidation originally behaved as if it were mandatory for writes; the harness proved it must stay best-effort
+- the integration harness needed explicit cache flushing between runs to avoid ambient state leaks
+- Windows Docker test orchestration needed safer command launching
+- PostgreSQL runtime validation exposed migration lifecycle and connection-handling rough edges faster than isolated unit tests
+
+This is exactly the kind of value a real consumer harness should provide: it improves package reliability by forcing the package through realistic backend behavior.
+
+## Why this page exists
+
+This is not core quick-start material. It is advanced validation material.
+
+Use it when you want to answer questions like:
+
+- Can this package hold up inside a real Express backend?
+- Does JWT auth work cleanly with service-layer ORM usage?
+- Can public REST reads be cached without polluting controllers?
+- Can Docker-backed PostgreSQL tests exercise the package predictably?
+- Will a consumer-project harness catch issues that package-local tests might miss?
+
+For this package, the answer is yes, and this page records the exact shape of that proof.
+
+## Related pages
+
+- [Scenarios](./scenarios)
+- [CLI and pack smoke](./cli-pack-smoke)
+- [Runtime Services](../runtime/services)
+- [Runtime Controllers](../runtime/controllers)
+- [CLI Test Matrix](../cli/test-matrix)

@@ -43,6 +43,7 @@
         "test/jest-runtime",
         "test/factories-seeds",
         "test/scenarios",
+        "test/real-backend-harness",
         "test/cli-pack-smoke"
       ]
     },

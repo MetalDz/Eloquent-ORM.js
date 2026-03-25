@@ -18,7 +18,7 @@ describe("supported versions docs sync", () => {
 
     const matrix = buildSupportMatrix(rootDir);
 
-    expect(matrix.node).toBe("20.x");
+    expect(matrix.node).toBe("^20 || ^22 || ^24");
     expect(matrix.mysql).toBe("8.0");
     expect(matrix.postgres).toBe("16");
     expect(matrix.mongo).toBe("7");

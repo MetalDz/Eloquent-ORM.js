@@ -38,3 +38,8 @@ REST routes exercised:
 - `GET /posts/:id`
 - `PUT /posts/:id`
 - `DELETE /posts/:id`
+
+Related pages:
+
+- [Advanced Integration / Real Backend Harness](./test-real-backend-harness.md)
+- [CLI and pack smoke](./test-cli-pack-smoke.md)

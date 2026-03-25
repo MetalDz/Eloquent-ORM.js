@@ -1,11 +1,11 @@
 # Eloquent ORM JS
 
-[![npm version](https://img.shields.io/npm/v/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?logo=npm&label=npm)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
-[![downloads](https://img.shields.io/npm/dm/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=downloads)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
-[![node](https://img.shields.io/node/v/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=node)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![npm version](https://img.shields.io/npm/v/@alpha.consultings/eloquent-orm.js?logo=npm&label=npm)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![downloads](https://img.shields.io/npm/dm/@alpha.consultings/eloquent-orm.js?label=downloads)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![node](https://img.shields.io/node/v/@alpha.consultings/eloquent-orm.js?label=node)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
 [![ci](https://img.shields.io/github/actions/workflow/status/MetalDz/Eloquent-ORM.js/ci.yml?branch=ai_master&label=ci)](https://github.com/MetalDz/Eloquent-ORM.js/actions/workflows/ci.yml)
 [![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/MetalDz/Eloquent-ORM.js)
-[![license](https://img.shields.io/npm/l/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=license)](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/LICENSE)
+[![license](https://img.shields.io/npm/l/@alpha.consultings/eloquent-orm.js?label=license)](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/LICENSE)
 [![docs](https://img.shields.io/badge/docs-official-blue)](https://alphaconsultings.mintlify.app/)
 [![Socket Badge](https://badge.socket.dev/npm/package/@alpha.consultings/eloquent-orm.js)](https://socket.dev/npm/package/@alpha.consultings/eloquent-orm.js)
 
@@ -34,7 +34,7 @@ The following versions are the current supported and CI-tested prerequisites.
 
 | Component | Supported / tested version |
 | --- | --- |
-| Node.js | `20.x` |
+| Node.js | `^20 || ^22 || ^24` |
 | TypeScript | `^5.9.3` |
 | MySQL | `8.0` |
 | PostgreSQL | `16` |
@@ -242,6 +242,9 @@ Start with:
 Some package scanners flag this package for network access and eval-like behavior. Those signals are expected for this runtime shape and should be read in context:
 
 - Outbound DB/cache connections are by design. This package opens runtime connections to MySQL, PostgreSQL, MongoDB, SQLite, and Memcached when those drivers are configured.
+- Network destinations and ports are configuration-driven. Database/cache hosts, ports, URIs, and credentials come from your environment variables and connection config, for example `DB_HOST`, `DB_PORT`, `PG_HOST`, `PG_PORT`, `MONGO_URI`, `MONGO_TEST_URI`, `MEMCACHED_HOST`, and `MEMCACHED_PORT`.
+- This package does not expose a public network service by itself. If you generate controllers and bind them into an Express or other REST API server, the HTTP port and external exposure are chosen by the consuming application, not by this package.
+- REST API protection is also application-owned. Authentication, authorization, middleware, JWT/session handling, reverse-proxy policy, server hardening, firewall rules, and least-privilege access control must be configured by the developer integrating the generated controllers or services.
 - Mongo SRV mode may use custom DNS resolvers when configured. If you use a `mongodb+srv://` URI and set `MONGO_DNS_SERVERS`, the runtime may call Node's in-process DNS resolver override for Mongo SRV lookups.
 - Eval-like behavior is not part of this package's own runtime source. Scanner warnings usually come from the `mysql2` dependency, which generates row parsers dynamically for performance.
 - The well-known `readCodeFor` arbitrary code injection issue affected `mysql2` versions earlier than `3.9.7`. This package currently depends on `mysql2` `^3.15.2`, which is above that fixed line and is not in the vulnerable range.

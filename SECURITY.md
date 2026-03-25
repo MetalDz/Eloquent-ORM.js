@@ -27,6 +27,9 @@ Out of scope:
 Some package scanners may report network-access or eval-like signals for this package. Those signals are expected for the supported runtime model:
 
 - Outbound network connections are intentional. The package connects to configured MySQL, PostgreSQL, MongoDB, and Memcached services at runtime.
+- Database/cache destinations are configuration-driven. Hosts, ports, URIs, and credentials are supplied by environment variables and connection config, such as `DB_PORT`, `PG_PORT`, `MONGO_URI`, and `MEMCACHED_PORT`.
+- The package does not open a public REST endpoint by itself. When a consumer wires generated controllers into Express or another HTTP server, the listening port and exposure model are controlled by the consumer application.
+- Authentication and access control are consumer responsibilities. Middleware, JWT/session auth, server-to-server authentication, firewall policy, reverse-proxy policy, and route authorization must be configured by the integrating application.
 - Mongo SRV DNS overrides are optional and configuration-driven. When a Mongo connection uses `mongodb+srv://` and `MONGO_DNS_SERVERS` is set, the runtime may call Node's `dns.setServers(...)` to help SRV resolution inside the current process.
 - Eval-like scanner signals usually come from direct dependencies rather than this package's own source. In particular, `mysql2` generates parser functions dynamically, which some supply-chain scanners classify as eval-like behavior.
 

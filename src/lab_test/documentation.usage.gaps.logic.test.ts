@@ -236,6 +236,10 @@ describe("documentation usage gaps smoke coverage", () => {
       path.resolve(rootDir, "docs/test/scenarios.mdx"),
       "utf8",
     );
+    const realBackendHarness = fs.readFileSync(
+      path.resolve(rootDir, "docs/test/real-backend-harness.mdx"),
+      "utf8",
+    );
     const testCliPackSmoke = fs.readFileSync(
       path.resolve(rootDir, "docs/test/cli-pack-smoke.mdx"),
       "utf8",
@@ -344,6 +348,22 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(testScenarios).toContain("3. SQLite");
     expect(testScenarios).toContain("GET /users");
     expect(testScenarios).toContain("DELETE /posts/:id");
+    expect(testScenarios).toContain("./real-backend-harness");
+    expect(realBackendHarness).toContain("This page documents a real consumer-project validation harness");
+    expect(realBackendHarness).toContain("## Architecture overview");
+    expect(realBackendHarness).toContain("## Folder structure");
+    expect(realBackendHarness).toContain("## Step-by-step integration flow");
+    expect(realBackendHarness).toContain("## Auth flow");
+    expect(realBackendHarness).toContain("## Cache strategy");
+    expect(realBackendHarness).toContain("## Docker test flow");
+    expect(realBackendHarness).toContain("## Key test files");
+    expect(realBackendHarness).toContain("## Lessons and bugs found while integrating");
+    expect(realBackendHarness).toContain("JWT access tokens");
+    expect(realBackendHarness).toContain("refresh token rotation");
+    expect(realBackendHarness).toContain("PostgreSQL");
+    expect(realBackendHarness).toContain("Memcached");
+    expect(realBackendHarness).toContain("Docker-backed integration tests");
+    expect(realBackendHarness).toContain("it improves package reliability");
     expect(testCliPackSmoke).toContain("npm run test:pack-smoke");
     expect(testCliPackSmoke).toContain("[CLI Test Matrix](../cli/test-matrix)");
     expect(docsConfig).toContain('"theme": "mint"');
@@ -360,6 +380,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(docsConfig).toContain('"test/jest-runtime"');
     expect(docsConfig).toContain('"test/factories-seeds"');
     expect(docsConfig).toContain('"test/scenarios"');
+    expect(docsConfig).toContain('"test/real-backend-harness"');
     expect(docsConfig).toContain('"test/cli-pack-smoke"');
     expect(docsConfig).toContain('"getting-started/common-scenarios"');
     expect(docsConfig).toContain('"getting-started/cookbook"');

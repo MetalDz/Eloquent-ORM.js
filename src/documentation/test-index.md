@@ -16,4 +16,5 @@ Pages:
 - [Jest and runtime tests](./test-jest-runtime.md)
 - [Factories and seeds](./test-factories-seeds.md)
 - [Scenarios](./test-scenarios.md)
+- [Advanced Integration / Real Backend Harness](./test-real-backend-harness.md)
 - [CLI and pack smoke](./test-cli-pack-smoke.md)
