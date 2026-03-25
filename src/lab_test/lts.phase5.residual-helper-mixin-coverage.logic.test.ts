@@ -381,7 +381,9 @@ describe("LTS phase 5 residual helper and mixin coverage", () => {
       tags: ["a", null, 3],
       fullName: "Alpha User",
     });
-    expect(model.toJSON()).toContain('"fullName":"Alpha User"');
+    expect(model.toJSON()).toEqual(
+      expect.objectContaining({ fullName: "Alpha User" })
+    );
     expect(model.serializeValue("value")).toBe("value");
   });
 

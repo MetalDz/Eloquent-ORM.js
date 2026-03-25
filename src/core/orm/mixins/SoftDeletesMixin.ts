@@ -31,6 +31,40 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
 
     protected readonly deletedAtColumn = "deleted_at";
 
+    private supportsSoftDeletes(): boolean {
+      const ctor = this.constructor as {
+        schema?: Record<string, unknown>;
+        softDeletes?: boolean;
+      };
+      if (ctor.softDeletes === true) {
+        return true;
+      }
+
+      const schema = ctor.schema;
+      if (!schema || typeof schema !== "object") {
+        return false;
+      }
+
+      return Object.entries(schema).some(([fieldName, field]) => {
+        if (fieldName === this.deletedAtColumn) {
+          return true;
+        }
+        if (!field || typeof field !== "object") {
+          return false;
+        }
+
+        const candidate = field as {
+          kind?: string;
+          type?: string;
+          name?: string;
+        };
+        return (
+          candidate.type === "softDeletes" ||
+          (candidate.kind === "mixin" && candidate.name === "SoftDeletes")
+        );
+      });
+    }
+
     constructor(...args: any[]) {
       super(...args);
     }
@@ -88,6 +122,25 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
     delete(): Promise<void>;
     delete(id: number | string, pk?: string): Promise<void>;
     async delete(id?: number | string, pk: string = "id"): Promise<void> {
+      if (!this.supportsSoftDeletes()) {
+        const baseDelete = resolveBaseMethod(this, "delete");
+        if (typeof baseDelete !== "function") {
+          throw new Error("Base 'delete' method not found for SoftDeletesMixin.");
+        }
+
+        const targetId =
+          id ?? (this.getTrackedPrimaryValue(pk) as number | string | undefined);
+        if (targetId === undefined || targetId === null) {
+          throw new Error(
+            `Cannot delete ${this.constructor.name} without primary key '${pk}'.`
+          );
+        }
+
+        await baseDelete(targetId, pk);
+        this.syncSoftDeleteState(targetId, pk, null, { removed: true });
+        return;
+      }
+
       const baseUpdate = resolveBaseMethod(this, "update");
       if (typeof baseUpdate !== "function") {
         throw new Error("Base 'update' method not found for SoftDeletesMixin.");
@@ -139,6 +192,9 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
       }
 
       const records = await baseAll();
+      if (!this.supportsSoftDeletes()) {
+        return records as this[];
+      }
       return (records as this[]).filter(
         (record) => !(record as any)[this.deletedAtColumn]
       );
@@ -155,6 +211,9 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
 
       const record = await baseFind(id, pk);
       if (!record) return null;
+      if (!this.supportsSoftDeletes()) {
+        return record as this;
+      }
 
       const isDeleted =
         typeof (record as any)[this.deletedAtColumn] === "string" &&
@@ -185,6 +244,9 @@ export function SoftDeletesMixin<TBase extends Constructor>(Base: TBase) {
       }
 
       const allRecords = (await baseAll()) as this[];
+      if (!this.supportsSoftDeletes()) {
+        return [];
+      }
       return allRecords.filter(
         (record) =>
           typeof (record as any)[this.deletedAtColumn] === "string" &&

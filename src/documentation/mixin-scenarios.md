@@ -91,7 +91,7 @@ const serializable = user as User & { toObject?: () => Record<string, unknown> }
 return typeof serializable.toObject === "function" ? serializable.toObject() : user;
 ```
 
-Prefer `toObject()` in controllers and services. `toJSON()` returns a string.
+Prefer `toObject()` in controllers and services for explicitness. `toJSON()` now returns the same plain-object payload shape for JSON serialization.
 
 ## Casts Scenario
 

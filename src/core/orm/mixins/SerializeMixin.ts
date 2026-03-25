@@ -8,7 +8,7 @@ export interface SerializableModel {
   all(): Promise<unknown[]>;
   find(id: number | string, pk?: string): Promise<unknown | null>;
   toObject?(): Record<string, unknown>;
-  toJSON?(): string;
+  toJSON?(): Record<string, unknown>;
 }
 
 /** Generic abstract constructor used by all mixins */
@@ -65,8 +65,8 @@ export function SerializeMixin<TBase extends Constructor<SerializableModel>>(Bas
     /**
      * 🧠 Convert model to JSON string
      */
-    toJSON(): string {
-      return JSON.stringify(this.toObject());
+    toJSON(): Record<string, unknown> {
+      return this.toObject();
     }
 
     /**

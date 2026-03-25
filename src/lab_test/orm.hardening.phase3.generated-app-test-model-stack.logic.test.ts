@@ -128,7 +128,7 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
           save(): Promise<void>;
           patch(data: Record<string, unknown>): Promise<void>;
           toObject(): Record<string, unknown>;
-          toJSON(): string;
+          toJSON(): Record<string, unknown>;
           with(...relations: string[]): unknown;
         };
         where(field: string, value: unknown): unknown;
@@ -145,7 +145,7 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
       expect(model.toObject()).toEqual(
         expect.objectContaining({ name: `${item.modelName} Example` })
       );
-      expect(JSON.parse(model.toJSON())).toEqual(
+      expect(model.toJSON()).toEqual(
         expect.objectContaining({ name: `${item.modelName} Example` })
       );
 

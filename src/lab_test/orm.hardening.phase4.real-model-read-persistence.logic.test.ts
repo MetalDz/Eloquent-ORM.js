@@ -17,7 +17,7 @@ function loadAppSmokeModel() {
       save(): Promise<void>;
       patch(data: Record<string, unknown>): Promise<void>;
       toObject(): Record<string, unknown>;
-      toJSON(): string;
+      toJSON(): Record<string, unknown>;
     };
     findOneBy(field: string, value: unknown): Promise<Record<string, unknown> | null>;
   }>("AppSmoke").exported;
@@ -30,7 +30,7 @@ function loadGeoLocalisationModel() {
       save(pk?: string): Promise<void>;
       patch(data: Record<string, unknown>, pk?: string): Promise<void>;
       toObject(): Record<string, unknown>;
-      toJSON(): string;
+      toJSON(): Record<string, unknown>;
     };
     findOneBy(field: string, value: unknown): Promise<Record<string, unknown> | null>;
   }>("GeoLocalisation").exported;
@@ -114,7 +114,7 @@ describe("ORM hardening phase 4 real-model read and persistence integration", ()
         name: "Smoke Alpha",
       })
     );
-    expect(JSON.parse(foundModel.toJSON())).toEqual(
+    expect(foundModel.toJSON()).toEqual(
       expect.objectContaining({
         id: 41,
         name: "Smoke Alpha",
@@ -174,7 +174,7 @@ describe("ORM hardening phase 4 real-model read and persistence integration", ()
         name: "Geo Alpha",
       })
     );
-    expect(JSON.parse(foundModel.toJSON())).toEqual(
+    expect(foundModel.toJSON()).toEqual(
       expect.objectContaining({
         id: "geo-41",
         name: "Geo Alpha",

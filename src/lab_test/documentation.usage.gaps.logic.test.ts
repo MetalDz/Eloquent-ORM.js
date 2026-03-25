@@ -338,6 +338,12 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(testFactoriesSeeds).toContain("eloquent db:seed --test --class BlogScenarioSeeder");
     expect(testScenarios).toContain("eloquent make:scenario blog --test --controllers --services --run --force");
     expect(testScenarios).toContain("eloquent demo:scenario --test --random");
+    expect(testScenarios).toContain("generated REST API matrix tests over SQL drivers");
+    expect(testScenarios).toContain("1. PostgreSQL");
+    expect(testScenarios).toContain("2. MySQL");
+    expect(testScenarios).toContain("3. SQLite");
+    expect(testScenarios).toContain("GET /users");
+    expect(testScenarios).toContain("DELETE /posts/:id");
     expect(testCliPackSmoke).toContain("npm run test:pack-smoke");
     expect(testCliPackSmoke).toContain("[CLI Test Matrix](../cli/test-matrix)");
     expect(docsConfig).toContain('"theme": "mint"');

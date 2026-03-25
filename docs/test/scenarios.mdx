@@ -36,8 +36,40 @@ eloquent make:scenario --test --mongo --run
 - generator integration tests
 - scenario lifecycle integration tests
 - runtime scenario persistence tests
+- generated REST API matrix tests over SQL drivers
 - demo and factory-status validation
 - tarball smoke for real-package behavior
+
+## Real REST API matrix
+
+For a real-time validation pass, generate the blog scenario with controllers and services, then bind the generated controllers into an Express app and exercise HTTP CRUD.
+
+Execution order:
+
+1. PostgreSQL
+2. MySQL
+3. SQLite
+
+Typical flow:
+
+```bash
+eloquent make:scenario blog --test --controllers --services --force
+eloquent make:migration --all --test
+eloquent migrate:run --test
+eloquent db:seed --test --class BlogScenarioSeeder
+```
+
+REST routes exercised in the SQL matrix:
+
+- `GET /users`
+- `POST /users`
+- `GET /users/:id`
+- `PUT /users/:id`
+- `GET /posts`
+- `POST /posts`
+- `GET /posts/:id`
+- `PUT /posts/:id`
+- `DELETE /posts/:id`
 
 ## Related pages
 

@@ -169,7 +169,7 @@ res.json(typeof (item as { toObject?: () => unknown }).toObject === "function"
   : item);
 ```
 
-Prefer `toObject()` over `toJSON()` in Express controllers because `toJSON()` returns a JSON string.
+`toJSON()` now returns the same plain-object shape as `toObject()`, so both are safe with Express `res.json(...)`. `toObject()` is still the clearest explicit controller choice.
 
 ### EagerLoading
 

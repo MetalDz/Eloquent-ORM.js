@@ -99,7 +99,7 @@ describe("ORM hardening phase 4 finder eager serialization", () => {
     expect(user).toBeInstanceOf(SqlUserModel);
 
     const serialized = user!.toObject() as Record<string, unknown>;
-    const fromJson = JSON.parse(user!.toJSON()) as Record<string, unknown>;
+    const fromJson = user!.toJSON() as Record<string, unknown>;
 
     expect(serialized).toEqual(
       expect.objectContaining({
@@ -185,7 +185,7 @@ describe("ORM hardening phase 4 finder eager serialization", () => {
     expect(users).toHaveLength(1);
 
     const serialized = users[0].toObject() as Record<string, unknown>;
-    const fromJson = JSON.parse(users[0].toJSON()) as Record<string, unknown>;
+    const fromJson = users[0].toJSON() as Record<string, unknown>;
 
     expect(collection.find).toHaveBeenCalledWith({ status: "active" });
     expect(serialized).toEqual(

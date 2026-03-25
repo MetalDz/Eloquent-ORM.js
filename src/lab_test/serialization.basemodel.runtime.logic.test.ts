@@ -31,7 +31,7 @@ describe("BaseModel default serialization runtime", () => {
         email: "user@example.com",
       })
     );
-    expect(JSON.parse(user.toJSON())).toEqual(
+    expect(user.toJSON()).toEqual(
       expect.objectContaining({
         id: 1,
         email: "user@example.com",

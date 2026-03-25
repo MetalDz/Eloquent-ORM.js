@@ -477,7 +477,11 @@ describe("Branch coverage 70% - Phase 4 ORM mixins", () => {
 
     class SoftModel extends SoftDeletesMixin(
       SoftBase as unknown as abstract new (...args: any[]) => object
-    ) {}
+    ) {
+      static schema = {
+        deleted_at: { kind: "column", type: "softDeletes" },
+      };
+    }
 
     test("delete/restore/update/forceDelete delegate to base methods with expected payloads", async () => {
       const model = new SoftModel() as any;
@@ -520,7 +524,7 @@ describe("Branch coverage 70% - Phase 4 ORM mixins", () => {
 
       const model = new EmptySoftModel() as any;
       await expect(model.delete(1)).rejects.toThrow(
-        "Base 'update' method not found for SoftDeletesMixin."
+        "Base 'delete' method not found for SoftDeletesMixin."
       );
       await expect(model.all()).rejects.toThrow(
         "Base 'all' method not found for SoftDeletesMixin."
@@ -531,6 +535,30 @@ describe("Branch coverage 70% - Phase 4 ORM mixins", () => {
       await expect(model.forceDelete(1)).rejects.toThrow(
         "Base 'delete' method not found for SoftDeletesMixin."
       );
+    });
+
+    test("non-soft-delete schemas fall back to hard delete and skip deleted_at filtering", async () => {
+      class PlainDeleteModel extends SoftDeletesMixin(
+        SoftBase as unknown as abstract new (...args: any[]) => object
+      ) {
+        static schema = {
+          id: { kind: "column", type: "increments" },
+          name: { kind: "column", type: "string" },
+        };
+      }
+
+      const model = new PlainDeleteModel() as any;
+
+      await model.delete(10, "uuid");
+      expect(model.deleteSpy).toHaveBeenCalledWith(10, "uuid");
+      expect(model.updateSpy).not.toHaveBeenCalled();
+
+      await expect(model.all()).resolves.toHaveLength(2);
+      await expect(model.find(2)).resolves.toEqual({
+        id: 2,
+        deleted_at: "2026-03-08T01:00:00.000Z",
+      });
+      await expect(model.onlyTrashed()).resolves.toEqual([]);
     });
   });
 
