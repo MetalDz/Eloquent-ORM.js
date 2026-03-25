@@ -275,7 +275,7 @@ function runGeneratedModelRuntimeCheck(sample, options) {
       "const instance = new Model();",
       'instance.fill({ name: expectedName });',
       "const objectValue = instance.toObject();",
-      "const jsonValue = JSON.parse(instance.toJSON());",
+      "const jsonValue = instance.toJSON();",
       'const instanceMethods = ["fill", "save", "patch", "toObject", "toJSON", "with"];',
       'const staticMethods = ["where", "with", "findBy", "findOneBy", "findAllBy", "existsBy"];',
       "for (const method of instanceMethods) {",

@@ -18,6 +18,7 @@ describe("ORM hardening phase 3 pack-smoke generated artifact lifecycle", () => 
       '"DemoAuto"',
       '"GeoLocation"',
       '"User"',
+      '"const jsonValue = instance.toJSON();"',
       'generated-model-runtime:${modelName}:${objectValue.name}',
       '["src", "test", "database", "models", "DemoAuto.ts"]',
       '["src", "test", "database", "models", "GeoLocation.ts"]',

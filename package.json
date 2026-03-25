@@ -81,7 +81,7 @@
     "test:mysql-smoke": "jest --runInBand --runTestsByPath src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
     "coverage:misses": "npm run test:coverage && node scripts/coverage-misses.cjs",
     "test:critical": "jest --runInBand src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
-    "test:pack-smoke": "node scripts/pack-smoke.js",
+    "test:pack-smoke": "npm run build && node scripts/pack-smoke.js",
     "test:pack-smoke:docker": "docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
@@ -115,11 +115,9 @@
     "@types/memcached": "^2.2.10",
     "@types/node": "^22.18.12",
     "@types/pg": "^8.15.5",
-    "eslint": "^9.38.0",
     "express": "^5.1.0",
     "jest": "^30.2.0",
     "semantic-release": "^24.2.9",
-    "ts-jest": "^29.4.5",
-    "typescript-eslint": "^8.46.1"
+    "ts-jest": "^29.4.5"
   }
 }

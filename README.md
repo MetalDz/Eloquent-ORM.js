@@ -1,5 +1,14 @@
 # Eloquent ORM JS
 
+[![npm version](https://img.shields.io/npm/v/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?logo=npm&label=npm)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![downloads](https://img.shields.io/npm/dm/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=downloads)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![node](https://img.shields.io/node/v/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=node)](https://www.npmjs.com/package/@alpha.consultings/eloquent-orm.js)
+[![ci](https://img.shields.io/github/actions/workflow/status/MetalDz/Eloquent-ORM.js/ci.yml?branch=ai_master&label=ci)](https://github.com/MetalDz/Eloquent-ORM.js/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/MetalDz/Eloquent-ORM.js)
+[![license](https://img.shields.io/npm/l/%40alpha.consultings%2F@alpha.consultings/eloquent-orm.js?label=license)](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/LICENSE)
+[![docs](https://img.shields.io/badge/docs-official-blue)](https://alphaconsultings.mintlify.app/)
+[![Socket Badge](https://badge.socket.dev/npm/package/@alpha.consultings/eloquent-orm.js/1.0.3)](https://badge.socket.dev/npm/package/@alpha.consultings/eloquent-orm.js/1.0.3)
+
 Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime support.
 
 Package: `@alpha.consultings/eloquent-orm.js`
@@ -235,6 +244,9 @@ Some package scanners flag this package for network access and eval-like behavio
 - Outbound DB/cache connections are by design. This package opens runtime connections to MySQL, PostgreSQL, MongoDB, SQLite, and Memcached when those drivers are configured.
 - Mongo SRV mode may use custom DNS resolvers when configured. If you use a `mongodb+srv://` URI and set `MONGO_DNS_SERVERS`, the runtime may call Node's in-process DNS resolver override for Mongo SRV lookups.
 - Eval-like behavior is not part of this package's own runtime source. Scanner warnings usually come from the `mysql2` dependency, which generates row parsers dynamically for performance.
+- The well-known `readCodeFor` arbitrary code injection issue affected `mysql2` versions earlier than `3.9.7`. This package currently depends on `mysql2` `^3.15.2`, which is above that fixed line and is not in the vulnerable range.
+- I also verified that the `mysql2` project continued shipping security hardening after that fix. The official `3.19.1` release notes mention bounds checks, malformed payload handling, and config-injection hardening, and npm currently lists `3.20.0` as the latest stable release as of March 25, 2026.
+- I am intentionally not claiming every third-party summary verbatim. The specific claim I verified directly is: `mysql2 < 3.9.7` was vulnerable, while this package's supported range is above that threshold.
 
 For the current hosted docs and security guidance:
 

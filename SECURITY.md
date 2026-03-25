@@ -30,6 +30,22 @@ Some package scanners may report network-access or eval-like signals for this pa
 - Mongo SRV DNS overrides are optional and configuration-driven. When a Mongo connection uses `mongodb+srv://` and `MONGO_DNS_SERVERS` is set, the runtime may call Node's `dns.setServers(...)` to help SRV resolution inside the current process.
 - Eval-like scanner signals usually come from direct dependencies rather than this package's own source. In particular, `mysql2` generates parser functions dynamically, which some supply-chain scanners classify as eval-like behavior.
 
+## mysql2 Security Note
+
+- The specific `mysql2` issue most people mean here is the `readCodeFor` arbitrary code injection problem tracked as `CVE-2024-21511`.
+- That issue affected `mysql2` versions earlier than `3.9.7`.
+- This package currently uses the `mysql2` range `^3.15.2`, which is above the fixed line and therefore not in the known vulnerable range for that issue.
+- I also verified later upstream hardening from primary sources:
+  - the official `mysql2` `3.19.1` release notes mention a potential out-of-bounds read fix, malformed geometry payload hardening, and URL/config injection hardening
+  - npm currently lists `mysql2` `3.20.0` as the latest stable release as of March 25, 2026
+- I did not independently verify every third-party summary about later `3.17.x` claims, so this policy intentionally documents only the parts confirmed from primary sources.
+
+Primary references:
+
+- NVD / CVE-2024-21511: https://nvd.nist.gov/vuln/detail/CVE-2024-21511
+- mysql2 releases: https://github.com/sidorares/node-mysql2/releases
+- npm package page: https://www.npmjs.com/package/mysql2
+
 This repository's hosted documentation is available at:
 
 - https://alphaconsultings.mintlify.app/

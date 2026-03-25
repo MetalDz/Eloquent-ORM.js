@@ -68,6 +68,8 @@ Version: `1.0.3`
 - This does not change ORM runtime behavior, CLI behavior, or the public API. It only removes published debug metadata.
 - Reverse mapping from published JavaScript back to TypeScript source is therefore not shipped in the npm tarball.
 - Full TypeScript source remains available in the GitHub repository for collaboration, source review, and deeper debugging.
+- The package may be flagged for network-access and eval-like behavior by supply-chain scanners because it legitimately talks to databases/cache servers and because `mysql2` uses generated parser functions internally.
+- The known `mysql2` `readCodeFor` issue affected versions earlier than `3.9.7`; this package's supported range is `^3.15.2`, which is above that fixed line.
 - Hosted docs: https://alphaconsultings.mintlify.app/
 - GitHub source: https://github.com/MetalDz/Eloquent-ORM.js
 - npm docs command:
