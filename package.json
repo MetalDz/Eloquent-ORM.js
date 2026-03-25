@@ -1,6 +1,6 @@
 {
   "name": "@alpha.consultings/eloquent-orm.js",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Laravel Eloquent-inspired ORM Multi Driver SQL & NoSQL and Cache System and Artisan CLI like for Node.js Lovers",
   "keywords": [
     "orm",

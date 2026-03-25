@@ -1,3 +1,11 @@
+## [1.0.4](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.3...v1.0.4) (2026-03-25)
+
+
+### Bug Fixes
+
+* add real sql rest scenario matrix and correct serialization delete runtime ([194dc23](https://github.com/MetalDz/Eloquent-ORM.js/commit/194dc235d5b9ccd7f8a930ce7f9c6683d718a336))
+* reduce inactive tooling deps and harden security transparency ([72d591d](https://github.com/MetalDz/Eloquent-ORM.js/commit/72d591dc8fec12648f3844595c41e8c34fa2983a))
+
 ## [1.0.3](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.2...v1.0.3) (2026-03-24)
 
 
