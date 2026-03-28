@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.6...v1.0.7) (2026-03-28)
+
+
+### Bug Fixes
+
+* document release behavior for docs commits ([c48eb42](https://github.com/MetalDz/Eloquent-ORM.js/commit/c48eb42ca2eb1628eda4b1ee13122a7bdae0c4fa))
+
 ## [1.0.6](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.5...v1.0.6) (2026-03-28)
 
 ## [1.0.5](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.4...v1.0.5) (2026-03-28)

@@ -17,9 +17,9 @@ Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `1.0.6`
-- Latest release: `v1.0.6 latest`
-- Old release: `v1.0.5`
+- Version: `1.0.7`
+- Latest release: `v1.0.7 latest`
+- Old release: `v1.0.6`
 - Latest update: ESM-safe `make:registry` imports for NodeNext apps, `SoftDeletesMixin` schema-detection hardening, restored 100% Docker coverage, and passing Docker pack smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start

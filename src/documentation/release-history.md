@@ -1,4 +1,4 @@
-# Release History / v1.0.6 / Latest Release Notes
+# Release History / v1.0.7 / Latest Release Notes
 
 Last updated: 2026-03-27
 
@@ -8,7 +8,7 @@ Last updated: 2026-03-27
 ## Current Release Summary
 - The latest package summary is maintained in `PACKAGE-UPDATE-SUMMARY.md` at the repository root.
 - That same summary is synced into the root `README.md` quick-info block.
-- Current package version: `1.0.6`
+- Current package version: `1.0.7`
 
 ## Older Release Information
 - Full published version history lives in `CHANGELOG.md`.
