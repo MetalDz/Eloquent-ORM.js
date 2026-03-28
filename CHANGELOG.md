@@ -1,3 +1,10 @@
+## [1.0.8](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.7...v1.0.8) (2026-03-28)
+
+
+### Bug Fixes
+
+* sync new release block format with v1.0.7 metadata ([0472869](https://github.com/MetalDz/Eloquent-ORM.js/commit/04728693cf84f04ce1749555a64ce9706f9499d3))
+
 ## [1.0.7](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.6...v1.0.7) (2026-03-28)
 
 

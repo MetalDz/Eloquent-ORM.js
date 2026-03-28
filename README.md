@@ -17,10 +17,10 @@ Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `v1.0.7`
-- Latest release: `v1.0.7 latest`
+- Version: `v1.0.8`
+- Latest release: `v1.0.8 latest`
 - What's new: Fix release
-- Old release: `v1.0.6`
+- Old release: `v1.0.7`
 - Latest update: Document release behavior for `docs:` commits so semantic-release publishes documentation updates as patch releases.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
