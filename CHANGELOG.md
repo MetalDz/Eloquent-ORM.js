@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.4...v1.0.5) (2026-03-28)
+
+
+### Bug Fixes
+
+* emit ESM-safe make:registry imports for NodeNext apps, SoftDeletesMixin schema-detection hardening, restored 100% Docker coverage, and passing Docker pack smoke ([37362ad](https://github.com/MetalDz/Eloquent-ORM.js/commit/37362ad9f61fdb9a9a20d0c992bb3aafb5a84782))
+
 ## [1.0.4](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.3...v1.0.4) (2026-03-25)
 
 

@@ -21,7 +21,7 @@ npm run docs:sync-package-metadata
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `1.0.4`
+- Version: `1.0.5`
 - Latest update: ESM-safe `make:registry` imports for NodeNext apps, PostgreSQL-first Phase 02 scaffolding defaults, and synchronized package metadata guidance.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
