@@ -11,6 +11,8 @@ const QUICK_INFO_SOURCE_FILE = "PACKAGE-UPDATE-SUMMARY.md";
 const QUICK_INFO_TARGET_FILE = "README.md";
 const LATEST_UPDATE_START = "<!-- latest-package-update:start -->";
 const LATEST_UPDATE_END = "<!-- latest-package-update:end -->";
+const RELEASE_LINEUP_START = "<!-- release-lineup:start -->";
+const RELEASE_LINEUP_END = "<!-- release-lineup:end -->";
 const QUICK_INFO_START = "<!-- package-quick-info:start -->";
 const QUICK_INFO_END = "<!-- package-quick-info:end -->";
 
@@ -117,12 +119,56 @@ function normalizeDocsUrl(homepage) {
   return trimmed.replace(/\/+$/, "");
 }
 
-function renderQuickInfoBlock({ packageName, version, docsUrl, latestUpdate }) {
+function extractPublishedReleaseVersions(changelogContent) {
+  return Array.from(
+    changelogContent.matchAll(
+      /^##\s+\[(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]\([^)]+\)\s+\([^)]+\)|^#\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\s+\([^)]+\)/gm,
+    ),
+  )
+    .map((match) => match[1] || match[2])
+    .filter(Boolean);
+}
+
+function getReleaseLineup(cwd, version) {
+  const changelogPath = path.join(cwd, "CHANGELOG.md");
+  if (!fs.existsSync(changelogPath)) {
+    return {
+      latestRelease: `v${version} latest`,
+      oldRelease: null,
+    };
+  }
+
+  const changelogContent = fs.readFileSync(changelogPath, "utf8");
+  const releaseVersions = extractPublishedReleaseVersions(changelogContent);
+  const latestVersion = releaseVersions[0] || version;
+  const oldVersion = releaseVersions.find((entry) => entry !== latestVersion) || null;
+
+  return {
+    latestRelease: `v${latestVersion} latest`,
+    oldRelease: oldVersion ? `v${oldVersion}` : null,
+  };
+}
+
+function renderReleaseLineupBlock({ latestRelease, oldRelease }) {
+  return [
+    RELEASE_LINEUP_START,
+    "Latest Release:",
+    `- \`${latestRelease}\``,
+    "",
+    "Old Release:",
+    oldRelease ? `- \`${oldRelease}\`` : "- none yet",
+    RELEASE_LINEUP_END,
+  ].join("\n");
+}
+
+function renderQuickInfoBlock({ packageName, version, docsUrl, latestUpdate, latestRelease, oldRelease }) {
   return [
     QUICK_INFO_START,
     "Quick info:",
     `- Package: \`${packageName}\``,
     `- Version: \`${version}\``,
+    `- Latest release: \`${latestRelease}\``,
+    `- Old release: ${oldRelease ? `\`${oldRelease}\`` : "none yet"}`,
     `- Latest update: ${latestUpdate}`,
     `- Official docs: ${docsUrl}`,
     `- Quick start: ${docsUrl}/getting-started/quick-start`,
@@ -153,16 +199,29 @@ function syncQuickInfoFiles(cwd, packageJson) {
 
   const latestUpdate = normalizeLatestUpdate(latestUpdateBlock);
   const docsUrl = normalizeDocsUrl(packageJson.homepage);
+  const { latestRelease, oldRelease } = getReleaseLineup(cwd, packageJson.version || "0.0.0");
+  const renderedReleaseLineup = renderReleaseLineupBlock({
+    latestRelease,
+    oldRelease,
+  });
   const renderedQuickInfo = renderQuickInfoBlock({
     packageName: packageJson.name || "@alpha.consultings/eloquent-orm.js",
     version: packageJson.version || "0.0.0",
     docsUrl,
     latestUpdate,
+    latestRelease,
+    oldRelease,
   });
 
   const changedFiles = [];
-  const sourceUpdated = replaceMarkedBlock(
+  const sourceWithReleaseLineup = replaceMarkedBlock(
     sourceOriginal,
+    RELEASE_LINEUP_START,
+    RELEASE_LINEUP_END,
+    renderedReleaseLineup,
+  );
+  const sourceUpdated = replaceMarkedBlock(
+    sourceWithReleaseLineup,
     QUICK_INFO_START,
     QUICK_INFO_END,
     renderedQuickInfo,

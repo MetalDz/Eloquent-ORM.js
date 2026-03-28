@@ -16,7 +16,7 @@ describe("semantic-release commit analyzer rules", () => {
     );
 
     expect(commitAnalyzerPlugin).toBeDefined();
-    expect(commitAnalyzerPlugin?.[1].preset).toBe("conventionalcommits");
+    expect(commitAnalyzerPlugin?.[1].preset).toBeUndefined();
     expect(commitAnalyzerPlugin?.[1].releaseRules).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

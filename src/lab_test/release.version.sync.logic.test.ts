@@ -131,6 +131,12 @@ describe("semantic-release version sync automation", () => {
                   "",
                   `Version: \`${previousVersion}\``,
                   "",
+                  "## Release Lineup",
+                  "",
+                  "<!-- release-lineup:start -->",
+                  "old",
+                  "<!-- release-lineup:end -->",
+                  "",
                   "<!-- latest-package-update:start -->",
                   "- Release summary from test fixture.",
                   "<!-- latest-package-update:end -->",
@@ -162,6 +168,25 @@ describe("semantic-release version sync automation", () => {
               : "## Prerequisites\n\n<!-- supported-prerequisites:start -->\nold\n<!-- supported-prerequisites:end -->\n";
         fs.writeFileSync(target, defaultContent, "utf8");
       }
+
+      fs.writeFileSync(
+        path.join(tempDir, "CHANGELOG.md"),
+        [
+          `## [${releaseVersion}](https://example.test/compare/v${previousVersion}...v${releaseVersion}) (2026-03-28)`,
+          "",
+          "### Bug Fixes",
+          "",
+          "* release fixture latest",
+          "",
+          `## [${previousVersion}](https://example.test/compare/v0.8.0...v${previousVersion}) (2026-03-27)`,
+          "",
+          "### Bug Fixes",
+          "",
+          "* release fixture old",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
 
       const changedFiles = syncVersionFiles({ cwd: tempDir, version: releaseVersion });
 
@@ -200,9 +225,15 @@ describe("semantic-release version sync automation", () => {
       expect(updatedDocs).toContain(`Version: \`${releaseVersion}\``);
       expect(updatedSourceDocs).toContain(`Version: \`${releaseVersion}\``);
       expect(updatedReadme).toContain(`- Version: \`${releaseVersion}\``);
+      expect(updatedReadme).toContain(`- Latest release: \`v${releaseVersion} latest\``);
+      expect(updatedReadme).toContain(`- Old release: \`v${previousVersion}\``);
       expect(updatedReadme).toContain("Official docs: https://alphaconsultings.mintlify.app");
       expect(updatedReadme).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
       expect(updatedQuickInfo).toContain(`Version: \`${releaseVersion}\``);
+      expect(updatedQuickInfo).toContain("Latest Release:");
+      expect(updatedQuickInfo).toContain(`- \`v${releaseVersion} latest\``);
+      expect(updatedQuickInfo).toContain("Old Release:");
+      expect(updatedQuickInfo).toContain(`- \`v${previousVersion}\``);
       expect(updatedQuickInfo).toContain(`- Version: \`${releaseVersion}\``);
       expect(updatedQuickInfo).toContain("Latest update: Release summary from test fixture.");
       expect(updatedQuickInfo).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");

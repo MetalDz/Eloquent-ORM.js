@@ -10,6 +10,16 @@ Update the latest release summary on every patch, minor, or major release, then 
 npm run docs:sync-package-metadata
 ```
 
+## Release Lineup
+
+<!-- release-lineup:start -->
+Latest Release:
+- `v1.0.5 latest`
+
+Old Release:
+- `v1.0.4`
+<!-- release-lineup:end -->
+
 ## Latest Release Summary
 
 <!-- latest-package-update:start -->
@@ -22,6 +32,8 @@ npm run docs:sync-package-metadata
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `1.0.5`
+- Latest release: `v1.0.5 latest`
+- Old release: `v1.0.4`
 - Latest update: ESM-safe `make:registry` imports for NodeNext apps, `SoftDeletesMixin` schema-detection hardening, restored 100% Docker coverage, and passing Docker pack smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
