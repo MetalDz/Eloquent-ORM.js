@@ -20,8 +20,15 @@ describe("Package surface hardening", () => {
     expect(pkg.exports).toEqual({
       ".": {
         types: "./dist/index.d.ts",
+        import: "./esm/index.mjs",
         require: "./dist/index.js",
-        default: "./dist/index.js",
+        default: "./esm/index.mjs",
+      },
+      "./Factory": {
+        types: "./dist/cli/utils/factories/Factory.d.ts",
+        import: "./esm/Factory.mjs",
+        require: "./dist/cli/utils/factories/Factory.js",
+        default: "./esm/Factory.mjs",
       },
       "./Model": {
         types: "./dist/Model.d.ts",
@@ -31,7 +38,7 @@ describe("Package surface hardening", () => {
       "./package.json": "./package.json",
     });
     expect(pkg.files).toEqual(
-      expect.arrayContaining(["dist", "src/cli/templates/**/*", "README.md", "CHANGELOG.md"])
+      expect.arrayContaining(["dist", "esm/**/*", "src/cli/templates/**/*", "README.md", "CHANGELOG.md"])
     );
     expect(pkg.dependencies?.eloquentjs).toBeUndefined();
     expect(pkg.dependencies?.["ts-node"]).toBeDefined();
@@ -73,8 +80,15 @@ describe("Package surface hardening", () => {
 
   test("root package exports the generator-facing helpers", () => {
     const indexSource = fs.readFileSync(path.resolve(process.cwd(), "src/index.ts"), "utf8");
+    const esmIndexSource = fs.readFileSync(path.resolve(process.cwd(), "esm/index.mjs"), "utf8");
+    const esmFactorySource = fs.readFileSync(path.resolve(process.cwd(), "esm/Factory.mjs"), "utf8");
     expect(indexSource).toContain('export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";');
-    expect(indexSource).toContain('} from "./cli/utils/factories/Factory";');
+    expect(indexSource).toContain('export let Factory: typeof import("./cli/utils/factories/Factory").Factory;');
+    expect(indexSource).toContain('Object.defineProperty(exports, "Factory", {');
+    expect(esmIndexSource).toContain('import { Factory } from "./Factory.mjs";');
+    expect(esmIndexSource).toContain("export default {");
+    expect(esmFactorySource).toContain('import { faker } from "@faker-js/faker";');
+    expect(esmFactorySource).toContain("export class Factory");
   });
 
   test("PathMap resolves package templates when cwd is not the repo root", () => {

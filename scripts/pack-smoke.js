@@ -206,6 +206,8 @@ function assertTarballSurface(entries) {
     "package/CHANGELOG.md",
     "package/PACKAGE-UPDATE-SUMMARY.md",
     "package/dist/index.js",
+    "package/esm/index.mjs",
+    "package/esm/Factory.mjs",
     "package/dist/cli/eloquent.js",
     "package/src/cli/templates/model.tpl",
   ];
@@ -360,6 +362,40 @@ function verifyPublicExports(sample) {
       `[package import] export surface mismatch\nExpected: ${expectedPublicExports.join(",")}\nActual: ${actualExports.join(",")}`
     );
   }
+}
+
+function verifyEsmPublicImports(sample) {
+  const result = runNodeScript(
+    sample.dir,
+    "smoke-import-check.mjs",
+    [
+      `import { SqlModel, column, Factory } from ${JSON.stringify(packageName)};`,
+      "if (!SqlModel || !column || !Factory) {",
+      '  throw new Error("Missing ESM public exports from package root.");',
+      "}",
+      "class DemoFactory extends Factory {",
+      "  model = class DemoModel {",
+      "    static async create(data) {",
+      "      return { ...data };",
+      "    }",
+      "  };",
+      "  definition() {",
+      "    return { name: this.faker.person.fullName() };",
+      "  }",
+      "}",
+      "const demoFactory = new DemoFactory();",
+      "const payload = demoFactory.definition();",
+      'if (!payload || typeof payload.name !== "string" || payload.name.length === 0) {',
+      '  throw new Error("Factory ESM wrapper did not produce faker-backed payload.");',
+      "}",
+      'console.log(`esm-import-ok:${typeof SqlModel}:${typeof column}:${typeof Factory}`);',
+      "",
+    ].join("\n"),
+    sample.env,
+    "package import esm"
+  );
+
+  assertContains("package import esm", result.combined, "esm-import-ok:function:function:function");
 }
 
 function runGeneralCliSmoke(sample) {
@@ -990,6 +1026,7 @@ try {
   const generalSample = createSampleApp(stagedTarballPath, "commands");
   sampleDirs.push(generalSample.dir);
   verifyPublicExports(generalSample);
+  verifyEsmPublicImports(generalSample);
   runGeneralCliSmoke(generalSample);
 
   const blogSample = createSampleApp(stagedTarballPath, "blog");

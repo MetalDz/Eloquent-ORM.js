@@ -25,6 +25,15 @@ If your own app bootstrap calls `dotenv.config()` or your code imports faker dir
 npm install dotenv @faker-js/faker
 ```
 
+## ESM and NodeNext imports
+NodeNext and ESM apps can import the public runtime directly from the package root:
+
+```ts
+import { SqlModel, column, Factory } from "@alpha.consultings/eloquent-orm.js";
+```
+
+The published package now routes `import` consumers through an ESM-safe entry while keeping CommonJS `require()` usage safe for plain root imports that do not need the factory runtime.
+
 ## npm Package Discovery
 These npm metadata commands now resolve directly to the hosted docs, GitHub repository, and issue tracker:
 

@@ -36,6 +36,11 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(installation).toContain(`npm install ${packageName} express`);
     expect(installation).toContain("`dotenv` and `@faker-js/faker` stay in the package runtime dependencies");
     expect(installation).toContain("npm install dotenv @faker-js/faker");
+    expect(installation).toContain("## ESM and NodeNext imports");
+    expect(installation).toContain(
+      `import { SqlModel, column, Factory } from "${packageName}";`,
+    );
+    expect(installation).toContain("routes `import` consumers through an ESM-safe entry");
     expect(installation).toContain("## Full `.env` setup");
     expect(installation).toContain("## Quick `.env` key list");
     expect(installation).toContain("## `.env` constant reference");

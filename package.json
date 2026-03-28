@@ -46,8 +46,15 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./esm/index.mjs",
       "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "default": "./esm/index.mjs"
+    },
+    "./Factory": {
+      "types": "./dist/cli/utils/factories/Factory.d.ts",
+      "import": "./esm/Factory.mjs",
+      "require": "./dist/cli/utils/factories/Factory.js",
+      "default": "./esm/Factory.mjs"
     },
     "./Model": {
       "types": "./dist/Model.d.ts",
@@ -61,6 +68,7 @@
   },
   "files": [
     "dist",
+    "esm/**/*",
     "src/cli/templates/**/*",
     "README.md",
     "CHANGELOG.md",

@@ -21,7 +21,7 @@ Quick info:
 - Latest release: `v1.0.8 latest`
 - What's new: Fix release
 - Old release: `v1.0.7`
-- Latest update: Document release behavior for `docs:` commits so semantic-release publishes documentation updates as patch releases.
+- Latest update: Add an ESM-safe package entry for NodeNext consumers, keep CommonJS root imports from eagerly loading `Factory`, and verify installed-package ESM imports in pack-smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history
