@@ -63,7 +63,8 @@
     "dist",
     "src/cli/templates/**/*",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "PACKAGE-UPDATE-SUMMARY.md"
   ],
   "scripts": {
     "docs:sync-package-metadata": "node scripts/sync-package-metadata.cjs",

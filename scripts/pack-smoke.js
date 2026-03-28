@@ -204,6 +204,7 @@ function assertTarballSurface(entries) {
     "package/package.json",
     "package/README.md",
     "package/CHANGELOG.md",
+    "package/PACKAGE-UPDATE-SUMMARY.md",
     "package/dist/index.js",
     "package/dist/cli/eloquent.js",
     "package/src/cli/templates/model.tpl",
