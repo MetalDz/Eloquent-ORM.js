@@ -79,7 +79,7 @@
     "docs:sync-supported": "node scripts/sync-supported-versions.cjs",
     "docs:sync-config": "node scripts/sync-mintlify-configs.cjs",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run clean && tsc -p tsconfig.build.json",
+    "build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run clean && tsc -p tsconfig.build.json && node scripts/patch-dist-cjs-factory-entry.cjs",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
     "docs:dev": "npm run docs:sync-package-metadata && npm run docs:sync-config && node scripts/run-mintlify.cjs dev",
     "docs:build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",

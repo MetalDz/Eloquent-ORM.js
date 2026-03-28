@@ -82,13 +82,18 @@ describe("Package surface hardening", () => {
     const indexSource = fs.readFileSync(path.resolve(process.cwd(), "src/index.ts"), "utf8");
     const esmIndexSource = fs.readFileSync(path.resolve(process.cwd(), "esm/index.mjs"), "utf8");
     const esmFactorySource = fs.readFileSync(path.resolve(process.cwd(), "esm/Factory.mjs"), "utf8");
+    const patchScriptSource = fs.readFileSync(
+      path.resolve(process.cwd(), "scripts/patch-dist-cjs-factory-entry.cjs"),
+      "utf8",
+    );
     expect(indexSource).toContain('export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";');
-    expect(indexSource).toContain('export let Factory: typeof import("./cli/utils/factories/Factory").Factory;');
-    expect(indexSource).toContain('Object.defineProperty(exports, "Factory", {');
+    expect(indexSource).toContain('} from "./cli/utils/factories/Factory";');
     expect(esmIndexSource).toContain('import { Factory } from "./Factory.mjs";');
     expect(esmIndexSource).toContain("export default {");
     expect(esmFactorySource).toContain('import { faker } from "@faker-js/faker";');
     expect(esmFactorySource).toContain("export class Factory");
+    expect(patchScriptSource).toContain("patchDistCjsFactoryEntry");
+    expect(patchScriptSource).toContain('Object.defineProperty(exports, "Factory"');
   });
 
   test("PathMap resolves package templates when cwd is not the repo root", () => {

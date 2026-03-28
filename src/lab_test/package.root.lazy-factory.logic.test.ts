@@ -1,23 +1,45 @@
+import fs from "fs";
+import os from "os";
+import path from "path";
+
 describe("Package root lazy Factory export", () => {
-  test("requiring the root package does not eagerly load faker", () => {
-    jest.resetModules();
-    jest.doMock("@faker-js/faker", () => {
-      throw new Error("faker should stay unloaded during plain root import");
-    });
+  test("build patch rewrites the dist CJS entry to lazy-load Factory", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-cjs-entry-patch-"));
+    const distDir = path.join(tempDir, "dist");
+    const distIndexPath = path.join(distDir, "index.js");
 
-    let pkg: Record<string, unknown> | undefined;
+    fs.mkdirSync(distDir, { recursive: true });
+    fs.writeFileSync(
+      distIndexPath,
+      [
+        '"use strict";',
+        'var Factory_1 = require("./cli/utils/factories/Factory");',
+        'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return Factory_1.Factory; } });',
+        "",
+      ].join("\n"),
+      "utf8",
+    );
 
-    expect(() => {
+    try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      pkg = require("../index") as Record<string, unknown>;
-    }).not.toThrow();
+      const { patchDistCjsFactoryEntry } = require("../../scripts/patch-dist-cjs-factory-entry.cjs") as {
+        patchDistCjsFactoryEntry: (options: { cwd: string }) => { changed: boolean; filePath: string };
+      };
 
-    expect(pkg?.SqlModel).toBeDefined();
-    expect(pkg?.column).toBeDefined();
+      const first = patchDistCjsFactoryEntry({ cwd: tempDir });
+      const patched = fs.readFileSync(distIndexPath, "utf8");
 
-    const factoryDescriptor = Object.getOwnPropertyDescriptor(pkg ?? {}, "Factory");
-    expect(typeof factoryDescriptor?.get).toBe("function");
+      expect(first.changed).toBe(true);
+      expect(first.filePath).toBe(distIndexPath);
+      expect(patched).not.toContain('var Factory_1 = require("./cli/utils/factories/Factory");');
+      expect(patched).toContain(
+        'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return require("./cli/utils/factories/Factory").Factory; } });',
+      );
 
-    expect(() => pkg?.Factory).toThrow("faker should stay unloaded during plain root import");
+      const second = patchDistCjsFactoryEntry({ cwd: tempDir });
+      expect(second.changed).toBe(false);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

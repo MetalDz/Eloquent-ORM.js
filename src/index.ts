@@ -17,11 +17,11 @@ export {
 } from "./core/model/BaseModel";
 
 export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";
-export let Factory: typeof import("./cli/utils/factories/Factory").Factory;
-export type {
-  PlainObject,
-  ModelCtor,
-  FactoryCtor,
+export {
+  Factory,
+  type PlainObject,
+  type ModelCtor,
+  type FactoryCtor,
 } from "./cli/utils/factories/Factory";
 
 export {
@@ -68,13 +68,3 @@ export {
   isModelRegistryStrictMode,
   type RegisterModelsOptions,
 } from "./core/orm/mixins/utils/modelRegistration";
-
-Object.defineProperty(exports, "Factory", {
-  enumerable: true,
-  get: function () {
-    // Lazy-load the factory surface so plain package imports do not pull faker.
-    // This keeps the public export stable while avoiding eager ESM/CJS interop failures.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("./cli/utils/factories/Factory").Factory as typeof import("./cli/utils/factories/Factory").Factory;
-  },
-});
