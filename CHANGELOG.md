@@ -1,3 +1,11 @@
+## [1.0.9](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.8...v1.0.9) (2026-03-28)
+
+
+### Bug Fixes
+
+* add esm-safe package entry and document nodenext imports ([ccf1105](https://github.com/MetalDz/Eloquent-ORM.js/commit/ccf11057385d0ad00530ad41ba34b41f575fae02))
+* patch dist cjs factory export after build ([2499e1a](https://github.com/MetalDz/Eloquent-ORM.js/commit/2499e1a08bc47835d59668a02e3cf6baa6b284d2))
+
 ## [1.0.8](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.7...v1.0.8) (2026-03-28)
 
 

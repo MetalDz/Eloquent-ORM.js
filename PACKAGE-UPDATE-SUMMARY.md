@@ -1,6 +1,6 @@
 # Package Update Summary
 
-Version: `1.0.8`
+Version: `1.0.9`
 
 This file is the source of truth for the release-focused quick info block that appears in `README.md`.
 
@@ -14,10 +14,10 @@ npm run docs:sync-package-metadata
 
 <!-- release-lineup:start -->
 Latest Release:
-- `v1.0.8 latest`
+- `v1.0.9 latest`
 
 Old Release:
-- `v1.0.7`
+- `v1.0.8`
 <!-- release-lineup:end -->
 
 ## Latest Release Summary
@@ -31,10 +31,10 @@ Old Release:
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `v1.0.8`
-- Latest release: `v1.0.8 latest`
+- Version: `v1.0.9`
+- Latest release: `v1.0.9 latest`
 - What's new: Fix release
-- Old release: `v1.0.7`
+- Old release: `v1.0.8`
 - Latest update: Add an ESM-safe package entry for NodeNext consumers, keep CommonJS root imports from eagerly loading `Factory`, and verify installed-package ESM imports in pack-smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
