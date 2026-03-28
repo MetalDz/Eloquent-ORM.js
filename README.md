@@ -19,7 +19,7 @@ Package: `@alpha.consultings/eloquent-orm.js`
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `1.0.5`
-- Latest update: ESM-safe `make:registry` imports for NodeNext apps, PostgreSQL-first Phase 02 scaffolding defaults, and synchronized package metadata guidance.
+- Latest update: ESM-safe `make:registry` imports for NodeNext apps, `SoftDeletesMixin` schema-detection hardening, restored 100% Docker coverage, and passing Docker pack smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history

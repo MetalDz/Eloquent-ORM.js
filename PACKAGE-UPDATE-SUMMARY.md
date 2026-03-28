@@ -1,6 +1,6 @@
 # Package Update Summary
 
-Version: `1.0.4`
+Version: `1.0.5`
 
 This file is the source of truth for the release-focused quick info block that appears in `README.md`.
 
@@ -13,7 +13,7 @@ npm run docs:sync-package-metadata
 ## Latest Release Summary
 
 <!-- latest-package-update:start -->
-- ESM-safe `make:registry` imports for NodeNext apps, PostgreSQL-first Phase 02 scaffolding defaults, and synchronized package metadata guidance.
+- ESM-safe `make:registry` imports for NodeNext apps, `SoftDeletesMixin` schema-detection hardening, restored 100% Docker coverage, and passing Docker pack smoke.
 <!-- latest-package-update:end -->
 
 ## Synced Quick Info
@@ -22,7 +22,7 @@ npm run docs:sync-package-metadata
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `1.0.5`
-- Latest update: ESM-safe `make:registry` imports for NodeNext apps, PostgreSQL-first Phase 02 scaffolding defaults, and synchronized package metadata guidance.
+- Latest update: ESM-safe `make:registry` imports for NodeNext apps, `SoftDeletesMixin` schema-detection hardening, restored 100% Docker coverage, and passing Docker pack smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history
