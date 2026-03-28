@@ -15,6 +15,17 @@ Package: `@alpha.consultings/eloquent-orm.js`
 
 ## What this package gives you
 
+<!-- package-quick-info:start -->
+Quick info:
+- Package: `@alpha.consultings/eloquent-orm.js`
+- Version: `1.0.4`
+- Latest update: ESM-safe `make:registry` imports for NodeNext apps, PostgreSQL-first Phase 02 scaffolding defaults, and synchronized package metadata guidance.
+- Official docs: https://alphaconsultings.mintlify.app
+- Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
+- Release history: https://alphaconsultings.mintlify.app/release/history
+- Latest release notes: [PACKAGE-UPDATE-SUMMARY.md](./PACKAGE-UPDATE-SUMMARY.md)
+<!-- package-quick-info:end -->
+
 - SQL and MongoDB model persistence with a Laravel-like runtime API.
 - CLI generators for models, services, controllers, migrations, factories, and scenarios.
 - Migration and seed pipelines across test/CLI environments.

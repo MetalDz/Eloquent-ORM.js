@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { makeRegistry } from "../cli/commands/makeRegistry";
+import { __makeRegistryInternals, makeRegistry } from "../cli/commands/makeRegistry";
 import { PathMap } from "../cli/utils/PathMap";
 import { ImportResolver } from "../cli/utils/ImportResolver";
 
@@ -62,6 +62,120 @@ describe("make:registry generator", () => {
     expect(content).toContain("export const APP_MODELS = [");
     expect(content).toContain("registerModels([...APP_MODELS], options);");
     expect(content).toContain("export function registerAppModels(");
+  });
+
+  test("generates .js relative imports for NodeNext-style ESM projects", async () => {
+    fs.writeFileSync(path.join(appModelsDir, "User.ts"), "export class User {}", "utf8");
+    fs.writeFileSync(
+      path.join(tempRoot, "package.json"),
+      JSON.stringify({ type: "module" }, null, 2),
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(tempRoot, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { module: "NodeNext" } }, null, 2),
+      "utf8",
+    );
+
+    await makeRegistry({ force: true });
+
+    const outputPath = path.join(tempRoot, "src/app/registerModels.ts");
+    const content = fs.readFileSync(outputPath, "utf8");
+
+    expect(content).toContain(
+      'import { registerModels, type RegisterModelsOptions } from "../index.js";',
+    );
+    expect(content).toContain('import { User } from "./models/User.js";');
+  });
+
+  test("falls back to CommonJS-style imports when package metadata cannot be parsed", async () => {
+    fs.writeFileSync(path.join(appModelsDir, "User.ts"), "export class User {}", "utf8");
+    fs.writeFileSync(path.join(tempRoot, "package.json"), "{ invalid json", "utf8");
+    fs.writeFileSync(path.join(tempRoot, "tsconfig.json"), JSON.stringify({}, null, 2), "utf8");
+
+    await makeRegistry({ force: true });
+
+    const outputPath = path.join(tempRoot, "src/app/registerModels.ts");
+    const content = fs.readFileSync(outputPath, "utf8");
+
+    expect(content).toContain(
+      'import { registerModels, type RegisterModelsOptions } from "../index";',
+    );
+    expect(content).toContain('import { User } from "./models/User";');
+  });
+
+  test("preserves non-relative public API imports for ESM projects", async () => {
+    fs.writeFileSync(path.join(appModelsDir, "User.ts"), "export class User {}", "utf8");
+    fs.writeFileSync(
+      path.join(tempRoot, "package.json"),
+      JSON.stringify({ type: "module" }, null, 2),
+      "utf8",
+    );
+    jest.spyOn(ImportResolver, "publicApiImportPath").mockReturnValue("@alpha.consultings/eloquent-orm.js");
+
+    await makeRegistry({ force: true });
+
+    const outputPath = path.join(tempRoot, "src/app/registerModels.ts");
+    const content = fs.readFileSync(outputPath, "utf8");
+
+    expect(content).toContain(
+      'import { registerModels, type RegisterModelsOptions } from "@alpha.consultings/eloquent-orm.js";',
+    );
+    expect(content).toContain('import { User } from "./models/User.js";');
+  });
+
+  test("preserves already-extensioned public API imports for ESM projects", async () => {
+    fs.writeFileSync(path.join(appModelsDir, "User.ts"), "export class User {}", "utf8");
+    fs.writeFileSync(
+      path.join(tempRoot, "package.json"),
+      JSON.stringify({ type: "module" }, null, 2),
+      "utf8",
+    );
+    jest.spyOn(ImportResolver, "publicApiImportPath").mockReturnValue("../index.js");
+
+    await makeRegistry({ force: true });
+
+    const outputPath = path.join(tempRoot, "src/app/registerModels.ts");
+    const content = fs.readFileSync(outputPath, "utf8");
+
+    expect(content).toContain(
+      'import { registerModels, type RegisterModelsOptions } from "../index.js";',
+    );
+    expect(content).toContain('import { User } from "./models/User.js";');
+  });
+
+  test("internal ESM helpers cover invalid metadata, tsconfig-only detection, and import-path guards", () => {
+    const invalidJsonPath = path.join(tempRoot, "package.json");
+    fs.writeFileSync(invalidJsonPath, "{ invalid json", "utf8");
+
+    expect(__makeRegistryInternals.readJsonFile(invalidJsonPath)).toBeNull();
+
+    const tsconfigOnlyRoot = path.join(tempRoot, "tsconfig-only-root");
+    fs.mkdirSync(tsconfigOnlyRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(tsconfigOnlyRoot, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { module: "Node16", moduleResolution: "Node16" } }, null, 2),
+      "utf8",
+    );
+    expect(__makeRegistryInternals.usesNodeEsmRegistryImports(tsconfigOnlyRoot)).toBe(true);
+
+    const esmRoot = path.join(tempRoot, "esm-root");
+    fs.mkdirSync(esmRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(esmRoot, "package.json"),
+      JSON.stringify({ type: "module" }, null, 2),
+      "utf8",
+    );
+
+    expect(
+      __makeRegistryInternals.withRuntimeRelativeImportExtension(
+        "@alpha.consultings/eloquent-orm.js",
+        esmRoot,
+      ),
+    ).toBe("@alpha.consultings/eloquent-orm.js");
+    expect(
+      __makeRegistryInternals.withRuntimeRelativeImportExtension("../index.js", esmRoot),
+    ).toBe("../index.js");
   });
 
   test("generates test registerModels bootstrap from discovered test models", async () => {

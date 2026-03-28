@@ -265,4 +265,60 @@ describe("LTS phase 5 migrateFresh continuation", () => {
     });
     expect(process.exitCode).toBe(1);
   });
+
+  test("migrateFresh covers the successful --all-migrations regeneration path", async () => {
+    jest.resetModules();
+
+    const execute = jest.fn(async () => undefined);
+    const query = jest.fn(async () => [{ tablename: "users" }]);
+    const db = {
+      execute,
+      query,
+      wrapId: jest.fn((id: string) => `\`${id}\``),
+    };
+
+    const getAdapter = jest.fn(async () => db);
+    const getConnection = jest.fn(async () => ({}));
+    const closeAllConnections = jest.fn(async () => undefined);
+    const migrateRun = jest.fn(async () => undefined);
+    const makeMigration = jest.fn(async () => undefined);
+
+    jest.doMock("chalk", () => passthroughChalk);
+    jest.doMock("../core/connection/ConnectionFactory", () => ({
+      getAdapter,
+      getConnection,
+      closeAllConnections,
+    }));
+    jest.doMock("../config/database", () => ({
+      dbConfig: {
+        connections: {
+          pg: { driver: "pg" },
+        },
+      },
+    }));
+    jest.doMock("../cli/commands/migrateRun", () => ({
+      migrateRun,
+    }));
+    jest.doMock("../cli/commands/makeMigration", () => ({
+      makeMigration,
+    }));
+
+    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    await migrateFresh({
+      force: true,
+      allMigrations: true,
+      connectionNames: ["pg" as never],
+    });
+
+    expect(makeMigration).toHaveBeenCalledWith("all", {
+      test: false,
+      connectionName: "pg",
+      exit: false,
+    });
+    expect(migrateRun).toHaveBeenCalledWith(false, undefined, false, false, {
+      connectionNames: ["pg"],
+      auditCommand: "migrate:fresh",
+    });
+    expect(process.exitCode).toBe(0);
+  });
 });

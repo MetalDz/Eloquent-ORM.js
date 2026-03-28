@@ -90,6 +90,7 @@
       "group": "Release & Support",
       "pages": [
         "production-support/release-policy",
+        "release/history",
         "release/cadence",
         "release/promotion-checklist",
         "release/qualification-checklist",

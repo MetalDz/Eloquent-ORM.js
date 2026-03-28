@@ -57,9 +57,10 @@ function syncPackageMetadata({ cwd }) {
   const changedFiles = new Set(syncVersionFiles({ cwd, version }));
   const targetFiles = [
     path.join(cwd, "README.md"),
+    path.join(cwd, "PACKAGE-UPDATE-SUMMARY.md"),
     ...walkFiles(path.join(cwd, "docs"), new Set([".md", ".mdx"])),
     ...walkFiles(path.join(cwd, "src", "documentation"), new Set([".md", ".mdx"])),
-  ];
+  ].filter((filePath) => fs.existsSync(filePath));
 
   for (const filePath of targetFiles) {
     if (updatePackageIdentifiers(filePath, packageName)) {

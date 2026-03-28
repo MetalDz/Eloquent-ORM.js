@@ -32,6 +32,7 @@ describe("semantic-release version sync automation", () => {
     expect(gitPlugin?.[1].assets).toEqual(
       expect.arrayContaining([
         "README.md",
+        "PACKAGE-UPDATE-SUMMARY.md",
         "package.json",
         "docs/**/*.mdx",
         "src/documentation/**/*.md",
@@ -99,17 +100,67 @@ describe("semantic-release version sync automation", () => {
       );
       for (const target of [
         path.join(tempDir, "README.md"),
+        path.join(tempDir, "PACKAGE-UPDATE-SUMMARY.md"),
+        path.join(tempDir, "docs", "release", "history.mdx"),
         path.join(tempDir, "docs", "getting-started", "installation.mdx"),
         path.join(tempDir, "docs", "support", "support-policy.mdx"),
+        path.join(tempDir, "src", "documentation", "release-history.md"),
         path.join(tempDir, "src", "documentation", "installation-and-quickstart.md"),
         path.join(tempDir, "src", "documentation", "support-policy.md"),
       ]) {
         fs.mkdirSync(path.dirname(target), { recursive: true });
-        fs.writeFileSync(
-          target,
-          "## Prerequisites\n\n<!-- supported-prerequisites:start -->\nold\n<!-- supported-prerequisites:end -->\n",
-          "utf8",
-        );
+        const defaultContent =
+          path.basename(target) === "README.md"
+            ? [
+                "## What this package gives you",
+                "",
+                "<!-- package-quick-info:start -->",
+                "old",
+                "<!-- package-quick-info:end -->",
+                "",
+                "## Prerequisites",
+                "",
+                "<!-- supported-prerequisites:start -->",
+                "old",
+                "<!-- supported-prerequisites:end -->",
+                "",
+              ].join("\n")
+            : path.basename(target) === "PACKAGE-UPDATE-SUMMARY.md"
+              ? [
+                  "# Package Update Summary",
+                  "",
+                  `Version: \`${previousVersion}\``,
+                  "",
+                  "<!-- latest-package-update:start -->",
+                  "- Release summary from test fixture.",
+                  "<!-- latest-package-update:end -->",
+                  "",
+                  "<!-- package-quick-info:start -->",
+                  "old",
+                  "<!-- package-quick-info:end -->",
+                  "",
+                ].join("\n")
+              : target.endsWith(path.join("docs", "release", "history.mdx"))
+                ? [
+                    "---",
+                    `title: Release History / v${previousVersion} / Latest Release Notes`,
+                    "description: release history fixture",
+                    "---",
+                    "",
+                    `# Release History / v${previousVersion} / Latest Release Notes`,
+                    "",
+                    `- Current package version: \`${previousVersion}\``,
+                    "",
+                  ].join("\n")
+                : target.endsWith(path.join("src", "documentation", "release-history.md"))
+                  ? [
+                      `# Release History / v${previousVersion} / Latest Release Notes`,
+                      "",
+                      `- Current package version: \`${previousVersion}\``,
+                      "",
+                    ].join("\n")
+              : "## Prerequisites\n\n<!-- supported-prerequisites:start -->\nold\n<!-- supported-prerequisites:end -->\n";
+        fs.writeFileSync(target, defaultContent, "utf8");
       }
 
       const changedFiles = syncVersionFiles({ cwd: tempDir, version: releaseVersion });
@@ -132,9 +183,44 @@ describe("semantic-release version sync automation", () => {
         path.join(tempDir, "src", "documentation", "package-docs-index.md"),
         "utf8",
       );
+      const updatedReadme = fs.readFileSync(path.join(tempDir, "README.md"), "utf8");
+      const updatedQuickInfo = fs.readFileSync(
+        path.join(tempDir, "PACKAGE-UPDATE-SUMMARY.md"),
+        "utf8",
+      );
+      const updatedReleaseHistory = fs.readFileSync(
+        path.join(tempDir, "docs", "release", "history.mdx"),
+        "utf8",
+      );
+      const updatedSourceReleaseHistory = fs.readFileSync(
+        path.join(tempDir, "src", "documentation", "release-history.md"),
+        "utf8",
+      );
 
       expect(updatedDocs).toContain(`Version: \`${releaseVersion}\``);
       expect(updatedSourceDocs).toContain(`Version: \`${releaseVersion}\``);
+      expect(updatedReadme).toContain(`- Version: \`${releaseVersion}\``);
+      expect(updatedReadme).toContain("Official docs: https://alphaconsultings.mintlify.app");
+      expect(updatedReadme).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
+      expect(updatedQuickInfo).toContain(`Version: \`${releaseVersion}\``);
+      expect(updatedQuickInfo).toContain(`- Version: \`${releaseVersion}\``);
+      expect(updatedQuickInfo).toContain("Latest update: Release summary from test fixture.");
+      expect(updatedQuickInfo).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
+      expect(updatedReleaseHistory).toContain(
+        `title: Release History / v${releaseVersion} / Latest Release Notes`,
+      );
+      expect(updatedReleaseHistory).toContain(
+        `# Release History / v${releaseVersion} / Latest Release Notes`,
+      );
+      expect(updatedReleaseHistory).toContain(
+        `Current package version: \`${releaseVersion}\``,
+      );
+      expect(updatedSourceReleaseHistory).toContain(
+        `# Release History / v${releaseVersion} / Latest Release Notes`,
+      );
+      expect(updatedSourceReleaseHistory).toContain(
+        `Current package version: \`${releaseVersion}\``,
+      );
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }

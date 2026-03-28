@@ -4,6 +4,15 @@ const { syncSupportedVersions } = require("./sync-supported-versions.cjs");
 
 const VERSION_LINE_REGEX = /Version:\s*`[^`]+`/g;
 const SEMVER_REGEX = /\b\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\b/g;
+const CURRENT_PACKAGE_VERSION_REGEX = /Current package version:\s*`[^`]+`/g;
+const RELEASE_HISTORY_TITLE_REGEX = /title:\s*Release History \/ v[^\r\n]+ \/ Latest Release Notes/g;
+const RELEASE_HISTORY_HEADING_REGEX = /^# Release History \/ v[^\r\n]+ \/ Latest Release Notes$/gm;
+const QUICK_INFO_SOURCE_FILE = "PACKAGE-UPDATE-SUMMARY.md";
+const QUICK_INFO_TARGET_FILE = "README.md";
+const LATEST_UPDATE_START = "<!-- latest-package-update:start -->";
+const LATEST_UPDATE_END = "<!-- latest-package-update:end -->";
+const QUICK_INFO_START = "<!-- package-quick-info:start -->";
+const QUICK_INFO_END = "<!-- package-quick-info:end -->";
 
 function walkFiles(rootDir, extensions, output = []) {
   if (!fs.existsSync(rootDir)) {
@@ -27,7 +36,17 @@ function walkFiles(rootDir, extensions, output = []) {
 
 function updateVersionMarkers(filePath, version) {
   const original = fs.readFileSync(filePath, "utf8");
-  const updated = original.replace(VERSION_LINE_REGEX, `Version: \`${version}\``);
+  const updated = original
+    .replace(VERSION_LINE_REGEX, `Version: \`${version}\``)
+    .replace(CURRENT_PACKAGE_VERSION_REGEX, `Current package version: \`${version}\``)
+    .replace(
+      RELEASE_HISTORY_TITLE_REGEX,
+      `title: Release History / v${version} / Latest Release Notes`,
+    )
+    .replace(
+      RELEASE_HISTORY_HEADING_REGEX,
+      `# Release History / v${version} / Latest Release Notes`,
+    );
   if (updated === original) {
     return false;
   }
@@ -60,6 +79,114 @@ function updatePackageJson(packageJsonPath, version) {
   return changed;
 }
 
+function extractMarkedBlock(content, startMarker, endMarker) {
+  const startIndex = content.indexOf(startMarker);
+  const endIndex = content.indexOf(endMarker);
+
+  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+    return null;
+  }
+
+  return content.slice(startIndex + startMarker.length, endIndex).trim();
+}
+
+function replaceMarkedBlock(content, startMarker, endMarker, replacementBlock) {
+  const startIndex = content.indexOf(startMarker);
+  const endIndex = content.indexOf(endMarker);
+
+  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+    return content;
+  }
+
+  const before = content.slice(0, startIndex);
+  const after = content.slice(endIndex + endMarker.length);
+  return `${before}${replacementBlock}${after}`;
+}
+
+function normalizeLatestUpdate(content) {
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/^-+\s*/, ""))
+    .join(" ");
+}
+
+function normalizeDocsUrl(homepage) {
+  const trimmed = String(homepage || "https://alphaconsultings.mintlify.app/").trim();
+  return trimmed.replace(/\/+$/, "");
+}
+
+function renderQuickInfoBlock({ packageName, version, docsUrl, latestUpdate }) {
+  return [
+    QUICK_INFO_START,
+    "Quick info:",
+    `- Package: \`${packageName}\``,
+    `- Version: \`${version}\``,
+    `- Latest update: ${latestUpdate}`,
+    `- Official docs: ${docsUrl}`,
+    `- Quick start: ${docsUrl}/getting-started/quick-start`,
+    `- Release history: ${docsUrl}/release/history`,
+    "- Latest release notes: [PACKAGE-UPDATE-SUMMARY.md](./PACKAGE-UPDATE-SUMMARY.md)",
+    QUICK_INFO_END,
+  ].join("\n");
+}
+
+function syncQuickInfoFiles(cwd, packageJson) {
+  const sourcePath = path.join(cwd, QUICK_INFO_SOURCE_FILE);
+  const targetPath = path.join(cwd, QUICK_INFO_TARGET_FILE);
+
+  if (!fs.existsSync(sourcePath) || !fs.existsSync(targetPath)) {
+    return [];
+  }
+
+  const sourceOriginal = fs.readFileSync(sourcePath, "utf8");
+  const latestUpdateBlock = extractMarkedBlock(
+    sourceOriginal,
+    LATEST_UPDATE_START,
+    LATEST_UPDATE_END,
+  );
+
+  if (!latestUpdateBlock) {
+    return [];
+  }
+
+  const latestUpdate = normalizeLatestUpdate(latestUpdateBlock);
+  const docsUrl = normalizeDocsUrl(packageJson.homepage);
+  const renderedQuickInfo = renderQuickInfoBlock({
+    packageName: packageJson.name || "@alpha.consultings/eloquent-orm.js",
+    version: packageJson.version || "0.0.0",
+    docsUrl,
+    latestUpdate,
+  });
+
+  const changedFiles = [];
+  const sourceUpdated = replaceMarkedBlock(
+    sourceOriginal,
+    QUICK_INFO_START,
+    QUICK_INFO_END,
+    renderedQuickInfo,
+  );
+  if (sourceUpdated !== sourceOriginal) {
+    fs.writeFileSync(sourcePath, sourceUpdated, "utf8");
+    changedFiles.push(sourcePath);
+  }
+
+  const targetOriginal = fs.readFileSync(targetPath, "utf8");
+  const targetUpdated = replaceMarkedBlock(
+    targetOriginal,
+    QUICK_INFO_START,
+    QUICK_INFO_END,
+    renderedQuickInfo,
+  );
+  if (targetUpdated !== targetOriginal) {
+    fs.writeFileSync(targetPath, targetUpdated, "utf8");
+    changedFiles.push(targetPath);
+  }
+
+  return changedFiles;
+}
+
 function syncVersionFiles({ cwd, version }) {
   const changedFiles = [];
   const packageJsonPath = path.join(cwd, "package.json");
@@ -80,6 +207,9 @@ function syncVersionFiles({ cwd, version }) {
       }
     }
   }
+
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+  changedFiles.push(...syncQuickInfoFiles(cwd, packageJson));
 
   return changedFiles;
 }
@@ -104,4 +234,5 @@ async function prepare(_pluginConfig, context) {
 module.exports = {
   prepare,
   syncVersionFiles,
+  syncQuickInfoFiles,
 };

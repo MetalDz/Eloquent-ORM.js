@@ -390,4 +390,116 @@ describe("LTS phase 5 residual ORM mixin coverage", () => {
       "Cannot restore SoftModel without primary key 'id'.",
     );
   });
+
+  test("SoftDeletesMixin covers schema-driven detection fallbacks and soft-delete delete guard rails", async () => {
+    class SchemaBase {
+      async all(): Promise<Array<Record<string, unknown>>> {
+        return [
+          { id: 1, deleted_at: null },
+          { id: 2, deleted_at: "2026-03-16T00:00:00.000Z" },
+        ];
+      }
+
+      async find(): Promise<Record<string, unknown> | null> {
+        return null;
+      }
+
+      async delete(): Promise<void> {
+        return undefined;
+      }
+    }
+
+    class NonObjectSchemaModel extends SoftDeletesMixin(
+      SchemaBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      static schema = {
+        name: "string",
+      };
+    }
+
+    const nonObjectSchemaModel = new (NonObjectSchemaModel as any)();
+    expect(nonObjectSchemaModel.supportsSoftDeletes()).toBe(false);
+    await expect(nonObjectSchemaModel.all()).resolves.toHaveLength(2);
+
+    class WrongMixinSchemaModel extends SoftDeletesMixin(
+      SchemaBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      static schema = {
+        deleted: {
+          kind: "mixin",
+          name: "OtherSoftDeleteMixin",
+        },
+      };
+    }
+
+    const wrongMixinSchemaModel = new (WrongMixinSchemaModel as any)();
+    expect(wrongMixinSchemaModel.supportsSoftDeletes()).toBe(false);
+    await expect(wrongMixinSchemaModel.all()).resolves.toHaveLength(2);
+
+    class TypeDrivenSchemaModel extends SoftDeletesMixin(
+      SchemaBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      static schema = {
+        deleted: {
+          type: "softDeletes",
+        },
+      };
+    }
+
+    expect(new (TypeDrivenSchemaModel as any)().supportsSoftDeletes()).toBe(true);
+
+    class NamedMixinSchemaModel extends SoftDeletesMixin(
+      SchemaBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      static schema = {
+        deleted: {
+          kind: "mixin",
+          name: "SoftDeletes",
+        },
+      };
+    }
+
+    expect(new (NamedMixinSchemaModel as any)().supportsSoftDeletes()).toBe(true);
+
+    class MissingUpdateSoftModel extends SoftDeletesMixin(
+      SchemaBase as unknown as abstract new (...args: any[]) => object,
+    ) {
+      static softDeletes = true;
+      public id = 1;
+      public _originalAttributes = { id: 1 };
+    }
+
+    await expect(new (MissingUpdateSoftModel as any)().delete(1)).rejects.toThrow(
+      "Base 'update' method not found for SoftDeletesMixin.",
+    );
+
+    class MissingTrackedIdSoftModel extends SoftDeletesMixin(
+      (class {
+        async update(): Promise<void> {
+          return undefined;
+        }
+
+        async all(): Promise<Array<Record<string, unknown>>> {
+          return [];
+        }
+
+        async find(): Promise<Record<string, unknown> | null> {
+          return null;
+        }
+
+        async delete(): Promise<void> {
+          return undefined;
+        }
+      } as unknown) as abstract new (...args: any[]) => object,
+    ) {
+      static softDeletes = true;
+      public id = undefined;
+      public _id = undefined;
+      public _originalAttributes = {};
+    }
+
+    await expect(new (MissingTrackedIdSoftModel as any)().delete()).rejects.toThrow(
+      "Cannot delete MissingTrackedIdSoftModel without primary key 'id'.",
+    );
+  });
 });

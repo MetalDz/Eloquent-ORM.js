@@ -13,6 +13,7 @@
         "assets": [
           "CHANGELOG.md",
           "README.md",
+          "PACKAGE-UPDATE-SUMMARY.md",
           "package.json",
           "package-lock.json",
           "docs/**/*.mdx",
