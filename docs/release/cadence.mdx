@@ -19,6 +19,14 @@ description: Channels, eligibility rules, and promotion criteria.
 - minor: scheduled batches after additive validation
 - major: intentional breaking changes with migration guidance
 
+## Commit message release rules
+
+- semantic-release evaluates commit message types, not changed files
+- `docs:` commits are configured to publish a patch release
+- use `docs:` for documentation changes that should ship to consumers
+- do not use `chore:` for releasable documentation updates
+- `chore:` remains non-releasing unless another configured rule says otherwise
+
 ## Stable promotion
 
 Required:

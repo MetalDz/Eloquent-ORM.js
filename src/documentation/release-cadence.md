@@ -32,6 +32,13 @@ Last updated: 2026-03-14
   - not automatic
   - must follow a stable-release period with low regression rate and complete release evidence
 
+## Commit Message Release Rules
+- semantic-release evaluates commit message types, not changed files
+- `docs:` commits are configured to publish a patch release
+- use `docs:` for documentation changes that should ship to consumers
+- do not use `chore:` for releasable documentation updates
+- `chore:` remains non-releasing unless another configured rule says otherwise
+
 ## Stable Release Requirements
 - green CI
 - green package smoke
