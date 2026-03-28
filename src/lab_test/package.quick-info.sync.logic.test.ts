@@ -109,8 +109,9 @@ describe("package quick info sync", () => {
       for (const content of [readme, summary]) {
         expect(content).toContain("Quick info:");
         expect(content).toContain("- Package: `@alpha.consultings/eloquent-orm.js`");
-        expect(content).toContain("- Version: `2.4.6`");
+        expect(content).toContain("- Version: `v2.4.6`");
         expect(content).toContain("- Latest release: `v2.4.6 latest`");
+        expect(content).toContain("- What's new: Fix release");
         expect(content).toContain("- Old release: `v2.4.5`");
         expect(content).toContain(
           "- Latest update: Added smarter release quick info syncing and ESM-safe registry generation.",

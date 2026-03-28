@@ -224,8 +224,9 @@ describe("semantic-release version sync automation", () => {
 
       expect(updatedDocs).toContain(`Version: \`${releaseVersion}\``);
       expect(updatedSourceDocs).toContain(`Version: \`${releaseVersion}\``);
-      expect(updatedReadme).toContain(`- Version: \`${releaseVersion}\``);
+      expect(updatedReadme).toContain(`- Version: \`v${releaseVersion}\``);
       expect(updatedReadme).toContain(`- Latest release: \`v${releaseVersion} latest\``);
+      expect(updatedReadme).toContain("- What's new: Major release");
       expect(updatedReadme).toContain(`- Old release: \`v${previousVersion}\``);
       expect(updatedReadme).toContain("Official docs: https://alphaconsultings.mintlify.app");
       expect(updatedReadme).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
@@ -234,7 +235,8 @@ describe("semantic-release version sync automation", () => {
       expect(updatedQuickInfo).toContain(`- \`v${releaseVersion} latest\``);
       expect(updatedQuickInfo).toContain("Old Release:");
       expect(updatedQuickInfo).toContain(`- \`v${previousVersion}\``);
-      expect(updatedQuickInfo).toContain(`- Version: \`${releaseVersion}\``);
+      expect(updatedQuickInfo).toContain(`- Version: \`v${releaseVersion}\``);
+      expect(updatedQuickInfo).toContain("- What's new: Major release");
       expect(updatedQuickInfo).toContain("Latest update: Release summary from test fixture.");
       expect(updatedQuickInfo).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
       expect(updatedReleaseHistory).toContain(

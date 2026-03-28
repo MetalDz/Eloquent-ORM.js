@@ -133,6 +133,8 @@ function getReleaseLineup(cwd, version) {
   const changelogPath = path.join(cwd, "CHANGELOG.md");
   if (!fs.existsSync(changelogPath)) {
     return {
+      latestVersion: version,
+      oldVersion: null,
       latestRelease: `v${version} latest`,
       oldRelease: null,
     };
@@ -144,9 +146,51 @@ function getReleaseLineup(cwd, version) {
   const oldVersion = releaseVersions.find((entry) => entry !== latestVersion) || null;
 
   return {
+    latestVersion,
+    oldVersion,
     latestRelease: `v${latestVersion} latest`,
     oldRelease: oldVersion ? `v${oldVersion}` : null,
   };
+}
+
+function parseCoreSemver(version) {
+  const match = String(version || "").match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  };
+}
+
+function getReleaseKind(latestVersion, oldVersion) {
+  if (!oldVersion) {
+    return "Initial release";
+  }
+
+  const latest = parseCoreSemver(latestVersion);
+  const old = parseCoreSemver(oldVersion);
+
+  if (!latest || !old) {
+    return "Release update";
+  }
+
+  if (latest.major !== old.major) {
+    return "Major release";
+  }
+
+  if (latest.minor !== old.minor) {
+    return "Minor release";
+  }
+
+  if (latest.patch !== old.patch) {
+    return "Fix release";
+  }
+
+  return "Release update";
 }
 
 function renderReleaseLineupBlock({ latestRelease, oldRelease }) {
@@ -161,13 +205,22 @@ function renderReleaseLineupBlock({ latestRelease, oldRelease }) {
   ].join("\n");
 }
 
-function renderQuickInfoBlock({ packageName, version, docsUrl, latestUpdate, latestRelease, oldRelease }) {
+function renderQuickInfoBlock({
+  packageName,
+  version,
+  docsUrl,
+  latestUpdate,
+  latestRelease,
+  oldRelease,
+  releaseKind,
+}) {
   return [
     QUICK_INFO_START,
     "Quick info:",
     `- Package: \`${packageName}\``,
-    `- Version: \`${version}\``,
+    `- Version: \`v${version}\``,
     `- Latest release: \`${latestRelease}\``,
+    `- What's new: ${releaseKind}`,
     `- Old release: ${oldRelease ? `\`${oldRelease}\`` : "none yet"}`,
     `- Latest update: ${latestUpdate}`,
     `- Official docs: ${docsUrl}`,
@@ -199,7 +252,11 @@ function syncQuickInfoFiles(cwd, packageJson) {
 
   const latestUpdate = normalizeLatestUpdate(latestUpdateBlock);
   const docsUrl = normalizeDocsUrl(packageJson.homepage);
-  const { latestRelease, oldRelease } = getReleaseLineup(cwd, packageJson.version || "0.0.0");
+  const { latestVersion, oldVersion, latestRelease, oldRelease } = getReleaseLineup(
+    cwd,
+    packageJson.version || "0.0.0",
+  );
+  const releaseKind = getReleaseKind(latestVersion, oldVersion);
   const renderedReleaseLineup = renderReleaseLineupBlock({
     latestRelease,
     oldRelease,
@@ -211,6 +268,7 @@ function syncQuickInfoFiles(cwd, packageJson) {
     latestUpdate,
     latestRelease,
     oldRelease,
+    releaseKind,
   });
 
   const changedFiles = [];
@@ -249,9 +307,14 @@ function syncQuickInfoFiles(cwd, packageJson) {
 function syncVersionFiles({ cwd, version }) {
   const changedFiles = [];
   const packageJsonPath = path.join(cwd, "package.json");
+  const quickInfoSourcePath = path.join(cwd, QUICK_INFO_SOURCE_FILE);
 
   if (updatePackageJson(packageJsonPath, version)) {
     changedFiles.push(packageJsonPath);
+  }
+
+  if (fs.existsSync(quickInfoSourcePath) && updateVersionMarkers(quickInfoSourcePath, version)) {
+    changedFiles.push(quickInfoSourcePath);
   }
 
   const docRoots = [
