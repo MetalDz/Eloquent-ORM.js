@@ -1,3 +1,11 @@
+## [1.0.10](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.9...v1.0.10) (2026-03-29)
+
+
+### Bug Fixes
+
+* make latest release summary mdx-safe for docs lint ([a4149bd](https://github.com/MetalDz/Eloquent-ORM.js/commit/a4149bd672972ed952c2e1d7d4092214d64ca058))
+* support nodenext local ts imports in cli ts runtime ([27d383e](https://github.com/MetalDz/Eloquent-ORM.js/commit/27d383e547034d5ab1978872af167e15abe36376))
+
 ## [1.0.9](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.8...v1.0.9) (2026-03-28)
 
 

@@ -17,10 +17,10 @@ Laravel-inspired ORM + CLI for Node.js + TypeScript with SQL and MongoDB runtime
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `v1.0.9`
-- Latest release: `v1.0.9 latest`
+- Version: `v1.0.10`
+- Latest release: `v1.0.10 latest`
 - What's new: [Patched. Added an ESM-safe package entry for NodeNext consumers and stabilized CommonJS `Factory` export behavior.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
-- Old release: `v1.0.8`
+- Old release: `v1.0.9`
 - Latest update: Add an ESM-safe package entry for NodeNext consumers, keep CommonJS root imports from eagerly loading `Factory`, and verify installed-package ESM imports in pack-smoke.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
