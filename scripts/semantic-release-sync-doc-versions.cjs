@@ -15,8 +15,12 @@ const LATEST_RELEASE_DOC_TARGETS = [
 ];
 const LATEST_HEADLINE_START = "<!-- latest-package-headline:start -->";
 const LATEST_HEADLINE_END = "<!-- latest-package-headline:end -->";
+const LATEST_HEADLINE_MDX_START = "{/* latest-package-headline:start */}";
+const LATEST_HEADLINE_MDX_END = "{/* latest-package-headline:end */}";
 const LATEST_UPDATE_START = "<!-- latest-package-update:start -->";
 const LATEST_UPDATE_END = "<!-- latest-package-update:end -->";
+const LATEST_UPDATE_MDX_START = "{/* latest-package-update:start */}";
+const LATEST_UPDATE_MDX_END = "{/* latest-package-update:end */}";
 const RELEASE_LINEUP_START = "<!-- release-lineup:start -->";
 const RELEASE_LINEUP_END = "<!-- release-lineup:end -->";
 const QUICK_INFO_START = "<!-- package-quick-info:start -->";
@@ -334,17 +338,22 @@ function syncQuickInfoFiles(cwd, packageJson) {
     }
 
     const original = fs.readFileSync(latestReleaseDocPath, "utf8");
+    const isMdx = latestReleaseDocPath.endsWith(".mdx");
+    const headlineStartMarker = isMdx ? LATEST_HEADLINE_MDX_START : LATEST_HEADLINE_START;
+    const headlineEndMarker = isMdx ? LATEST_HEADLINE_MDX_END : LATEST_HEADLINE_END;
+    const updateStartMarker = isMdx ? LATEST_UPDATE_MDX_START : LATEST_UPDATE_START;
+    const updateEndMarker = isMdx ? LATEST_UPDATE_MDX_END : LATEST_UPDATE_END;
     const withHeadline = replaceMarkedBlock(
       original,
-      LATEST_HEADLINE_START,
-      LATEST_HEADLINE_END,
-      [LATEST_HEADLINE_START, `- ${latestHeadline}`, LATEST_HEADLINE_END].join("\n"),
+      headlineStartMarker,
+      headlineEndMarker,
+      [headlineStartMarker, `- ${latestHeadline}`, headlineEndMarker].join("\n"),
     );
     const withUpdate = replaceMarkedBlock(
       withHeadline,
-      LATEST_UPDATE_START,
-      LATEST_UPDATE_END,
-      [LATEST_UPDATE_START, `- ${latestUpdate}`, LATEST_UPDATE_END].join("\n"),
+      updateStartMarker,
+      updateEndMarker,
+      [updateStartMarker, `- ${latestUpdate}`, updateEndMarker].join("\n"),
     );
 
     if (withUpdate !== original) {
