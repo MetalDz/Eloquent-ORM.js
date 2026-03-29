@@ -60,8 +60,14 @@ describe("package quick info sync", () => {
           "old",
           "<!-- release-lineup:end -->",
           "",
+          "## Latest Release Headline",
+          "",
+          "<!-- latest-package-headline:start -->",
+          "- Patched. This was an ORM CLI bug, not a make:registry regression.",
+          "<!-- latest-package-headline:end -->",
+          "",
           "<!-- latest-package-update:start -->",
-          "- Added smarter release quick info syncing and ESM-safe registry generation.",
+          "- Support NodeNext local `.js` specifiers to sibling `.ts` source files in the CLI runtime and fail `make:migration` when model processing errors occur.",
           "<!-- latest-package-update:end -->",
           "",
           "<!-- package-quick-info:start -->",
@@ -111,10 +117,12 @@ describe("package quick info sync", () => {
         expect(content).toContain("- Package: `@alpha.consultings/eloquent-orm.js`");
         expect(content).toContain("- Version: `v2.4.6`");
         expect(content).toContain("- Latest release: `v2.4.6 latest`");
-        expect(content).toContain("- What's new: Fix release");
+        expect(content).toContain(
+          "- What's new: [Patched. This was an ORM CLI bug, not a make:registry regression.](https://alphaconsultings.mintlify.app/release/latest-release-summary)",
+        );
         expect(content).toContain("- Old release: `v2.4.5`");
         expect(content).toContain(
-          "- Latest update: Added smarter release quick info syncing and ESM-safe registry generation.",
+          "- Latest update: Support NodeNext local `.js` specifiers to sibling `.ts` source files in the CLI runtime and fail `make:migration` when model processing errors occur.",
         );
         expect(content).toContain("Official docs: https://alphaconsultings.mintlify.app");
         expect(content).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
@@ -128,6 +136,10 @@ describe("package quick info sync", () => {
       expect(summary).toContain("Old Release:");
       expect(summary).toContain("- `v2.4.5`");
       expect(summary).toContain("Version: `2.4.6`");
+      expect(summary).toContain("## Latest Release Headline");
+      expect(summary).toContain(
+        "- Patched. This was an ORM CLI bug, not a make:registry regression.",
+      );
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }

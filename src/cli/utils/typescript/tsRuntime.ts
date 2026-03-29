@@ -25,13 +25,47 @@ const PACKAGE_NAME = (() => {
 })();
 
 function resolveExistingModulePath(basePath: string): string | null {
-  const candidates = [
-    basePath,
-    `${basePath}.ts`,
-    `${basePath}.js`,
-    path.join(basePath, "index.ts"),
-    path.join(basePath, "index.js"),
-  ];
+  const extension = path.extname(basePath).toLowerCase();
+  const withoutExtension =
+    extension.length > 0 ? basePath.slice(0, -extension.length) : basePath;
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+
+  const addCandidate = (candidate: string): void => {
+    if (seen.has(candidate)) {
+      return;
+    }
+    seen.add(candidate);
+    candidates.push(candidate);
+  };
+
+  if (extension === ".js" || extension === ".mjs" || extension === ".cjs") {
+    // NodeNext TypeScript source commonly imports local modules using `.js`
+    // specifiers even though the source file on disk is `.ts`.
+    addCandidate(`${withoutExtension}.ts`);
+    addCandidate(`${withoutExtension}.tsx`);
+    addCandidate(`${withoutExtension}.mts`);
+    addCandidate(`${withoutExtension}.cts`);
+  }
+
+  addCandidate(basePath);
+
+  if (!extension) {
+    addCandidate(`${basePath}.ts`);
+    addCandidate(`${basePath}.tsx`);
+    addCandidate(`${basePath}.mts`);
+    addCandidate(`${basePath}.cts`);
+    addCandidate(`${basePath}.js`);
+    addCandidate(`${basePath}.mjs`);
+    addCandidate(`${basePath}.cjs`);
+    addCandidate(path.join(basePath, "index.ts"));
+    addCandidate(path.join(basePath, "index.tsx"));
+    addCandidate(path.join(basePath, "index.mts"));
+    addCandidate(path.join(basePath, "index.cts"));
+    addCandidate(path.join(basePath, "index.js"));
+    addCandidate(path.join(basePath, "index.mjs"));
+    addCandidate(path.join(basePath, "index.cjs"));
+  }
 
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
 }

@@ -267,7 +267,9 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     ctx.loadModule.mockImplementation(() => {
       throw "load-failed-string";
     });
-    await makeMigration("User", { test: true, exit: false });
+    await expect(makeMigration("User", { test: true, exit: false })).rejects.toThrow(
+      "User.ts"
+    );
     expect(errorSpy).toHaveBeenCalledWith("load-failed-string");
 
     ctx.loadModule.mockReturnValue({
@@ -281,7 +283,9 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     ctx.toCreateSQL.mockImplementation(async () => {
       throw "sql-failed-string";
     });
-    await makeMigration("User", { test: true, exit: false });
+    await expect(makeMigration("User", { test: true, exit: false })).rejects.toThrow(
+      "User.ts"
+    );
     expect(errorSpy).toHaveBeenCalledWith("sql-failed-string");
 
     ctx.toCreateSQL.mockResolvedValue({

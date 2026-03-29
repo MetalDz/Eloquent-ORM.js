@@ -7,7 +7,8 @@ Last updated: 2026-03-27
 
 ## Current Release Summary
 - The latest package summary is maintained in `PACKAGE-UPDATE-SUMMARY.md` at the repository root.
-- That same summary is synced into the root `README.md` quick-info block.
+- The official-docs entry point for that summary is [Latest release summary](./latest-release-summary.md).
+- That same source summary is synced into the root `README.md` quick-info block.
 - Current package version: `1.0.9`
 
 ## Older Release Information
@@ -28,7 +29,8 @@ Last updated: 2026-03-27
   - first stable release with model registry generator support
 
 ## Official References
-- [Latest package summary](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/PACKAGE-UPDATE-SUMMARY.md)
+- [Latest release summary](./latest-release-summary.md)
+- [Repository package summary source](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/PACKAGE-UPDATE-SUMMARY.md)
 - [Full changelog](https://github.com/MetalDz/Eloquent-ORM.js/blob/ai_master/CHANGELOG.md)
 - [Release cadence](./release-cadence.md)
 - [Release qualification checklist](./release-qualification-checklist.md)

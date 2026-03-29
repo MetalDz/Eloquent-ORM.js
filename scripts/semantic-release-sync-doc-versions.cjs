@@ -9,12 +9,20 @@ const RELEASE_HISTORY_TITLE_REGEX = /title:\s*Release History \/ v[^\r\n]+ \/ La
 const RELEASE_HISTORY_HEADING_REGEX = /^# Release History \/ v[^\r\n]+ \/ Latest Release Notes$/gm;
 const QUICK_INFO_SOURCE_FILE = "PACKAGE-UPDATE-SUMMARY.md";
 const QUICK_INFO_TARGET_FILE = "README.md";
+const LATEST_RELEASE_DOC_TARGETS = [
+  path.join("docs", "release", "latest-release-summary.mdx"),
+  path.join("src", "documentation", "latest-release-summary.md"),
+];
+const LATEST_HEADLINE_START = "<!-- latest-package-headline:start -->";
+const LATEST_HEADLINE_END = "<!-- latest-package-headline:end -->";
 const LATEST_UPDATE_START = "<!-- latest-package-update:start -->";
 const LATEST_UPDATE_END = "<!-- latest-package-update:end -->";
 const RELEASE_LINEUP_START = "<!-- release-lineup:start -->";
 const RELEASE_LINEUP_END = "<!-- release-lineup:end -->";
 const QUICK_INFO_START = "<!-- package-quick-info:start -->";
 const QUICK_INFO_END = "<!-- package-quick-info:end -->";
+const LATEST_RELEASE_SUMMARY_TITLE_REGEX = /title:\s*Latest Release Summary \/ v[^\r\n]+/g;
+const LATEST_RELEASE_SUMMARY_HEADING_REGEX = /^# Latest Release Summary \/ v[^\r\n]+$/gm;
 
 function walkFiles(rootDir, extensions, output = []) {
   if (!fs.existsSync(rootDir)) {
@@ -48,6 +56,14 @@ function updateVersionMarkers(filePath, version) {
     .replace(
       RELEASE_HISTORY_HEADING_REGEX,
       `# Release History / v${version} / Latest Release Notes`,
+    )
+    .replace(
+      LATEST_RELEASE_SUMMARY_TITLE_REGEX,
+      `title: Latest Release Summary / v${version}`,
+    )
+    .replace(
+      LATEST_RELEASE_SUMMARY_HEADING_REGEX,
+      `# Latest Release Summary / v${version}`,
     );
   if (updated === original) {
     return false;
@@ -112,6 +128,11 @@ function normalizeLatestUpdate(content) {
     .filter(Boolean)
     .map((line) => line.replace(/^-+\s*/, ""))
     .join(" ");
+}
+
+function normalizeHeadline(content) {
+  const normalized = normalizeLatestUpdate(content);
+  return normalized.endsWith(".") ? normalized : `${normalized}.`;
 }
 
 function normalizeDocsUrl(homepage) {
@@ -209,10 +230,10 @@ function renderQuickInfoBlock({
   packageName,
   version,
   docsUrl,
+  latestHeadline,
   latestUpdate,
   latestRelease,
   oldRelease,
-  releaseKind,
 }) {
   return [
     QUICK_INFO_START,
@@ -220,7 +241,7 @@ function renderQuickInfoBlock({
     `- Package: \`${packageName}\``,
     `- Version: \`v${version}\``,
     `- Latest release: \`${latestRelease}\``,
-    `- What's new: ${releaseKind}`,
+    `- What's new: [${latestHeadline}](${docsUrl}/release/latest-release-summary)`,
     `- Old release: ${oldRelease ? `\`${oldRelease}\`` : "none yet"}`,
     `- Latest update: ${latestUpdate}`,
     `- Official docs: ${docsUrl}`,
@@ -240,23 +261,28 @@ function syncQuickInfoFiles(cwd, packageJson) {
   }
 
   const sourceOriginal = fs.readFileSync(sourcePath, "utf8");
+  const latestHeadlineBlock = extractMarkedBlock(
+    sourceOriginal,
+    LATEST_HEADLINE_START,
+    LATEST_HEADLINE_END,
+  );
   const latestUpdateBlock = extractMarkedBlock(
     sourceOriginal,
     LATEST_UPDATE_START,
     LATEST_UPDATE_END,
   );
 
-  if (!latestUpdateBlock) {
+  if (!latestHeadlineBlock || !latestUpdateBlock) {
     return [];
   }
 
+  const latestHeadline = normalizeHeadline(latestHeadlineBlock);
   const latestUpdate = normalizeLatestUpdate(latestUpdateBlock);
   const docsUrl = normalizeDocsUrl(packageJson.homepage);
   const { latestVersion, oldVersion, latestRelease, oldRelease } = getReleaseLineup(
     cwd,
     packageJson.version || "0.0.0",
   );
-  const releaseKind = getReleaseKind(latestVersion, oldVersion);
   const renderedReleaseLineup = renderReleaseLineupBlock({
     latestRelease,
     oldRelease,
@@ -265,10 +291,10 @@ function syncQuickInfoFiles(cwd, packageJson) {
     packageName: packageJson.name || "@alpha.consultings/eloquent-orm.js",
     version: packageJson.version || "0.0.0",
     docsUrl,
+    latestHeadline,
     latestUpdate,
     latestRelease,
     oldRelease,
-    releaseKind,
   });
 
   const changedFiles = [];
@@ -299,6 +325,32 @@ function syncQuickInfoFiles(cwd, packageJson) {
   if (targetUpdated !== targetOriginal) {
     fs.writeFileSync(targetPath, targetUpdated, "utf8");
     changedFiles.push(targetPath);
+  }
+
+  for (const relativeTarget of LATEST_RELEASE_DOC_TARGETS) {
+    const latestReleaseDocPath = path.join(cwd, relativeTarget);
+    if (!fs.existsSync(latestReleaseDocPath)) {
+      continue;
+    }
+
+    const original = fs.readFileSync(latestReleaseDocPath, "utf8");
+    const withHeadline = replaceMarkedBlock(
+      original,
+      LATEST_HEADLINE_START,
+      LATEST_HEADLINE_END,
+      [LATEST_HEADLINE_START, `- ${latestHeadline}`, LATEST_HEADLINE_END].join("\n"),
+    );
+    const withUpdate = replaceMarkedBlock(
+      withHeadline,
+      LATEST_UPDATE_START,
+      LATEST_UPDATE_END,
+      [LATEST_UPDATE_START, `- ${latestUpdate}`, LATEST_UPDATE_END].join("\n"),
+    );
+
+    if (withUpdate !== original) {
+      fs.writeFileSync(latestReleaseDocPath, withUpdate, "utf8");
+      changedFiles.push(latestReleaseDocPath);
+    }
   }
 
   return changedFiles;

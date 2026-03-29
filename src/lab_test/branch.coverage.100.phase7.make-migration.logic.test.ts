@@ -117,7 +117,9 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const { makeMigration } = await import("../cli/commands/makeMigration");
-    await makeMigration("all", { test: true, exit: false });
+    await expect(makeMigration("all", { test: true, exit: false })).rejects.toThrow(
+      "Broken.ts"
+    );
 
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Error processing Broken.ts:"));
     fs.rmSync(ctx.root, { recursive: true, force: true });
@@ -228,7 +230,9 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
     });
 
     ctx.toCreateSQL.mockRejectedValueOnce(new Error("sql-stage-failure"));
-    await makeMigration("User", { test: true, exit: false });
+    await expect(makeMigration("User", { test: true, exit: false })).rejects.toThrow(
+      "User.ts"
+    );
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Error processing User.ts:"));
 
     ctx.toCreateSQL.mockResolvedValue({

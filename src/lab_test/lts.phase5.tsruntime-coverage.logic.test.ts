@@ -68,6 +68,45 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     }
   });
 
+  test("manual transpile resolves NodeNext local .js specifiers to sibling .ts source files", () => {
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+    });
+
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-nodenext-local-"));
+    const depFile = path.join(tempRoot, "createPlatformUuid.ts");
+    const mainFile = path.join(tempRoot, "main.ts");
+
+    fs.writeFileSync(
+      depFile,
+      [
+        "export function createPlatformUuid(): string {",
+        '  return "uuid-from-ts-source";',
+        "}",
+      ].join("\n"),
+      "utf8",
+    );
+    fs.writeFileSync(
+      mainFile,
+      [
+        'import { createPlatformUuid } from "./createPlatformUuid.js";',
+        "export const loaded = createPlatformUuid();",
+      ].join("\n"),
+      "utf8",
+    );
+
+    try {
+      runtime!.clearLoadedModuleCache(depFile);
+      runtime!.clearLoadedModuleCache(mainFile);
+      expect(runtime!.loadModule(mainFile)).toEqual({ loaded: "uuid-from-ts-source" });
+    } finally {
+      runtime!.clearLoadedModuleCache(depFile);
+      runtime!.clearLoadedModuleCache(mainFile);
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   test("manual transpile falls back cleanly when the package name cannot be read", () => {
     const packageJsonPath = path.resolve(rootDir, "package.json");
     const originalReadFileSync = fs.readFileSync.bind(fs);

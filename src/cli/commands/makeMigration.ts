@@ -274,6 +274,7 @@ export async function makeMigration(
 
   const loadedModels: LoadedModel[] = [];
   const pendingPivotMigrations = new Map<string, PendingPivotMigration>();
+  const failedFiles = new Set<string>();
   const timestampSeed = new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, "")
@@ -326,6 +327,7 @@ export async function makeMigration(
         },
       });
     } catch (err) {
+      failedFiles.add(file);
       console.error(chalk.red(`ERROR: Error processing ${file}:`));
       console.error(err instanceof Error ? err.message : err);
     }
@@ -636,6 +638,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
         }
       }
     } catch (err) {
+      failedFiles.add(file);
       console.error(chalk.red(`ERROR: Error processing ${file}:`));
       console.error(err instanceof Error ? err.message : err);
     }
@@ -673,6 +676,18 @@ export async function down(db: { query(sql: string): Promise<void> }) {
     console.log(chalk.gray("INFO: All database connections closed.\n"));
   } catch {
     console.warn(chalk.yellow("WARN: Could not close DB connections cleanly."));
+  }
+
+  if (failedFiles.size > 0) {
+    const failureSummary =
+      `ERROR: Migration generation failed for ${failedFiles.size} model` +
+      `${failedFiles.size === 1 ? "" : "s"}: ${[...failedFiles].join(", ")}`;
+    console.error(chalk.red(failureSummary));
+    if (options.exit !== false) {
+      process.exit(1);
+      return;
+    }
+    throw new Error(failureSummary);
   }
 
   console.log(

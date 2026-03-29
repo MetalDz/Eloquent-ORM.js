@@ -102,9 +102,11 @@ describe("semantic-release version sync automation", () => {
         path.join(tempDir, "README.md"),
         path.join(tempDir, "PACKAGE-UPDATE-SUMMARY.md"),
         path.join(tempDir, "docs", "release", "history.mdx"),
+        path.join(tempDir, "docs", "release", "latest-release-summary.mdx"),
         path.join(tempDir, "docs", "getting-started", "installation.mdx"),
         path.join(tempDir, "docs", "support", "support-policy.mdx"),
         path.join(tempDir, "src", "documentation", "release-history.md"),
+        path.join(tempDir, "src", "documentation", "latest-release-summary.md"),
         path.join(tempDir, "src", "documentation", "installation-and-quickstart.md"),
         path.join(tempDir, "src", "documentation", "support-policy.md"),
       ]) {
@@ -137,6 +139,12 @@ describe("semantic-release version sync automation", () => {
                   "old",
                   "<!-- release-lineup:end -->",
                   "",
+                  "## Latest Release Headline",
+                  "",
+                  "<!-- latest-package-headline:start -->",
+                  "- Patched. Fixture release headline.",
+                  "<!-- latest-package-headline:end -->",
+                  "",
                   "<!-- latest-package-update:start -->",
                   "- Release summary from test fixture.",
                   "<!-- latest-package-update:end -->",
@@ -158,6 +166,30 @@ describe("semantic-release version sync automation", () => {
                     `- Current package version: \`${previousVersion}\``,
                     "",
                   ].join("\n")
+                : target.endsWith(path.join("docs", "release", "latest-release-summary.mdx"))
+                  ? [
+                      "---",
+                      `title: Latest Release Summary / v${previousVersion}`,
+                      "description: latest release summary fixture",
+                      "---",
+                      "",
+                      `# Latest Release Summary / v${previousVersion}`,
+                      "",
+                      `- Current package version: \`${previousVersion}\``,
+                      "",
+                      "## What's new",
+                      "",
+                      "<!-- latest-package-headline:start -->",
+                      "- stale headline",
+                      "<!-- latest-package-headline:end -->",
+                      "",
+                      "## Exact changes",
+                      "",
+                      "<!-- latest-package-update:start -->",
+                      "- stale update",
+                      "<!-- latest-package-update:end -->",
+                      "",
+                    ].join("\n")
                 : target.endsWith(path.join("src", "documentation", "release-history.md"))
                   ? [
                       `# Release History / v${previousVersion} / Latest Release Notes`,
@@ -165,6 +197,23 @@ describe("semantic-release version sync automation", () => {
                       `- Current package version: \`${previousVersion}\``,
                       "",
                     ].join("\n")
+                  : target.endsWith(path.join("src", "documentation", "latest-release-summary.md"))
+                    ? [
+                        `# Latest Release Summary / v${previousVersion}`,
+                        "",
+                        `- Current package version: \`${previousVersion}\``,
+                        "",
+                        "## What's New",
+                        "<!-- latest-package-headline:start -->",
+                        "- stale headline",
+                        "<!-- latest-package-headline:end -->",
+                        "",
+                        "## Exact Changes",
+                        "<!-- latest-package-update:start -->",
+                        "- stale update",
+                        "<!-- latest-package-update:end -->",
+                        "",
+                      ].join("\n")
               : "## Prerequisites\n\n<!-- supported-prerequisites:start -->\nold\n<!-- supported-prerequisites:end -->\n";
         fs.writeFileSync(target, defaultContent, "utf8");
       }
@@ -217,8 +266,16 @@ describe("semantic-release version sync automation", () => {
         path.join(tempDir, "docs", "release", "history.mdx"),
         "utf8",
       );
+      const updatedLatestReleaseSummary = fs.readFileSync(
+        path.join(tempDir, "docs", "release", "latest-release-summary.mdx"),
+        "utf8",
+      );
       const updatedSourceReleaseHistory = fs.readFileSync(
         path.join(tempDir, "src", "documentation", "release-history.md"),
+        "utf8",
+      );
+      const updatedSourceLatestReleaseSummary = fs.readFileSync(
+        path.join(tempDir, "src", "documentation", "latest-release-summary.md"),
         "utf8",
       );
 
@@ -226,7 +283,9 @@ describe("semantic-release version sync automation", () => {
       expect(updatedSourceDocs).toContain(`Version: \`${releaseVersion}\``);
       expect(updatedReadme).toContain(`- Version: \`v${releaseVersion}\``);
       expect(updatedReadme).toContain(`- Latest release: \`v${releaseVersion} latest\``);
-      expect(updatedReadme).toContain("- What's new: Major release");
+      expect(updatedReadme).toContain(
+        "- What's new: [Patched. Fixture release headline.](https://alphaconsultings.mintlify.app/release/latest-release-summary)",
+      );
       expect(updatedReadme).toContain(`- Old release: \`v${previousVersion}\``);
       expect(updatedReadme).toContain("Official docs: https://alphaconsultings.mintlify.app");
       expect(updatedReadme).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
@@ -236,7 +295,9 @@ describe("semantic-release version sync automation", () => {
       expect(updatedQuickInfo).toContain("Old Release:");
       expect(updatedQuickInfo).toContain(`- \`v${previousVersion}\``);
       expect(updatedQuickInfo).toContain(`- Version: \`v${releaseVersion}\``);
-      expect(updatedQuickInfo).toContain("- What's new: Major release");
+      expect(updatedQuickInfo).toContain(
+        "- What's new: [Patched. Fixture release headline.](https://alphaconsultings.mintlify.app/release/latest-release-summary)",
+      );
       expect(updatedQuickInfo).toContain("Latest update: Release summary from test fixture.");
       expect(updatedQuickInfo).toContain("Release history: https://alphaconsultings.mintlify.app/release/history");
       expect(updatedReleaseHistory).toContain(
@@ -253,6 +314,33 @@ describe("semantic-release version sync automation", () => {
       );
       expect(updatedSourceReleaseHistory).toContain(
         `Current package version: \`${releaseVersion}\``,
+      );
+      expect(updatedLatestReleaseSummary).toContain(
+        `title: Latest Release Summary / v${releaseVersion}`,
+      );
+      expect(updatedLatestReleaseSummary).toContain(
+        `# Latest Release Summary / v${releaseVersion}`,
+      );
+      expect(updatedLatestReleaseSummary).toContain(
+        `Current package version: \`${releaseVersion}\``,
+      );
+      expect(updatedLatestReleaseSummary).toContain(
+        "- Patched. Fixture release headline.",
+      );
+      expect(updatedLatestReleaseSummary).toContain(
+        "- Release summary from test fixture.",
+      );
+      expect(updatedSourceLatestReleaseSummary).toContain(
+        `# Latest Release Summary / v${releaseVersion}`,
+      );
+      expect(updatedSourceLatestReleaseSummary).toContain(
+        `Current package version: \`${releaseVersion}\``,
+      );
+      expect(updatedSourceLatestReleaseSummary).toContain(
+        "- Patched. Fixture release headline.",
+      );
+      expect(updatedSourceLatestReleaseSummary).toContain(
+        "- Release summary from test fixture.",
       );
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
