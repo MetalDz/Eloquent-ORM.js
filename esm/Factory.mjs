@@ -1,7 +1,20 @@
-import { faker } from "@faker-js/faker";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+let cachedFaker;
+
+function getFaker() {
+  if (!cachedFaker) {
+    cachedFaker = require("@faker-js/faker").faker;
+  }
+
+  return cachedFaker;
+}
 
 export class Factory {
-  faker = faker;
+  get faker() {
+    return getFaker();
+  }
 
   async create(attrs = {}, index = 0) {
     const base = this.definition(index);

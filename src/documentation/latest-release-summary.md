@@ -10,12 +10,12 @@ Last updated: 2026-03-29
 
 ## What's New
 <!-- latest-package-headline:start -->
-- Patched. Added an ESM-safe package entry for NodeNext consumers and stabilized CommonJS `Factory` export behavior.
+- Patched. Root ESM imports no longer touch Factory eagerly, preserving CommonJS and NodeNext compatibility.
 <!-- latest-package-headline:end -->
 
 ## Exact Changes
 <!-- latest-package-update:start -->
-- Add an ESM-safe package entry for NodeNext consumers, keep CommonJS root imports from eagerly loading `Factory`, and verify installed-package ESM imports in pack-smoke.
+- Fix the published root ESM surface so non-factory root imports no longer trigger the factory runtime, preserving CommonJS consumers and stabilizing NodeNext/Jest ESM usage.
 <!-- latest-package-update:end -->
 
 ## References

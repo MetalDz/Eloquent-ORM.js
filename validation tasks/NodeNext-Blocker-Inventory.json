@@ -1,0 +1,485 @@
+{
+  "snapshotDate": "2026-03-30",
+  "packageName": "@alpha.consultings/eloquent-orm.js",
+  "source": {
+    "roots": [
+      "src",
+      "bin"
+    ],
+    "totalMatches": 1286,
+    "uniqueFiles": 341,
+    "byKind": [
+      {
+        "kind": "import/export local specifiers",
+        "matches": 1163
+      },
+      {
+        "kind": "require() local imports",
+        "matches": 123
+      }
+    ],
+    "byArea": [
+      {
+        "area": "src/lab_test",
+        "files": 215,
+        "matches": 889
+      },
+      {
+        "area": "src/cli",
+        "files": 48,
+        "matches": 215
+      },
+      {
+        "area": "src/core",
+        "files": 41,
+        "matches": 112
+      },
+      {
+        "area": "src/app",
+        "files": 23,
+        "matches": 39
+      },
+      {
+        "area": "src/test",
+        "files": 11,
+        "matches": 19
+      },
+      {
+        "area": "other",
+        "files": 3,
+        "matches": 12
+      }
+    ],
+    "topFiles": [
+      {
+        "file": "src/core/model/BaseModel.ts",
+        "area": "src/core",
+        "matches": 23,
+        "kinds": {
+          "import/export local specifiers": 23
+        },
+        "firstLine": 2
+      },
+      {
+        "file": "src/lab_test/nosql.cli.phase3.parity.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 23,
+        "kinds": {
+          "import/export local specifiers": 23
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/branch.coverage.70.cli-commands.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 21,
+        "kinds": {
+          "import/export local specifiers": 21
+        },
+        "firstLine": 5
+      },
+      {
+        "file": "src/cli/commands/makeScenario.ts",
+        "area": "src/cli",
+        "matches": 17,
+        "kinds": {
+          "import/export local specifiers": 17
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 17,
+        "kinds": {
+          "require() local imports": 14,
+          "import/export local specifiers": 3
+        },
+        "firstLine": 30
+      },
+      {
+        "file": "src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 16,
+        "kinds": {
+          "import/export local specifiers": 16
+        },
+        "firstLine": 1
+      },
+      {
+        "file": "src/lab_test/branch.coverage.70.utilities.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 16,
+        "kinds": {
+          "import/export local specifiers": 2,
+          "require() local imports": 14
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/lts.phase5.cli-registration-security-utility-coverage.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 15,
+        "kinds": {
+          "require() local imports": 15
+        },
+        "firstLine": 134
+      },
+      {
+        "file": "src/lab_test/lts.phase5.residual-helper-mixin-coverage.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 15,
+        "kinds": {
+          "import/export local specifiers": 15
+        },
+        "firstLine": 8
+      },
+      {
+        "file": "src/lab_test/make.registry.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 15,
+        "kinds": {
+          "import/export local specifiers": 15
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/branch.coverage.100.phase32.cache-query-morph-redactor.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 14,
+        "kinds": {
+          "import/export local specifiers": 14
+        },
+        "firstLine": 1
+      },
+      {
+        "file": "src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 13,
+        "kinds": {
+          "import/export local specifiers": 13
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/support/cli.integration.harness.ts",
+        "area": "src/lab_test",
+        "matches": 13,
+        "kinds": {
+          "import/export local specifiers": 13
+        },
+        "firstLine": 296
+      },
+      {
+        "file": "src/cli/eloquent.ts",
+        "area": "src/cli",
+        "matches": 12,
+        "kinds": {
+          "import/export local specifiers": 12
+        },
+        "firstLine": 14
+      },
+      {
+        "file": "src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 12,
+        "kinds": {
+          "import/export local specifiers": 10,
+          "require() local imports": 2
+        },
+        "firstLine": 4
+      }
+    ]
+  },
+  "generatorTemplates": {
+    "roots": [
+      "src/cli",
+      "src/cli/templates"
+    ],
+    "totalMatches": 218,
+    "uniqueFiles": 50,
+    "byArea": [
+      {
+        "area": "src/cli/commands",
+        "files": 20,
+        "matches": 122
+      },
+      {
+        "area": "src/cli/utils",
+        "files": 27,
+        "matches": 82
+      },
+      {
+        "area": "src/cli/other",
+        "files": 1,
+        "matches": 12
+      },
+      {
+        "area": "src/cli/templates",
+        "files": 2,
+        "matches": 2
+      }
+    ],
+    "topFiles": [
+      {
+        "file": "src/cli/commands/makeScenario.ts",
+        "area": "src/cli/commands",
+        "matches": 17,
+        "kinds": {
+          "import/export local specifiers": 17
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/cli/eloquent.ts",
+        "area": "src/cli/other",
+        "matches": 12,
+        "kinds": {
+          "import/export local specifiers": 12
+        },
+        "firstLine": 14
+      },
+      {
+        "file": "src/cli/commands/makeModel.ts",
+        "area": "src/cli/commands",
+        "matches": 11,
+        "kinds": {
+          "import/export local specifiers": 11
+        },
+        "firstLine": 5
+      },
+      {
+        "file": "src/cli/commands/dbSeed.ts",
+        "area": "src/cli/commands",
+        "matches": 9,
+        "kinds": {
+          "import/export local specifiers": 9
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/cli/commands/migrateRun.ts",
+        "area": "src/cli/commands",
+        "matches": 9,
+        "kinds": {
+          "import/export local specifiers": 9
+        },
+        "firstLine": 9
+      },
+      {
+        "file": "src/cli/utils/CliMigrationCommandRegistration.ts",
+        "area": "src/cli/utils",
+        "matches": 9,
+        "kinds": {
+          "import/export local specifiers": 9
+        },
+        "firstLine": 3
+      },
+      {
+        "file": "src/cli/commands/makeMigration.ts",
+        "area": "src/cli/commands",
+        "matches": 8,
+        "kinds": {
+          "import/export local specifiers": 8
+        },
+        "firstLine": 5
+      },
+      {
+        "file": "src/cli/commands/migrateRollback.ts",
+        "area": "src/cli/commands",
+        "matches": 8,
+        "kinds": {
+          "import/export local specifiers": 8
+        },
+        "firstLine": 9
+      },
+      {
+        "file": "src/cli/utils/ArtifactStorage.ts",
+        "area": "src/cli/utils",
+        "matches": 8,
+        "kinds": {
+          "import/export local specifiers": 8
+        },
+        "firstLine": 3
+      },
+      {
+        "file": "src/cli/utils/CliSeedScenarioCommandRegistration.ts",
+        "area": "src/cli/utils",
+        "matches": 8,
+        "kinds": {
+          "import/export local specifiers": 8
+        },
+        "firstLine": 2
+      },
+      {
+        "file": "src/cli/commands/makeFactory.ts",
+        "area": "src/cli/commands",
+        "matches": 7,
+        "kinds": {
+          "import/export local specifiers": 6,
+          "generated relative import/require strings": 1
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/cli/commands/demoScenario.ts",
+        "area": "src/cli/commands",
+        "matches": 6,
+        "kinds": {
+          "import/export local specifiers": 6
+        },
+        "firstLine": 9
+      },
+      {
+        "file": "src/cli/commands/factoryStatus.ts",
+        "area": "src/cli/commands",
+        "matches": 6,
+        "kinds": {
+          "import/export local specifiers": 6
+        },
+        "firstLine": 7
+      },
+      {
+        "file": "src/cli/utils/factories/FactoryRegistry.ts",
+        "area": "src/cli/utils",
+        "matches": 6,
+        "kinds": {
+          "import/export local specifiers": 6
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/cli/commands/cacheStats.ts",
+        "area": "src/cli/commands",
+        "matches": 5,
+        "kinds": {
+          "import/export local specifiers": 5
+        },
+        "firstLine": 1
+      }
+    ]
+  },
+  "testAssertions": {
+    "roots": [
+      "src/lab_test"
+    ],
+    "totalMatches": 19,
+    "uniqueFiles": 8,
+    "topFiles": [
+      {
+        "file": "src/lab_test/orm.hardening.phase3.generated-app-test-model-stack.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 8,
+        "kinds": {
+          "exact import-string assertions": 8
+        },
+        "firstLine": 91
+      },
+      {
+        "file": "src/lab_test/orm.hardening.phase1.cli-action-runtime.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 3,
+        "kinds": {
+          "exact import-string assertions": 3
+        },
+        "firstLine": 102
+      },
+      {
+        "file": "src/lab_test/orm.hardening.phase1.cli-command-targets.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 3,
+        "kinds": {
+          "exact import-string assertions": 3
+        },
+        "firstLine": 71
+      },
+      {
+        "file": "src/lab_test/branch.coverage.100.phase38.make-factory.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 1,
+        "kinds": {
+          "exact import-string assertions": 1
+        },
+        "firstLine": 139
+      },
+      {
+        "file": "src/lab_test/lts.phase5.make-factory-coverage-and-ascii.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 1,
+        "kinds": {
+          "exact import-string assertions": 1
+        },
+        "firstLine": 115
+      },
+      {
+        "file": "src/lab_test/orm.hardening.phase1.cli-bootstrap.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 1,
+        "kinds": {
+          "exact import-string assertions": 1
+        },
+        "firstLine": 110
+      },
+      {
+        "file": "src/lab_test/orm.hardening.phase1.cli-production-guards.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 1,
+        "kinds": {
+          "exact import-string assertions": 1
+        },
+        "firstLine": 122
+      },
+      {
+        "file": "src/lab_test/orm.hardening.phase2.artifact-compatibility-matrix.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 1,
+        "kinds": {
+          "exact import-string assertions": 1
+        },
+        "firstLine": 67
+      }
+    ]
+  },
+  "runtimeLoaderHotspots": [
+    {
+      "path": "src/cli/utils/typescript/tsRuntime.ts",
+      "reason": "Consumer TypeScript loader must keep supporting NodeNext-style local `.js` specifiers.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/utils/ImportResolver.ts",
+      "reason": "Generator import paths must switch to NodeNext-safe emitted specifiers.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/utils/PathMap.ts",
+      "reason": "Generated artifacts and templates depend on path routing staying coherent during the migration.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/commands/makeModel.ts",
+      "reason": "Model scaffolding controls emitted local imports for generated models.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/commands/makeFactory.ts",
+      "reason": "Factory scaffolding emits local model imports and package imports that must stay dual-compatible.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/commands/makeRegistry.ts",
+      "reason": "Registry generation must keep working for NodeNext source trees and compiled consumers.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/commands/makeScenario.ts",
+      "reason": "Scenario generation emits a large graph of related files and import strings.",
+      "exists": true
+    },
+    {
+      "path": "src/cli/commands/makeMigration.ts",
+      "reason": "Migration generation loads TypeScript models directly and must keep honoring NodeNext consumer code.",
+      "exists": true
+    }
+  ]
+}

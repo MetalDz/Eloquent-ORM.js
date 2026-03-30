@@ -23,13 +23,13 @@ Old Release:
 ## Latest Release Headline
 
 <!-- latest-package-headline:start -->
-- Patched. Added an ESM-safe package entry for NodeNext consumers and stabilized CommonJS `Factory` export behavior.
+- Patched. Root ESM imports no longer touch Factory eagerly, preserving CommonJS and NodeNext compatibility.
 <!-- latest-package-headline:end -->
 
 ## Latest Release Summary
 
 <!-- latest-package-update:start -->
-- Add an ESM-safe package entry for NodeNext consumers, keep CommonJS root imports from eagerly loading `Factory`, and verify installed-package ESM imports in pack-smoke.
+- Fix the published root ESM surface so non-factory root imports no longer trigger the factory runtime, preserving CommonJS consumers and stabilizing NodeNext/Jest ESM usage.
 <!-- latest-package-update:end -->
 
 ## Synced Quick Info
@@ -39,9 +39,9 @@ Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `v1.0.10`
 - Latest release: `v1.0.10 latest`
-- What's new: [Patched. Added an ESM-safe package entry for NodeNext consumers and stabilized CommonJS `Factory` export behavior.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
+- What's new: [Patched. Root ESM imports no longer touch Factory eagerly, preserving CommonJS and NodeNext compatibility.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
 - Old release: `v1.0.9`
-- Latest update: Add an ESM-safe package entry for NodeNext consumers, keep CommonJS root imports from eagerly loading `Factory`, and verify installed-package ESM imports in pack-smoke.
+- Latest update: Fix the published root ESM surface so non-factory root imports no longer trigger the factory runtime, preserving CommonJS consumers and stabilizing NodeNext/Jest ESM usage.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history

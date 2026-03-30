@@ -1,9 +1,7 @@
 import cjsPackage from "../dist/index.js";
 import { Factory } from "./Factory.mjs";
 
-export { Factory };
-
-export const {
+const {
   BaseModel,
   Model,
   SqlModel,
@@ -26,7 +24,50 @@ export const {
   isModelRegistryStrictMode,
 } = cjsPackage;
 
-export default {
-  ...cjsPackage,
+export {
+  BaseModel,
+  Model,
+  SqlModel,
+  MongoModel,
+  MorphRegistry,
+  PivotHelperMixin,
   Factory,
+  CoreModel,
+  column,
+  validate,
+  relation,
+  mixin,
+  validateSchema,
+  SchemaValidator,
+  SchemaBuilder,
+  CacheManager,
+  setupCache,
+  registerModels,
+  isModelRegistered,
+  setModelRegistryStrictMode,
+  isModelRegistryStrictMode,
+};
+
+export default {
+  BaseModel,
+  Model,
+  SqlModel,
+  MongoModel,
+  MorphRegistry,
+  PivotHelperMixin,
+  Factory,
+  CoreModel,
+  column,
+  validate,
+  relation,
+  mixin,
+  validateSchema,
+  SchemaValidator,
+  SchemaBuilder,
+  CacheManager,
+  setupCache,
+  registerModels,
+  isModelRegistered,
+  setModelRegistryStrictMode,
+  isModelRegistryStrictMode,
 };

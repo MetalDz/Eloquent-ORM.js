@@ -41,6 +41,12 @@ npm run docs:sync-supported
 npm run docs:sync-config
 ```
 
+## NodeNext migration audit
+
+```bash
+npm run audit:nodenext-blockers
+```
+
 ## Local runtime helpers
 
 ```bash

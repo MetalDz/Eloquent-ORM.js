@@ -89,8 +89,11 @@ describe("Package surface hardening", () => {
     expect(indexSource).toContain('export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";');
     expect(indexSource).toContain('} from "./cli/utils/factories/Factory";');
     expect(esmIndexSource).toContain('import { Factory } from "./Factory.mjs";');
+    expect(esmIndexSource).not.toContain("...cjsPackage");
     expect(esmIndexSource).toContain("export default {");
-    expect(esmFactorySource).toContain('import { faker } from "@faker-js/faker";');
+    expect(esmFactorySource).toContain('import { createRequire } from "node:module";');
+    expect(esmFactorySource).toContain('cachedFaker = require("@faker-js/faker").faker;');
+    expect(esmFactorySource).toContain("get faker()");
     expect(esmFactorySource).toContain("export class Factory");
     expect(patchScriptSource).toContain("patchDistCjsFactoryEntry");
     expect(patchScriptSource).toContain('Object.defineProperty(exports, "Factory"');
