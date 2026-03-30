@@ -31,7 +31,6 @@ export {
   MongoModel,
   MorphRegistry,
   PivotHelperMixin,
-  Factory,
   CoreModel,
   column,
   validate,
@@ -46,6 +45,7 @@ export {
   isModelRegistered,
   setModelRegistryStrictMode,
   isModelRegistryStrictMode,
+  Factory,
 };
 
 export default {
@@ -55,7 +55,6 @@ export default {
   MongoModel,
   MorphRegistry,
   PivotHelperMixin,
-  Factory,
   CoreModel,
   column,
   validate,
@@ -70,4 +69,5 @@ export default {
   isModelRegistered,
   setModelRegistryStrictMode,
   isModelRegistryStrictMode,
+  Factory,
 };

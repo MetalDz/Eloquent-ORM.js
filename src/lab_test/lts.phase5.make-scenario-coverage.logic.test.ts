@@ -106,6 +106,7 @@ function setupMakeScenarioHarness(options: HarnessOptions = {}): ScenarioHarness
     ImportResolver: {
       coreImportPath: () => coreImportPath,
       schemaImportPath: () => schemaImportPath,
+      withRuntimeRelativeImportExtension: (importPath: string) => importPath,
     },
   }));
   jest.doMock("../cli/utils/resolveConnectionFlags", () => ({

@@ -79,8 +79,8 @@ function renderModel(
 ): string {
   const attrs = spec.attrs.map((line) => `  ${line}`).join("\n");
   const schema = spec.schemaLines.map((line) => `    ${line}`).join("\n");
-  const coreImportPath = ImportResolver.coreImportPath(options.isTest);
-  const schemaImportPath = ImportResolver.schemaImportPath(options.isTest);
+  const coreImportPath = ImportResolver.coreImportPath(options.isTest, PathMap.root);
+  const schemaImportPath = ImportResolver.schemaImportPath(options.isTest, PathMap.root);
   const modelBaseClass = options.useMongo ? "MongoModel" : "SqlModel";
   const connectionExpr = options.useMongo
     ? `"${options.defaultConnectionName}"`
@@ -648,16 +648,38 @@ export async function makeScenario(
 
   // 3) Seeder (custom scenario)
   const seederPath = path.join(seedsDir, `${preset.seedName}.ts`);
+  const userFactoryImportPath = ImportResolver.withRuntimeRelativeImportExtension(
+    "../factories/UserFactory",
+    PathMap.root,
+  );
+  const commentFactoryImportPath = ImportResolver.withRuntimeRelativeImportExtension(
+    "../factories/CommentFactory",
+    PathMap.root,
+  );
+  const extraFactoryImports =
+    preset.id === "media"
+      ? [
+          `import { PhotoFactory } from "${ImportResolver.withRuntimeRelativeImportExtension(
+            "../factories/PhotoFactory",
+            PathMap.root,
+          )}";`,
+          `import { VideoFactory } from "${ImportResolver.withRuntimeRelativeImportExtension(
+            "../factories/VideoFactory",
+            PathMap.root,
+          )}";`,
+        ].join("\n")
+      : `import { PostFactory } from "${ImportResolver.withRuntimeRelativeImportExtension(
+          "../factories/PostFactory",
+          PathMap.root,
+        )}";`;
   const seedContent = `/**
  * Auto-generated Scenario Seeder
  * Seeder: ${preset.seedName}
  */
 
-import { UserFactory } from "../factories/UserFactory";
-import { CommentFactory } from "../factories/CommentFactory";
-${preset.id === "media"
-  ? 'import { PhotoFactory } from "../factories/PhotoFactory";\nimport { VideoFactory } from "../factories/VideoFactory";'
-  : 'import { PostFactory } from "../factories/PostFactory";'}
+import { UserFactory } from "${userFactoryImportPath}";
+import { CommentFactory } from "${commentFactoryImportPath}";
+${extraFactoryImports}
 
 type SeedModel = {
   id?: number;

@@ -65,10 +65,6 @@ describe("Package docs and examples rename", () => {
       path.resolve(rootDir, "src/cli/utils/ImportResolver.ts"),
       "utf8",
     );
-    const tsconfig = fs.readFileSync(
-      path.resolve(rootDir, "tsconfig.json"),
-      "utf8",
-    );
     const harness = fs.readFileSync(
       path.resolve(rootDir, "src/lab_test/support/cli.integration.harness.ts"),
       "utf8",
@@ -81,8 +77,7 @@ describe("Package docs and examples rename", () => {
     expect(importResolver).toContain(
       `private static readonly FALLBACK_PACKAGE_NAME = "${packageName}";`,
     );
-    expect(tsconfig).toContain(`"${packageName}": ["src/index.ts"]`);
-    expect(tsconfig).toContain(`"${packageName}/Model": ["src/Model.ts"]`);
+    expect(packageJson.name).toBe(packageName);
     expect(
       harness.includes(`import { Factory } from "${packageName}";`) ||
       harness.includes('import { Factory } from "${packageName}";')

@@ -48,7 +48,7 @@ describe("Pack smoke Docker runner", () => {
 
     expect(pkg.scripts?.["test:pack-smoke"]).toBe("npm run build && node scripts/pack-smoke.js");
     expect(pkg.scripts?.["test:pack-smoke:docker"]).toBe(
-      "docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke",
+      "docker compose -f docker-compose.coverage-debug.yml build --no-cache pack-smoke && docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke",
     );
   });
 });

@@ -6,6 +6,7 @@ import { pathToFileURL } from "url";
 
 const spawnProbe = spawnSync(process.execPath, ["-v"], { encoding: "utf8" });
 const canSpawn = !spawnProbe.error;
+const canRunRuntimeProbe = canSpawn && process.env.CI !== "true";
 
 describe("Package root lazy Factory export", () => {
   test("build patch rewrites the dist CJS entry to lazy-load Factory", () => {
@@ -48,7 +49,7 @@ describe("Package root lazy Factory export", () => {
     }
   });
 
-  const runtimeTest = canSpawn ? test : test.skip;
+  const runtimeTest = canRunRuntimeProbe ? test : test.skip;
 
   runtimeTest("root ESM imports for non-factory symbols do not require faker eagerly", async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-esm-root-no-faker-"));

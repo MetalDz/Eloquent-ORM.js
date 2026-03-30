@@ -194,8 +194,8 @@ export async function makeModel(name: string, options: ModelOptions = {}): Promi
   console.log(chalk.gray(`📁 Models Path: ${modelsDir}`));
   console.log(chalk.gray(`📁 Migrations Path: ${migrationsDir}`));
 
-  const coreImportPath = ImportResolver.coreImportPath(isTest);
-  const schemaImportPath = ImportResolver.schemaImportPath(isTest);
+  const coreImportPath = ImportResolver.coreImportPath(isTest, PathMap.root);
+  const schemaImportPath = ImportResolver.schemaImportPath(isTest, PathMap.root);
   let tpl = "";
 
   // 🧠 1️⃣ Generate Model

@@ -98,7 +98,7 @@ describe("LTS phase 5 makeFactory coverage and ASCII", () => {
     fs.writeFileSync(
       path.join(templatesDir, "factory.tpl"),
       [
-        'import DemoModel from "../../models/DemoModel";',
+        'import DemoModel from "{{modelImportPath}}";',
         "hasRelations={{hasRelations}}",
       ].join("\n"),
       "utf8",
@@ -112,7 +112,7 @@ describe("LTS phase 5 makeFactory coverage and ASCII", () => {
       path.join(factoriesDir, "DefaultedFactory.ts"),
       "utf8",
     );
-    expect(output).toContain('from "../../models/DemoModel"');
+    expect(output).toContain('from "../../models/Defaulted"');
     expect(output).toContain("hasRelations=false");
   });
 

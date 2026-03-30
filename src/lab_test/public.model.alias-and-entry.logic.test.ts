@@ -29,8 +29,9 @@ describe("Public Model alias and subpath entry", () => {
       expect.objectContaining({
         "./Model": {
           types: "./dist/Model.d.ts",
+          import: "./esm/Model.mjs",
           require: "./dist/Model.js",
-          default: "./dist/Model.js",
+          default: "./esm/Model.mjs",
         },
       })
     );

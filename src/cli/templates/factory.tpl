@@ -1,5 +1,5 @@
 import { Factory } from "{{packageImportPath}}";
-import { {{ModelName}} } from "../../models/{{ModelName}}";
+import { {{ModelName}} } from "{{modelImportPath}}";
 
 export class {{FactoryName}} extends Factory<{{ModelName}}> {
   model = {{ModelName}};

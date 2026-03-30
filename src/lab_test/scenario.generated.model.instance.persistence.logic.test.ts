@@ -109,6 +109,7 @@ function setupScenarioContext(options: { useMongo: boolean }) {
     ImportResolver: {
       coreImportPath: () => coreImportPath,
       schemaImportPath: () => schemaImportPath,
+      withRuntimeRelativeImportExtension: (importPath: string) => importPath,
     },
   }));
   jest.doMock("../cli/utils/resolveConnectionFlags", () => ({

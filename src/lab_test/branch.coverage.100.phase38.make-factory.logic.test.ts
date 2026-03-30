@@ -77,11 +77,11 @@ describe("Branch coverage 100% - phase 38 makeFactory branches", () => {
     expect(fs.existsSync(factoriesDir)).toBe(false);
   });
 
-  test("generates main and pivot factories, including test import rewrite", async () => {
+  test("generates main and pivot factories, including test-mode model import rendering", async () => {
     writeTemplate(
       "factory",
       [
-        'import DemoModel from "../../models/DemoModel";',
+        'import DemoModel from "{{modelImportPath}}";',
         "{{#each relationImports}}",
         "{{this}}",
         "{{/each}}",
@@ -136,7 +136,7 @@ describe("Branch coverage 100% - phase 38 makeFactory branches", () => {
     const main = fs.readFileSync(mainPath, "utf8");
     const pivot = fs.readFileSync(pivotPath, "utf8");
 
-    expect(main).toContain('from "../models/DemoModel"');
+    expect(main).toContain('from "../models/Post"');
     expect(main).toContain('import { UserFactory } from "../factories/UserFactory";');
     expect(main).toContain('import { TagFactory } from "../factories/TagFactory";');
     expect(main).toContain('import { CommentFactory } from "../factories/CommentFactory";');

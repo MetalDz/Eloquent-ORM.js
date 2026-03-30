@@ -120,11 +120,19 @@ export async function makeFactory(
     // Build relation imports and example usage snippets for template.
     const relationImports = new Set<string>();
     const relationExamples: string[] = [];
+    const rootDir = PathMap.root;
+    const modelImportPath = ImportResolver.withRuntimeRelativeImportExtension(
+      options.test ? `../models/${ModelName}` : `../../models/${ModelName}`,
+      rootDir,
+    );
 
     for (const rel of relations) {
       if (rel.target && typeof rel.target === "string") {
         const candidateFactoryName = `${rel.target}Factory`;
-        const candidateImportPath = `../factories/${candidateFactoryName}`;
+        const candidateImportPath = ImportResolver.withRuntimeRelativeImportExtension(
+          `../factories/${candidateFactoryName}`,
+          rootDir,
+        );
         relationImports.add(
           `import { ${candidateFactoryName} } from "${candidateImportPath}";`,
         );
@@ -163,7 +171,7 @@ export async function makeFactory(
 
     const factoriesDir = PathMap.factories(!!options.test);
     const outputPath = path.join(factoriesDir, `${FactoryName}.ts`);
-    const packageImportPath = ImportResolver.publicApiImportPath(outputPath);
+    const packageImportPath = ImportResolver.publicApiImportPath(outputPath, rootDir);
     const renderData = {
       ModelName,
       FactoryName,
@@ -173,16 +181,11 @@ export async function makeFactory(
       relationImports: Array.from(relationImports),
       relationExamples,
       features,
+      modelImportPath,
       packageImportPath,
     } as const;
 
-    let rendered = TemplateEngine.render(templateContent, renderData);
-    if (options.test) {
-      rendered = rendered.replace(
-        /from \"\.\.\/\.\.\/models\//g,
-        'from "../models/',
-      );
-    }
+    const rendered = TemplateEngine.render(templateContent, renderData);
 
     // Write the main factory file using writeFileSafe / overwriteFile.
     ensureDirSync(factoriesDir);
@@ -234,7 +237,7 @@ export async function makeFactory(
           `${pivotFactoryName}.ts`,
         );
         const pivotPackageImportPath =
-          ImportResolver.publicApiImportPath(pivotOutputPath);
+          ImportResolver.publicApiImportPath(pivotOutputPath, rootDir);
         const pivotRenderData = {
           PivotFactoryName: pivotFactoryName,
           pivotTable,

@@ -32,8 +32,9 @@ describe("Package surface hardening", () => {
       },
       "./Model": {
         types: "./dist/Model.d.ts",
+        import: "./esm/Model.mjs",
         require: "./dist/Model.js",
-        default: "./dist/Model.js",
+        default: "./esm/Model.mjs",
       },
       "./package.json": "./package.json",
     });
@@ -119,6 +120,10 @@ describe("Package surface hardening", () => {
         const template = fs.readFileSync(templatePath, "utf8");
         expect(template).toContain("SeederName");
         expect(template).toContain("FactoryName");
+        expect(template).toContain("factoryImportPath");
+
+        const factoryTemplate = fs.readFileSync(PathMap.template("factory"), "utf8");
+        expect(factoryTemplate).toContain("modelImportPath");
       });
     } finally {
       process.chdir(originalCwd);

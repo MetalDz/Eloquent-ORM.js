@@ -10,26 +10,25 @@ Snapshot date: `2026-03-30`
 - template roots scanned: `src/cli`, `src/cli/templates`
 
 ## Direct source blocker counts
-- local relative import/require matches in `src` and `bin`: `1286`
-- unique TypeScript files affected: `341`
-- import/export local specifiers: `1163`
+- local relative import/require matches in `src` and `bin`: `1289`
+- unique TypeScript files affected: `342`
+- import/export local specifiers: `1166`
 - require() local imports: `123`
 
 ## Direct source hotspot breakdown
-- `src/lab_test`: `215 files / 889 matches`
-- `src/cli`: `48 files / 215 matches`
+- `src/lab_test`: `216 files / 897 matches`
+- `src/cli`: `48 files / 210 matches`
 - `src/core`: `41 files / 112 matches`
 - `src/app`: `23 files / 39 matches`
 - `src/test`: `11 files / 19 matches`
 - `other`: `3 files / 12 matches`
 
 ## Generator and template emission blockers
-- relative import/require string matches in generator sources and templates: `218`
-- unique generator/template files affected: `50`
-- `src/cli/commands`: `20 files / 122 matches`
+- relative import/require string matches in generator sources and templates: `210`
+- unique generator/template files affected: `48`
+- `src/cli/commands`: `20 files / 116 matches`
 - `src/cli/utils`: `27 files / 82 matches`
 - `src/cli/other`: `1 files / 12 matches`
-- `src/cli/templates`: `2 files / 2 matches`
 
 ## Test assertion blockers
 - exact import-string hotspot matches in `src/lab_test`: `19`
@@ -57,7 +56,6 @@ Snapshot date: `2026-03-30`
 - `src/core/model/BaseModel.ts`: `23 matches`
 - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`: `23 matches`
 - `src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`: `21 matches`
-- `src/cli/commands/makeScenario.ts`: `17 matches`
 - `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `17 matches`
 - `src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts`: `16 matches`
 - `src/lab_test/branch.coverage.70.utilities.logic.test.ts`: `16 matches`
@@ -67,6 +65,7 @@ Snapshot date: `2026-03-30`
 - `src/lab_test/branch.coverage.100.phase32.cache-query-morph-redactor.logic.test.ts`: `14 matches`
 - `src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts`: `13 matches`
 - `src/lab_test/support/cli.integration.harness.ts`: `13 matches`
+- `src/cli/commands/makeScenario.ts`: `12 matches`
 - `src/cli/eloquent.ts`: `12 matches`
 - `src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts`: `12 matches`
 

@@ -5,7 +5,7 @@
  * Created at: {{Timestamp}}
  */
 
-import { {{FactoryName}} } from "../factories/{{FactoryName}}";
+import { {{FactoryName}} } from "{{factoryImportPath}}";
 
 export async function {{SeederName}}() {
   console.log("Running seeder: {{SeederName}}");

@@ -2,6 +2,7 @@ import path from "path";
 import chalk from "chalk";
 import { TemplateEngine } from "../utils/TemplateEngine";
 import { PathMap } from "../utils/PathMap";
+import { ImportResolver } from "../utils/ImportResolver";
 import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
 
 /**
@@ -21,6 +22,10 @@ export async function makeSeed(
 
     const Count = options?.count ?? 10;
     const Timestamp = new Date().toISOString();
+    const factoryImportPath = ImportResolver.withRuntimeRelativeImportExtension(
+      `../factories/${FactoryName}`,
+      PathMap.root,
+    );
 
     const template = TemplateEngine.load("seed");
     const rendered = TemplateEngine.render(template, {
@@ -29,6 +34,7 @@ export async function makeSeed(
       ModelName,
       Count,
       Timestamp,
+      factoryImportPath,
     });
 
     const outputDir = PathMap.seeds(!!options?.test);

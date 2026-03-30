@@ -90,9 +90,10 @@ describe("makeFactory package import rename support", () => {
     ).toContain(
       'import { BaseModel, Factory, PivotHelperMixin } from "Eloquent-ORM.js";',
     );
-    expect(importSpy).toHaveBeenCalledWith(path.join(factoriesDir, "UserFactory.ts"));
+    expect(importSpy).toHaveBeenCalledWith(path.join(factoriesDir, "UserFactory.ts"), PathMap.root);
     expect(importSpy).toHaveBeenCalledWith(
       path.join(factoriesDir, "UserRolePivotFactory.ts"),
+      PathMap.root,
     );
   });
 

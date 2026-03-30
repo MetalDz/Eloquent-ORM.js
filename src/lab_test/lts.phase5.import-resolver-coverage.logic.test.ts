@@ -122,4 +122,39 @@ describe("LTS phase 5 ImportResolver coverage", () => {
       ),
     ).toBe("./index");
   });
+
+  test("NodeNext-aware helpers add .js only to relative runtime imports", async () => {
+    const nodenextRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-import-resolver-nodenext-"));
+    fs.writeFileSync(
+      path.join(nodenextRoot, "package.json"),
+      JSON.stringify({ type: "module" }, null, 2),
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(nodenextRoot, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { module: "NodeNext", moduleResolution: "NodeNext" } }, null, 2),
+      "utf8",
+    );
+
+    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+
+    expect(ImportResolver.usesNodeEsmRuntime(nodenextRoot)).toBe(true);
+    expect(
+      ImportResolver.withRuntimeRelativeImportExtension("../factories/UserFactory", nodenextRoot),
+    ).toBe("../factories/UserFactory.js");
+    expect(
+      ImportResolver.withRuntimeRelativeImportExtension("@alpha.consultings/eloquent-orm.js", nodenextRoot),
+    ).toBe("@alpha.consultings/eloquent-orm.js");
+    expect(
+      ImportResolver.withRuntimeRelativeImportExtension("../index", nodenextRoot),
+    ).toBe("../index.js");
+    expect(
+      ImportResolver.publicApiImportPath(
+        path.join(rootDir, "src", "app", "registerModels.ts"),
+        nodenextRoot,
+      ),
+    ).toBe(packageName);
+
+    fs.rmSync(nodenextRoot, { recursive: true, force: true });
+  });
 });

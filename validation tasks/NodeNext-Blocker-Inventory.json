@@ -6,12 +6,12 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1286,
-    "uniqueFiles": 341,
+    "totalMatches": 1289,
+    "uniqueFiles": 342,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1163
+        "matches": 1166
       },
       {
         "kind": "require() local imports",
@@ -21,13 +21,13 @@
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 215,
-        "matches": 889
+        "files": 216,
+        "matches": 897
       },
       {
         "area": "src/cli",
         "files": 48,
-        "matches": 215
+        "matches": 210
       },
       {
         "area": "src/core",
@@ -77,15 +77,6 @@
           "import/export local specifiers": 21
         },
         "firstLine": 5
-      },
-      {
-        "file": "src/cli/commands/makeScenario.ts",
-        "area": "src/cli",
-        "matches": 17,
-        "kinds": {
-          "import/export local specifiers": 17
-        },
-        "firstLine": 4
       },
       {
         "file": "src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts",
@@ -171,6 +162,15 @@
         "firstLine": 296
       },
       {
+        "file": "src/cli/commands/makeScenario.ts",
+        "area": "src/cli",
+        "matches": 12,
+        "kinds": {
+          "import/export local specifiers": 12
+        },
+        "firstLine": 4
+      },
+      {
         "file": "src/cli/eloquent.ts",
         "area": "src/cli",
         "matches": 12,
@@ -196,13 +196,13 @@
       "src/cli",
       "src/cli/templates"
     ],
-    "totalMatches": 218,
-    "uniqueFiles": 50,
+    "totalMatches": 210,
+    "uniqueFiles": 48,
     "byArea": [
       {
         "area": "src/cli/commands",
         "files": 20,
-        "matches": 122
+        "matches": 116
       },
       {
         "area": "src/cli/utils",
@@ -213,20 +213,15 @@
         "area": "src/cli/other",
         "files": 1,
         "matches": 12
-      },
-      {
-        "area": "src/cli/templates",
-        "files": 2,
-        "matches": 2
       }
     ],
     "topFiles": [
       {
         "file": "src/cli/commands/makeScenario.ts",
         "area": "src/cli/commands",
-        "matches": 17,
+        "matches": 12,
         "kinds": {
-          "import/export local specifiers": 17
+          "import/export local specifiers": 12
         },
         "firstLine": 4
       },
@@ -312,16 +307,6 @@
         "firstLine": 2
       },
       {
-        "file": "src/cli/commands/makeFactory.ts",
-        "area": "src/cli/commands",
-        "matches": 7,
-        "kinds": {
-          "import/export local specifiers": 6,
-          "generated relative import/require strings": 1
-        },
-        "firstLine": 4
-      },
-      {
         "file": "src/cli/commands/demoScenario.ts",
         "area": "src/cli/commands",
         "matches": 6,
@@ -356,6 +341,15 @@
           "import/export local specifiers": 5
         },
         "firstLine": 1
+      },
+      {
+        "file": "src/cli/commands/dbSeedFresh.ts",
+        "area": "src/cli/commands",
+        "matches": 5,
+        "kinds": {
+          "import/export local specifiers": 5
+        },
+        "firstLine": 2
       }
     ]
   },
