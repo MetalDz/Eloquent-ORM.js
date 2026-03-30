@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020"],
+    "rootDir": "src",
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": false,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "noUnusedParameters": false,
+    "baseUrl": ".",
+    "paths": {
+      "eloquentjs": ["src/index.ts"],
+      "eloquentjs/Model": ["src/Model.ts"],
+      "eloquent-orm.js": ["src/index.ts"],
+      "eloquent-orm.js/Model": ["src/Model.ts"],
+      "@alpha.consultings/eloquent-orm.js": ["src/index.ts"],
+      "@alpha.consultings/eloquent-orm.js/Model": ["src/Model.ts"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "downlevelIteration": true,
+    "sourceMap": true,
+    "pretty": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}

@@ -17,11 +17,13 @@ describe("testing command reference", () => {
 
     const expectedScripts = [
       "typecheck",
+      "typecheck:nodenext",
       "test",
       "test:coverage",
       "coverage:misses",
       "test:critical",
       "test:mysql-smoke",
+      "test:coverage:docker",
       "test:pack-smoke",
       "test:pack-smoke:docker",
       "docs:build",
@@ -40,5 +42,9 @@ describe("testing command reference", () => {
       expect(packageJson.scripts?.[scriptName]).toBeDefined();
       expect(documented).toContain(`npm run ${scriptName}`);
     }
+
+    expect(packageJson.scripts?.["test:coverage:docker"]).toContain("build --no-cache coverage-debug");
+    expect(packageJson.scripts?.["test:pack-smoke:docker"]).toContain("build --no-cache pack-smoke");
+    expect(documented).toContain("fully fresh image with `--no-cache`");
   });
 });

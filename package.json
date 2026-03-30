@@ -83,6 +83,7 @@
     "clean": "node -e \"const fs=require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('esm', { recursive: true, force: true })\"",
     "build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run clean && tsc -p tsconfig.build.json && node scripts/generate-esm-entrypoints.cjs && node scripts/patch-dist-cjs-factory-entry.cjs",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
+    "typecheck:nodenext": "tsc -p tsconfig.nodenext.json --noEmit --skipLibCheck",
     "docs:dev": "npm run docs:sync-package-metadata && npm run docs:sync-config && node scripts/run-mintlify.cjs dev",
     "docs:build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
     "docs:validate": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
@@ -93,7 +94,8 @@
     "coverage:misses": "npm run test:coverage && node scripts/coverage-misses.cjs",
     "test:critical": "jest --runInBand src/lab_test/cli.integration.scenario.lifecycle.test.ts src/lab_test/cli.integration.make-migration.targeting.test.ts src/lab_test/cli.integration.migrate.targeting.test.ts src/lab_test/cli.integration.seed-and-demo.targeting.test.ts src/lab_test/cli.integration.factory-status.targeting.test.ts src/lab_test/migration.tracker.logic.test.ts src/lab_test/cache.commands.logic.test.ts",
     "test:pack-smoke": "npm run build && node scripts/pack-smoke.js",
-    "test:pack-smoke:docker": "docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke",
+    "test:coverage:docker": "docker compose -f docker-compose.coverage-debug.yml build --no-cache coverage-debug && docker compose -f docker-compose.coverage-debug.yml run --rm coverage-debug",
+    "test:pack-smoke:docker": "docker compose -f docker-compose.coverage-debug.yml build --no-cache pack-smoke && docker compose -f docker-compose.coverage-debug.yml run --rm pack-smoke",
     "dev": "ts-node src/index.ts",
     "cli": "ts-node bin/eloquent.ts",
     "release": "npm run docs:sync-package-metadata && npm run docs:sync-supported && semantic-release"

@@ -4,6 +4,7 @@
 
 ```bash
 npm run typecheck
+npm run typecheck:nodenext
 npm test
 npm run test:coverage
 npm run coverage:misses
@@ -14,9 +15,13 @@ npm run coverage:misses
 ```bash
 npm run test:critical
 npm run test:mysql-smoke
+npm run test:coverage:docker
 npm run test:pack-smoke
 npm run test:pack-smoke:docker
 ```
+
+Docker rule:
+- Docker test commands rebuild from a fully fresh image with `--no-cache` before running.
 
 ## Documentation validation
 
