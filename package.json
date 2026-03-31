@@ -132,5 +132,10 @@
     "jest": "^30.2.0",
     "semantic-release": "^24.2.9",
     "ts-jest": "^29.4.5"
+  },
+  "overrides": {
+    "@mintlify/link-rot": {
+      "@mintlify/scraping": "4.0.688"
+    }
   }
 }
