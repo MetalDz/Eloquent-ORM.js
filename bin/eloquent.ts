@@ -1,2 +1,2 @@
 // CLI entrypoint for ts-node (development)
-import "../src/cli/eloquent";
+import "../src/cli/eloquent.js";

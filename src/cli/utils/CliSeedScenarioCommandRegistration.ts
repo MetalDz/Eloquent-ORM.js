@@ -1,18 +1,18 @@
 import type { Command } from "commander";
-import { assertSeedBootstrapPrecheck } from "./SeedBootstrapPrecheck";
-import { dbSeed } from "../commands/dbSeed";
-import { dbSeedFresh } from "../commands/dbSeedFresh";
-import { demoScenario } from "../commands/demoScenario";
-import { dbSeedBootstrapPrecheck } from "../commands/dbSeedBootstrapPrecheck";
+import { assertSeedBootstrapPrecheck } from "./SeedBootstrapPrecheck.js";
+import { dbSeed } from "../commands/dbSeed.js";
+import { dbSeedFresh } from "../commands/dbSeedFresh.js";
+import { demoScenario } from "../commands/demoScenario.js";
+import { dbSeedBootstrapPrecheck } from "../commands/dbSeedBootstrapPrecheck.js";
 import {
   ensureCliProductionOverride,
   ensureCliProductionTestOnly,
-} from "./CliProductionGuards";
+} from "./CliProductionGuards.js";
 import {
   resolveCliConnectionNames,
   resolveCliPrimaryConnectionName,
-} from "./CliCommandTargets";
-import { runCliAction } from "./CliActionRuntime";
+} from "./CliCommandTargets.js";
+import { runCliAction } from "./CliActionRuntime.js";
 
 export function registerCliSeedScenarioCommands(program: Command): void {
   program

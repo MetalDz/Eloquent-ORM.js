@@ -1,13 +1,13 @@
-import { createAdapter, type DriverAdapter } from "../core/connection/DriverAdapter";
-import { Relation, type CoreModelClass, type RelationModel } from "../core/orm/Relation";
-import { BelongsTo } from "../core/orm/relations/BelongsTo";
-import { BelongsToMany } from "../core/orm/relations/BelongsToMany";
-import { HasMany } from "../core/orm/relations/HasMany";
-import { HasOne } from "../core/orm/relations/HasOne";
-import { MorphMany } from "../core/orm/relations/MorphMany";
-import { MorphOne } from "../core/orm/relations/MorphOne";
-import { MorphTo } from "../core/orm/relations/MorphTo";
-import { MorphRegistry } from "../core/orm/mixins/MorphRegistry";
+import { createAdapter, type DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { Relation, type CoreModelClass, type RelationModel } from "../core/orm/Relation.js";
+import { BelongsTo } from "../core/orm/relations/BelongsTo.js";
+import { BelongsToMany } from "../core/orm/relations/BelongsToMany.js";
+import { HasMany } from "../core/orm/relations/HasMany.js";
+import { HasOne } from "../core/orm/relations/HasOne.js";
+import { MorphMany } from "../core/orm/relations/MorphMany.js";
+import { MorphOne } from "../core/orm/relations/MorphOne.js";
+import { MorphTo } from "../core/orm/relations/MorphTo.js";
+import { MorphRegistry } from "../core/orm/mixins/MorphRegistry.js";
 
 type Row = Record<string, unknown>;
 
@@ -132,7 +132,7 @@ describe("Branch coverage 100% - phase 2 core branch trees", () => {
       createAdapter: createAdapterMock,
     }));
 
-    const { getConnection, getAdapter } = await import("../core/connection/ConnectionFactory");
+    const { getConnection, getAdapter } = await import("../core/connection/ConnectionFactory.js");
 
     const firstConn = await getConnection("mysql_test" as never);
     const secondConn = await getConnection("mysql_test" as never);
@@ -161,7 +161,7 @@ describe("Branch coverage 100% - phase 2 core branch trees", () => {
       closeMongoClient,
     }));
 
-    const { getConnection, closeAllConnections } = await import("../core/connection/ConnectionFactory");
+    const { getConnection, closeAllConnections } = await import("../core/connection/ConnectionFactory.js");
 
     await getConnection("sqlite_test" as never);
     await getConnection("sqlite" as never);
@@ -186,7 +186,7 @@ describe("Branch coverage 100% - phase 2 core branch trees", () => {
       closeMongoClient,
     }));
 
-    const { getConnection, closeAllConnections } = await import("../core/connection/ConnectionFactory");
+    const { getConnection, closeAllConnections } = await import("../core/connection/ConnectionFactory.js");
     await getConnection("mongo" as never);
     await closeAllConnections();
 
@@ -222,7 +222,7 @@ describe("Branch coverage 100% - phase 2 core branch trees", () => {
       redactSecretsInValue,
     }));
 
-    const { getConnection, closeAllConnections } = await import("../core/connection/ConnectionFactory");
+    const { getConnection, closeAllConnections } = await import("../core/connection/ConnectionFactory.js");
 
     await getConnection("sqlite_test" as never);
     await getConnection("sqlite" as never);

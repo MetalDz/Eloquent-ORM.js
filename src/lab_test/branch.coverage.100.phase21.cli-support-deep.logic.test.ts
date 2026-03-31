@@ -2,8 +2,8 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-type HarnessModule = typeof import("./support/cli.integration.harness");
-type SharedModule = typeof import("./support/cli.integration.connection.shared");
+type HarnessModule = typeof import("./support/cli.integration.harness.js");
+type SharedModule = typeof import("./support/cli.integration.connection.shared.js");
 
 describe("Branch coverage 100% - phase 21 CLI support deep branches", () => {
   const originalCwd = process.cwd();

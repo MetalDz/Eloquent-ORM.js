@@ -1,15 +1,15 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
+import { PathMap } from "../cli/utils/PathMap.js";
 import {
   assertSeedBootstrapPrecheck,
   runSeedBootstrapPrecheck,
-} from "../cli/utils/SeedBootstrapPrecheck";
+} from "../cli/utils/SeedBootstrapPrecheck.js";
 import {
   closeAllConnections,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+} from "../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

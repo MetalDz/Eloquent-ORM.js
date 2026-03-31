@@ -11,6 +11,9 @@ concurrency:
   group: pr-quality-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   typecheck:
     name: Typecheck
@@ -32,6 +35,27 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  typecheck-nodenext:
+    name: Typecheck (NodeNext)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck NodeNext
+        run: npm run typecheck:nodenext
 
   build:
     name: Build
@@ -58,6 +82,7 @@ jobs:
     name: Test (MySQL Smoke)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [typecheck, typecheck-nodenext, build]
     services:
       mysql:
         image: mysql:8.0
@@ -130,6 +155,7 @@ jobs:
     name: Test (Docker Coverage)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: [typecheck, typecheck-nodenext, build]
 
     steps:
       - name: Checkout
@@ -150,12 +176,13 @@ jobs:
           FORCE_COLOR: "0"
           ELOQUENT_RUNTIME_LOG: "false"
           DOTENV_CONFIG_QUIET: "true"
-        run: docker compose -f docker-compose.coverage-debug.yml run --rm coverage-debug
+        run: npm run test:coverage:docker
 
   critical-stability:
     name: Critical Stability Re-runs (MySQL)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    needs: [typecheck, typecheck-nodenext, build]
     services:
       mysql:
         image: mysql:8.0
@@ -229,6 +256,7 @@ jobs:
     name: Package Smoke (Tarball)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [typecheck, typecheck-nodenext, build]
     services:
       mongo:
         image: mongo:7
@@ -272,6 +300,7 @@ jobs:
     name: Docs Lint
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    needs: [typecheck, typecheck-nodenext]
 
     steps:
       - name: Checkout
@@ -293,6 +322,7 @@ jobs:
     name: Docs Build
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    needs: [typecheck, typecheck-nodenext]
 
     steps:
       - name: Checkout
@@ -314,6 +344,7 @@ jobs:
     name: Package Smoke (Windows Tarball)
     runs-on: windows-latest
     timeout-minutes: 20
+    needs: [typecheck, typecheck-nodenext, build]
 
     steps:
       - name: Checkout
@@ -338,6 +369,7 @@ jobs:
     name: NoSQL Regression Gate
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    needs: [typecheck, typecheck-nodenext, build]
 
     steps:
       - name: Checkout
@@ -394,6 +426,7 @@ jobs:
     name: Scenario Matrix (${{ matrix.driver }})
     runs-on: ubuntu-latest
     timeout-minutes: 18
+    needs: [typecheck, typecheck-nodenext, build]
     strategy:
       fail-fast: false
       matrix:

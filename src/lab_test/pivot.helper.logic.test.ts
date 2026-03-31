@@ -1,5 +1,5 @@
-﻿import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
+﻿import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
 
 type ExecuteCall = { sql: string; params: unknown[] };
 

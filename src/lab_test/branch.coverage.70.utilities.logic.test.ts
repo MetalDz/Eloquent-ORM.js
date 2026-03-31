@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { TemplateEngine } from "../cli/utils/TemplateEngine";
-import { PathMap } from "../cli/utils/PathMap";
+import { TemplateEngine } from "../cli/utils/TemplateEngine.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

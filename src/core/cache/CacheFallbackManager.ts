@@ -1,5 +1,5 @@
 // src/core/cache/CacheFallbackManager.ts
-import { CacheDriver } from "./CacheDriver";
+import { CacheDriver } from "./CacheDriver.js";
 
 export class CacheFallbackManager {
   private static drivers: CacheDriver[] = [];

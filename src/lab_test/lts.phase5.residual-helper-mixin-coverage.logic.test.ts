@@ -5,21 +5,21 @@ import {
   applyCliTestConnectionOverride,
   resolveCliRequestedStorageKind,
   shouldAutoLoadFactoriesForCli,
-} from "../cli/utils/CliBootstrapSupport";
+} from "../cli/utils/CliBootstrapSupport.js";
 import {
   buildStructuredLogLine,
   isJsonLogFormat,
   resolveLogLevel,
-} from "../cli/utils/StructuredLogger";
-import { resolveTargetedMorphAlias } from "../cli/utils/ScenarioMorphAliasRouting";
-import { PathMap } from "../cli/utils/PathMap";
-import * as artifactStorage from "../cli/utils/ArtifactStorage";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
+} from "../cli/utils/StructuredLogger.js";
+import { resolveTargetedMorphAlias } from "../cli/utils/ScenarioMorphAliasRouting.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import * as artifactStorage from "../cli/utils/ArtifactStorage.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
 import {
   resolveDbExecutionRole,
   resolveMongoEnv,
   resolveMysqlEnv,
-} from "../config/dbRoleEnv";
+} from "../config/dbRoleEnv.js";
 import {
   createPersistedSnapshot,
   extractPersistableAttributes,
@@ -29,17 +29,17 @@ import {
   getPrimaryKeyValue,
   resolvePrimaryKey,
   sanitizeAssignableData,
-} from "../core/model/CoreModelPersistenceState";
-import { Relation } from "../core/orm/Relation";
-import { SerializeMixin } from "../core/orm/mixins/SerializeMixin";
-import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
-import { column } from "../core/schema/SchemaBlueprint";
-import { dbConfig } from "../config/database";
+} from "../core/model/CoreModelPersistenceState.js";
+import { Relation } from "../core/orm/Relation.js";
+import { SerializeMixin } from "../core/orm/mixins/SerializeMixin.js";
+import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
+import { column } from "../core/schema/SchemaBlueprint.js";
+import { dbConfig } from "../config/database.js";
 import {
   checkProductionDestructiveCommand,
   checkProductionTestOnlyCommand,
-} from "../cli/utils/ProductionSafety";
+} from "../cli/utils/ProductionSafety.js";
 
 describe("LTS phase 5 residual helper and mixin coverage", () => {
   const originalConnections = dbConfig.connections;

@@ -11,30 +11,30 @@ import chalk from "chalk";
 import { Command } from "commander";
 import fs from "fs";
 import path from "path";
-import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler";
-import { RuntimeDetector } from "./utils/typescript/RuntimeDetector";
-import { loadFactories } from "./utils/factories/FactoryLoader";
-import { redactSecretsInArgs } from "../core/security/SecretRedactor";
+import { TypeScriptCompiler } from "./utils/typescript/TypeScriptCompiler.js";
+import { RuntimeDetector } from "./utils/typescript/RuntimeDetector.js";
+import { loadFactories } from "./utils/factories/FactoryLoader.js";
+import { redactSecretsInArgs } from "../core/security/SecretRedactor.js";
 import {
   buildStructuredLogLine,
   isJsonLogFormat,
   resolveLogLevel,
   shouldLogAtLevel,
   type StructuredLogLevel,
-} from "./utils/StructuredLogger";
+} from "./utils/StructuredLogger.js";
 import {
   applyCliTestConnectionOverride,
   isCliTestArgv,
   resolveCliRequestedStorageKind,
   shouldAutoLoadFactoriesForCli,
   type CliBootstrapEnv,
-} from "./utils/CliBootstrapSupport";
-import { printCliBanner } from "./utils/CliPresentation";
-import { registerCliSupportCommands } from "./utils/CliSupportCommandRegistration";
-import { registerCliScaffoldCommands } from "./utils/CliScaffoldCommandRegistration";
-import { registerCliMakeArtifactCommands } from "./utils/CliMakeArtifactCommandRegistration";
-import { registerCliSeedScenarioCommands } from "./utils/CliSeedScenarioCommandRegistration";
-import { registerCliMigrationCommands } from "./utils/CliMigrationCommandRegistration";
+} from "./utils/CliBootstrapSupport.js";
+import { printCliBanner } from "./utils/CliPresentation.js";
+import { registerCliSupportCommands } from "./utils/CliSupportCommandRegistration.js";
+import { registerCliScaffoldCommands } from "./utils/CliScaffoldCommandRegistration.js";
+import { registerCliMakeArtifactCommands } from "./utils/CliMakeArtifactCommandRegistration.js";
+import { registerCliSeedScenarioCommands } from "./utils/CliSeedScenarioCommandRegistration.js";
+import { registerCliMigrationCommands } from "./utils/CliMigrationCommandRegistration.js";
 
 function resolveCommandName(argv: string[]): string {
   return (argv[2] ?? "unknown").replace(/[^a-z0-9_-]/gi, "_").toLowerCase();

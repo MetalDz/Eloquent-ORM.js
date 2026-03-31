@@ -2,9 +2,9 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { PathMap } from "../cli/utils/PathMap";
-import { ModelIntrospector } from "../cli/utils/ModelIntrospector";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { ModelIntrospector } from "../cli/utils/ModelIntrospector.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 
 jest.mock("../cli/utils/typescript/tsRuntime", () => ({
   loadModule: jest.fn(),

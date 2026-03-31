@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 
-import { CoreModel, MongoModel } from "../core/model/CoreModel";
-import { column } from "../core/schema/SchemaBlueprint";
+import { CoreModel, MongoModel } from "../core/model/CoreModel.js";
+import { column } from "../core/schema/SchemaBlueprint.js";
 
 describe("LTS phase 5 CoreModel coverage", () => {
   afterEach(() => {

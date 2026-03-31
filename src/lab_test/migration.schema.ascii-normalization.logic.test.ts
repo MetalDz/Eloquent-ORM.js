@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { SchemaBuilder } from "../core/schema/SchemaBuilder";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { dbConfig } from "../config/database.js";
+import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("migration/schema ASCII normalization", () => {
   const rootDir = process.cwd();

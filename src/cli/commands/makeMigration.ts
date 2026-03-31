@@ -2,17 +2,17 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { SchemaBuilder } from "../../core/schema/SchemaBuilder";
-import { RelationDefinition, SchemaField } from "../../core/schema/SchemaBlueprint";
-import { PathMap } from "../utils/PathMap";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
+import { SchemaBuilder } from "../../core/schema/SchemaBuilder.js";
+import { RelationDefinition, SchemaField } from "../../core/schema/SchemaBlueprint.js";
+import { PathMap } from "../utils/PathMap.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler.js";
 import {
   closeAllConnections,
   type ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { dbConfig } from "../../config/database";
-import { loadModule } from "../utils/typescript/tsRuntime";
+} from "../../core/connection/ConnectionFactory.js";
+import { dbConfig } from "../../config/database.js";
+import { loadModule } from "../utils/typescript/tsRuntime.js";
 
 interface MigrationOptions {
   test?: boolean;

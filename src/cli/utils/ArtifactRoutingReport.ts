@@ -4,7 +4,7 @@ import {
   type ArtifactCompatibilityReason,
   type StorageKind,
   type TargetStorageKind,
-} from "./ArtifactCompatibility";
+} from "./ArtifactCompatibility.js";
 
 export type TargetedArtifactDecision = {
   name: string;

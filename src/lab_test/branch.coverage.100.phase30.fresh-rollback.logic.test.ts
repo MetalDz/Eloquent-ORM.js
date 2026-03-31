@@ -73,7 +73,7 @@ describe("Branch coverage 100% - phase 30 migrateFresh + migrateRollback edge cl
     }));
 
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh();
 
     expect(resolveConnectionName).toHaveBeenCalledWith(undefined, { test: false });
@@ -159,7 +159,7 @@ describe("Branch coverage 100% - phase 30 migrateFresh + migrateRollback edge cl
       appendAuditEvent,
     }));
 
-    const { migrateRollback } = await import("../cli/commands/migrateRollback");
+    const { migrateRollback } = await import("../cli/commands/migrateRollback.js");
     await migrateRollback();
 
     expect(resolveConnectionName).toHaveBeenCalledWith(undefined, { test: false });

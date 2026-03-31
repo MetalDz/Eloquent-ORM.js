@@ -1,6 +1,6 @@
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
-import { loadAppModel } from "./support/appModelResolver";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
+import { loadAppModel } from "./support/appModelResolver.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

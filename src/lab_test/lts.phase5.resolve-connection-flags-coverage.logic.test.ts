@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 
-import { dbConfig } from "../config/database";
-import { resolveConnectionNamesFromFlags } from "../cli/utils/resolveConnectionFlags";
+import { dbConfig } from "../config/database.js";
+import { resolveConnectionNamesFromFlags } from "../cli/utils/resolveConnectionFlags.js";
 
 describe("LTS phase 5 resolveConnectionFlags coverage", () => {
   const originalConnections = { ...dbConfig.connections };

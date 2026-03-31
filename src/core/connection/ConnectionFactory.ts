@@ -2,11 +2,11 @@ import {
   connectDB,
   closeMongoClient,
   ConnectionName,
-} from "./DatabaseConnection";
-import { createAdapter } from "./DriverAdapter";
-import type { DriverAdapter } from "./DriverAdapter";
-import { dbConfig } from "../../config/database";
-import { redactSecretsInValue } from "../security/SecretRedactor";
+} from "./DatabaseConnection.js";
+import { createAdapter } from "./DriverAdapter.js";
+import type { DriverAdapter } from "./DriverAdapter.js";
+import { dbConfig } from "../../config/database.js";
+import { redactSecretsInValue } from "../security/SecretRedactor.js";
 
 export type { ConnectionName };
 

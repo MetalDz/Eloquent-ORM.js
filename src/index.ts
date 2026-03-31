@@ -14,20 +14,20 @@ export {
   type ModelInstance,
   type TypedRelation,
   type PivotRelation,
-} from "./core/model/BaseModel";
+} from "./core/model/BaseModel.js";
 
-export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";
+export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin.js";
 export {
   Factory,
   type PlainObject,
   type ModelCtor,
   type FactoryCtor,
-} from "./cli/utils/factories/Factory";
+} from "./cli/utils/factories/Factory.js";
 
 export {
   CoreModel,
   type ModelEventHooks,
-} from "./core/model/CoreModel";
+} from "./core/model/CoreModel.js";
 
 export {
   column,
@@ -45,7 +45,7 @@ export {
   type ColumnDefinition,
   type RelationDefinition,
   type SchemaField,
-} from "./core/schema/SchemaBlueprint";
+} from "./core/schema/SchemaBlueprint.js";
 
 export {
   SchemaValidator,
@@ -54,12 +54,12 @@ export {
   type ValidationHooks,
   type CustomRuleFunction,
   type CustomRuleResult,
-} from "./core/schema/SchemaValidator";
+} from "./core/schema/SchemaValidator.js";
 
-export { SchemaBuilder, type SchemaBuildResult } from "./core/schema/SchemaBuilder";
+export { SchemaBuilder, type SchemaBuildResult } from "./core/schema/SchemaBuilder.js";
 
-export { CacheManager } from "./core/cache/CacheManager";
-export { setupCache } from "./core/cache/setupCache";
+export { CacheManager } from "./core/cache/CacheManager.js";
+export { setupCache } from "./core/cache/setupCache.js";
 
 export {
   registerModels,
@@ -67,4 +67,4 @@ export {
   setModelRegistryStrictMode,
   isModelRegistryStrictMode,
   type RegisterModelsOptions,
-} from "./core/orm/mixins/utils/modelRegistration";
+} from "./core/orm/mixins/utils/modelRegistration.js";

@@ -4,8 +4,8 @@ import {
   acquireMigrationLock,
   ensureMigrationTables,
   releaseMigrationLock,
-} from "../cli/utils/migrations/MigrationTracker";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
+} from "../cli/utils/migrations/MigrationTracker.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
 
 type MockAdapter = DriverAdapter & {
   query: jest.Mock;

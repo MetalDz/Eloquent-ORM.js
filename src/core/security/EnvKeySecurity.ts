@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import crypto from "crypto";
 import readline from "readline";
-import { AbstractSecurity } from "./AbstractSecurity";
+import { AbstractSecurity } from "./AbstractSecurity.js";
 
 /**
  * 🔑 EnvKeySecurity

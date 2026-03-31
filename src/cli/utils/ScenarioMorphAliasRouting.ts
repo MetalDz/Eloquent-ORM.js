@@ -1,12 +1,12 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "./PathMap";
+import { PathMap } from "./PathMap.js";
 import {
   matchesTargetStorageKind,
   resolveModelStorageKind,
   targetStorageKindForConnection,
-} from "./ArtifactStorage";
-import { loadModule } from "./typescript/tsRuntime";
+} from "./ArtifactStorage.js";
+import { loadModule } from "./typescript/tsRuntime.js";
 
 function resolveExistingModelPath(modelsDir: string, modelName: string): string | null {
   const basePath = path.join(modelsDir, modelName);

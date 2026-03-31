@@ -8,14 +8,16 @@ Use this checklist before creating a release tag or publishing a package.
 
 ### 1) Typecheck + Build + Test
 - Command source:
-  - CI job: `quality-gate`
+  - CI jobs: `typecheck`, `typecheck-nodenext`, `build`, `test-docker-coverage`
 - Pass Criteria:
   - `npm run typecheck` passes.
+  - `npm run typecheck:nodenext` passes.
   - `npm run build` passes.
-  - `npm run test:coverage` passes.
+  - `npm run test:coverage:docker` passes.
 - Fail Criteria:
-  - Any of the three commands fails.
-  - Coverage run exits non-zero.
+  - Any of the four commands fails.
+  - NodeNext typecheck regresses.
+  - Docker coverage exits non-zero.
 
 ### 2) Critical Stability Re-runs
 - Command source:

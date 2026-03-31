@@ -3,7 +3,7 @@ import {
   checkProductionDestructiveCommand,
   checkProductionTestOnlyCommand,
   isProductionRuntime,
-} from "../cli/utils/ProductionSafety";
+} from "../cli/utils/ProductionSafety.js";
 
 describe("CLI production safety guard", () => {
   test("detects production runtime using NODE_ENV or APP_ENV", () => {

@@ -4,13 +4,13 @@ import path from "path";
 import {
   appendAuditEvent,
   type AuditEventRecord,
-} from "../cli/utils/AuditTrail";
+} from "../cli/utils/AuditTrail.js";
 import {
   buildStructuredLogLine,
   isJsonLogFormat,
   resolveLogLevel,
   shouldLogAtLevel,
-} from "../cli/utils/StructuredLogger";
+} from "../cli/utils/StructuredLogger.js";
 
 describe("CLI structured logging + audit trail", () => {
   test("structured log mode and level resolution behave predictably", () => {

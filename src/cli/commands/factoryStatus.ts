@@ -4,19 +4,19 @@
  */
 
 import chalk from "chalk";
-import type { BaseModel } from "../../core/model/BaseModel";
+import type { BaseModel } from "../../core/model/BaseModel.js";
 import type {
   RelationDefinition,
   SchemaField,
-} from "../../core/schema/SchemaBlueprint";
-import type { Factory } from "../utils/factories/Factory";
+} from "../../core/schema/SchemaBlueprint.js";
+import type { Factory } from "../utils/factories/Factory.js";
 import {
   FACTORY_EMPTY_MARK,
   FACTORY_STATUS_FOOTER,
   getFactoryRelationArrow,
-} from "../utils/factories/FactoryDisplay";
-import { generateFactoryGraph } from "../utils/factories/FactoryGraph";
-import { FactoryRegistry } from "../utils/factories/FactoryRegistry";
+} from "../utils/factories/FactoryDisplay.js";
+import { generateFactoryGraph } from "../utils/factories/FactoryGraph.js";
+import { FactoryRegistry } from "../utils/factories/FactoryRegistry.js";
 
 interface TableRow {
   Factory: string;

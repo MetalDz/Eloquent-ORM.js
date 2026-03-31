@@ -1,16 +1,16 @@
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheManager } from "../core/cache/CacheManager";
-import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver";
-import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver";
-import { MemcachedCacheDriver } from "../core/cache/drivers/MemcachedCacheDriver";
-import { setupCache } from "../core/cache/setupCache";
-import { HooksMixin } from "../core/orm/mixins/HooksMixin";
-import { MorphRegistry } from "../core/orm/mixins/MorphRegistry";
-import { HookStore } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver.js";
+import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver.js";
+import { MemcachedCacheDriver } from "../core/cache/drivers/MemcachedCacheDriver.js";
+import { setupCache } from "../core/cache/setupCache.js";
+import { HooksMixin } from "../core/orm/mixins/HooksMixin.js";
+import { MorphRegistry } from "../core/orm/mixins/MorphRegistry.js";
+import { HookStore } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 class HookBase {
   public calls: string[] = [];

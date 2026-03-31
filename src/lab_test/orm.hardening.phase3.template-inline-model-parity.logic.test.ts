@@ -122,7 +122,7 @@ describe("ORM hardening phase 3 template-inline model parity", () => {
         const templatePath = path.resolve(process.cwd(), "src/cli/templates/model.tpl");
         const template = fs.readFileSync(templatePath, "utf8");
 
-        const { makeScenario } = await import("../cli/commands/makeScenario");
+        const { makeScenario } = await import("../cli/commands/makeScenario.js");
         await makeScenario("blog", { force: true, mongo: useMongo });
 
         const userFile = path.join(ctx.modelsDir, "User.ts");

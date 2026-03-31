@@ -3,7 +3,7 @@
  * Runtime validation engine for models with hooks and custom rules.
  */
 
-import type { ValidationRule } from "./SchemaBlueprint";
+import type { ValidationRule } from "./SchemaBlueprint.js";
 
 export interface ValidationError {
   field: string;

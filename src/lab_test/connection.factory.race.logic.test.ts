@@ -24,7 +24,7 @@ describe("ConnectionFactory cold-start race protection", () => {
       closeMongoClient,
     }));
 
-    const { getConnection } = await import("../core/connection/ConnectionFactory");
+    const { getConnection } = await import("../core/connection/ConnectionFactory.js");
 
     const first = getConnection("mysql_test" as never);
     const second = getConnection("mysql_test" as never);
@@ -65,7 +65,7 @@ describe("ConnectionFactory cold-start race protection", () => {
       closeMongoClient,
     }));
 
-    const { getConnection } = await import("../core/connection/ConnectionFactory");
+    const { getConnection } = await import("../core/connection/ConnectionFactory.js");
 
     await expect(getConnection("mysql_test" as never)).rejects.toThrow("first init failed");
     await expect(getConnection("mysql_test" as never)).resolves.toBe(successfulConnection);
@@ -87,7 +87,7 @@ describe("ConnectionFactory cold-start race protection", () => {
       createAdapter,
     }));
 
-    const { getAdapter } = await import("../core/connection/ConnectionFactory");
+    const { getAdapter } = await import("../core/connection/ConnectionFactory.js");
 
     const first = getAdapter("mysql_test" as never);
     const second = getAdapter("mysql_test" as never);
@@ -120,7 +120,7 @@ describe("ConnectionFactory cold-start race protection", () => {
       createAdapter,
     }));
 
-    const { getAdapter, closeAllConnections } = await import("../core/connection/ConnectionFactory");
+    const { getAdapter, closeAllConnections } = await import("../core/connection/ConnectionFactory.js");
 
     const pendingAdapter = getAdapter("mysql_test" as never);
     const closePromise = closeAllConnections();

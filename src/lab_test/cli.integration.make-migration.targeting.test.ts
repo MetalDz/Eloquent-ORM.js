@@ -5,7 +5,7 @@ import {
   hasTestDbEnv,
   resetSqliteDatabase,
   runCli,
-} from "./support/cli.integration.harness";
+} from "./support/cli.integration.harness.js";
 import {
   appAllConnectionsEnv,
   appPgEnv,
@@ -14,7 +14,7 @@ import {
   testMysqlEnv,
   testPgEnv,
   testSqliteEnv,
-} from "./support/cli.integration.connection.shared";
+} from "./support/cli.integration.connection.shared.js";
 
 describeIfBuiltOnly("CLI integration: make:migration connection targeting", () => {
   registerConnectionFixtureLifecycle();

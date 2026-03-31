@@ -5,6 +5,9 @@ module.exports = {
   coverageProvider: "v8",
   roots: ["<rootDir>/src"],
   testMatch: ["**/lab_test/**/*.test.ts"],
+  moduleNameMapper: {
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+  },
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
   collectCoverageFrom: [
     "src/**/*.ts",

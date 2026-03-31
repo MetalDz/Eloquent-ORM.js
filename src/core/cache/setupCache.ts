@@ -1,9 +1,9 @@
 // src/core/cache/setupCache.ts
-import { CacheFallbackManager } from "./CacheFallbackManager";
-import { MemoryCacheDriver } from "./drivers/MemoryCacheDriver";
-import { FileCacheDriver } from "./drivers/FileCacheDriver";
-import { MemcachedCacheDriver } from "./drivers/MemcachedCacheDriver";
-import { CacheManager } from "./CacheManager"; // still used for simple modes
+import { CacheFallbackManager } from "./CacheFallbackManager.js";
+import { MemoryCacheDriver } from "./drivers/MemoryCacheDriver.js";
+import { FileCacheDriver } from "./drivers/FileCacheDriver.js";
+import { MemcachedCacheDriver } from "./drivers/MemcachedCacheDriver.js";
+import { CacheManager } from "./CacheManager.js"; // still used for simple modes
 
 export function setupCache() {
   const env = process.env.APP_ENV || process.env.NODE_ENV || "development";

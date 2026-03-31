@@ -1,13 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { column, relation } from "../core/schema/SchemaBlueprint";
-import { MongoModel, SqlModel } from "../core/model/BaseModel";
-import { factoryStatus } from "../cli/commands/factoryStatus";
-import { generateFactoryGraph } from "../cli/utils/factories/FactoryGraph";
-import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry";
-import { loadFactories } from "../cli/utils/factories/FactoryLoader";
-import { PathMap } from "../cli/utils/PathMap";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
+import { column, relation } from "../core/schema/SchemaBlueprint.js";
+import { MongoModel, SqlModel } from "../core/model/BaseModel.js";
+import { factoryStatus } from "../cli/commands/factoryStatus.js";
+import { generateFactoryGraph } from "../cli/utils/factories/FactoryGraph.js";
+import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry.js";
+import { loadFactories } from "../cli/utils/factories/FactoryLoader.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

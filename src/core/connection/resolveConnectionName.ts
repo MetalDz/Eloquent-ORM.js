@@ -1,6 +1,6 @@
 // src/core/connection/resolveConnectionName.ts
-import { dbConfig } from "../../config/database";
-import type { ConnectionName } from "./ConnectionFactory";
+import { dbConfig } from "../../config/database.js";
+import type { ConnectionName } from "./ConnectionFactory.js";
 
 /**
  * 🔍 Resolve the correct connection name for a model or fallback globally.

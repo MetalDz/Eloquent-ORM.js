@@ -1,16 +1,16 @@
 import chalk from "chalk";
 import fs from "fs";
 import path from "path";
-import type { BaseModel } from "../../../core/model/BaseModel";
-import { createTargetedArtifactDecision, summarizeSkippedArtifacts } from "../ArtifactRoutingReport";
+import type { BaseModel } from "../../../core/model/BaseModel.js";
+import { createTargetedArtifactDecision, summarizeSkippedArtifacts } from "../ArtifactRoutingReport.js";
 import {
   matchesTargetStorageKind,
   resolveFactoryStorageKindFromCtor,
   type StorageKind,
-} from "../ArtifactStorage";
-import { PathMap } from "../PathMap";
-import { loadModule } from "../typescript/tsRuntime";
-import type { Factory } from "./Factory";
+} from "../ArtifactStorage.js";
+import { PathMap } from "../PathMap.js";
+import { loadModule } from "../typescript/tsRuntime.js";
+import type { Factory } from "./Factory.js";
 
 export class FactoryRegistry {
   private static registry = new Map<string, new () => Factory<BaseModel>>();

@@ -2,7 +2,7 @@ import {
   MorphableMixin,
   type MorphableBaseModel,
   type ORMQuery,
-} from "../core/orm/mixins/MorphableMixin";
+} from "../core/orm/mixins/MorphableMixin.js";
 
 abstract class EmptyBase {}
 

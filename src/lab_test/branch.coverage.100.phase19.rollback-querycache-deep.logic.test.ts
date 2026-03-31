@@ -1,11 +1,11 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { CacheManager } from "../core/cache/CacheManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin";
-import { HookStore } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin.js";
+import { HookStore } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 const passthroughChalk = {
   __esModule: true,
@@ -106,7 +106,7 @@ async function setupPgRollbackHarness(rows: RollbackRow[]) {
     appendAuditEvent,
   }));
 
-  const rollbackModule = await import("../cli/commands/migrateRollback");
+  const rollbackModule = await import("../cli/commands/migrateRollback.js");
   return {
     root,
     migrateRollback: rollbackModule.migrateRollback,

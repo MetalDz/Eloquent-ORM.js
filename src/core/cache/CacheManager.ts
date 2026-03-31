@@ -1,6 +1,6 @@
 // src/core/cache/CacheManager.ts
-import { CacheDriver } from "./CacheDriver";
-import { MemoryCacheDriver } from "./drivers/MemoryCacheDriver";
+import { CacheDriver } from "./CacheDriver.js";
+import { MemoryCacheDriver } from "./drivers/MemoryCacheDriver.js";
 
 export class CacheManager {
   private static driver: CacheDriver = new MemoryCacheDriver();

@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import type { ConnectionName } from "../core/connection/DatabaseConnection";
+import type { ConnectionName } from "../core/connection/DatabaseConnection.js";
 
 const passthroughChalk = {
   __esModule: true,
@@ -132,7 +132,7 @@ async function setupSqlRollbackHarness(options: SqlRollbackHarnessOptions = {}) 
     appendAuditEvent,
   }));
 
-  const rollbackModule = await import("../cli/commands/migrateRollback");
+  const rollbackModule = await import("../cli/commands/migrateRollback.js");
 
   return {
     root,

@@ -1,9 +1,9 @@
-import { dbConfig } from "../config/database";
-import { createAdapter } from "../core/connection/DriverAdapter";
-import { MorphableMixin } from "../core/orm/mixins/MorphableMixin";
-import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin";
-import { ScopeMixin } from "../core/orm/mixins/ScopeMixin";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { dbConfig } from "../config/database.js";
+import { createAdapter } from "../core/connection/DriverAdapter.js";
+import { MorphableMixin } from "../core/orm/mixins/MorphableMixin.js";
+import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin.js";
+import { ScopeMixin } from "../core/orm/mixins/ScopeMixin.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 describe("Branch coverage 100% - phase 36 orm mixins and adapter edge branches", () => {
   afterEach(() => {

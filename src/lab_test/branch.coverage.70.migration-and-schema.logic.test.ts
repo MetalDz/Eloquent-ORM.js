@@ -4,7 +4,7 @@ import {
   resetMigrationLockStrategy,
   setMigrationLockStrategy,
   type MigrationLockStrategy,
-} from "../cli/utils/migrations/MigrationLockStrategy";
+} from "../cli/utils/migrations/MigrationLockStrategy.js";
 import {
   acquireMigrationLock,
   doesMigrationTableExist,
@@ -12,10 +12,10 @@ import {
   readLastBatch,
   releaseMigrationLock,
   type SqlMigrationDriver,
-} from "../cli/utils/migrations/MigrationTracker";
-import { SchemaValidator } from "../core/schema/SchemaValidator";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import type { ConnectionName } from "../core/connection/ConnectionFactory";
+} from "../cli/utils/migrations/MigrationTracker.js";
+import { SchemaValidator } from "../core/schema/SchemaValidator.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import type { ConnectionName } from "../core/connection/ConnectionFactory.js";
 
 type MockSqlAdapter = DriverAdapter & {
   query: jest.Mock;

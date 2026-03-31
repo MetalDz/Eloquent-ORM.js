@@ -1,4 +1,4 @@
-import { AbstractSecurity } from "./AbstractSecurity";
+import { AbstractSecurity } from "./AbstractSecurity.js";
 
 /**
  * 🚧 NoSecurity

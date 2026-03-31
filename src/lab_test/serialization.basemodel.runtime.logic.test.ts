@@ -1,4 +1,4 @@
-import { BaseModel } from "../core/model/BaseModel";
+import { BaseModel } from "../core/model/BaseModel.js";
 
 describe("BaseModel default serialization runtime", () => {
   class PostModel extends BaseModel {

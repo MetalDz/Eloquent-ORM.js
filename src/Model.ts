@@ -3,4 +3,4 @@ export {
   MongoModel,
   type ModelAttrs,
   type ModelInstance,
-} from "./core/model/BaseModel";
+} from "./core/model/BaseModel.js";

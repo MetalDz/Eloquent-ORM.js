@@ -1,10 +1,10 @@
-import { dbConfig } from "../config/database";
+import { dbConfig } from "../config/database.js";
 import {
   NativeSqlMigrationLockStrategy,
   resetMigrationLockStrategy,
-} from "../cli/utils/migrations/MigrationLockStrategy";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import type { ConnectionName } from "../core/connection/ConnectionFactory";
+} from "../cli/utils/migrations/MigrationLockStrategy.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import type { ConnectionName } from "../core/connection/ConnectionFactory.js";
 
 type MockAdapter = DriverAdapter & {
   query: jest.Mock;

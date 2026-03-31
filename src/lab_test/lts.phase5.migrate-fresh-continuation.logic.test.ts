@@ -88,7 +88,7 @@ describe("LTS phase 5 migrateFresh continuation", () => {
       makeMigration,
     }));
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       force: true,
       connectionNames: ["mongo" as never],
@@ -143,7 +143,7 @@ describe("LTS phase 5 migrateFresh continuation", () => {
         makeMigration,
       }));
 
-      const { migrateFresh } = await import("../cli/commands/migrateFresh");
+      const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
       await migrateFresh({
         force: true,
         connectionNames: [driver as never],
@@ -203,7 +203,7 @@ describe("LTS phase 5 migrateFresh continuation", () => {
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       test: true,
     });
@@ -248,7 +248,7 @@ describe("LTS phase 5 migrateFresh continuation", () => {
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       force: true,
       connectionNames: ["mysql" as never],
@@ -303,7 +303,7 @@ describe("LTS phase 5 migrateFresh continuation", () => {
       makeMigration,
     }));
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       force: true,
       allMigrations: true,

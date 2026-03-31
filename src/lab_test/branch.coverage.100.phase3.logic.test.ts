@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 3 command branch trees", () => {
   const passthroughChalk = {
@@ -49,7 +49,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       }));
 
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
-      const { migrateStatus } = await import("../cli/commands/migrateStatus");
+      const { migrateStatus } = await import("../cli/commands/migrateStatus.js");
       await migrateStatus({ connectionNames: ["sqlite" as never] });
 
       expect(getAdapter).not.toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
 
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
       const tableSpy = jest.spyOn(console, "table").mockImplementation(() => undefined);
-      const { migrateStatus } = await import("../cli/commands/migrateStatus");
+      const { migrateStatus } = await import("../cli/commands/migrateStatus.js");
       await migrateStatus(true);
 
       expect(resolveConnectionName).toHaveBeenCalledWith(undefined, { test: true });
@@ -123,7 +123,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       }));
 
       const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-      const { migrateStatus } = await import("../cli/commands/migrateStatus");
+      const { migrateStatus } = await import("../cli/commands/migrateStatus.js");
       await migrateStatus({ connectionNames: ["pg" as never] });
 
       expect(process.exitCode).toBe(1);
@@ -231,7 +231,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
         };
       });
 
-      const { makeMigration } = await import("../cli/commands/makeMigration");
+      const { makeMigration } = await import("../cli/commands/makeMigration.js");
       await makeMigration("all", { test: true, exit: false });
 
       const tables = ctx.toCreateSQL.mock.calls.map((call) => call[0]);
@@ -244,7 +244,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
 
     test("covers no-model-files, missing-specific-model, no-schema, and no-diff branches", async () => {
       const ctx = setupMakeMigrationContext();
-      const { makeMigration } = await import("../cli/commands/makeMigration");
+      const { makeMigration } = await import("../cli/commands/makeMigration.js");
 
       await makeMigration("all", { test: true, exit: false });
       expect(ctx.warnSpy).toHaveBeenCalledWith(expect.stringContaining("No model files found"));
@@ -289,7 +289,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
         },
       });
 
-      const { makeMigration } = await import("../cli/commands/makeMigration");
+      const { makeMigration } = await import("../cli/commands/makeMigration.js");
       await makeMigration("User", { test: true });
 
       expect(ctx.exitSpy).toHaveBeenCalledWith(0);
@@ -383,7 +383,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
       }));
 
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-      const { makeModel } = await import("../cli/commands/makeModel");
+      const { makeModel } = await import("../cli/commands/makeModel.js");
 
       await makeModel("User", { test: true, attrsFromSchema: true, force: true });
       const inferredAttrsPayload = (templateRender.mock.calls[1] ?? [])[1] as
@@ -476,7 +476,7 @@ describe("Branch coverage 100% - phase 3 command branch trees", () => {
 
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-      const { migrateRollback } = await import("../cli/commands/migrateRollback");
+      const { migrateRollback } = await import("../cli/commands/migrateRollback.js");
 
       await migrateRollback({ connectionNames: ["missing_conn" as never] });
       expect(getAdapter).not.toHaveBeenCalled();

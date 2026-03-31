@@ -1,5 +1,5 @@
 // src/core/cache/drivers/MemcachedCacheDriver.ts
-import { CacheDriver } from "../CacheDriver";
+import { CacheDriver } from "../CacheDriver.js";
 import Memcached from "memcached";
 
 export class MemcachedCacheDriver extends CacheDriver {

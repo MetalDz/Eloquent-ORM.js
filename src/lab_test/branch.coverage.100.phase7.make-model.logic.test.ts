@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 7 makeModel edge paths", () => {
   const passthroughChalk = {
@@ -124,7 +124,7 @@ describe("Branch coverage 100% - phase 7 makeModel edge paths", () => {
     });
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
 
     await makeModel("User", { test: true, force: true });
 
@@ -140,7 +140,7 @@ describe("Branch coverage 100% - phase 7 makeModel edge paths", () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
 
     ctx.compile.mockReturnValue(true);
     ctx.loadModule.mockReturnValue({
@@ -183,7 +183,7 @@ describe("Branch coverage 100% - phase 7 makeModel edge paths", () => {
   test("covers withMigration schema-missing, directory-create, opposite-cleanup, and existing-migration branches", async () => {
     const ctx = setupMakeModelContext();
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
 
     ctx.loadModule.mockReturnValueOnce({ User: { tableName: "users" } });
     await makeModel("User", { test: true, withMigration: true, force: true });
@@ -228,7 +228,7 @@ describe("Branch coverage 100% - phase 7 makeModel edge paths", () => {
     const ctx = setupMakeModelContext();
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
 
     ctx.loadModule.mockReturnValue({
       User: {
@@ -271,7 +271,7 @@ describe("Branch coverage 100% - phase 7 makeModel edge paths", () => {
       rollbackExtraTables: ["DROP TABLE IF EXISTS user_role;"],
     });
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel("User", { test: true, withMigration: true, force: true });
 
     const migrationDir = path.join(ctx.migrationsRoot, "pg_test");

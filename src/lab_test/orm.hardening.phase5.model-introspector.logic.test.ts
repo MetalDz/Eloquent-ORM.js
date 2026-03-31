@@ -2,10 +2,10 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { mixin, relation, column } from "../core/schema/SchemaBlueprint";
-import { ModelIntrospector } from "../cli/utils/ModelIntrospector";
-import { PathMap } from "../cli/utils/PathMap";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+import { mixin, relation, column } from "../core/schema/SchemaBlueprint.js";
+import { ModelIntrospector } from "../cli/utils/ModelIntrospector.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 
 jest.mock("../cli/utils/typescript/tsRuntime", () => ({
   loadModule: jest.fn(),

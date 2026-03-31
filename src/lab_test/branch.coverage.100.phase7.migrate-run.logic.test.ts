@@ -1,14 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { dbConfig } from "../config/database";
-import { migrateRun } from "../cli/commands/migrateRun";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { dbConfig } from "../config/database.js";
+import { migrateRun } from "../cli/commands/migrateRun.js";
 import {
   closeAllConnections,
   getConnection,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+} from "../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 import {
   acquireMigrationLock,
   computeMigrationChecksum,
@@ -17,9 +17,9 @@ import {
   recordAppliedMigration,
   releaseMigrationLock,
   validateMigrationHistory,
-} from "../cli/utils/migrations/MigrationTracker";
-import { appendAuditEvent } from "../cli/utils/AuditTrail";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+} from "../cli/utils/migrations/MigrationTracker.js";
+import { appendAuditEvent } from "../cli/utils/AuditTrail.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 import {
   acquireMigrationLock as acquireMongoMigrationLock,
   ensureMigrationCollection,
@@ -27,7 +27,7 @@ import {
   recordAppliedMigration as recordMongoAppliedMigration,
   releaseMigrationLock as releaseMongoMigrationLock,
   validateMigrationHistory as validateMongoMigrationHistory,
-} from "../cli/utils/migrations/MongoMigrationTracker";
+} from "../cli/utils/migrations/MongoMigrationTracker.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

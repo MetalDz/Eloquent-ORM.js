@@ -2,10 +2,10 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { makeFactory } from "../cli/commands/makeFactory";
-import { makeSeed } from "../cli/commands/makeSeed";
-import { PathMap } from "../cli/utils/PathMap";
-import { ModelIntrospector } from "../cli/utils/ModelIntrospector";
+import { makeFactory } from "../cli/commands/makeFactory.js";
+import { makeSeed } from "../cli/commands/makeSeed.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { ModelIntrospector } from "../cli/utils/ModelIntrospector.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -192,7 +192,7 @@ describe("NodeNext generator/template rewrite", () => {
         },
       }));
 
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("blog", { test: true, force: true });
 
       const seederContent = fs.readFileSync(

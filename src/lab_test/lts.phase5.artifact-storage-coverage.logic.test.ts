@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { dbConfig } from "../config/database";
+import { dbConfig } from "../config/database.js";
 import {
   matchesTargetStorageKind,
   resolveFactoryStorageKindFromCtor,
@@ -10,10 +10,10 @@ import {
   resolveModelStorageKindFromCtor,
   resolveSeederStorageKindFromFile,
   targetStorageKindForConnection,
-} from "../cli/utils/ArtifactStorage";
-import { PathMap } from "../cli/utils/PathMap";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
-import { MongoModel, SqlModel } from "../core/model/BaseModel";
+} from "../cli/utils/ArtifactStorage.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
+import { MongoModel, SqlModel } from "../core/model/BaseModel.js";
 
 describe("LTS phase 5 ArtifactStorage coverage", () => {
   const originalConnections = dbConfig.connections;

@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { makeScenario } from "../cli/commands/makeScenario";
-import { PathMap } from "../cli/utils/PathMap";
+import { makeScenario } from "../cli/commands/makeScenario.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -76,7 +76,7 @@ describe("NoSQL phase 16 scenario generator type parity", () => {
     jest.spyOn(PathMap, "seeds").mockReturnValue(seedsDir);
     jest.spyOn(PathMap, "migrations").mockReturnValue(migrationsDir);
 
-    const importResolver = await import("../cli/utils/ImportResolver");
+    const importResolver = await import("../cli/utils/ImportResolver.js");
     jest.spyOn(importResolver.ImportResolver, "coreImportPath").mockReturnValue(coreImportPath);
     jest
       .spyOn(importResolver.ImportResolver, "schemaImportPath")

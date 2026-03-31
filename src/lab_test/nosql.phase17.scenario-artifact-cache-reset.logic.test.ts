@@ -1,9 +1,9 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { makeScenario } from "../cli/commands/makeScenario";
-import { resolveSeederStorageKindFromFile } from "../cli/utils/ArtifactStorage";
-import { PathMap } from "../cli/utils/PathMap";
+import { makeScenario } from "../cli/commands/makeScenario.js";
+import { resolveSeederStorageKindFromFile } from "../cli/utils/ArtifactStorage.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -135,7 +135,7 @@ export async function BlogScenarioSeeder() {
 
     expect(resolveSeederStorageKindFromFile(staleSeederPath, true)).toBe("sql");
 
-    const importResolver = await import("../cli/utils/ImportResolver");
+    const importResolver = await import("../cli/utils/ImportResolver.js");
     jest.spyOn(importResolver.ImportResolver, "coreImportPath").mockReturnValue("eloquentjs");
     jest.spyOn(importResolver.ImportResolver, "schemaImportPath").mockReturnValue("eloquentjs");
 

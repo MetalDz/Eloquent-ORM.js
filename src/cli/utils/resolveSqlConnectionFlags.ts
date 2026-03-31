@@ -1,4 +1,4 @@
-import type { ConnectionName } from "../../core/connection/ConnectionFactory";
+import type { ConnectionName } from "../../core/connection/ConnectionFactory.js";
 
 export type SqlConnectionFlags = {
   mysql?: boolean;

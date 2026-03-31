@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
 
 type DriverLike = {
   constructor: { name: string };
@@ -33,7 +33,7 @@ async function loadFileCacheDriverWithFsMock(fsMock: Record<string, unknown>) {
     __esModule: true,
     default: fsMock,
   }));
-  const mod = await import("../core/cache/drivers/FileCacheDriver");
+  const mod = await import("../core/cache/drivers/FileCacheDriver.js");
   return mod.FileCacheDriver;
 }
 

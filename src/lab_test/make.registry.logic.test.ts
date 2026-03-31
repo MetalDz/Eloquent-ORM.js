@@ -1,9 +1,9 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { __makeRegistryInternals, makeRegistry } from "../cli/commands/makeRegistry";
-import { PathMap } from "../cli/utils/PathMap";
-import { ImportResolver } from "../cli/utils/ImportResolver";
+import { __makeRegistryInternals, makeRegistry } from "../cli/commands/makeRegistry.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { ImportResolver } from "../cli/utils/ImportResolver.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

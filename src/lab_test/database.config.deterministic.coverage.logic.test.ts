@@ -17,10 +17,10 @@ describe("database config deterministic coverage", () => {
     process.env.DB_CONNECTION = "pg";
     jest.doMock("dotenv", () => ({ config: dotenvConfig }));
 
-    let dbConfig: typeof import("../config/database").dbConfig | undefined;
+    let dbConfig: typeof import("../config/database.js").dbConfig | undefined;
 
     jest.isolateModules(() => {
-      ({ dbConfig } = require("../config/database") as typeof import("../config/database"));
+      ({ dbConfig } = require("../config/database") as typeof import("../config/database.js"));
     });
 
     expect(dotenvConfig).toHaveBeenCalledTimes(1);
@@ -33,10 +33,10 @@ describe("database config deterministic coverage", () => {
     delete process.env.DB_CONNECTION;
     jest.doMock("dotenv", () => ({ config: dotenvConfig }));
 
-    let dbConfig: typeof import("../config/database").dbConfig | undefined;
+    let dbConfig: typeof import("../config/database.js").dbConfig | undefined;
 
     jest.isolateModules(() => {
-      ({ dbConfig } = require("../config/database") as typeof import("../config/database"));
+      ({ dbConfig } = require("../config/database") as typeof import("../config/database.js"));
     });
 
     expect(dotenvConfig).toHaveBeenCalledTimes(1);

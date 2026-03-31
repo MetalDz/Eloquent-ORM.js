@@ -4,7 +4,7 @@ import path from "path";
 import {
   resolveCliConnectionNames,
   resolveCliPrimaryConnectionName,
-} from "../cli/utils/CliCommandTargets";
+} from "../cli/utils/CliCommandTargets.js";
 
 describe("LTS phase 5 CliCommandTargets coverage", () => {
   test("plan tracks the dedicated CliCommandTargets LTS slice", () => {

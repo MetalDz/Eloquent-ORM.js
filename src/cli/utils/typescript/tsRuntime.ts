@@ -24,6 +24,17 @@ const PACKAGE_NAME = (() => {
   }
 })();
 
+const PACKAGE_SOURCE_ROOT = path.join(PACKAGE_ROOT, "src") + path.sep;
+const PACKAGE_BIN_ROOT = path.join(PACKAGE_ROOT, "bin") + path.sep;
+
+function isPackageSourceTreeFile(filePath: string): boolean {
+  const normalized = path.resolve(filePath);
+  return (
+    normalized.startsWith(PACKAGE_SOURCE_ROOT) ||
+    normalized.startsWith(PACKAGE_BIN_ROOT)
+  );
+}
+
 function resolveExistingModulePath(basePath: string): string | null {
   const extension = path.extname(basePath).toLowerCase();
   const withoutExtension =
@@ -164,8 +175,9 @@ function loadTypeScriptModule(
 ): Record<string, unknown> {
   const absolutePath = path.resolve(filePath);
   const forceTranspileReload = forceTranspileReloadPaths.delete(absolutePath);
+  const preferManualTranspile = isPackageSourceTreeFile(absolutePath);
 
-  if (runtimeAvailable && !forceTranspileReload) {
+  if (runtimeAvailable && !forceTranspileReload && !preferManualTranspile) {
     try {
       return requireFromFile(filePath);
     } catch {

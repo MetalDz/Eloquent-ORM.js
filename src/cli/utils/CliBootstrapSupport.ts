@@ -1,4 +1,4 @@
-import type { StorageKind } from "./ArtifactStorage";
+import type { StorageKind } from "./ArtifactStorage.js";
 
 type CliStorageKind = Exclude<StorageKind, "unknown" | "mixed">;
 

@@ -4,7 +4,7 @@ import {
   defaultCliActionErrorRenderer,
   runCliAction,
   toCliActionErrorMessage,
-} from "../cli/utils/CliActionRuntime";
+} from "../cli/utils/CliActionRuntime.js";
 
 describe("ORM hardening phase 1 CLI action runtime extraction", () => {
   const rootDir = process.cwd();

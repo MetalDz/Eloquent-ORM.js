@@ -1,10 +1,10 @@
-import { CoreModel } from "./CoreModel";
+import { CoreModel } from "./CoreModel.js";
 import type {
   SafeFinderDirection,
   SafeFinderFilters,
   SafeFinderModelInstance,
   SafeFinderQuery,
-} from "./SafeFinder";
+} from "./SafeFinder.js";
 
 type AbstractConstructor<T = object> = abstract new (...args: any[]) => T;
 

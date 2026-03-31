@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-type HarnessModule = typeof import("./support/cli.integration.harness");
+type HarnessModule = typeof import("./support/cli.integration.harness.js");
 
 describe("Branch coverage 70 - CLI support helpers", () => {
   const originalCwd = process.cwd();

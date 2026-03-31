@@ -1,16 +1,16 @@
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheManager } from "../core/cache/CacheManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { Relation } from "../core/orm/Relation";
-import { CastsMixin } from "../core/orm/mixins/CastsMixin";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { Relation } from "../core/orm/Relation.js";
+import { CastsMixin } from "../core/orm/mixins/CastsMixin.js";
 import {
   EagerLoadingMixin,
   type RelationDefinition,
-} from "../core/orm/mixins/EagerLoadingMixin";
-import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin";
-import { HookStore } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+} from "../core/orm/mixins/EagerLoadingMixin.js";
+import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin.js";
+import { HookStore } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 abstract class EmptyBase {}
 

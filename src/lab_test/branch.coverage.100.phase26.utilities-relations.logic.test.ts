@@ -1,7 +1,7 @@
-import { BelongsToMany } from "../core/orm/relations/BelongsToMany";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { CastsMixin } from "../core/orm/mixins/CastsMixin";
-import { TemplateEngine } from "../cli/utils/TemplateEngine";
+import { BelongsToMany } from "../core/orm/relations/BelongsToMany.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { CastsMixin } from "../core/orm/mixins/CastsMixin.js";
+import { TemplateEngine } from "../cli/utils/TemplateEngine.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

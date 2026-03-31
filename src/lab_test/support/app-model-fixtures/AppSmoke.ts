@@ -1,5 +1,5 @@
-import { SqlModel, ModelInstance } from "../../../core/model/BaseModel";
-import { column, validate } from "../../../core/schema/SchemaBlueprint";
+import { SqlModel, ModelInstance } from "../../../core/model/BaseModel.js";
+import { column, validate } from "../../../core/schema/SchemaBlueprint.js";
 
 type AppSmokeAttrs = {
   id?: number;

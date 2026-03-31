@@ -1,15 +1,15 @@
 import chalk from "chalk";
 import readline from "readline";
-import { migrateRun } from "./migrateRun";
-import { makeMigration } from "./makeMigration";
+import { migrateRun } from "./migrateRun.js";
+import { makeMigration } from "./makeMigration.js";
 import {
   getAdapter,
   getConnection,
   closeAllConnections,
   ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { dbConfig } from "../../config/database";
+} from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { dbConfig } from "../../config/database.js";
 import type { Db } from "mongodb";
 
 /**

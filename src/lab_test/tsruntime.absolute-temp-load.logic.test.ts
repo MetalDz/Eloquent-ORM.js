@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 
 describe("tsRuntime absolute temp load", () => {
   test("loads a temp TypeScript module outside src with relative imports", () => {

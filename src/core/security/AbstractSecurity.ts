@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { SecurityContract } from "./SecurityContract";
+import { SecurityContract } from "./SecurityContract.js";
 
 /**
  * 🧠 AbstractSecurity

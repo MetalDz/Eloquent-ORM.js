@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { CLI_COMMAND_CATALOG } from "../cli/utils/CliCommandCatalog";
+import { CLI_COMMAND_CATALOG } from "../cli/utils/CliCommandCatalog.js";
 
 type CommandSpec = {
   name: string;

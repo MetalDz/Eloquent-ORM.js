@@ -1,6 +1,6 @@
-import { dbConfig } from "../../config/database";
-import type { DriverAdapter } from "../connection/DriverAdapter";
-import type { SchemaField } from "../schema/SchemaBlueprint";
+import { dbConfig } from "../../config/database.js";
+import type { DriverAdapter } from "../connection/DriverAdapter.js";
+import type { SchemaField } from "../schema/SchemaBlueprint.js";
 
 export type SafeFinderDirection = "asc" | "desc";
 export type SafeFinderFilters = Record<string, unknown>;

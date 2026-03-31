@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
   const passthroughChalk = {
@@ -134,7 +134,7 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: false,
       pivotSeparate: true,
@@ -197,7 +197,7 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("all", { test: true, exit: false });
 
     const sqlCalls = ctx.toCreateSQL.mock.calls as unknown as unknown[][];
@@ -242,7 +242,7 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: true,
       connectionName: "custom_conn" as any,
@@ -262,7 +262,7 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
     fs.writeFileSync(path.join(ctx.modelsDir, "User.ts"), "export class User {}", "utf8");
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
 
     ctx.loadModule.mockImplementation(() => {
       throw "load-failed-string";

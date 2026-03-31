@@ -1,5 +1,5 @@
 // src/core/cache/CacheRegistry.ts
-import { CacheManager } from "./CacheManager";
+import { CacheManager } from "./CacheManager.js";
 
 /**
  * 🧩 CacheRegistry

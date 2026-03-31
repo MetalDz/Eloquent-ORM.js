@@ -1,13 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { SchemaBuilder } from "../core/schema/SchemaBuilder";
+import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
 import {
   column,
   mixin,
   relation,
   type SchemaField,
-} from "../core/schema/SchemaBlueprint";
-import { getAdapter } from "../core/connection/ConnectionFactory";
+} from "../core/schema/SchemaBlueprint.js";
+import { getAdapter } from "../core/connection/ConnectionFactory.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

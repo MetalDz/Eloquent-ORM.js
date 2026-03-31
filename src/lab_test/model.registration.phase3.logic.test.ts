@@ -1,12 +1,12 @@
-import { HooksMixin } from "../core/orm/mixins/HooksMixin";
-import { HookStore } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { HooksMixin } from "../core/orm/mixins/HooksMixin.js";
+import { HookStore } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 import {
   isModelRegistered,
   isModelRegistryStrictMode,
   registerModels,
   setModelRegistryStrictMode,
-} from "../core/orm/mixins/utils/modelRegistration";
+} from "../core/orm/mixins/utils/modelRegistration.js";
 
 class CrudBase {
   async create(data: Record<string, unknown>): Promise<unknown> {

@@ -1,30 +1,30 @@
 // src/model/BaseModel.ts
-import { CoreModel } from "./CoreModel";
-import { PivotHelperMixin } from "../orm/mixins/PivotHelperMixin";
-import { CastsMixin } from "../orm/mixins/CastsMixin";
-import { SoftDeletesMixin } from "../orm/mixins/SoftDeletesMixin";
-import { ScopeMixin } from "../orm/mixins/ScopeMixin";
-import { HooksMixin } from "../orm/mixins/HooksMixin";
-import { QueryCacheMixin } from "../orm/mixins/QueryCacheMixin";
-import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin";
-import { SerializeMixin } from "../orm/mixins/SerializeMixin";
-import { getAdapter, getConnection, ConnectionName } from "../connection/ConnectionFactory";
-import type { DriverAdapter } from "../connection/DriverAdapter";
+import { CoreModel } from "./CoreModel.js";
+import { PivotHelperMixin } from "../orm/mixins/PivotHelperMixin.js";
+import { CastsMixin } from "../orm/mixins/CastsMixin.js";
+import { SoftDeletesMixin } from "../orm/mixins/SoftDeletesMixin.js";
+import { ScopeMixin } from "../orm/mixins/ScopeMixin.js";
+import { HooksMixin } from "../orm/mixins/HooksMixin.js";
+import { QueryCacheMixin } from "../orm/mixins/QueryCacheMixin.js";
+import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin.js";
+import { SerializeMixin } from "../orm/mixins/SerializeMixin.js";
+import { getAdapter, getConnection, ConnectionName } from "../connection/ConnectionFactory.js";
+import type { DriverAdapter } from "../connection/DriverAdapter.js";
 import type { Db } from "mongodb";
-import { dbConfig } from "../../config/database";
-import { BelongsTo } from "../orm/relations/BelongsTo";
-import { HasOne } from "../orm/relations/HasOne";
-import { HasMany } from "../orm/relations/HasMany";
-import { BelongsToMany } from "../orm/relations/BelongsToMany";
-import { MorphOne } from "../orm/relations/MorphOne";
-import { MorphMany } from "../orm/relations/MorphMany";
-import { MorphTo } from "../orm/relations/MorphTo";
-import type { CoreModelClass } from "../orm/Relation";
-import { BaseModelSafeFinderStaticsMixin } from "./BaseModelSafeFinderStatics";
+import { dbConfig } from "../../config/database.js";
+import { BelongsTo } from "../orm/relations/BelongsTo.js";
+import { HasOne } from "../orm/relations/HasOne.js";
+import { HasMany } from "../orm/relations/HasMany.js";
+import { BelongsToMany } from "../orm/relations/BelongsToMany.js";
+import { MorphOne } from "../orm/relations/MorphOne.js";
+import { MorphMany } from "../orm/relations/MorphMany.js";
+import { MorphTo } from "../orm/relations/MorphTo.js";
+import type { CoreModelClass } from "../orm/Relation.js";
+import { BaseModelSafeFinderStaticsMixin } from "./BaseModelSafeFinderStatics.js";
 
 // Morph system (re-export convenience)
-import { MorphableMixin, MorphableBaseModel } from "../orm/mixins/MorphableMixin";
-import { MorphRegistry } from "../orm/mixins/MorphRegistry";
+import { MorphableMixin, MorphableBaseModel } from "../orm/mixins/MorphableMixin.js";
+import { MorphRegistry } from "../orm/mixins/MorphRegistry.js";
 
 /**
  * Shared record interface for all models

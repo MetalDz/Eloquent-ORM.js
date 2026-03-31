@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { MorphRegistry } from "../core/orm/mixins/MorphRegistry";
-import { MorphableMixin } from "../core/orm/mixins/MorphableMixin";
+import { MorphRegistry } from "../core/orm/mixins/MorphRegistry.js";
+import { MorphableMixin } from "../core/orm/mixins/MorphableMixin.js";
 
 describe("LTS phase 5 MorphableMixin coverage and ASCII", () => {
   afterEach(() => {

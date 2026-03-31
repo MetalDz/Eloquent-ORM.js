@@ -1,16 +1,16 @@
 import fs from "fs";
 import path from "path";
 
-import { PathMap } from "../cli/utils/PathMap";
-import { dbSeed } from "../cli/commands/dbSeed";
-import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry";
-import * as artifactStorage from "../cli/utils/ArtifactStorage";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { dbSeed } from "../cli/commands/dbSeed.js";
+import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry.js";
+import * as artifactStorage from "../cli/utils/ArtifactStorage.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
 import {
   createTargetedArtifactDecision,
   summarizeSkippedArtifacts,
-} from "../cli/utils/ArtifactRoutingReport";
-import { MongoModel, SqlModel } from "../core/model/BaseModel";
+} from "../cli/utils/ArtifactRoutingReport.js";
+import { MongoModel, SqlModel } from "../core/model/BaseModel.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

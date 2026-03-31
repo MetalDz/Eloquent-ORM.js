@@ -1,6 +1,6 @@
 // src/cli/utils/factories/Factory.ts
 import { faker } from "@faker-js/faker";
-import { BaseModel } from "../../../core/model/BaseModel";
+import { BaseModel } from "../../../core/model/BaseModel.js";
 
 /** Plain object for attributes */
 export type PlainObject = Record<string, unknown>;

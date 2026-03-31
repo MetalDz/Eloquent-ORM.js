@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import type { CliResult } from "./cli.integration.harness";
+import type { CliResult } from "./cli.integration.harness.js";
 import {
   appRootDir,
   assertCliSuccess,
@@ -20,7 +20,7 @@ import {
   resetSqliteDatabase,
   rootDir,
   runCli,
-} from "./cli.integration.harness";
+} from "./cli.integration.harness.js";
 
 export const describeIfBuiltOnly =
   hasBuiltCli && canSpawnCli ? describe : describe.skip;

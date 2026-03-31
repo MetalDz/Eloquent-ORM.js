@@ -4,10 +4,10 @@ jest.mock("@faker-js/faker", () => ({
 
 import fs from "fs";
 import path from "path";
-import { Factory } from "../cli/utils/factories/Factory";
-import { PathMap } from "../cli/utils/PathMap";
-import { dbConfig } from "../config/database";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+import { Factory } from "../cli/utils/factories/Factory.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { dbConfig } from "../config/database.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 
 describe("Branch coverage 70 - factory, path map, and resolver", () => {
   const originalEnv = { ...process.env };
@@ -258,7 +258,7 @@ describe("Branch coverage 70 - factory, path map, and resolver", () => {
       }));
 
       jest.doMock("better-sqlite3", () => ctorMock);
-      const mod = require("../core/connection/BetterSqliteConnection") as typeof import("../core/connection/BetterSqliteConnection");
+      const mod = require("../core/connection/BetterSqliteConnection") as typeof import("../core/connection/BetterSqliteConnection.js");
       const conn = new mod.BetterSqliteConnection(":memory:");
 
       await conn.all("SELECT 1", "x" as unknown as unknown[]);
@@ -291,7 +291,7 @@ describe("Branch coverage 70 - factory, path map, and resolver", () => {
         close: jest.fn(),
       }));
       jest.doMock("better-sqlite3", () => ctorMock);
-      const mod = require("../core/connection/BetterSqliteConnection") as typeof import("../core/connection/BetterSqliteConnection");
+      const mod = require("../core/connection/BetterSqliteConnection") as typeof import("../core/connection/BetterSqliteConnection.js");
       const conn = new mod.BetterSqliteConnection(":memory:");
 
       await conn.all("SELECT 1");

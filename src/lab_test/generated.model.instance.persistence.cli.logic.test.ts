@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -117,7 +117,7 @@ describe("Generated model instance persistence via make:model", () => {
     });
     mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel(sqlModelName, { force: true });
 
     const content = fs.readFileSync(sqlModelFile, "utf8");
@@ -218,7 +218,7 @@ describe("Generated model instance persistence via make:model", () => {
     };
     mockedGetConnection.mockResolvedValue(mongoDb as never);
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel(mongoModelName, { mongo: true, force: true });
 
     const content = fs.readFileSync(mongoModelFile, "utf8");

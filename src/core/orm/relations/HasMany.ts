@@ -1,5 +1,5 @@
-import { Relation } from "../Relation";
-import type { DriverAdapter } from "../../connection/DriverAdapter";
+import { Relation } from "../Relation.js";
+import type { DriverAdapter } from "../../connection/DriverAdapter.js";
 
 export class HasMany extends Relation {
   async getResults(parent: Record<string, unknown>): Promise<unknown[]> {

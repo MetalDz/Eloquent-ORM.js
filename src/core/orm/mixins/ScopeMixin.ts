@@ -1,4 +1,4 @@
-import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver.js";
 
 /**
  * ًںŒچ ScopeMixin

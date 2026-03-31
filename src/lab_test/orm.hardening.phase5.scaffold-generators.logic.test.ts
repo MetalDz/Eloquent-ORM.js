@@ -20,11 +20,11 @@ jest.mock("../cli/utils/fileWriter", () => ({
 }));
 
 import path from "path";
-import { makeController } from "../cli/commands/makeController";
-import { makeService } from "../cli/commands/makeService";
-import { TemplateEngine } from "../cli/utils/TemplateEngine";
-import { overwriteFile, writeFileSafe } from "../cli/utils/fileWriter";
-import { PathMap } from "../cli/utils/PathMap";
+import { makeController } from "../cli/commands/makeController.js";
+import { makeService } from "../cli/commands/makeService.js";
+import { TemplateEngine } from "../cli/utils/TemplateEngine.js";
+import { overwriteFile, writeFileSafe } from "../cli/utils/fileWriter.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 
 const mockedTemplateEngine = TemplateEngine as jest.Mocked<typeof TemplateEngine>;
 const mockedWriteFileSafe = writeFileSafe as jest.MockedFunction<typeof writeFileSafe>;

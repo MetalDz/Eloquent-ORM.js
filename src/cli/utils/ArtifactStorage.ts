@@ -1,18 +1,18 @@
 import fs from "fs";
 import path from "path";
-import { dbConfig } from "../../config/database";
-import { MongoModel, SqlModel } from "../../core/model/BaseModel";
-import { PathMap } from "./PathMap";
-import { loadModule } from "./typescript/tsRuntime";
-import type { BaseModel } from "../../core/model/BaseModel";
-import type { Factory } from "./factories/Factory";
+import { dbConfig } from "../../config/database.js";
+import { MongoModel, SqlModel } from "../../core/model/BaseModel.js";
+import { PathMap } from "./PathMap.js";
+import { loadModule } from "./typescript/tsRuntime.js";
+import type { BaseModel } from "../../core/model/BaseModel.js";
+import type { Factory } from "./factories/Factory.js";
 import {
   collapseStorageKinds,
   resolveArtifactCompatibility,
   type StorageKind,
   type TargetStorageKind,
-} from "./ArtifactCompatibility";
-export type { ArtifactCompatibilityReason, StorageKind, TargetStorageKind } from "./ArtifactCompatibility";
+} from "./ArtifactCompatibility.js";
+export type { ArtifactCompatibilityReason, StorageKind, TargetStorageKind } from "./ArtifactCompatibility.js";
 
 function resolveExistingPath(filePath: string): string | null {
   if (fs.existsSync(filePath)) {

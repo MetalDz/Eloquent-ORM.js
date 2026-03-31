@@ -1,12 +1,12 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { BelongsTo } from "../core/orm/relations/BelongsTo";
-import { HasMany } from "../core/orm/relations/HasMany";
-import { HasOne } from "../core/orm/relations/HasOne";
-import { MorphTo } from "../core/orm/relations/MorphTo";
-import { MorphRegistry } from "../core/orm/mixins/MorphRegistry";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { BelongsTo } from "../core/orm/relations/BelongsTo.js";
+import { HasMany } from "../core/orm/relations/HasMany.js";
+import { HasOne } from "../core/orm/relations/HasOne.js";
+import { MorphTo } from "../core/orm/relations/MorphTo.js";
+import { MorphRegistry } from "../core/orm/mixins/MorphRegistry.js";
 
 type Row = Record<string, unknown>;
 
@@ -141,9 +141,9 @@ describe("Branch coverage 100% - phase 33 relation + tsRuntime edge branches", (
     const register = jest.fn();
     jest.doMock("ts-node", () => ({ register }));
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     expect(runtime!.ensureTsRuntime()).toBe(true);
@@ -156,9 +156,9 @@ describe("Branch coverage 100% - phase 33 relation + tsRuntime edge branches", (
       throw new Error("ts-node unavailable");
     });
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-no-tsnode-"));
@@ -173,9 +173,9 @@ describe("Branch coverage 100% - phase 33 relation + tsRuntime edge branches", (
   });
 
   test("tsRuntime loads .ts directly when ts-node runtime is available", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-ok-"));

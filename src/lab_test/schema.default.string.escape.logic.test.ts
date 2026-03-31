@@ -1,6 +1,6 @@
-import { SchemaBuilder } from "../core/schema/SchemaBuilder";
-import { column, type SchemaField } from "../core/schema/SchemaBlueprint";
-import { getAdapter } from "../core/connection/ConnectionFactory";
+import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
+import { column, type SchemaField } from "../core/schema/SchemaBlueprint.js";
+import { getAdapter } from "../core/connection/ConnectionFactory.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

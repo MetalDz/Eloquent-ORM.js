@@ -8,14 +8,14 @@ jest.mock("chalk", () => {
 });
 
 const fs = require("fs") as typeof import("fs");
-const { PathMap } = require("../cli/utils/PathMap") as typeof import("../cli/utils/PathMap");
-const artifactStorage = require("../cli/utils/ArtifactStorage") as typeof import("../cli/utils/ArtifactStorage");
-const tsRuntime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
-const migrateFreshCommand = require("../cli/commands/migrateFresh") as typeof import("../cli/commands/migrateFresh");
-const dbSeedCommand = require("../cli/commands/dbSeed") as typeof import("../cli/commands/dbSeed");
-const connectionFactory = require("../core/connection/ConnectionFactory") as typeof import("../core/connection/ConnectionFactory");
+const { PathMap } = require("../cli/utils/PathMap") as typeof import("../cli/utils/PathMap.js");
+const artifactStorage = require("../cli/utils/ArtifactStorage") as typeof import("../cli/utils/ArtifactStorage.js");
+const tsRuntime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
+const migrateFreshCommand = require("../cli/commands/migrateFresh") as typeof import("../cli/commands/migrateFresh.js");
+const dbSeedCommand = require("../cli/commands/dbSeed") as typeof import("../cli/commands/dbSeed.js");
+const connectionFactory = require("../core/connection/ConnectionFactory") as typeof import("../core/connection/ConnectionFactory.js");
 const { dbSeed } = dbSeedCommand;
-const { dbSeedFresh } = require("../cli/commands/dbSeedFresh") as typeof import("../cli/commands/dbSeedFresh");
+const { dbSeedFresh } = require("../cli/commands/dbSeedFresh") as typeof import("../cli/commands/dbSeedFresh.js");
 
 describe("db seed connection env routing", () => {
   const originalDbConnection = process.env.DB_CONNECTION;

@@ -1,5 +1,5 @@
-import type { ConnectionName } from "../../core/connection/ConnectionFactory";
-import { dbConfig } from "../../config/database";
+import type { ConnectionName } from "../../core/connection/ConnectionFactory.js";
+import { dbConfig } from "../../config/database.js";
 
 export type DriverConnectionFlags = {
   mysql?: boolean;

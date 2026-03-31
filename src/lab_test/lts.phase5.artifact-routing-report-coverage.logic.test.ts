@@ -4,7 +4,7 @@ import path from "path";
 import {
   createTargetedArtifactDecision,
   summarizeSkippedArtifacts,
-} from "../cli/utils/ArtifactRoutingReport";
+} from "../cli/utils/ArtifactRoutingReport.js";
 
 describe("LTS phase 5 ArtifactRoutingReport coverage", () => {
   test("plan tracks the dedicated ArtifactRoutingReport LTS slice", () => {

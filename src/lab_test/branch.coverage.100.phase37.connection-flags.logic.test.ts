@@ -1,4 +1,4 @@
-import { resolveConnectionNamesFromFlags } from "../cli/utils/resolveConnectionFlags";
+import { resolveConnectionNamesFromFlags } from "../cli/utils/resolveConnectionFlags.js";
 
 describe("Branch coverage 100% - phase 37 connection flag resolver", () => {
   test("returns empty when no explicit flags are passed", () => {

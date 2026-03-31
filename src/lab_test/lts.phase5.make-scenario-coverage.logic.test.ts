@@ -195,7 +195,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     fs.writeFileSync(manifestPath, "{invalid json", "utf8");
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("unknown", {});
 
       expect(logSpy).toHaveBeenCalledWith("\nScenario preset: media");
@@ -249,7 +249,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     const randomSpy = jest.spyOn(Math, "random").mockReturnValue(0);
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("");
 
       expect(logSpy).toHaveBeenCalledWith("\nScenario preset: blog");
@@ -279,7 +279,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     });
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await expect(
         makeScenario("blog", { test: true, mongo: true, force: true }),
       ).rejects.toThrow(
@@ -312,7 +312,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     );
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await expect(makeScenario("media", {})).rejects.toThrow(
         'Existing app scenario "blog" is active. Re-run with --force to replace it.',
       );
@@ -343,7 +343,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     );
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await expect(
         makeScenario("media", {
           test: true,
@@ -422,7 +422,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
           }
           return originalExistsSync(target);
         });
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("media", {
         test: true,
         mongo: true,
@@ -504,7 +504,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     removeDir(ctx.migrationsRoot);
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("media", { force: true });
 
       expect(logSpy).toHaveBeenCalledWith(
@@ -561,7 +561,7 @@ describe("LTS phase 5 makeScenario coverage", () => {
     fs.writeFileSync(stalePivotMigration, "export async function up() {}\n", "utf8");
 
     try {
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("media", { test: true, force: true });
 
       expect(fs.existsSync(stalePostsMigration)).toBe(false);

@@ -1,12 +1,12 @@
 import fs from "fs";
 import crypto from "crypto";
 import path from "path";
-import { dbConfig } from "../../../config/database";
-import type { DriverAdapter } from "../../../core/connection/DriverAdapter";
+import { dbConfig } from "../../../config/database.js";
+import type { DriverAdapter } from "../../../core/connection/DriverAdapter.js";
 import {
   getMigrationLockStrategy,
   type SqlMigrationDriver,
-} from "./MigrationLockStrategy";
+} from "./MigrationLockStrategy.js";
 
 export type { SqlMigrationDriver };
 

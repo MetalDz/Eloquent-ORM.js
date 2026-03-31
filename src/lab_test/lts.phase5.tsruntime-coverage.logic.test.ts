@@ -25,9 +25,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("temp transpiled modules use workspace ts manual transpile, local js resolution, and fallback require", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-"));
@@ -69,9 +69,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("manual transpile resolves NodeNext local .js specifiers to sibling .ts source files", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-nodenext-local-"));
@@ -119,9 +119,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
         return originalReadFileSync(filePath, encoding as never);
       }) as typeof fs.readFileSync);
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-pkg-missing-"));
@@ -154,9 +154,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
         return originalReadFileSync(filePath, encoding as never);
       }) as typeof fs.readFileSync);
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-pkg-nonstr-"));
@@ -194,9 +194,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
         return originalExistsSync(candidate);
       }) as typeof fs.existsSync);
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-self-miss-"));
@@ -226,15 +226,18 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("workspace ts dependencies can self-import the renamed package root and model subpath", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const packageJson = JSON.parse(
       fs.readFileSync(path.resolve(rootDir, "package.json"), "utf8"),
     ) as { name?: string };
     const packageName = packageJson.name ?? "@alpha.consultings/eloquent-orm.js";
+    const packageIndexPath = path.resolve(rootDir, "src", "index.ts");
+    const packageModelPath = path.resolve(rootDir, "src", "Model.ts");
+    const baseModelPath = path.resolve(rootDir, "src", "core", "model", "BaseModel.ts");
     const tempRoot = fs.mkdtempSync(
       path.join(rootDir, "src", "lab_test", "support", "tsruntime-selfref-"),
     );
@@ -262,6 +265,12 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     );
 
     try {
+      runtime!.clearLoadedModuleCache(packageIndexPath);
+      runtime!.clearLoadedModuleCache(packageModelPath);
+      runtime!.clearLoadedModuleCache(baseModelPath);
+      runtime!.clearLoadedModuleCache(depFile);
+      runtime!.clearLoadedModuleCache(mainFile);
+
       const loaded = runtime!.loadModule(mainFile) as {
         loaded: { sameModel: boolean; factoryCtor: string; mongoCtor: string };
       };
@@ -272,6 +281,11 @@ describe("LTS phase 5 tsRuntime coverage", () => {
         mongoCtor: "function",
       });
     } finally {
+      runtime!.clearLoadedModuleCache(packageIndexPath);
+      runtime!.clearLoadedModuleCache(packageModelPath);
+      runtime!.clearLoadedModuleCache(baseModelPath);
+      runtime!.clearLoadedModuleCache(depFile);
+      runtime!.clearLoadedModuleCache(mainFile);
       delete require.cache[path.resolve(depFile)];
       delete require.cache[path.resolve(mainFile)];
       fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -279,9 +293,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("missing local imports fall back to Node's normal module error path", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-missing-"));
@@ -305,9 +319,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
       throw new Error("ts-node unavailable");
     });
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-dist-"));
@@ -334,9 +348,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
       throw new Error("ts-node unavailable");
     });
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-cache-"));
@@ -357,9 +371,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("cached transpiled exports can be explicitly cleared before reloading the TypeScript file", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-clear-"));
@@ -397,9 +411,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
       loaded: "mocked",
     }));
 
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     try {
@@ -412,9 +426,9 @@ describe("LTS phase 5 tsRuntime coverage", () => {
   });
 
   test("non-TypeScript modules are required directly", () => {
-    let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {
-      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
     });
 
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-js-"));

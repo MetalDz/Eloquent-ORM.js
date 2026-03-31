@@ -1,5 +1,5 @@
-import type { DriverAdapter } from "../../../core/connection/DriverAdapter";
-import { dbConfig } from "../../../config/database";
+import type { DriverAdapter } from "../../../core/connection/DriverAdapter.js";
+import { dbConfig } from "../../../config/database.js";
 
 export type SqlMigrationDriver = "mysql" | "pg" | "sqlite";
 

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { BelongsToMany } from "../core/orm/relations/BelongsToMany";
+import { BelongsToMany } from "../core/orm/relations/BelongsToMany.js";
 
 type Row = Record<string, unknown>;
 

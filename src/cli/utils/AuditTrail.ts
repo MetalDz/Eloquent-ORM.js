@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { redactSecretsInValue } from "../../core/security/SecretRedactor";
+import { redactSecretsInValue } from "../../core/security/SecretRedactor.js";
 
 export type AuditResult = "success" | "failure";
 

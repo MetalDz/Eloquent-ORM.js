@@ -1,4 +1,4 @@
-import { ModelRegistry, type ModelConstructor } from "./ModelRegistry";
+import { ModelRegistry, type ModelConstructor } from "./ModelRegistry.js";
 
 export type LifecycleEvent =
   | "creating"

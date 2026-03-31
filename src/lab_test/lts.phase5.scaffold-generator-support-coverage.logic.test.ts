@@ -12,7 +12,7 @@ jest.mock("chalk", () => ({
   },
 }));
 
-import { normalizeScaffoldModelName } from "../cli/utils/ScaffoldGeneratorSupport";
+import { normalizeScaffoldModelName } from "../cli/utils/ScaffoldGeneratorSupport.js";
 
 describe("LTS phase 5 ScaffoldGeneratorSupport coverage", () => {
   test("plan tracks the dedicated ScaffoldGeneratorSupport LTS slice", () => {

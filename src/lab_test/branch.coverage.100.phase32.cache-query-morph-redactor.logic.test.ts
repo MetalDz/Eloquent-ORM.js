@@ -1,17 +1,17 @@
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheManager } from "../core/cache/CacheManager";
-import { setupCache } from "../core/cache/setupCache";
-import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver";
-import { MemcachedCacheDriver } from "../core/cache/drivers/MemcachedCacheDriver";
-import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver";
-import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { HookStore } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
-import { MorphMany } from "../core/orm/relations/MorphMany";
-import { MorphOne } from "../core/orm/relations/MorphOne";
-import { redactSecretsInValue } from "../core/security/SecretRedactor";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { setupCache } from "../core/cache/setupCache.js";
+import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver.js";
+import { MemcachedCacheDriver } from "../core/cache/drivers/MemcachedCacheDriver.js";
+import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver.js";
+import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { HookStore } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
+import { MorphMany } from "../core/orm/relations/MorphMany.js";
+import { MorphOne } from "../core/orm/relations/MorphOne.js";
+import { redactSecretsInValue } from "../core/security/SecretRedactor.js";
 import Memcached from "memcached";
 
 jest.mock("memcached", () =>

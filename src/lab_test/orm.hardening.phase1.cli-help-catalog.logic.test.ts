@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { CLI_COMMAND_CATALOG } from "../cli/utils/CliCommandCatalog";
+import { CLI_COMMAND_CATALOG } from "../cli/utils/CliCommandCatalog.js";
 
 describe("ORM hardening phase 1 - CLI help catalog extraction", () => {
   test("plan records the extracted help catalog seam", () => {

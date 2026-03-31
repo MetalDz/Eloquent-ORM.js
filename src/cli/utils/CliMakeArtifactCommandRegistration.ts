@@ -1,12 +1,12 @@
 import type { Command } from "commander";
-import { makeSeed } from "../commands/makeSeed";
-import { makeFactory } from "../commands/makeFactory";
-import { makeScenario } from "../commands/makeScenario";
+import { makeSeed } from "../commands/makeSeed.js";
+import { makeFactory } from "../commands/makeFactory.js";
+import { makeScenario } from "../commands/makeScenario.js";
 import {
   ensureCliProductionOverride,
   ensureCliProductionTestOnly,
-} from "./CliProductionGuards";
-import { runCliAction } from "./CliActionRuntime";
+} from "./CliProductionGuards.js";
+import { runCliAction } from "./CliActionRuntime.js";
 
 export function registerCliMakeArtifactCommands(program: Command): void {
   program

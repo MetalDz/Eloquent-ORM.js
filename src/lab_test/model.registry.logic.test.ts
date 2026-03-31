@@ -1,4 +1,4 @@
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 class UserModel {}
 class PostModel {}

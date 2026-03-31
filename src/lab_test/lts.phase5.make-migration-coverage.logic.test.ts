@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 const passthroughChalk = {
   __esModule: true,
@@ -157,7 +157,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: true,
       pivotSeparate: false,
@@ -205,7 +205,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("Session", {
       test: true,
       connectionName: "mongo_soft" as never,
@@ -252,7 +252,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("Audit", {
       test: true,
       connectionName: "mongo_soft_column" as never,
@@ -294,7 +294,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("Plain", {
       test: true,
       connectionName: "mongo_noop" as never,
@@ -325,7 +325,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: false,
       pivotSeparate: true,
@@ -363,7 +363,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("Wifi", {
       test: true,
       pivotSeparate: true,
@@ -421,7 +421,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("all", {
       test: true,
       connectionName: "sql_cycle" as never,
@@ -450,7 +450,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: true,
       connectionName: "legacy_conn" as never,
@@ -483,7 +483,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: true,
       connectionName: "legacy_fallback" as never,
@@ -530,7 +530,7 @@ describe("LTS phase 5 makeMigration coverage", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: true,
       connectionName: "sql_cov" as never,

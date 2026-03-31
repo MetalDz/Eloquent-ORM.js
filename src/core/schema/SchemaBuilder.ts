@@ -8,9 +8,9 @@ import {
   RelationDefinition,
   MixinDefinition,
   validateSchema,
-} from "./SchemaBlueprint";
-import { SQLDialect, Dialect } from "./SQLDialect";
-import { dbConfig } from "../../config/database";
+} from "./SchemaBlueprint.js";
+import { SQLDialect, Dialect } from "./SQLDialect.js";
+import { dbConfig } from "../../config/database.js";
 
 export interface SchemaBuildResult {
   mainSQL: string;
@@ -156,7 +156,7 @@ export class SchemaBuilder {
 
     if (!forceCreate) {
       try {
-        const { getAdapter } = await import("../connection/ConnectionFactory");
+        const { getAdapter } = await import("../connection/ConnectionFactory.js");
         const adapter = await getAdapter(
           ((connectionNameOverride as unknown) || dialectName) as any
         );

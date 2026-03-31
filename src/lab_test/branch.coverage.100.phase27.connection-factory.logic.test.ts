@@ -19,7 +19,7 @@ describe("Branch coverage 100% - phase 27 ConnectionFactory edge closures", () =
     }));
 
     const { getConnection, closeAllConnections } = await import(
-      "../core/connection/ConnectionFactory"
+      "../core/connection/ConnectionFactory.js"
     );
 
     await getConnection("mysql_test" as never);
@@ -55,7 +55,7 @@ describe("Branch coverage 100% - phase 27 ConnectionFactory edge closures", () =
     }));
 
     const { getConnection, closeAllConnections } = await import(
-      "../core/connection/ConnectionFactory"
+      "../core/connection/ConnectionFactory.js"
     );
 
     await getConnection("pg_test" as never);

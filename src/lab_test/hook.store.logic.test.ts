@@ -1,5 +1,5 @@
-import { HookStore, type LifecycleEvent } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { HookStore, type LifecycleEvent } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 class UserModel {}
 class PostModel {}

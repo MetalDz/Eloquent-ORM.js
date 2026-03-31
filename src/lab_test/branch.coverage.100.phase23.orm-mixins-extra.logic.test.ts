@@ -1,5 +1,5 @@
-import { EagerLoadingMixin } from "../core/orm/mixins/EagerLoadingMixin";
-import { SoftDeletesMixin } from "../core/orm/mixins/SoftDeletesMixin";
+import { EagerLoadingMixin } from "../core/orm/mixins/EagerLoadingMixin.js";
+import { SoftDeletesMixin } from "../core/orm/mixins/SoftDeletesMixin.js";
 
 abstract class EmptyBase {}
 

@@ -1,14 +1,14 @@
 import type { Command } from "commander";
 import chalk from "chalk";
-import { makeMigration } from "../commands/makeMigration";
-import { migrateRun } from "../commands/migrateRun";
-import { migrateRollback } from "../commands/migrateRollback";
-import { migrateStatus } from "../commands/migrateStatus";
-import { migrateFresh } from "../commands/migrateFresh";
-import { migrateReset } from "../commands/migrateReset";
-import { resolveCliConnectionNames } from "./CliCommandTargets";
-import { runCliAction } from "./CliActionRuntime";
-import { ensureCliProductionOverride } from "./CliProductionGuards";
+import { makeMigration } from "../commands/makeMigration.js";
+import { migrateRun } from "../commands/migrateRun.js";
+import { migrateRollback } from "../commands/migrateRollback.js";
+import { migrateStatus } from "../commands/migrateStatus.js";
+import { migrateFresh } from "../commands/migrateFresh.js";
+import { migrateReset } from "../commands/migrateReset.js";
+import { resolveCliConnectionNames } from "./CliCommandTargets.js";
+import { runCliAction } from "./CliActionRuntime.js";
+import { ensureCliProductionOverride } from "./CliProductionGuards.js";
 
 export function registerCliMigrationCommands(program: Command): void {
   program

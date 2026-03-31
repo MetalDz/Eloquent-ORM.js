@@ -2,8 +2,8 @@ jest.mock("@faker-js/faker", () => ({
   faker: {},
 }));
 
-import { Factory } from "../cli/utils/factories/Factory";
-import { BaseModel } from "../core/model/BaseModel";
+import { Factory } from "../cli/utils/factories/Factory.js";
+import { BaseModel } from "../core/model/BaseModel.js";
 
 class FactoryTestModel extends BaseModel {}
 

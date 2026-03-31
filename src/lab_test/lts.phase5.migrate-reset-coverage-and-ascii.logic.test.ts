@@ -44,7 +44,7 @@ describe("LTS phase 5 migrateReset coverage and ASCII", () => {
     }));
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
-    const { migrateReset } = await import("../cli/commands/migrateReset");
+    const { migrateReset } = await import("../cli/commands/migrateReset.js");
 
     await migrateReset();
 
@@ -75,7 +75,7 @@ describe("LTS phase 5 migrateReset coverage and ASCII", () => {
     }));
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
-    const { migrateReset } = await import("../cli/commands/migrateReset");
+    const { migrateReset } = await import("../cli/commands/migrateReset.js");
 
     await migrateReset({
       test: true,

@@ -1,4 +1,4 @@
-import { BaseModel } from "../core/model/BaseModel";
+import { BaseModel } from "../core/model/BaseModel.js";
 
 type Row = Record<string, unknown>;
 

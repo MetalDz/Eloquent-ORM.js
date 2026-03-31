@@ -3,7 +3,7 @@ import {
   resolveMysqlEnv,
   resolvePgEnv,
   resolveSqlitePath,
-} from "../config/dbRoleEnv";
+} from "../config/dbRoleEnv.js";
 
 describe("DB user role separation env contract", () => {
   test("defaults to runtime role", () => {

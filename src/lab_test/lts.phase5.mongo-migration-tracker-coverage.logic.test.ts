@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { acquireMigrationLock } from "../cli/utils/migrations/MongoMigrationTracker";
+import { acquireMigrationLock } from "../cli/utils/migrations/MongoMigrationTracker.js";
 import {
   deleteAppliedMigration,
   ensureMigrationCollection,
@@ -10,7 +10,7 @@ import {
   recordAppliedMigration,
   releaseMigrationLock,
   validateMigrationHistory,
-} from "../cli/utils/migrations/MongoMigrationTracker";
+} from "../cli/utils/migrations/MongoMigrationTracker.js";
 
 type SortSpec = Record<string, 1 | -1>;
 

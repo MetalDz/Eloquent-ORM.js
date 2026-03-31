@@ -2,7 +2,7 @@ import {
   redactSecretsInArgs,
   redactSecretsInText,
   redactSecretsInValue,
-} from "../core/security/SecretRedactor";
+} from "../core/security/SecretRedactor.js";
 
 describe("CLI/core secret redaction", () => {
   test("redacts key/value secret patterns in text", () => {

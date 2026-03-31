@@ -1,5 +1,5 @@
 // src/core/cache/drivers/FileCacheDriver.ts
-import { CacheDriver } from "../CacheDriver";
+import { CacheDriver } from "../CacheDriver.js";
 import fs from "fs/promises";
 import path from "path";
 

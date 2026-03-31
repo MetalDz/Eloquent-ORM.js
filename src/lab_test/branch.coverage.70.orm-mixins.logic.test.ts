@@ -1,22 +1,22 @@
-import { BaseModel, SqlModel } from "../core/model/BaseModel";
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheManager } from "../core/cache/CacheManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { getAdapter } from "../core/connection/ConnectionFactory";
-import { CastsMixin } from "../core/orm/mixins/CastsMixin";
+import { BaseModel, SqlModel } from "../core/model/BaseModel.js";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { getAdapter } from "../core/connection/ConnectionFactory.js";
+import { CastsMixin } from "../core/orm/mixins/CastsMixin.js";
 import {
   EagerLoadingMixin,
   type RelationDefinition,
-} from "../core/orm/mixins/EagerLoadingMixin";
-import { MorphRegistry } from "../core/orm/mixins/MorphRegistry";
-import { MorphableMixin } from "../core/orm/mixins/MorphableMixin";
-import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin";
-import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin";
-import { ScopeMixin } from "../core/orm/mixins/ScopeMixin";
-import { SoftDeletesMixin } from "../core/orm/mixins/SoftDeletesMixin";
-import { HookStore } from "../core/orm/mixins/utils/HookStore";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+} from "../core/orm/mixins/EagerLoadingMixin.js";
+import { MorphRegistry } from "../core/orm/mixins/MorphRegistry.js";
+import { MorphableMixin } from "../core/orm/mixins/MorphableMixin.js";
+import { PivotHelperMixin } from "../core/orm/mixins/PivotHelperMixin.js";
+import { QueryCacheMixin } from "../core/orm/mixins/QueryCacheMixin.js";
+import { ScopeMixin } from "../core/orm/mixins/ScopeMixin.js";
+import { SoftDeletesMixin } from "../core/orm/mixins/SoftDeletesMixin.js";
+import { HookStore } from "../core/orm/mixins/utils/HookStore.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

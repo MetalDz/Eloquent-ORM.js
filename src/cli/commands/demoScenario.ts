@@ -6,13 +6,13 @@ import {
   getAdapter,
   getConnection,
   type ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { dbConfig } from "../../config/database";
-import { PathMap } from "../utils/PathMap";
-import { loadModule } from "../utils/typescript/tsRuntime";
+} from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { dbConfig } from "../../config/database.js";
+import { PathMap } from "../utils/PathMap.js";
+import { loadModule } from "../utils/typescript/tsRuntime.js";
 import type { Collection, Db, Document, Filter } from "mongodb";
-import { resolveScenarioMorphAliases } from "../utils/ScenarioMorphAliasRouting";
+import { resolveScenarioMorphAliases } from "../utils/ScenarioMorphAliasRouting.js";
 
 type Row = Record<string, unknown>;
 

@@ -1,6 +1,6 @@
-import { Relation, type CoreModelClass, type RelationModel } from "../Relation";
-import type { DriverAdapter } from "../../connection/DriverAdapter";
-import { MorphRegistry } from "../mixins/MorphRegistry";
+import { Relation, type CoreModelClass, type RelationModel } from "../Relation.js";
+import type { DriverAdapter } from "../../connection/DriverAdapter.js";
+import { MorphRegistry } from "../mixins/MorphRegistry.js";
 
 export class MorphTo extends Relation {
   protected morphType: string;

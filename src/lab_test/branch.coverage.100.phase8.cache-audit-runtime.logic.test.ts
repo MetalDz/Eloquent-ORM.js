@@ -1,16 +1,16 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { cacheClear } from "../cli/commands/cacheClear";
+import { cacheClear } from "../cli/commands/cacheClear.js";
 import {
   appendAuditEvent,
   isAuditEnabled,
   resolveAuditActor,
   resolveAuditPath,
-} from "../cli/utils/AuditTrail";
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
+} from "../cli/utils/AuditTrail.js";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
 
 describe("Branch coverage 100% - phase 8 cache/audit/runtime branches", () => {
   const originalEloquentModels = (global as { EloquentModels?: unknown }).EloquentModels;
@@ -152,7 +152,7 @@ describe("Branch coverage 100% - phase 8 cache/audit/runtime branches", () => {
     jest.isolateModules(() => {
       const register = jest.fn();
       jest.doMock("ts-node", () => ({ register }));
-      const runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+      const runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
 
       expect(runtime.ensureTsRuntime()).toBe(true);
       expect(runtime.ensureTsRuntime()).toBe(true);

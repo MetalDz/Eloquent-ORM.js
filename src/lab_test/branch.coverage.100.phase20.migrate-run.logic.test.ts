@@ -1,13 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { migrateRun } from "../cli/commands/migrateRun";
-import { PathMap } from "../cli/utils/PathMap";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+import { dbConfig } from "../config/database.js";
+import { migrateRun } from "../cli/commands/migrateRun.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 import {
   closeAllConnections,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
+} from "../core/connection/ConnectionFactory.js";
 import {
   acquireMigrationLock,
   computeMigrationChecksum,
@@ -16,9 +16,9 @@ import {
   recordAppliedMigration,
   releaseMigrationLock,
   validateMigrationHistory,
-} from "../cli/utils/migrations/MigrationTracker";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
-import { appendAuditEvent } from "../cli/utils/AuditTrail";
+} from "../cli/utils/migrations/MigrationTracker.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
+import { appendAuditEvent } from "../cli/utils/AuditTrail.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

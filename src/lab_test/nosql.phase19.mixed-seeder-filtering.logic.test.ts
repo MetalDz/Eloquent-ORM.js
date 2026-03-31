@@ -16,10 +16,10 @@ import {
   matchesTargetStorageKind,
   resolveFactoryStorageKindFromFile,
   resolveSeederStorageKindFromFile,
-} from "../cli/utils/ArtifactStorage";
-import { dbSeed } from "../cli/commands/dbSeed";
-import { PathMap } from "../cli/utils/PathMap";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
+} from "../cli/utils/ArtifactStorage.js";
+import { dbSeed } from "../cli/commands/dbSeed.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
 
 describe("NoSQL phase 19 mixed seeder filtering", () => {
   beforeEach(() => {

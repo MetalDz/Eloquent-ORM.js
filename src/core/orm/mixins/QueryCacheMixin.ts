@@ -1,10 +1,10 @@
 import * as crypto from "crypto";
-import { CacheManager } from "../../cache/CacheManager";
-import { CacheRegistry } from "../../cache/CacheRegistry";
-import { CacheFallbackManager } from "../../cache/CacheFallbackManager";
-import { CacheAnalytics } from "../../cache/CacheAnalytics";
-import { HookStore, type LifecycleEvent } from "./utils/HookStore";
-import { ModelRegistry, type ModelConstructor } from "./utils/ModelRegistry";
+import { CacheManager } from "../../cache/CacheManager.js";
+import { CacheRegistry } from "../../cache/CacheRegistry.js";
+import { CacheFallbackManager } from "../../cache/CacheFallbackManager.js";
+import { CacheAnalytics } from "../../cache/CacheAnalytics.js";
+import { HookStore, type LifecycleEvent } from "./utils/HookStore.js";
+import { ModelRegistry, type ModelConstructor } from "./utils/ModelRegistry.js";
 
 export type CacheOptions = { enabled: boolean; ttl: number };
 

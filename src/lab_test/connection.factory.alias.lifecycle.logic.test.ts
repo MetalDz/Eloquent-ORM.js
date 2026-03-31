@@ -15,7 +15,7 @@
     }));
 
     const { getConnection, closeAllConnections } = await import(
-      "../core/connection/ConnectionFactory"
+      "../core/connection/ConnectionFactory.js"
     );
 
     await getConnection("mysql_test" as never);

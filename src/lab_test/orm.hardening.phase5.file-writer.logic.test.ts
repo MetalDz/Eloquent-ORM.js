@@ -13,7 +13,7 @@ jest.mock("chalk", () => ({
   },
 }));
 
-import { overwriteFile, writeFileSafe } from "../cli/utils/fileWriter";
+import { overwriteFile, writeFileSafe } from "../cli/utils/fileWriter.js";
 
 describe("ORM hardening phase 5 fileWriter operations", () => {
   const tempDirs: string[] = [];

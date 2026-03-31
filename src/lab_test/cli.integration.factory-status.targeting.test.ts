@@ -1,8 +1,8 @@
-import { assertCliSuccess, runCli } from "./support/cli.integration.harness";
+import { assertCliSuccess, runCli } from "./support/cli.integration.harness.js";
 import {
   describeIfBuiltOnly,
   registerConnectionFixtureLifecycle,
-} from "./support/cli.integration.connection.shared";
+} from "./support/cli.integration.connection.shared.js";
 
 describeIfBuiltOnly("CLI integration: factory:status targeting", () => {
   registerConnectionFixtureLifecycle();

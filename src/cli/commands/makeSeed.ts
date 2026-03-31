@@ -1,9 +1,9 @@
 import path from "path";
 import chalk from "chalk";
-import { TemplateEngine } from "../utils/TemplateEngine";
-import { PathMap } from "../utils/PathMap";
-import { ImportResolver } from "../utils/ImportResolver";
-import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
+import { TemplateEngine } from "../utils/TemplateEngine.js";
+import { PathMap } from "../utils/PathMap.js";
+import { ImportResolver } from "../utils/ImportResolver.js";
+import { overwriteFile, writeFileSafe } from "../utils/fileWriter.js";
 
 /**
  * makeSeed

@@ -7,12 +7,12 @@ import chalk from "chalk";
 import type {
   RelationDefinition,
   SchemaField,
-} from "../../../core/schema/SchemaBlueprint";
+} from "../../../core/schema/SchemaBlueprint.js";
 import {
   FACTORY_GRAPH_HEADER,
   getFactoryRelationArrow,
-} from "./FactoryDisplay";
-import { FactoryRegistry } from "./FactoryRegistry";
+} from "./FactoryDisplay.js";
+import { FactoryRegistry } from "./FactoryRegistry.js";
 
 function hasSchema<T extends { schema?: Record<string, SchemaField> }>(
   modelCtor: unknown

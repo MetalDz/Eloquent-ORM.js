@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import type { ConnectionName } from "../core/connection/ConnectionFactory";
+import type { ConnectionName } from "../core/connection/ConnectionFactory.js";
 
 const passthroughChalk = {
   __esModule: true,
@@ -173,7 +173,7 @@ async function setupMigrateRunHarness(options: MigrateRunHarnessOptions = {}) {
     appendAuditEvent,
   }));
 
-  const migrateRunModule = await import("../cli/commands/migrateRun");
+  const migrateRunModule = await import("../cli/commands/migrateRun.js");
 
   return {
     root,

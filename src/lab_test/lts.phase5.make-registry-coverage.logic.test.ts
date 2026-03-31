@@ -25,11 +25,11 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { makeRegistry } from "../cli/commands/makeRegistry";
-import { PathMap } from "../cli/utils/PathMap";
-import { ImportResolver } from "../cli/utils/ImportResolver";
-import { TemplateEngine } from "../cli/utils/TemplateEngine";
-import { overwriteFile, writeFileSafe } from "../cli/utils/fileWriter";
+import { makeRegistry } from "../cli/commands/makeRegistry.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { ImportResolver } from "../cli/utils/ImportResolver.js";
+import { TemplateEngine } from "../cli/utils/TemplateEngine.js";
+import { overwriteFile, writeFileSafe } from "../cli/utils/fileWriter.js";
 
 const mockedTemplateEngine = TemplateEngine as jest.Mocked<typeof TemplateEngine>;
 const mockedWriteFileSafe = writeFileSafe as jest.MockedFunction<typeof writeFileSafe>;

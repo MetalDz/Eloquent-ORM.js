@@ -12,7 +12,7 @@ jest.mock("chalk", () => ({
   },
 }));
 
-import { writeFileSafe } from "../cli/utils/fileWriter";
+import { writeFileSafe } from "../cli/utils/fileWriter.js";
 
 describe("LTS phase 5 fileWriter coverage", () => {
   afterEach(() => {

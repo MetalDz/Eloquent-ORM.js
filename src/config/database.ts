@@ -5,7 +5,7 @@ import {
   resolveMongoEnv,
   resolvePgEnv,
   resolveSqlitePath,
-} from "./dbRoleEnv";
+} from "./dbRoleEnv.js";
 
 dotenv.config();
 

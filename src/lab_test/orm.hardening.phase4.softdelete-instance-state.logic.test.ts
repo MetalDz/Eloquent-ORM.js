@@ -1,7 +1,7 @@
-import { BaseModel } from "../core/model/BaseModel";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
-import { column, validate } from "../core/schema/SchemaBlueprint";
+import { BaseModel } from "../core/model/BaseModel.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
+import { column, validate } from "../core/schema/SchemaBlueprint.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

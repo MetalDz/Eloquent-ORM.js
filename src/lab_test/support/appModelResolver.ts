@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { loadModule } from "../../cli/utils/typescript/tsRuntime";
+import { loadModule } from "../../cli/utils/typescript/tsRuntime.js";
 
 type ResolveOptions = {
   preferFixture?: boolean;

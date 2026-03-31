@@ -5,7 +5,7 @@ import {
   isCliTestArgv,
   resolveCliRequestedStorageKind,
   shouldAutoLoadFactoriesForCli,
-} from "../cli/utils/CliBootstrapSupport";
+} from "../cli/utils/CliBootstrapSupport.js";
 
 describe("ORM hardening phase 1 CLI bootstrap extraction", () => {
   const rootDir = process.cwd();

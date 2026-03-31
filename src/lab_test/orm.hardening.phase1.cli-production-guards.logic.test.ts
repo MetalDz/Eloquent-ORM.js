@@ -3,7 +3,7 @@ import path from "path";
 import {
   ensureCliProductionOverride,
   ensureCliProductionTestOnly,
-} from "../cli/utils/CliProductionGuards";
+} from "../cli/utils/CliProductionGuards.js";
 
 describe("ORM hardening phase 1 CLI production guards extraction", () => {
   const rootDir = process.cwd();

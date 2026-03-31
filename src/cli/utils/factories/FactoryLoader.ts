@@ -1,6 +1,6 @@
 import chalk from "chalk";
-import { FactoryRegistry } from "./FactoryRegistry";
-import type { StorageKind } from "../ArtifactStorage";
+import { FactoryRegistry } from "./FactoryRegistry.js";
+import type { StorageKind } from "../ArtifactStorage.js";
 
 /**
  *  FactoryLoader

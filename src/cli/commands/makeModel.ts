@@ -2,20 +2,20 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { SchemaBuilder } from "../../core/schema/SchemaBuilder";
-import { PathMap } from "../utils/PathMap";
-import { TemplateEngine } from "../utils/TemplateEngine";
-import { ImportResolver } from "../utils/ImportResolver";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler";
-import { closeAllConnections } from "../../core/connection/ConnectionFactory";
-import { dbConfig } from "../../config/database";
-import { loadModule } from "../utils/typescript/tsRuntime";
-import { makeMigration } from "./makeMigration";
+import { SchemaBuilder } from "../../core/schema/SchemaBuilder.js";
+import { PathMap } from "../utils/PathMap.js";
+import { TemplateEngine } from "../utils/TemplateEngine.js";
+import { ImportResolver } from "../utils/ImportResolver.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler.js";
+import { closeAllConnections } from "../../core/connection/ConnectionFactory.js";
+import { dbConfig } from "../../config/database.js";
+import { loadModule } from "../utils/typescript/tsRuntime.js";
+import { makeMigration } from "./makeMigration.js";
 import type {
   SchemaField,
   ColumnDefinition,
-} from "../../core/schema/SchemaBlueprint";
+} from "../../core/schema/SchemaBlueprint.js";
 
 interface ModelOptions {
   test?: boolean;

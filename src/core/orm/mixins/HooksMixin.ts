@@ -1,6 +1,6 @@
-import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
-import { HookStore } from "./utils/HookStore";
-import { ModelRegistry, type ModelConstructor } from "./utils/ModelRegistry";
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver.js";
+import { HookStore } from "./utils/HookStore.js";
+import { ModelRegistry, type ModelConstructor } from "./utils/ModelRegistry.js";
 
 export type LifecycleEvent =
   | "creating"

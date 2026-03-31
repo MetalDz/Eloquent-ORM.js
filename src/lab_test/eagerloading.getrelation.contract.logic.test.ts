@@ -1,4 +1,4 @@
-import { EagerLoadingMixin, type RelationDefinition } from "../core/orm/mixins/EagerLoadingMixin";
+import { EagerLoadingMixin, type RelationDefinition } from "../core/orm/mixins/EagerLoadingMixin.js";
 
 abstract class EmptyBase {}
 

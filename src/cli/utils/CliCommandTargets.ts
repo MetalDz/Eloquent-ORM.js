@@ -1,9 +1,9 @@
-import type { ConnectionName } from "../../core/connection/ConnectionFactory";
+import type { ConnectionName } from "../../core/connection/ConnectionFactory.js";
 import {
   resolveConnectionNamesFromFlags,
   type DriverConnectionFlags,
   type ResolveConnectionFlagsOptions,
-} from "./resolveConnectionFlags";
+} from "./resolveConnectionFlags.js";
 
 export type CliConnectionTargetOptions = Partial<DriverConnectionFlags> & {
   test?: boolean;

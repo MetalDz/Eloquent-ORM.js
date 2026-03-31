@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { readCoverageSummaryForContractTests } from "./support/coverageSummary";
+import { readCoverageSummaryForContractTests } from "./support/coverageSummary.js";
 
 describe("Branch coverage 70% plan contract", () => {
   const rootDir = process.cwd();

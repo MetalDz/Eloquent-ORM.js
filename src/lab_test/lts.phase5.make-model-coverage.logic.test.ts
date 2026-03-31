@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { column } from "../core/schema/SchemaBlueprint";
+import { dbConfig } from "../config/database.js";
+import { column } from "../core/schema/SchemaBlueprint.js";
 
 describe("LTS phase 5 makeModel coverage", () => {
   const passthroughChalk = {
@@ -128,7 +128,7 @@ describe("LTS phase 5 makeModel coverage", () => {
     }));
 
     try {
-      const { makeModel } = await import("../cli/commands/makeModel");
+      const { makeModel } = await import("../cli/commands/makeModel.js");
 
       await makeModel("GeoPhoto", {
         test: true,
@@ -251,7 +251,7 @@ describe("LTS phase 5 makeModel coverage", () => {
     }));
 
     try {
-      const { makeModel } = await import("../cli/commands/makeModel");
+      const { makeModel } = await import("../cli/commands/makeModel.js");
 
       await makeModel("PostAudit", {
         test: true,

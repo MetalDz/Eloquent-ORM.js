@@ -1,14 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { dbSeed } from "../cli/commands/dbSeed";
-import { demoScenario } from "../cli/commands/demoScenario";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
-import * as connectionFactory from "../core/connection/ConnectionFactory";
-import * as resolveConnectionModule from "../core/connection/resolveConnectionName";
-import * as artifactStorage from "../cli/utils/ArtifactStorage";
-import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry";
-import { MongoModel, SqlModel } from "../core/model/BaseModel";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { dbSeed } from "../cli/commands/dbSeed.js";
+import { demoScenario } from "../cli/commands/demoScenario.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
+import * as connectionFactory from "../core/connection/ConnectionFactory.js";
+import * as resolveConnectionModule from "../core/connection/resolveConnectionName.js";
+import * as artifactStorage from "../cli/utils/ArtifactStorage.js";
+import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry.js";
+import { MongoModel, SqlModel } from "../core/model/BaseModel.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

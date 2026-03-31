@@ -4,7 +4,7 @@ import path from "path";
 import {
   buildMongoPrimaryFilter,
   getOriginalPrimaryKeyValue,
-} from "../core/model/CoreModelPersistenceState";
+} from "../core/model/CoreModelPersistenceState.js";
 
 describe("LTS phase 5 CoreModelPersistenceState coverage", () => {
   test("plan tracks the dedicated CoreModelPersistenceState coverage slice", () => {

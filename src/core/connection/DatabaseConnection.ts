@@ -2,11 +2,11 @@ import { Pool } from "mysql2/promise";
 import { Client as PgClient } from "pg";
 import { MongoClient, Db } from "mongodb";
 import dns from "dns";
-import { dbConfig } from "../../config/database";
+import { dbConfig } from "../../config/database.js";
 import {
   BetterSqliteConnection,
   SQLiteConnectionLike,
-} from "./BetterSqliteConnection";
+} from "./BetterSqliteConnection.js";
 
 /* ----------------------------------------------------------
  * 1. Type Declarations for Configurations

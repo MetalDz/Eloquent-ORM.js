@@ -4,8 +4,8 @@
  * âœ… Type-safe, constructor-compliant, and works with SQL & Mongo drivers
  */
 
-import type { DriverAdapter } from "../../connection/DriverAdapter";
-import { dbConfig } from "../../../config/database";
+import type { DriverAdapter } from "../../connection/DriverAdapter.js";
+import { dbConfig } from "../../../config/database.js";
 
 export interface DatabaseConnection {
   collection?(name: string): {

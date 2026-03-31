@@ -1,20 +1,20 @@
 import fs from "fs";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { PathMap } from "../cli/utils/PathMap";
+import { dbConfig } from "../config/database.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 import {
   assertSeedBootstrapPrecheck,
   printSeedBootstrapPrecheck,
   runSeedBootstrapPrecheck,
-} from "../cli/utils/SeedBootstrapPrecheck";
+} from "../cli/utils/SeedBootstrapPrecheck.js";
 import {
   closeAllConnections,
   getConnection,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
-import { resolveConnectionName as resolveSeedConnectionName } from "../core/connection/resolveConnectionName";
+} from "../core/connection/ConnectionFactory.js";
+import { resolveConnectionName as resolveSeedConnectionName } from "../core/connection/resolveConnectionName.js";
 const { resolveConnectionName: resolveConnectionNameActual } =
-  jest.requireActual("../core/connection/resolveConnectionName") as typeof import("../core/connection/resolveConnectionName");
+  jest.requireActual("../core/connection/resolveConnectionName") as typeof import("../core/connection/resolveConnectionName.js");
 
 jest.mock("chalk", () => ({
   __esModule: true,

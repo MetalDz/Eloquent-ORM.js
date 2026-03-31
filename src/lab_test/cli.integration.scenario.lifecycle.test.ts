@@ -13,7 +13,7 @@ import {
   testMigrationsDir,
   testRootDir,
   testSeedsDir,
-} from "./support/cli.integration.harness";
+} from "./support/cli.integration.harness.js";
 
 describeIfTestDbAndBuild("CLI integration: migrations + seed + scenario", () => {
   let testRootBackupDir: string | null = null;

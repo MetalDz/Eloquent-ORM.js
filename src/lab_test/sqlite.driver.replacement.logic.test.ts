@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { getConnection, closeAllConnections } from "../core/connection/ConnectionFactory";
-import { dbConfig } from "../config/database";
+import { getConnection, closeAllConnections } from "../core/connection/ConnectionFactory.js";
+import { dbConfig } from "../config/database.js";
 
 describe("SQLite driver replacement", () => {
   const sqliteConfig = dbConfig.connections.sqlite_test as {

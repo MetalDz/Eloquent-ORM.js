@@ -26,6 +26,7 @@ describe("NodeNext config and build split", () => {
     ) as {
       scripts?: Record<string, string>;
     };
+    const jestConfigSource = fs.readFileSync(path.resolve(cwd, "jest.config.cjs"), "utf8");
     const baseConfig = JSON.parse(
       fs.readFileSync(path.resolve(cwd, "tsconfig.base.json"), "utf8"),
     ) as {
@@ -55,5 +56,6 @@ describe("NodeNext config and build split", () => {
     expect(nodeNextConfig.compilerOptions?.module).toBe("NodeNext");
     expect(nodeNextConfig.compilerOptions?.moduleResolution).toBe("NodeNext");
     expect(nodeNextConfig.compilerOptions?.noEmit).toBe(true);
+    expect(jestConfigSource).toContain('"^(\\\\.{1,2}/.*)\\\\.js$": "$1"');
   });
 });

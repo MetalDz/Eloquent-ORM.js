@@ -1,5 +1,5 @@
-import { BaseModel, MorphRegistry } from "../core/model/BaseModel";
-import { MorphableMixin } from "../core/orm/mixins/MorphableMixin";
+import { BaseModel, MorphRegistry } from "../core/model/BaseModel.js";
+import { MorphableMixin } from "../core/orm/mixins/MorphableMixin.js";
 
 type Row = Record<string, unknown>;
 

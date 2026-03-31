@@ -1,11 +1,11 @@
 import {
   checkProductionDestructiveCommand,
   checkProductionTestOnlyCommand,
-} from "./ProductionSafety";
+} from "./ProductionSafety.js";
 import {
   defaultCliActionErrorRenderer,
   type CliActionErrorRenderer,
-} from "./CliActionRuntime";
+} from "./CliActionRuntime.js";
 
 export type CliProductionOverrideOptions = {
   force?: boolean;

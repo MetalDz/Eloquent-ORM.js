@@ -93,7 +93,7 @@ describe("LTS phase 5 demoScenario coverage", () => {
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
 
-    const { demoScenario } = await import("../cli/commands/demoScenario");
+    const { demoScenario } = await import("../cli/commands/demoScenario.js");
     await demoScenario({
       connectionName: "sqlite",
       user: 42,
@@ -170,7 +170,7 @@ describe("LTS phase 5 demoScenario coverage", () => {
       })),
     }));
 
-    const { demoScenario } = await import("../cli/commands/demoScenario");
+    const { demoScenario } = await import("../cli/commands/demoScenario.js");
     await demoScenario({
       connectionName: "mysql",
       random: true,
@@ -246,7 +246,7 @@ describe("LTS phase 5 demoScenario coverage", () => {
       })),
     }));
 
-    const { demoScenario } = await import("../cli/commands/demoScenario");
+    const { demoScenario } = await import("../cli/commands/demoScenario.js");
     await demoScenario({
       connectionName: "pg",
       random: true,
@@ -296,7 +296,7 @@ describe("LTS phase 5 demoScenario coverage", () => {
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const { demoScenario } = await import("../cli/commands/demoScenario");
+    const { demoScenario } = await import("../cli/commands/demoScenario.js");
     await demoScenario({
       connectionName: "sqlite",
     });
@@ -383,7 +383,7 @@ describe("LTS phase 5 demoScenario coverage", () => {
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
 
-    const { demoScenario } = await import("../cli/commands/demoScenario");
+    const { demoScenario } = await import("../cli/commands/demoScenario.js");
     await demoScenario({
       connectionName: "mongo",
       random: true,
@@ -459,7 +459,7 @@ describe("LTS phase 5 demoScenario coverage", () => {
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
 
-    const { demoScenario } = await import("../cli/commands/demoScenario");
+    const { demoScenario } = await import("../cli/commands/demoScenario.js");
     await demoScenario({
       connectionName: "mongo",
       random: true,

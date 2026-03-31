@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { describeArtifactCompatibilityMismatch } from "../cli/utils/ArtifactCompatibility";
+import { describeArtifactCompatibilityMismatch } from "../cli/utils/ArtifactCompatibility.js";
 
 describe("LTS phase 5 ArtifactCompatibility coverage", () => {
   test("plan tracks the dedicated ArtifactCompatibility coverage slice", () => {

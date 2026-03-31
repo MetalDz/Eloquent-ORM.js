@@ -1,9 +1,9 @@
-import { cacheClear } from "../cli/commands/cacheClear";
-import { cacheStats } from "../cli/commands/cacheStats";
-import { CacheManager } from "../core/cache/CacheManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
+import { cacheClear } from "../cli/commands/cacheClear.js";
+import { cacheStats } from "../cli/commands/cacheStats.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
 
 describe("Milestone 1: cache command logic", () => {
   const originalAppEnv = process.env.APP_ENV;

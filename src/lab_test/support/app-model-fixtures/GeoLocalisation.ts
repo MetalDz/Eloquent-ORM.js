@@ -1,5 +1,5 @@
-import { MongoModel, ModelInstance } from "../../../core/model/BaseModel";
-import { column, validate } from "../../../core/schema/SchemaBlueprint";
+import { MongoModel, ModelInstance } from "../../../core/model/BaseModel.js";
+import { column, validate } from "../../../core/schema/SchemaBlueprint.js";
 
 type GeoLocalisationAttrs = {
   id?: number | string;

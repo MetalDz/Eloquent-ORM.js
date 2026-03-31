@@ -1,14 +1,14 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { cacheClear } from "../cli/commands/cacheClear";
-import { cacheStats } from "../cli/commands/cacheStats";
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheManager } from "../core/cache/CacheManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver";
-import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver";
+import { cacheClear } from "../cli/commands/cacheClear.js";
+import { cacheStats } from "../cli/commands/cacheStats.js";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver.js";
+import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver.js";
 
 describe("Branch coverage 100% - phase 34 cache edge branches", () => {
   beforeEach(() => {
@@ -66,7 +66,7 @@ describe("Branch coverage 100% - phase 34 cache edge branches", () => {
       };
     });
 
-    const { MemcachedCacheDriver } = require("../core/cache/drivers/MemcachedCacheDriver") as typeof import("../core/cache/drivers/MemcachedCacheDriver");
+    const { MemcachedCacheDriver } = require("../core/cache/drivers/MemcachedCacheDriver") as typeof import("../core/cache/drivers/MemcachedCacheDriver.js");
     const driver = new MemcachedCacheDriver();
 
     await expect(driver.set("phase34:mem", { x: 1 })).resolves.toBeUndefined();

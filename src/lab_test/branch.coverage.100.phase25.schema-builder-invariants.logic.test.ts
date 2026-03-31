@@ -1,6 +1,6 @@
-import { dbConfig } from "../config/database";
-import { SchemaBuilder } from "../core/schema/SchemaBuilder";
-import { column, mixin, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { dbConfig } from "../config/database.js";
+import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
+import { column, mixin, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 25 SchemaBuilder invariant branches", () => {
   const originalDefault = dbConfig.default;

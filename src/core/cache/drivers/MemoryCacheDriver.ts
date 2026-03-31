@@ -1,5 +1,5 @@
 // src/core/cache/drivers/MemoryCacheDriver.ts
-import { CacheDriver } from "../CacheDriver";
+import { CacheDriver } from "../CacheDriver.js";
 
 interface Entry<T = any> {
   value: T;

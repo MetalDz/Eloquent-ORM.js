@@ -1,10 +1,10 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { demoScenario } from "../cli/commands/demoScenario";
-import * as connectionFactory from "../core/connection/ConnectionFactory";
-import { PathMap } from "../cli/utils/PathMap";
+import { dbConfig } from "../config/database.js";
+import { demoScenario } from "../cli/commands/demoScenario.js";
+import * as connectionFactory from "../core/connection/ConnectionFactory.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

@@ -1,11 +1,11 @@
 import fs from "fs";
-import { dbSeed } from "../cli/commands/dbSeed";
-import { PathMap } from "../cli/utils/PathMap";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
-import { closeAllConnections } from "../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
-import { appendAuditEvent } from "../cli/utils/AuditTrail";
-import * as artifactStorage from "../cli/utils/ArtifactStorage";
+import { dbSeed } from "../cli/commands/dbSeed.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
+import { closeAllConnections } from "../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
+import { appendAuditEvent } from "../cli/utils/AuditTrail.js";
+import * as artifactStorage from "../cli/utils/ArtifactStorage.js";
 
 jest.mock("chalk", () => {
   const passthrough = (value: unknown): string => String(value ?? "");

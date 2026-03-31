@@ -101,6 +101,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Typecheck NodeNext
+        run: npm run typecheck:nodenext
+
       - name: Build
         run: npm run build
 

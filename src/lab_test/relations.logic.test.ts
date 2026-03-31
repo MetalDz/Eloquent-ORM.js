@@ -1,13 +1,13 @@
-import { BelongsTo } from "../core/orm/relations/BelongsTo";
-import { HasMany } from "../core/orm/relations/HasMany";
-import { HasOne } from "../core/orm/relations/HasOne";
-import { BelongsToMany } from "../core/orm/relations/BelongsToMany";
-import { MorphTo } from "../core/orm/relations/MorphTo";
-import { MorphMany } from "../core/orm/relations/MorphMany";
-import { MorphOne } from "../core/orm/relations/MorphOne";
-import { MorphRegistry } from "../core/orm/mixins/MorphRegistry";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import type { CoreModelClass } from "../core/orm/Relation";
+import { BelongsTo } from "../core/orm/relations/BelongsTo.js";
+import { HasMany } from "../core/orm/relations/HasMany.js";
+import { HasOne } from "../core/orm/relations/HasOne.js";
+import { BelongsToMany } from "../core/orm/relations/BelongsToMany.js";
+import { MorphTo } from "../core/orm/relations/MorphTo.js";
+import { MorphMany } from "../core/orm/relations/MorphMany.js";
+import { MorphOne } from "../core/orm/relations/MorphOne.js";
+import { MorphRegistry } from "../core/orm/mixins/MorphRegistry.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import type { CoreModelClass } from "../core/orm/Relation.js";
 
 type Row = Record<string, unknown>;
 

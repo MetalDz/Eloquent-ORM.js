@@ -1,4 +1,4 @@
-import { createAdapter } from "../core/connection/DriverAdapter";
+import { createAdapter } from "../core/connection/DriverAdapter.js";
 
 describe("DriverAdapter parity", () => {
   test("mysql adapter uses question-mark placeholders and mysql query semantics", async () => {

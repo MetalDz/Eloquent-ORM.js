@@ -1,9 +1,9 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { resolveScenarioMorphAliases } from "../cli/utils/ScenarioMorphAliasRouting";
-import { dbConfig } from "../config/database";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { resolveScenarioMorphAliases } from "../cli/utils/ScenarioMorphAliasRouting.js";
+import { dbConfig } from "../config/database.js";
 
 describe("ORM hardening phase 2 - scenario morph alias targeting", () => {
   const originalConnections = dbConfig.connections;

@@ -2,14 +2,14 @@ import fs from "fs";
 import fsp from "fs/promises";
 import os from "os";
 import path from "path";
-import { CacheDriver } from "../core/cache/CacheDriver";
-import { CacheFallbackManager } from "../core/cache/CacheFallbackManager";
-import { CacheRegistry } from "../core/cache/CacheRegistry";
-import { CacheAnalytics } from "../core/cache/CacheAnalytics";
-import { CacheManager } from "../core/cache/CacheManager";
-import { setupCache } from "../core/cache/setupCache";
-import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver";
-import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver";
+import { CacheDriver } from "../core/cache/CacheDriver.js";
+import { CacheFallbackManager } from "../core/cache/CacheFallbackManager.js";
+import { CacheRegistry } from "../core/cache/CacheRegistry.js";
+import { CacheAnalytics } from "../core/cache/CacheAnalytics.js";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { setupCache } from "../core/cache/setupCache.js";
+import { FileCacheDriver } from "../core/cache/drivers/FileCacheDriver.js";
+import { MemoryCacheDriver } from "../core/cache/drivers/MemoryCacheDriver.js";
 
 type DriverLike = CacheDriver & {
   close?: () => Promise<void> | void;

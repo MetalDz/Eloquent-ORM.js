@@ -35,9 +35,9 @@ describe("ORM hardening phase 3 tsRuntime transpile fallback", () => {
     );
 
     try {
-      let runtime: typeof import("../cli/utils/typescript/tsRuntime");
+      let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
       jest.isolateModules(() => {
-        runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
+        runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
       });
 
       expect(runtime!.loadModule(mainFile)).toEqual(

@@ -5,13 +5,13 @@ import {
   buildStructuredLogLine,
   isJsonLogFormat,
   resolveLogLevel,
-} from "../cli/utils/StructuredLogger";
-import { resolveSqlConnectionNames } from "../cli/utils/resolveSqlConnectionFlags";
+} from "../cli/utils/StructuredLogger.js";
+import { resolveSqlConnectionNames } from "../cli/utils/resolveSqlConnectionFlags.js";
 import {
   checkProductionDestructiveCommand,
   isProductionRuntime,
-} from "../cli/utils/ProductionSafety";
-import { PathMap } from "../cli/utils/PathMap";
+} from "../cli/utils/ProductionSafety.js";
+import { PathMap } from "../cli/utils/PathMap.js";
 
 describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure", () => {
   const packageName = (
@@ -113,7 +113,7 @@ describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure",
     const cwdSpy = jest.spyOn(process, "cwd").mockReturnValue(path.join(os.tmpdir(), "outside-repo"));
 
     jest.resetModules();
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(ImportResolver.coreImportPath(true)).toBe(packageName);
     expect(ImportResolver.schemaImportPath(false)).toBe(packageName);
@@ -169,7 +169,7 @@ describe("Branch coverage 100% - phase 29 utility + migrateStatus edge closure",
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const tableSpy = jest.spyOn(console, "table").mockImplementation(() => undefined);
 
-    const { migrateStatus } = await import("../cli/commands/migrateStatus");
+    const { migrateStatus } = await import("../cli/commands/migrateStatus.js");
     await migrateStatus();
 
     expect(resolveConnectionName).toHaveBeenCalledWith(undefined, { test: false });

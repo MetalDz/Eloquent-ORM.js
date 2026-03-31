@@ -5,7 +5,7 @@
  * ✅ Compatible with CoreModel and previous mixins
  */
 
-import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver.js";
 
 export interface SoftDeletable {
   deleted_at?: string | null;

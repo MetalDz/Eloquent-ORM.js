@@ -1,17 +1,17 @@
 // src/core/connection/CoreModel.ts
-import { getConnection, getAdapter, ConnectionName } from "../connection/ConnectionFactory";
-import { dbConfig } from "../../config/database";
-import type { DriverAdapter } from "../connection/DriverAdapter";
+import { getConnection, getAdapter, ConnectionName } from "../connection/ConnectionFactory.js";
+import { dbConfig } from "../../config/database.js";
+import type { DriverAdapter } from "../connection/DriverAdapter.js";
 import type { Db } from "mongodb";
 
-import type { SchemaValidatorOptions } from "../schema/SchemaValidator";
-import type { SchemaField } from "../schema/SchemaBlueprint";
+import type { SchemaValidatorOptions } from "../schema/SchemaValidator.js";
+import type { SchemaField } from "../schema/SchemaBlueprint.js";
 import {
   SafeFinderDirection,
   SafeFinderFilters,
   SafeFinderModelStatic,
   SafeFinderQuery,
-} from "./SafeFinder";
+} from "./SafeFinder.js";
 import {
   assertPrimaryKeyNotMutated,
   buildMongoPrimaryFilter,
@@ -24,13 +24,13 @@ import {
   getPrimaryKeyValue,
   resolvePrimaryKey,
   sanitizeAssignableData,
-} from "./CoreModelPersistenceState";
+} from "./CoreModelPersistenceState.js";
 import {
   fireModelEvent,
   shouldSkipModelHooks,
   validateModelData,
-} from "./CoreModelValidationEvents";
-import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFinderSupport";
+} from "./CoreModelValidationEvents.js";
+import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFinderSupport.js";
 
 /**
  * Types for model contract (kept generic)

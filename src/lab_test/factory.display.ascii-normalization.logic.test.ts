@@ -1,16 +1,16 @@
 import fs from "fs";
 import path from "path";
-import { relation } from "../core/schema/SchemaBlueprint";
-import { SqlModel } from "../core/model/BaseModel";
-import { factoryStatus } from "../cli/commands/factoryStatus";
+import { relation } from "../core/schema/SchemaBlueprint.js";
+import { SqlModel } from "../core/model/BaseModel.js";
+import { factoryStatus } from "../cli/commands/factoryStatus.js";
 import {
   FACTORY_EMPTY_MARK,
   FACTORY_GRAPH_HEADER,
   FACTORY_STATUS_FOOTER,
   getFactoryRelationArrow,
-} from "../cli/utils/factories/FactoryDisplay";
-import { generateFactoryGraph } from "../cli/utils/factories/FactoryGraph";
-import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry";
+} from "../cli/utils/factories/FactoryDisplay.js";
+import { generateFactoryGraph } from "../cli/utils/factories/FactoryGraph.js";
+import { FactoryRegistry } from "../cli/utils/factories/FactoryRegistry.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

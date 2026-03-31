@@ -1,8 +1,8 @@
-import { CacheManager } from "../../core/cache/CacheManager";
-import { CacheRegistry } from "../../core/cache/CacheRegistry";
-import { CacheAnalytics } from "../../core/cache/CacheAnalytics";
-import { CacheFallbackManager } from "../../core/cache/CacheFallbackManager";
-import { setupCache } from "../../core/cache/setupCache";
+import { CacheManager } from "../../core/cache/CacheManager.js";
+import { CacheRegistry } from "../../core/cache/CacheRegistry.js";
+import { CacheAnalytics } from "../../core/cache/CacheAnalytics.js";
+import { CacheFallbackManager } from "../../core/cache/CacheFallbackManager.js";
+import { setupCache } from "../../core/cache/setupCache.js";
 
 function ratioPercent(hits: number, misses: number): string {
   const total = hits + misses;

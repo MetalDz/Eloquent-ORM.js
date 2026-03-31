@@ -7,7 +7,7 @@ import {
   isAuditEnabled,
   resolveAuditActor,
   resolveAuditPath,
-} from "../cli/utils/AuditTrail";
+} from "../cli/utils/AuditTrail.js";
 
 describe("Branch coverage 100% - phase 20 audit trail branches", () => {
   afterEach(() => {

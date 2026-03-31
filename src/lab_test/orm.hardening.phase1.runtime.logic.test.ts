@@ -6,13 +6,13 @@ import {
   MongoModel,
   BASE_MODEL_COMPOSITION_ORDER,
   MODEL_BOUNDARY_MATRIX,
-} from "../core/model/BaseModel";
+} from "../core/model/BaseModel.js";
 import {
   BaseModel as PublicBaseModel,
   SqlModel as PublicSqlModel,
   MongoModel as PublicMongoModel,
-} from "../index";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+} from "../index.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -131,7 +131,7 @@ describe("ORM hardening phase 1 runtime boundaries", () => {
   });
 
   test("generated SQL and Mongo app models inherit the intended default runtime stack", async () => {
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
 
     await makeModel(sqlModelName, { force: true });
     await makeModel(mongoModelName, { mongo: true, force: true });

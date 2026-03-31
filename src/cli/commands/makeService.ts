@@ -1,10 +1,10 @@
-import { TemplateEngine } from "../utils/TemplateEngine";
-import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
+import { TemplateEngine } from "../utils/TemplateEngine.js";
+import { overwriteFile, writeFileSafe } from "../utils/fileWriter.js";
 import {
   logScaffoldCreated,
   logScaffoldFailure,
   resolveScaffoldArtifact,
-} from "../utils/ScaffoldGeneratorSupport";
+} from "../utils/ScaffoldGeneratorSupport.js";
 
 export async function makeService(
   modelName: string,

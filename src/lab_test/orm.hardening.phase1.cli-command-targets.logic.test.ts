@@ -3,7 +3,7 @@ import path from "path";
 import {
   resolveCliConnectionNames,
   resolveCliPrimaryConnectionName,
-} from "../cli/utils/CliCommandTargets";
+} from "../cli/utils/CliCommandTargets.js";
 
 describe("ORM hardening phase 1 CLI command target resolution extraction", () => {
   const rootDir = process.cwd();

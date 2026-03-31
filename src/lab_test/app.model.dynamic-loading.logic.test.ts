@@ -1,4 +1,4 @@
-import { loadAppModel } from "./support/appModelResolver";
+import { loadAppModel } from "./support/appModelResolver.js";
 
 describe("App model dynamic loading", () => {
   test("loads AppSmoke dynamically from src/app/models", () => {

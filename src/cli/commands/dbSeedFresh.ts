@@ -1,12 +1,12 @@
 import chalk from "chalk";
-import { migrateFresh } from "./migrateFresh";
-import { dbSeed } from "./dbSeed";
+import { migrateFresh } from "./migrateFresh.js";
+import { dbSeed } from "./dbSeed.js";
 import {
   closeAllConnections,
   type ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { silenceConsoleOutput } from "../utils/ConsoleSilencer";
+} from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { silenceConsoleOutput } from "../utils/ConsoleSilencer.js";
 
 /**
  * db:seed:fresh

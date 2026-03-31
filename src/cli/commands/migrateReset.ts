@@ -1,7 +1,7 @@
 import chalk from "chalk";
-import { migrateRollback } from "./migrateRollback";
-import { ConnectionName } from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+import { migrateRollback } from "./migrateRollback.js";
+import { ConnectionName } from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
 
 export type MigrateResetOptions = {
   test?: boolean;

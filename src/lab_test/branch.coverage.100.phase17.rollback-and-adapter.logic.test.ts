@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { createAdapter } from "../core/connection/DriverAdapter";
-import type { ConnectionName } from "../core/connection/DatabaseConnection";
+import { createAdapter } from "../core/connection/DriverAdapter.js";
+import type { ConnectionName } from "../core/connection/DatabaseConnection.js";
 
 const passthroughChalk = {
   __esModule: true,
@@ -120,7 +120,7 @@ async function setupRollbackHarness(options: RollbackHarnessOptions = {}) {
     validateMigrationHistory,
   }));
 
-  const rollbackModule = await import("../cli/commands/migrateRollback");
+  const rollbackModule = await import("../cli/commands/migrateRollback.js");
 
   return {
     root,
@@ -158,7 +158,7 @@ describe("Branch coverage 100% - phase 17 rollback + adapter edge branches", () 
       "Unsupported driver for adapter: undefined"
     );
 
-    const { dbConfig } = require("../config/database") as typeof import("../config/database");
+    const { dbConfig } = require("../config/database") as typeof import("../config/database.js");
     (dbConfig.connections as Record<string, unknown>).legacy = {
       driver: "oracle",
     };

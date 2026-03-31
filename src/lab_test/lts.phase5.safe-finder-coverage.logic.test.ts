@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { SafeFinderQuery, type SafeFinderModelInstance } from "../core/model/SafeFinder";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { SafeFinderQuery, type SafeFinderModelInstance } from "../core/model/SafeFinder.js";
 
 function makeSqlAdapter() {
   return {

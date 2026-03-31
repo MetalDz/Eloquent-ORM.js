@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 const passthroughChalk = {
   __esModule: true,
@@ -191,7 +191,7 @@ describe("Branch coverage 100% - phase 31 makeModel/makeMigration helper edges",
       };
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("all", { test: true, exit: false });
 
     expect(ctx.toCreateSQL).toHaveBeenCalledTimes(2);
@@ -229,7 +229,7 @@ describe("Branch coverage 100% - phase 31 makeModel/makeMigration helper edges",
       },
     });
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel("User", { test: true, withMigration: true, force: true });
 
     const firstCallArgs = ctx.toCreateSQL.mock.calls[0] as unknown[] | undefined;

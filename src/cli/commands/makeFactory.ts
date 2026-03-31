@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { PathMap } from "../utils/PathMap";
-import { TemplateEngine } from "../utils/TemplateEngine";
-import { writeFileSafe, overwriteFile } from "../utils/fileWriter";
-import { ModelIntrospector } from "../utils/ModelIntrospector";
-import { ImportResolver } from "../utils/ImportResolver";
+import { PathMap } from "../utils/PathMap.js";
+import { TemplateEngine } from "../utils/TemplateEngine.js";
+import { writeFileSafe, overwriteFile } from "../utils/fileWriter.js";
+import { ModelIntrospector } from "../utils/ModelIntrospector.js";
+import { ImportResolver } from "../utils/ImportResolver.js";
 
 type MakeFactoryOptions = {
   model?: string;

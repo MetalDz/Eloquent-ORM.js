@@ -12,9 +12,13 @@ describe("CI release qualification gates", () => {
 
     const requiredSnippets = [
       "typecheck:",
+      "typecheck-nodenext:",
+      "Typecheck (NodeNext)",
+      "npm run typecheck:nodenext",
       "build:",
       "test-mysql-smoke:",
       "test-docker-coverage:",
+      "npm run test:coverage:docker",
       "critical-stability:",
       "package-smoke:",
       "docs-lint:",
@@ -47,6 +51,9 @@ describe("CI release qualification gates", () => {
       /test-mysql-smoke:\s+name:\s+Test \(MySQL Smoke\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+15/s
     );
     expect(workflow).toMatch(
+      /typecheck-nodenext:\s+name:\s+Typecheck \(NodeNext\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+10/s
+    );
+    expect(workflow).toMatch(
       /test-docker-coverage:\s+name:\s+Test \(Docker Coverage\)\s+runs-on:\s+ubuntu-latest\s+timeout-minutes:\s+30/s
     );
     expect(workflow).toMatch(
@@ -70,6 +77,7 @@ describe("CI release qualification gates", () => {
       "# Release Qualification Checklist",
       "## Hard Gates",
       "Typecheck + Build + Test",
+      "typecheck-nodenext",
       "Critical Stability Re-runs",
       "Multi-Driver Scenario Matrix",
       "Package Smoke Validation",
@@ -78,6 +86,8 @@ describe("CI release qualification gates", () => {
       "NoSQL Documentation Closure",
       "Pass Criteria",
       "Fail Criteria",
+      "npm run typecheck:nodenext",
+      "npm run test:coverage:docker",
       "Release is allowed only when all hard gates pass",
       "release is blocked",
     ];

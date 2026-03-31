@@ -1,9 +1,9 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { makeFactory } from "../cli/commands/makeFactory";
-import { PathMap } from "../cli/utils/PathMap";
-import { ModelIntrospector } from "../cli/utils/ModelIntrospector";
+import { makeFactory } from "../cli/commands/makeFactory.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { ModelIntrospector } from "../cli/utils/ModelIntrospector.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

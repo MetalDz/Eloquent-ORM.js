@@ -12,7 +12,7 @@ import {
   recordAppliedMigration,
   releaseMigrationLock,
   validateMigrationHistory,
-} from "../cli/utils/migrations/MongoMigrationTracker";
+} from "../cli/utils/migrations/MongoMigrationTracker.js";
 
 type SortSpec = Record<string, 1 | -1>;
 

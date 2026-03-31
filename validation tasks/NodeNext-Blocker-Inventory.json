@@ -6,23 +6,23 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1289,
-    "uniqueFiles": 342,
+    "totalMatches": 1306,
+    "uniqueFiles": 350,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1166
+        "matches": 1180
       },
       {
         "kind": "require() local imports",
-        "matches": 123
+        "matches": 126
       }
     ],
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 216,
-        "matches": 897
+        "files": 217,
+        "matches": 906
       },
       {
         "area": "src/cli",
@@ -41,8 +41,8 @@
       },
       {
         "area": "src/test",
-        "files": 11,
-        "matches": 19
+        "files": 18,
+        "matches": 27
       },
       {
         "area": "other",

@@ -74,7 +74,7 @@ describe("LTS phase 5 migrateFresh coverage", () => {
       makeMigration,
     }));
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       force: true,
       connectionNames: ["mongo" as never],
@@ -120,7 +120,7 @@ describe("LTS phase 5 migrateFresh coverage", () => {
 
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       force: true,
       connectionNames: ["oracle" as never],
@@ -179,7 +179,7 @@ describe("LTS phase 5 migrateFresh coverage", () => {
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await migrateFresh({
       force: true,
       allMigrations: true,
@@ -239,7 +239,7 @@ describe("LTS phase 5 migrateFresh coverage", () => {
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
     await expect(
       migrateFresh({
         force: true,

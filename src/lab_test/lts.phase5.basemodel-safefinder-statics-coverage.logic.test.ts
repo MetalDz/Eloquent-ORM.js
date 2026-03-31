@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 
-import { CoreModel } from "../core/model/CoreModel";
-import { BaseModelSafeFinderStaticsMixin } from "../core/model/BaseModelSafeFinderStatics";
+import { CoreModel } from "../core/model/CoreModel.js";
+import { BaseModelSafeFinderStaticsMixin } from "../core/model/BaseModelSafeFinderStatics.js";
 
 describe("LTS phase 5 BaseModelSafeFinderStatics coverage", () => {
   afterEach(() => {

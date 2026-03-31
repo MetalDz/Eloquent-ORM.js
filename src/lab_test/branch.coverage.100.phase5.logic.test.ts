@@ -26,14 +26,14 @@ jest.mock("../cli/utils/AuditTrail", () => ({
 }));
 
 const fs = require("fs") as typeof import("fs");
-const artifactStorage = require("../cli/utils/ArtifactStorage") as typeof import("../cli/utils/ArtifactStorage");
-const { PathMap } = require("../cli/utils/PathMap") as typeof import("../cli/utils/PathMap");
-const { dbSeed } = require("../cli/commands/dbSeed") as typeof import("../cli/commands/dbSeed");
-const seedPrecheck = require("../cli/utils/SeedBootstrapPrecheck") as typeof import("../cli/utils/SeedBootstrapPrecheck");
-const tsRuntime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime");
-const connectionFactory = require("../core/connection/ConnectionFactory") as typeof import("../core/connection/ConnectionFactory");
-const resolveConnection = require("../core/connection/resolveConnectionName") as typeof import("../core/connection/resolveConnectionName");
-const { dbConfig } = require("../config/database") as typeof import("../config/database");
+const artifactStorage = require("../cli/utils/ArtifactStorage") as typeof import("../cli/utils/ArtifactStorage.js");
+const { PathMap } = require("../cli/utils/PathMap") as typeof import("../cli/utils/PathMap.js");
+const { dbSeed } = require("../cli/commands/dbSeed") as typeof import("../cli/commands/dbSeed.js");
+const seedPrecheck = require("../cli/utils/SeedBootstrapPrecheck") as typeof import("../cli/utils/SeedBootstrapPrecheck.js");
+const tsRuntime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
+const connectionFactory = require("../core/connection/ConnectionFactory") as typeof import("../core/connection/ConnectionFactory.js");
+const resolveConnection = require("../core/connection/resolveConnectionName") as typeof import("../core/connection/resolveConnectionName.js");
+const { dbConfig } = require("../config/database") as typeof import("../config/database.js");
 
 describe("Branch coverage 100% - phase 5 hard-to-reach environment paths", () => {
   const originalDbConnection = process.env.DB_CONNECTION;

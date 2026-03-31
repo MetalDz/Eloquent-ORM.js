@@ -14,17 +14,17 @@ import {
   resetSqliteDatabase,
   runCli,
   testRootDir,
-} from "./support/cli.integration.harness";
+} from "./support/cli.integration.harness.js";
 import {
   resetTestPg,
   testMysqlEnv,
   testPgEnv,
   testSqliteEnv,
-} from "./support/cli.integration.connection.shared";
+} from "./support/cli.integration.connection.shared.js";
 import {
   clearLoadedModuleCache,
   loadModule,
-} from "../cli/utils/typescript/tsRuntime";
+} from "../cli/utils/typescript/tsRuntime.js";
 
 jest.setTimeout(420000);
 

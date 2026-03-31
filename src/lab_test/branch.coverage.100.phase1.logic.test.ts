@@ -1,6 +1,6 @@
-import { CacheManager } from "../core/cache/CacheManager";
-import { SQLDialect } from "../core/schema/SQLDialect";
-import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry";
+import { CacheManager } from "../core/cache/CacheManager.js";
+import { SQLDialect } from "../core/schema/SQLDialect.js";
+import { ModelRegistry } from "../core/orm/mixins/utils/ModelRegistry.js";
 
 describe("Branch coverage 100% - phase 1 deterministic closures", () => {
   const originalDriver = CacheManager.getDriver();

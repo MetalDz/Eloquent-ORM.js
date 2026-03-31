@@ -1,4 +1,4 @@
-import { TypeScriptCompiler } from "./TypeScriptCompiler";
+import { TypeScriptCompiler } from "./TypeScriptCompiler.js";
 import chalk from "chalk";
 
 /**

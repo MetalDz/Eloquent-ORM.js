@@ -1,5 +1,5 @@
-import { BaseModel, MorphRegistry, SqlModel } from "../core/model/BaseModel";
-import { getAdapter } from "../core/connection/ConnectionFactory";
+import { BaseModel, MorphRegistry, SqlModel } from "../core/model/BaseModel.js";
+import { getAdapter } from "../core/connection/ConnectionFactory.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

@@ -2,8 +2,8 @@ import type {
   SafeFinderFilters,
   SafeFinderModelInstance,
   SafeFinderModelStatic,
-} from "./SafeFinder";
-import { SafeFinderQuery } from "./SafeFinder";
+} from "./SafeFinder.js";
+import { SafeFinderQuery } from "./SafeFinder.js";
 
 export function createSafeFinderQuery<TModel extends SafeFinderModelInstance>(
   model: TModel,

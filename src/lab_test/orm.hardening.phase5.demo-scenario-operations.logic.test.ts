@@ -1,7 +1,7 @@
-import { dbConfig } from "../config/database";
-import { demoScenario } from "../cli/commands/demoScenario";
-import * as connectionFactory from "../core/connection/ConnectionFactory";
-import * as scenarioMorphAliasRouting from "../cli/utils/ScenarioMorphAliasRouting";
+import { dbConfig } from "../config/database.js";
+import { demoScenario } from "../cli/commands/demoScenario.js";
+import * as connectionFactory from "../core/connection/ConnectionFactory.js";
+import * as scenarioMorphAliasRouting from "../cli/utils/ScenarioMorphAliasRouting.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

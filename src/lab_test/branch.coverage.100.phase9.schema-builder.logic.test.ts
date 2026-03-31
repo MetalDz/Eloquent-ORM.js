@@ -1,7 +1,7 @@
-import { dbConfig } from "../config/database";
-import { SchemaBuilder } from "../core/schema/SchemaBuilder";
-import { SQLDialect } from "../core/schema/SQLDialect";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { dbConfig } from "../config/database.js";
+import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
+import { SQLDialect } from "../core/schema/SQLDialect.js";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 9 SchemaBuilder branches", () => {
   const originalDefault = dbConfig.default;
@@ -218,8 +218,8 @@ describe("Branch coverage 100% - phase 9 SchemaBuilder branches", () => {
         getAdapter: jest.fn(async () => adapter),
       }));
 
-      const { SchemaBuilder: IsolatedSchemaBuilder } = await import("../core/schema/SchemaBuilder");
-      const { column: isolatedColumn } = await import("../core/schema/SchemaBlueprint");
+      const { SchemaBuilder: IsolatedSchemaBuilder } = await import("../core/schema/SchemaBuilder.js");
+      const { column: isolatedColumn } = await import("../core/schema/SchemaBlueprint.js");
 
       const result = await IsolatedSchemaBuilder.toCreateSQL(
         "posts",

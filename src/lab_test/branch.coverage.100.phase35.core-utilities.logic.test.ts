@@ -1,10 +1,10 @@
-import { dbConfig } from "../config/database";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
-import { Relation } from "../core/orm/Relation";
-import { HooksMixin } from "../core/orm/mixins/HooksMixin";
-import { createBaseMethodResolver } from "../core/orm/mixins/utils/BaseMethodResolver";
-import { registerModels } from "../core/orm/mixins/utils/modelRegistration";
-import { SQLDialect } from "../core/schema/SQLDialect";
+import { dbConfig } from "../config/database.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
+import { Relation } from "../core/orm/Relation.js";
+import { HooksMixin } from "../core/orm/mixins/HooksMixin.js";
+import { createBaseMethodResolver } from "../core/orm/mixins/utils/BaseMethodResolver.js";
+import { registerModels } from "../core/orm/mixins/utils/modelRegistration.js";
+import { SQLDialect } from "../core/schema/SQLDialect.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -132,9 +132,9 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
     const BetterSqlite3 = jest.fn(() => ({ prepare, exec, close }));
     jest.doMock("better-sqlite3", () => BetterSqlite3);
 
-    let BetterSqliteConnection: typeof import("../core/connection/BetterSqliteConnection").BetterSqliteConnection;
+    let BetterSqliteConnection: typeof import("../core/connection/BetterSqliteConnection.js").BetterSqliteConnection;
     jest.isolateModules(() => {
-      ({ BetterSqliteConnection } = require("../core/connection/BetterSqliteConnection") as typeof import("../core/connection/BetterSqliteConnection"));
+      ({ BetterSqliteConnection } = require("../core/connection/BetterSqliteConnection") as typeof import("../core/connection/BetterSqliteConnection.js"));
     });
 
     const conn = new BetterSqliteConnection!("phase35.sqlite");
@@ -177,9 +177,9 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
       ModuleResolutionKind: { NodeJs: 2 },
     }));
 
-    let TypeScriptCompiler!: typeof import("../cli/utils/typescript/TypeScriptCompiler").TypeScriptCompiler;
+    let TypeScriptCompiler!: typeof import("../cli/utils/typescript/TypeScriptCompiler.js").TypeScriptCompiler;
     jest.isolateModules(() => {
-      ({ TypeScriptCompiler } = require("../cli/utils/typescript/TypeScriptCompiler") as typeof import("../cli/utils/typescript/TypeScriptCompiler"));
+      ({ TypeScriptCompiler } = require("../cli/utils/typescript/TypeScriptCompiler") as typeof import("../cli/utils/typescript/TypeScriptCompiler.js"));
     });
 
     const ok = (
@@ -203,9 +203,9 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
     const register = jest.fn();
     jest.doMock("ts-node", () => ({ register }));
 
-    let TypeScriptCompiler!: typeof import("../cli/utils/typescript/TypeScriptCompiler").TypeScriptCompiler;
+    let TypeScriptCompiler!: typeof import("../cli/utils/typescript/TypeScriptCompiler.js").TypeScriptCompiler;
     jest.isolateModules(() => {
-      ({ TypeScriptCompiler } = require("../cli/utils/typescript/TypeScriptCompiler") as typeof import("../cli/utils/typescript/TypeScriptCompiler"));
+      ({ TypeScriptCompiler } = require("../cli/utils/typescript/TypeScriptCompiler") as typeof import("../cli/utils/typescript/TypeScriptCompiler.js"));
     });
 
     delete require.extensions[".ts"];
@@ -238,9 +238,9 @@ describe("Branch coverage 100% - phase 35 core utility edge branches", () => {
     const register = jest.fn();
     jest.doMock("ts-node", () => ({ register }));
 
-    let TypeScriptCompiler!: typeof import("../cli/utils/typescript/TypeScriptCompiler").TypeScriptCompiler;
+    let TypeScriptCompiler!: typeof import("../cli/utils/typescript/TypeScriptCompiler.js").TypeScriptCompiler;
     jest.isolateModules(() => {
-      ({ TypeScriptCompiler } = require("../cli/utils/typescript/TypeScriptCompiler") as typeof import("../cli/utils/typescript/TypeScriptCompiler"));
+      ({ TypeScriptCompiler } = require("../cli/utils/typescript/TypeScriptCompiler") as typeof import("../cli/utils/typescript/TypeScriptCompiler.js"));
     });
 
     (TypeScriptCompiler as unknown as { initialized: boolean }).initialized = false;

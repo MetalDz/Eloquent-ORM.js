@@ -1,14 +1,14 @@
 import path from "path";
 import fs from "fs";
-import { PathMap } from "./PathMap";
-import { loadModule } from "./typescript/tsRuntime";
+import { PathMap } from "./PathMap.js";
+import { loadModule } from "./typescript/tsRuntime.js";
 import type {
   SchemaField,
   ColumnDefinition,
   RelationDefinition,
   MixinDefinition,
   RelationType,
-} from "../../core/schema/SchemaBlueprint";
+} from "../../core/schema/SchemaBlueprint.js";
 
 export interface IntrospectedField {
   name: string;

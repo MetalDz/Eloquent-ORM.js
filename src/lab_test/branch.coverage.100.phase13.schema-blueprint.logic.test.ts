@@ -5,7 +5,7 @@ import {
   validate,
   validateSchema,
   type SchemaField,
-} from "../core/schema/SchemaBlueprint";
+} from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 13 SchemaBlueprint branches", () => {
   test("builder helpers produce expected shapes and validate mutates column definition", () => {

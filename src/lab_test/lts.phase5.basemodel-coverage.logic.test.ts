@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { dbConfig } from "../config/database";
+import { dbConfig } from "../config/database.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
@@ -12,8 +12,8 @@ import {
   MongoModel,
   MorphRegistry,
   MorphableMixin,
-} from "../core/model/BaseModel";
-import { getConnection } from "../core/connection/ConnectionFactory";
+} from "../core/model/BaseModel.js";
+import { getConnection } from "../core/connection/ConnectionFactory.js";
 
 const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
 

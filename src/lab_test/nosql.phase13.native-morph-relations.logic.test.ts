@@ -1,4 +1,4 @@
-import { BaseModel, MorphRegistry } from "../core/model/BaseModel";
+import { BaseModel, MorphRegistry } from "../core/model/BaseModel.js";
 
 type Row = Record<string, unknown>;
 

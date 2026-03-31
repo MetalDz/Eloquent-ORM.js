@@ -7,12 +7,12 @@ jest.mock("chalk", () => {
   return { __esModule: true, default: proxy };
 });
 
-import { dbSeedFresh } from "../cli/commands/dbSeedFresh";
-import * as migrateFreshCommand from "../cli/commands/migrateFresh";
-import * as dbSeedCommand from "../cli/commands/dbSeed";
-import * as connectionFactory from "../core/connection/ConnectionFactory";
-import * as resolver from "../core/connection/resolveConnectionName";
-import * as consoleSilencer from "../cli/utils/ConsoleSilencer";
+import { dbSeedFresh } from "../cli/commands/dbSeedFresh.js";
+import * as migrateFreshCommand from "../cli/commands/migrateFresh.js";
+import * as dbSeedCommand from "../cli/commands/dbSeed.js";
+import * as connectionFactory from "../core/connection/ConnectionFactory.js";
+import * as resolver from "../core/connection/resolveConnectionName.js";
+import * as consoleSilencer from "../cli/utils/ConsoleSilencer.js";
 
 describe("Branch coverage 70 - dbSeedFresh", () => {
   const originalEnv = { ...process.env };

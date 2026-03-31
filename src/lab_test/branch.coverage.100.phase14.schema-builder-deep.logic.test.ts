@@ -1,13 +1,13 @@
-import { dbConfig } from "../config/database";
-import { getAdapter } from "../core/connection/ConnectionFactory";
-import { SchemaBuilder } from "../core/schema/SchemaBuilder";
-import { SQLDialect } from "../core/schema/SQLDialect";
+import { dbConfig } from "../config/database.js";
+import { getAdapter } from "../core/connection/ConnectionFactory.js";
+import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
+import { SQLDialect } from "../core/schema/SQLDialect.js";
 import {
   column,
   mixin,
   relation,
   type SchemaField,
-} from "../core/schema/SchemaBlueprint";
+} from "../core/schema/SchemaBlueprint.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

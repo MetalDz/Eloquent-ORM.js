@@ -1,5 +1,5 @@
-import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator";
-import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint";
+import { SchemaValidator, SchemaValidatorOptions } from "../schema/SchemaValidator.js";
+import type { SchemaField, ValidationRule } from "../schema/SchemaBlueprint.js";
 
 export type CoreModelEventHandler = (payload: unknown) => Promise<unknown> | unknown;
 

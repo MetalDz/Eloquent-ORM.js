@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { PathMap } from "./PathMap";
+import { PathMap } from "./PathMap.js";
 
 /**
  * 🧩 TemplateEngine

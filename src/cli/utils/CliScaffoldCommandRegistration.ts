@@ -1,9 +1,9 @@
 import type { Command } from "commander";
-import { makeModel } from "../commands/makeModel";
-import { makeController } from "../commands/makeController";
-import { makeService } from "../commands/makeService";
-import { makeRegistry } from "../commands/makeRegistry";
-import { ensureCliProductionOverride } from "./CliProductionGuards";
+import { makeModel } from "../commands/makeModel.js";
+import { makeController } from "../commands/makeController.js";
+import { makeService } from "../commands/makeService.js";
+import { makeRegistry } from "../commands/makeRegistry.js";
+import { ensureCliProductionOverride } from "./CliProductionGuards.js";
 
 export function registerCliScaffoldCommands(program: Command): void {
   program

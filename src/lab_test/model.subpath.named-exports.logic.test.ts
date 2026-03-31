@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import * as ModelSubpath from "../Model";
-import { SqlModel, MongoModel } from "../index";
+import * as ModelSubpath from "../Model.js";
+import { SqlModel, MongoModel } from "../index.js";
 
 jest.mock("@faker-js/faker", () => ({
   faker: {},

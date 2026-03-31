@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import type { RelationDefinition } from "../../../core/schema/SchemaBlueprint";
+import type { RelationDefinition } from "../../../core/schema/SchemaBlueprint.js";
 
 export const FACTORY_EMPTY_MARK = "-";
 export const FACTORY_STATUS_FOOTER =

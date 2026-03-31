@@ -1,4 +1,4 @@
-import type { SchemaField } from "../schema/SchemaBlueprint";
+import type { SchemaField } from "../schema/SchemaBlueprint.js";
 
 export type PersistenceUsage = "fill" | "patch";
 

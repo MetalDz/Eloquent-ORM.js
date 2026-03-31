@@ -12,8 +12,8 @@ import {
   getPrimaryKeyValue,
   resolvePrimaryKey,
   sanitizeAssignableData,
-} from "../core/model/CoreModelPersistenceState";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+} from "../core/model/CoreModelPersistenceState.js";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("ORM hardening phase 1 CoreModel persistence state extraction", () => {
   const rootDir = process.cwd();

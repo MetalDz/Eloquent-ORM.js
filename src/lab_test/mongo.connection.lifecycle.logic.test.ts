@@ -22,7 +22,7 @@
     jest.doMock("mongodb", () => ({ MongoClient }));
 
     const { getConnection, closeAllConnections } = await import(
-      "../core/connection/ConnectionFactory"
+      "../core/connection/ConnectionFactory.js"
     );
 
     const first = await getConnection("mongo" as never);

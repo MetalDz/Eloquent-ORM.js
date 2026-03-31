@@ -1,13 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { migrateStatus } from "../cli/commands/migrateStatus";
-import { resolveMigrationConnectionNames } from "../cli/commands/migrateRun";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { migrateStatus } from "../cli/commands/migrateStatus.js";
+import { resolveMigrationConnectionNames } from "../cli/commands/migrateRun.js";
 import {
   getAdapter,
   closeAllConnections,
-} from "../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+} from "../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

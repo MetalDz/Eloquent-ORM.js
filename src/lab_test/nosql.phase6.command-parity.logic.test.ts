@@ -1,13 +1,13 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { PathMap } from "../cli/utils/PathMap";
-import { makeModel } from "../cli/commands/makeModel";
-import { TypeScriptCompiler } from "../cli/utils/typescript/TypeScriptCompiler";
-import * as tsRuntime from "../cli/utils/typescript/tsRuntime";
-import * as makeMigrationCommand from "../cli/commands/makeMigration";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+import { dbConfig } from "../config/database.js";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { makeModel } from "../cli/commands/makeModel.js";
+import { TypeScriptCompiler } from "../cli/utils/typescript/TypeScriptCompiler.js";
+import * as tsRuntime from "../cli/utils/typescript/tsRuntime.js";
+import * as makeMigrationCommand from "../cli/commands/makeMigration.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -268,7 +268,7 @@ describe("NoSQL phase 6 command parity", () => {
       makeMigration,
     }));
 
-    const { migrateFresh } = await import("../cli/commands/migrateFresh");
+    const { migrateFresh } = await import("../cli/commands/migrateFresh.js");
 
     await migrateFresh({
       test: true,
@@ -307,7 +307,7 @@ describe("NoSQL phase 6 command parity", () => {
       resolveConnectionName,
     }));
 
-    const { migrateReset } = await import("../cli/commands/migrateReset");
+    const { migrateReset } = await import("../cli/commands/migrateReset.js");
 
     await migrateReset({
       test: true,

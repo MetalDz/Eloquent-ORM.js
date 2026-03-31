@@ -5,10 +5,10 @@ import {
   getConnection,
   getAdapter,
   type ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { dbConfig } from "../../config/database";
-import { PathMap } from "./PathMap";
+} from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { dbConfig } from "../../config/database.js";
+import { PathMap } from "./PathMap.js";
 
 export type SeedBootstrapPrecheckOptions = {
   test?: boolean;

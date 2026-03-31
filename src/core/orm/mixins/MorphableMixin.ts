@@ -1,5 +1,5 @@
 // src/core/orm/mixins/MorphableMixin.ts
-import { MorphRegistry, type MorphableConstructor } from "./MorphRegistry";
+import { MorphRegistry, type MorphableConstructor } from "./MorphRegistry.js";
 
 function assertSafeRelationName(relationName: string): void {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(relationName)) {

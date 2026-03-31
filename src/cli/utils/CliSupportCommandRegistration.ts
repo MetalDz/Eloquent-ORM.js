@@ -1,9 +1,9 @@
 import type { Command } from "commander";
 import chalk from "chalk";
-import { cacheClear } from "../commands/cacheClear";
-import { cacheStats } from "../commands/cacheStats";
-import { factoryStatus } from "../commands/factoryStatus";
-import { CLI_COMMAND_CATALOG } from "./CliCommandCatalog";
+import { cacheClear } from "../commands/cacheClear.js";
+import { cacheStats } from "../commands/cacheStats.js";
+import { factoryStatus } from "../commands/factoryStatus.js";
+import { CLI_COMMAND_CATALOG } from "./CliCommandCatalog.js";
 
 export function registerCliSupportCommands(program: Command): void {
   program

@@ -44,7 +44,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
       }) as typeof fs.readFileSync);
     const cwdSpy = jest.spyOn(process, "cwd").mockReturnValue(outsideRepo);
 
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(ImportResolver.coreImportPath(true)).toBe("custom-eloquent");
     expect(ImportResolver.schemaImportPath(false)).toBe("custom-eloquent");
@@ -70,7 +70,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
     );
     const cwdSpy = jest.spyOn(process, "cwd").mockReturnValue(outsideRepo);
 
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(ImportResolver.coreImportPath(false)).toBe(packageName);
     expect(ImportResolver.schemaImportPath(true)).toBe(packageName);
@@ -84,7 +84,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
   test("inside the repo the public API import path remains relative", async () => {
     jest.spyOn(process, "cwd").mockReturnValue(rootDir);
 
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(ImportResolver.publicApiImportPath()).toBe("../index");
   });
@@ -92,7 +92,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
   test("inside the repo the public API import path resolves relative to the generated file", async () => {
     jest.spyOn(process, "cwd").mockReturnValue(rootDir);
 
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(
       ImportResolver.publicApiImportPath(
@@ -114,7 +114,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
   test("inside the repo same-directory imports are normalized with a leading ./ prefix", async () => {
     jest.spyOn(process, "cwd").mockReturnValue(rootDir);
 
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(
       ImportResolver.publicApiImportPath(
@@ -136,7 +136,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
       "utf8",
     );
 
-    const { ImportResolver } = await import("../cli/utils/ImportResolver");
+    const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(ImportResolver.usesNodeEsmRuntime(nodenextRoot)).toBe(true);
     expect(

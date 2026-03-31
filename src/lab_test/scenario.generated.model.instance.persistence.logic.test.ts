@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -189,13 +189,13 @@ describe("Scenario-generated model instance persistence", () => {
 
     const ctx = setupScenarioContext({ useMongo: false });
     try {
-      const connectionFactory = await import("../core/connection/ConnectionFactory");
+      const connectionFactory = await import("../core/connection/ConnectionFactory.js");
       const currentGetAdapter = connectionFactory.getAdapter as jest.MockedFunction<
         typeof connectionFactory.getAdapter
       >;
       currentGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
 
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("blog", { force: true });
 
       const userFile = path.join(ctx.modelsDir, "User.ts");
@@ -285,13 +285,13 @@ describe("Scenario-generated model instance persistence", () => {
 
     const ctx = setupScenarioContext({ useMongo: true });
     try {
-      const connectionFactory = await import("../core/connection/ConnectionFactory");
+      const connectionFactory = await import("../core/connection/ConnectionFactory.js");
       const currentGetConnection = connectionFactory.getConnection as jest.MockedFunction<
         typeof connectionFactory.getConnection
       >;
       currentGetConnection.mockResolvedValue(mongoDb as never);
 
-      const { makeScenario } = await import("../cli/commands/makeScenario");
+      const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("blog", { force: true, mongo: true });
 
       const userFile = path.join(ctx.modelsDir, "User.ts");

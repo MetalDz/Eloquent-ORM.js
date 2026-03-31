@@ -1,7 +1,7 @@
-import { CoreModel, MongoModel } from "../core/model/CoreModel";
-import type { DriverAdapter } from "../core/connection/DriverAdapter";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
-import { SchemaValidator } from "../core/schema/SchemaValidator";
+import { CoreModel, MongoModel } from "../core/model/CoreModel.js";
+import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
+import { SchemaValidator } from "../core/schema/SchemaValidator.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

@@ -1,6 +1,6 @@
-import { EnvKeySecurity } from "./EnvKeySecurity";
-import { NoSecurity } from "./NoSecurity";
-import { SecurityContract } from "./SecurityContract";
+import { EnvKeySecurity } from "./EnvKeySecurity.js";
+import { NoSecurity } from "./NoSecurity.js";
+import { SecurityContract } from "./SecurityContract.js";
 import chalk from "chalk";
 
 /**

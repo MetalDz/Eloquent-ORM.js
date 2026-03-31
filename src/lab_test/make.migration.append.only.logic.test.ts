@@ -1,17 +1,17 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { TypeScriptCompiler } from "../cli/utils/typescript/TypeScriptCompiler";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { TypeScriptCompiler } from "../cli/utils/typescript/TypeScriptCompiler.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
 import {
   closeAllConnections,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+} from "../core/connection/ConnectionFactory.js";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
-type MakeMigrationFn = typeof import("../cli/commands/makeMigration").makeMigration;
+type MakeMigrationFn = typeof import("../cli/commands/makeMigration.js").makeMigration;
 let makeMigration: MakeMigrationFn;
 
 jest.mock("chalk", () => ({

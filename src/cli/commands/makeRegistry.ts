@@ -1,10 +1,10 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { TemplateEngine } from "../utils/TemplateEngine";
-import { overwriteFile, writeFileSafe } from "../utils/fileWriter";
-import { PathMap } from "../utils/PathMap";
-import { __importResolverInternals, ImportResolver } from "../utils/ImportResolver";
+import { TemplateEngine } from "../utils/TemplateEngine.js";
+import { overwriteFile, writeFileSafe } from "../utils/fileWriter.js";
+import { PathMap } from "../utils/PathMap.js";
+import { __importResolverInternals, ImportResolver } from "../utils/ImportResolver.js";
 
 type RegistryOptions = {
   test?: boolean;

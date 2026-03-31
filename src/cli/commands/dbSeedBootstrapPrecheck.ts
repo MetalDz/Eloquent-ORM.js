@@ -1,7 +1,7 @@
 import {
   assertSeedBootstrapPrecheck,
   type SeedBootstrapPrecheckOptions,
-} from "../utils/SeedBootstrapPrecheck";
+} from "../utils/SeedBootstrapPrecheck.js";
 
 export async function dbSeedBootstrapPrecheck(
   options: SeedBootstrapPrecheckOptions = {}

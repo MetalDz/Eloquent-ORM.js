@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { Collection, Db, ObjectId } from "mongodb";
-import { computeMigrationChecksum } from "./MigrationTracker";
+import { computeMigrationChecksum } from "./MigrationTracker.js";
 
 export type MongoMigrationRow = {
   id?: string;

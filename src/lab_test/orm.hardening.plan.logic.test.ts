@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { readCoverageSummaryForContractTests } from "./support/coverageSummary";
+import { readCoverageSummaryForContractTests } from "./support/coverageSummary.js";
 
 describe("ORM hardening execution plan contract", () => {
   const rootDir = process.cwd();

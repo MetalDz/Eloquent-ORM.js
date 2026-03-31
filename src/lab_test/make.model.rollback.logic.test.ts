@@ -1,15 +1,15 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { TypeScriptCompiler } from "../cli/utils/typescript/TypeScriptCompiler";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
-import { closeAllConnections } from "../core/connection/ConnectionFactory";
-import { SchemaBuilder, type SchemaBuildResult } from "../core/schema/SchemaBuilder";
-import { column, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { TypeScriptCompiler } from "../cli/utils/typescript/TypeScriptCompiler.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
+import { closeAllConnections } from "../core/connection/ConnectionFactory.js";
+import { SchemaBuilder, type SchemaBuildResult } from "../core/schema/SchemaBuilder.js";
+import { column, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
-type MakeModelFn = typeof import("../cli/commands/makeModel").makeModel;
+type MakeModelFn = typeof import("../cli/commands/makeModel.js").makeModel;
 let makeModel: MakeModelFn;
 
 jest.mock("chalk", () => ({

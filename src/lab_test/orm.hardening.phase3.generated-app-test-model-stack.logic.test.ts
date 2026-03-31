@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -76,7 +76,7 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
   });
 
   test("generated app/test SQL and Mongo models keep the default BaseModel stack", async () => {
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
 
     await makeModel(sqlAppModelName, { force: true });
     await makeModel(mongoAppModelName, { mongo: true, force: true });

@@ -5,7 +5,7 @@
  * ✅ Clean ESLint/TS-compatible super calls
  */
 
-import { createBaseMethodResolver } from "./utils/BaseMethodResolver";
+import { createBaseMethodResolver } from "./utils/BaseMethodResolver.js";
 
 export interface Castable {
   find(id: number | string, pk?: string): Promise<this | null>;

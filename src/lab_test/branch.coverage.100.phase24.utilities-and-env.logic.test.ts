@@ -1,26 +1,26 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
+import { PathMap } from "../cli/utils/PathMap.js";
 import {
   assertSeedBootstrapPrecheck,
   printSeedBootstrapPrecheck,
   runSeedBootstrapPrecheck,
-} from "../cli/utils/SeedBootstrapPrecheck";
+} from "../cli/utils/SeedBootstrapPrecheck.js";
 import {
   resolveDbExecutionRole,
   resolveMysqlEnv,
   resolveMongoEnv,
   resolvePgEnv,
   resolveSqlitePath,
-} from "../config/dbRoleEnv";
-import { dbConfig } from "../config/database";
+} from "../config/dbRoleEnv.js";
+import { dbConfig } from "../config/database.js";
 import {
   closeAllConnections,
   getConnection,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../core/connection/resolveConnectionName";
-import { SchemaValidator } from "../core/schema/SchemaValidator";
+} from "../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../core/connection/resolveConnectionName.js";
+import { SchemaValidator } from "../core/schema/SchemaValidator.js";
 
 jest.mock("@faker-js/faker", () => ({
   faker: {},
@@ -46,7 +46,7 @@ jest.mock("../core/connection/resolveConnectionName", () => ({
   resolveConnectionName: jest.fn(),
 }));
 
-const { Factory } = require("../cli/utils/factories/Factory") as typeof import("../cli/utils/factories/Factory");
+const { Factory } = require("../cli/utils/factories/Factory") as typeof import("../cli/utils/factories/Factory.js");
 
 const mockedCloseAllConnections =
   closeAllConnections as jest.MockedFunction<typeof closeAllConnections>;

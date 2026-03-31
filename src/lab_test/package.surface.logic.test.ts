@@ -87,8 +87,8 @@ describe("Package surface hardening", () => {
       path.resolve(process.cwd(), "scripts/patch-dist-cjs-factory-entry.cjs"),
       "utf8",
     );
-    expect(indexSource).toContain('export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin";');
-    expect(indexSource).toContain('} from "./cli/utils/factories/Factory";');
+    expect(indexSource).toContain('export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin.js";');
+    expect(indexSource).toContain('} from "./cli/utils/factories/Factory.js";');
     expect(esmIndexSource).toContain('import { Factory } from "./Factory.mjs";');
     expect(esmIndexSource).not.toContain("...cjsPackage");
     expect(esmIndexSource).toContain("export default {");

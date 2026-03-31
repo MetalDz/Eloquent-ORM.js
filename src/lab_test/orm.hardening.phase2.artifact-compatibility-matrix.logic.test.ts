@@ -5,7 +5,7 @@ import {
   collapseStorageKinds,
   describeArtifactCompatibilityMismatch,
   resolveArtifactCompatibility,
-} from "../cli/utils/ArtifactCompatibility";
+} from "../cli/utils/ArtifactCompatibility.js";
 
 describe("ORM hardening phase 2 - artifact compatibility matrix", () => {
   test("phase 2 extraction plan records the compatibility matrix seam", () => {

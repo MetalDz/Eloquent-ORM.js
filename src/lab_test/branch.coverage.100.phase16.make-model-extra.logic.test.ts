@@ -1,8 +1,8 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { dbConfig } from "../config/database";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { dbConfig } from "../config/database.js";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 16 makeModel extra branches", () => {
   const passthroughChalk = {
@@ -174,7 +174,7 @@ describe("Branch coverage 100% - phase 16 makeModel extra branches", () => {
         },
       });
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel("Status", { test: true, attrsFromSchema: true, force: true });
     await makeModel("Ghost", { test: true, attrsFromSchema: true, force: true });
     await makeModel("User");
@@ -239,7 +239,7 @@ describe("Branch coverage 100% - phase 16 makeModel extra branches", () => {
         },
       });
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel("Post", { test: true, withMigration: true, force: true });
 
     await makeModel("Post", { test: true, withMigration: true, force: true });
@@ -283,7 +283,7 @@ describe("Branch coverage 100% - phase 16 makeModel extra branches", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeModel } = await import("../cli/commands/makeModel");
+    const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel("Account", { test: false, withMigration: true, force: true });
 
     const migrationDir = path.join(ctx.appMigrationsRoot, "custom_conn");

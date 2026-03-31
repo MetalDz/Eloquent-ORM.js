@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, relation, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => {
   const passthroughChalk = {
@@ -103,7 +103,7 @@ describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => 
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
 
     await makeMigration("all", { test: true, exit: false });
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("No model files found"));
@@ -125,7 +125,7 @@ describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => 
       },
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", { test: true, exit: false });
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("No schema found in User"));
 
@@ -179,7 +179,7 @@ describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => 
       };
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("all", { test: true, exit: false });
 
     const orderedTables = ctx.toCreateSQL.mock.calls.map((args) => args[0]);
@@ -227,7 +227,7 @@ describe("Branch coverage 100% - phase 11 makeMigration deep edge paths", () => 
         throw new Error(`exit:${String(code)}`);
       }) as never);
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await expect(makeMigration("User", { test: true })).rejects.toThrow("exit:0");
     expect(exitSpy).toHaveBeenCalledWith(0);
 

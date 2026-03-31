@@ -1,5 +1,5 @@
-import type { ConnectionInstance, ConnectionName } from "./DatabaseConnection";
-import { dbConfig } from "../../config/database";
+import type { ConnectionInstance, ConnectionName } from "./DatabaseConnection.js";
+import { dbConfig } from "../../config/database.js";
 
 export type AdapterKind = "sql" | "mongo";
 

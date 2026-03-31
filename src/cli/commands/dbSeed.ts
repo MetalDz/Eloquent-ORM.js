@@ -1,25 +1,25 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { PathMap } from "../utils/PathMap";
-import { loadModule } from "../utils/typescript/tsRuntime";
+import { PathMap } from "../utils/PathMap.js";
+import { loadModule } from "../utils/typescript/tsRuntime.js";
 import {
   closeAllConnections,
   type ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { appendAuditEvent } from "../utils/AuditTrail";
-import { silenceConsoleOutput } from "../utils/ConsoleSilencer";
+} from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { appendAuditEvent } from "../utils/AuditTrail.js";
+import { silenceConsoleOutput } from "../utils/ConsoleSilencer.js";
 import {
   matchesTargetStorageKind,
   resolveSeederStorageKindFromFile,
   targetStorageKindForConnection,
-} from "../utils/ArtifactStorage";
-import { describeArtifactCompatibilityMismatch } from "../utils/ArtifactCompatibility";
+} from "../utils/ArtifactStorage.js";
+import { describeArtifactCompatibilityMismatch } from "../utils/ArtifactCompatibility.js";
 import {
   createTargetedArtifactDecision,
   summarizeSkippedArtifacts,
-} from "../utils/ArtifactRoutingReport";
+} from "../utils/ArtifactRoutingReport.js";
 
 /**
  * db:seed

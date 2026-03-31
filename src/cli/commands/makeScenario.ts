@@ -1,18 +1,18 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { PathMap } from "../utils/PathMap";
-import { makeFactory } from "./makeFactory";
-import { makeController } from "./makeController";
-import { makeService } from "./makeService";
-import { makeMigration } from "./makeMigration";
-import { migrateFresh } from "./migrateFresh";
-import { dbSeed } from "./dbSeed";
-import { ImportResolver } from "../utils/ImportResolver";
-import { resolveConnectionNamesFromFlags } from "../utils/resolveConnectionFlags";
-import type { ConnectionName } from "../../core/connection/ConnectionFactory";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { clearLoadedModuleCache } from "../utils/typescript/tsRuntime";
+import { PathMap } from "../utils/PathMap.js";
+import { makeFactory } from "./makeFactory.js";
+import { makeController } from "./makeController.js";
+import { makeService } from "./makeService.js";
+import { makeMigration } from "./makeMigration.js";
+import { migrateFresh } from "./migrateFresh.js";
+import { dbSeed } from "./dbSeed.js";
+import { ImportResolver } from "../utils/ImportResolver.js";
+import { resolveConnectionNamesFromFlags } from "../utils/resolveConnectionFlags.js";
+import type { ConnectionName } from "../../core/connection/ConnectionFactory.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { clearLoadedModuleCache } from "../utils/typescript/tsRuntime.js";
 
 type ScenarioOptions = {
   test?: boolean;

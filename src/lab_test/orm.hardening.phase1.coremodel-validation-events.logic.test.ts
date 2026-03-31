@@ -5,8 +5,8 @@ import {
   fireModelEvent,
   shouldSkipModelHooks,
   validateModelData,
-} from "../core/model/CoreModelValidationEvents";
-import { column, relation, validate, type SchemaField } from "../core/schema/SchemaBlueprint";
+} from "../core/model/CoreModelValidationEvents.js";
+import { column, relation, validate, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("ORM hardening phase 1 CoreModel validation and events extraction", () => {
   const rootDir = process.cwd();

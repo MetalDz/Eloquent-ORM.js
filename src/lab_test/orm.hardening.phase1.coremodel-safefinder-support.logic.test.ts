@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
 
-import { SafeFinderQuery } from "../core/model/SafeFinder";
+import { SafeFinderQuery } from "../core/model/SafeFinder.js";
 import {
   applySafeFinderFilters,
   createSafeFinderQuery,
-} from "../core/model/CoreModelSafeFinderSupport";
+} from "../core/model/CoreModelSafeFinderSupport.js";
 
 describe("ORM hardening phase 1 - CoreModel safe finder support extraction", () => {
   test("plan records the extracted CoreModel safe finder support seam", () => {

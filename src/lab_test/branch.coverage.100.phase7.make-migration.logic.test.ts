@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { column, type SchemaField } from "../core/schema/SchemaBlueprint";
+import { column, type SchemaField } from "../core/schema/SchemaBlueprint.js";
 
 describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
   const passthroughChalk = {
@@ -116,7 +116,7 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
     });
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await expect(makeMigration("all", { test: true, exit: false })).rejects.toThrow(
       "Broken.ts"
     );
@@ -129,7 +129,7 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
     const ctx = setupMakeMigrationContext();
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
 
     fs.rmSync(ctx.modelsDir, { recursive: true, force: true });
     await makeMigration("User", { test: true, exit: false });
@@ -170,7 +170,7 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
     });
     ctx.closeAllConnections.mockRejectedValue(new Error("close fail"));
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", { test: true, pivotSeparate: true, exit: false });
     await makeMigration("User", { test: true, pivotSeparate: true, exit: false });
 
@@ -200,7 +200,7 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
       rollbackExtraTables: ["DROP TABLE IF EXISTS user_role;"],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
     await makeMigration("User", { test: true, pivotSeparate: false, exit: false });
 
     const migrationDir = path.join(ctx.migrationsRoot, "pg_test");
@@ -218,7 +218,7 @@ describe("Branch coverage 100% - phase 7 makeMigration edge paths", () => {
     const ctx = setupMakeMigrationContext();
     fs.writeFileSync(path.join(ctx.modelsDir, "User.ts"), "export class User {}", "utf8");
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const { makeMigration } = await import("../cli/commands/makeMigration");
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
 
     ctx.loadModule.mockReturnValue({
       User: {

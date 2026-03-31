@@ -1,6 +1,6 @@
 import path from "path";
 
-import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver";
+import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver.js";
 
 describe("App model fixture fallback", () => {
   test("can force AppSmoke fixture resolution", () => {

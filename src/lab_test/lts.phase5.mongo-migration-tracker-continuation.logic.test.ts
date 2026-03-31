@@ -1,14 +1,14 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { computeMigrationChecksum } from "../cli/utils/migrations/MigrationTracker";
+import { computeMigrationChecksum } from "../cli/utils/migrations/MigrationTracker.js";
 import {
   acquireMigrationLock,
   doesCollectionExist,
   ensureMigrationCollection,
   readAppliedMigrations,
   validateMigrationHistory,
-} from "../cli/utils/migrations/MongoMigrationTracker";
+} from "../cli/utils/migrations/MongoMigrationTracker.js";
 
 type SortSpec = Record<string, 1 | -1>;
 

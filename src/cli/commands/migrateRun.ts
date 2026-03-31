@@ -6,10 +6,10 @@ import {
   getConnection,
   closeAllConnections,
   type ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { PathMap } from "../utils/PathMap";
-import { dbConfig } from "../../config/database";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
+} from "../../core/connection/ConnectionFactory.js";
+import { PathMap } from "../utils/PathMap.js";
+import { dbConfig } from "../../config/database.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
 import {
   acquireMigrationLock,
   ensureMigrationTables,
@@ -18,7 +18,7 @@ import {
   releaseMigrationLock,
   validateMigrationHistory,
   computeMigrationChecksum,
-} from "../utils/migrations/MigrationTracker";
+} from "../utils/migrations/MigrationTracker.js";
 import {
   acquireMigrationLock as acquireMongoMigrationLock,
   ensureMigrationCollection,
@@ -26,13 +26,13 @@ import {
   recordAppliedMigration as recordAppliedMongoMigration,
   releaseMigrationLock as releaseMongoMigrationLock,
   validateMigrationHistory as validateMongoMigrationHistory,
-} from "../utils/migrations/MongoMigrationTracker";
-import { loadModule } from "../utils/typescript/tsRuntime";
+} from "../utils/migrations/MongoMigrationTracker.js";
+import { loadModule } from "../utils/typescript/tsRuntime.js";
 import {
   resolveSqlConnectionNames,
   type SqlConnectionFlags,
-} from "../utils/resolveSqlConnectionFlags";
-import { appendAuditEvent } from "../utils/AuditTrail";
+} from "../utils/resolveSqlConnectionFlags.js";
+import { appendAuditEvent } from "../utils/AuditTrail.js";
 import type { Db } from "mongodb";
 
 export type MigrateRunOptions = {

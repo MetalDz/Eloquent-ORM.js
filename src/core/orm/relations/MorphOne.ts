@@ -1,5 +1,5 @@
-import { Relation, type CoreModelClass } from "../Relation";
-import type { DriverAdapter } from "../../connection/DriverAdapter";
+import { Relation, type CoreModelClass } from "../Relation.js";
+import type { DriverAdapter } from "../../connection/DriverAdapter.js";
 
 export class MorphOne extends Relation {
   protected morphType: string;

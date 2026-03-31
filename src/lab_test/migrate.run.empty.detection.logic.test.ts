@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { PathMap } from "../cli/utils/PathMap";
-import { migrateRun } from "../cli/commands/migrateRun";
+import { PathMap } from "../cli/utils/PathMap.js";
+import { migrateRun } from "../cli/commands/migrateRun.js";
 import {
   closeAllConnections,
   getAdapter,
-} from "../core/connection/ConnectionFactory";
+} from "../core/connection/ConnectionFactory.js";
 import {
   acquireMigrationLock,
   computeMigrationChecksum,
@@ -14,8 +14,8 @@ import {
   recordAppliedMigration,
   releaseMigrationLock,
   validateMigrationHistory,
-} from "../cli/utils/migrations/MigrationTracker";
-import { loadModule } from "../cli/utils/typescript/tsRuntime";
+} from "../cli/utils/migrations/MigrationTracker.js";
+import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,

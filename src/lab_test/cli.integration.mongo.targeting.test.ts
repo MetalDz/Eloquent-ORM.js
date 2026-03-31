@@ -8,7 +8,7 @@ import {
   type CliResult,
   hasBuiltCli,
   rootDir,
-} from "./support/cli.integration.harness";
+} from "./support/cli.integration.harness.js";
 import { spawnSync } from "child_process";
 
 const hasMongoRuntimeEnv = Boolean(process.env.MONGO_TEST_URI || process.env.MONGO_URI);

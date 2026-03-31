@@ -5,14 +5,14 @@ import {
   getConnection,
   closeAllConnections,
   ConnectionName,
-} from "../../core/connection/ConnectionFactory";
-import { PathMap } from "../utils/PathMap";
-import { resolveConnectionName } from "../../core/connection/resolveConnectionName";
-import { dbConfig } from "../../config/database";
+} from "../../core/connection/ConnectionFactory.js";
+import { PathMap } from "../utils/PathMap.js";
+import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
+import { dbConfig } from "../../config/database.js";
 import {
   ensureMigrationCollection,
   readAppliedMigrations as readMongoAppliedMigrations,
-} from "../utils/migrations/MongoMigrationTracker";
+} from "../utils/migrations/MongoMigrationTracker.js";
 import type { Db } from "mongodb";
 
 export type MigrateStatusOptions = {

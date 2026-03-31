@@ -1,6 +1,6 @@
-import { CoreModel } from "../core/model/CoreModel";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory";
-import { column, validate } from "../core/schema/SchemaBlueprint";
+import { CoreModel } from "../core/model/CoreModel.js";
+import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
+import { column, validate } from "../core/schema/SchemaBlueprint.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),

@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-type SharedModule = typeof import("./support/cli.integration.connection.shared");
+type SharedModule = typeof import("./support/cli.integration.connection.shared.js");
 
 describe("Branch coverage 70 - CLI support shared helpers", () => {
   const originalEnv = { ...process.env };
