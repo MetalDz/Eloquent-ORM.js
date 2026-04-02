@@ -6,12 +6,12 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1320,
-    "uniqueFiles": 349,
+    "totalMatches": 1247,
+    "uniqueFiles": 310,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1193
+        "matches": 1120
       },
       {
         "kind": "require() local imports",
@@ -33,16 +33,6 @@
         "area": "src/core",
         "files": 41,
         "matches": 112
-      },
-      {
-        "area": "src/app",
-        "files": 23,
-        "matches": 39
-      },
-      {
-        "area": "src/test",
-        "files": 16,
-        "matches": 34
       },
       {
         "area": "other",

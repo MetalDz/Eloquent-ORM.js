@@ -1,16 +1,27 @@
 const fs = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
 
 const SNAPSHOT_DATE = "2026-03-30";
 const SOURCE_EXTENSIONS = new Set([".ts"]);
 const TEMPLATE_EXTENSIONS = new Set([".tpl", ".ts", ".md", ".mdx"]);
+const IGNORED_SOURCE_DIRECTORIES = new Set([
+  "src/app",
+  "src/test",
+  "dist",
+  "coverage",
+  "node_modules",
+]);
 const DIRECT_IMPORT_EXPORT_PATTERN = /\bfrom\s+["'](\.{1,2}\/[^"']+)["']/g;
 const DIRECT_REQUIRE_PATTERN = /require\(\s*["'](\.{1,2}\/[^"']+)["']\s*\)/g;
 const LITERAL_IMPORT_PATTERN =
   /["'`](?:from\s+["'](\.{1,2}\/[^"'`]+)["']|require\(\s*["'](\.{1,2}\/[^"'`]+)["']\s*\))/g;
 
-function walkFiles(rootDir, extensions, output = []) {
+function shouldIgnoreDirectory(cwd, directoryPath) {
+  const relativePath = path.relative(cwd, directoryPath).replace(/\\/g, "/");
+  return IGNORED_SOURCE_DIRECTORIES.has(relativePath);
+}
+
+function walkFiles(cwd, rootDir, extensions, output = []) {
   if (!fs.existsSync(rootDir)) {
     return output;
   }
@@ -18,7 +29,10 @@ function walkFiles(rootDir, extensions, output = []) {
   for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
     const fullPath = path.join(rootDir, entry.name);
     if (entry.isDirectory()) {
-      walkFiles(fullPath, extensions, output);
+      if (shouldIgnoreDirectory(cwd, fullPath)) {
+        continue;
+      }
+      walkFiles(cwd, fullPath, extensions, output);
       continue;
     }
 
@@ -29,36 +43,6 @@ function walkFiles(rootDir, extensions, output = []) {
 
   return output;
 }
-
-function listTrackedFiles(cwd, roots, extensions) {
-  const gitProbe = spawnSync("git", ["rev-parse", "--show-toplevel"], {
-    cwd,
-    encoding: "utf8",
-    shell: false,
-  });
-
-  if (gitProbe.error || gitProbe.status !== 0) {
-    return null;
-  }
-
-  const tracked = spawnSync("git", ["ls-files", "--", ...roots], {
-    cwd,
-    encoding: "utf8",
-    shell: false,
-  });
-
-  if (tracked.error || tracked.status !== 0) {
-    return null;
-  }
-
-  return tracked.stdout
-    .split(/\r?\n/)
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .filter((relativePath) => !extensions || extensions.has(path.extname(relativePath)))
-    .map((relativePath) => path.join(cwd, relativePath));
-}
-
 function toRelativePath(cwd, filePath) {
   return path.relative(cwd, filePath).replace(/\\/g, "/");
 }
@@ -285,19 +269,17 @@ function buildNodeNextBlockerInventory(options = {}) {
   const sourceRoots = ["src", "bin"];
   const generatorTemplateRoots = ["src/cli", "src/cli/templates"];
 
-  const trackedSourceFiles = listTrackedFiles(cwd, sourceRoots, SOURCE_EXTENSIONS);
-  const trackedCliFiles = listTrackedFiles(cwd, ["src/cli"], SOURCE_EXTENSIONS);
-  const trackedTemplateFiles = listTrackedFiles(cwd, ["src/cli/templates"], TEMPLATE_EXTENSIONS);
-  const trackedTestFiles = listTrackedFiles(cwd, ["src/lab_test"], SOURCE_EXTENSIONS);
-
-  const sourceFiles = trackedSourceFiles || [
-    ...walkFiles(path.join(cwd, "src"), SOURCE_EXTENSIONS),
-    ...walkFiles(path.join(cwd, "bin"), SOURCE_EXTENSIONS),
+  const sourceFiles = [
+    ...walkFiles(cwd, path.join(cwd, "src"), SOURCE_EXTENSIONS),
+    ...walkFiles(cwd, path.join(cwd, "bin"), SOURCE_EXTENSIONS),
   ];
-  const cliFiles = trackedCliFiles || walkFiles(path.join(cwd, "src", "cli"), SOURCE_EXTENSIONS);
-  const templateFiles =
-    trackedTemplateFiles || walkFiles(path.join(cwd, "src", "cli", "templates"), TEMPLATE_EXTENSIONS);
-  const testFiles = trackedTestFiles || walkFiles(path.join(cwd, "src", "lab_test"), SOURCE_EXTENSIONS);
+  const cliFiles = walkFiles(cwd, path.join(cwd, "src", "cli"), SOURCE_EXTENSIONS);
+  const templateFiles = walkFiles(
+    cwd,
+    path.join(cwd, "src", "cli", "templates"),
+    TEMPLATE_EXTENSIONS,
+  );
+  const testFiles = walkFiles(cwd, path.join(cwd, "src", "lab_test"), SOURCE_EXTENSIONS);
 
   const source = scanFiles(
     cwd,
