@@ -1,6 +1,6 @@
 # Package Update Summary
 
-Version: `1.0.10`
+Version: `1.0.11`
 
 This file is the source of truth for the release-focused quick info block that appears in `README.md`.
 
@@ -14,10 +14,10 @@ npm run docs:sync-package-metadata
 
 <!-- release-lineup:start -->
 Latest Release:
-- `v1.0.10 latest`
+- `v1.0.11 latest`
 
 Old Release:
-- `v1.0.9`
+- `v1.0.10`
 <!-- release-lineup:end -->
 
 ## Latest Release Headline
@@ -37,10 +37,10 @@ Old Release:
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `v1.0.10`
-- Latest release: `v1.0.10 latest`
+- Version: `v1.0.11`
+- Latest release: `v1.0.11 latest`
 - What's new: [Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
-- Old release: `v1.0.9`
+- Old release: `v1.0.10`
 - Latest update: Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start

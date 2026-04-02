@@ -1,3 +1,12 @@
+## [1.0.11](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.10...v1.0.11) (2026-04-02)
+
+
+### Bug Fixes
+
+* align cjs factory patch with nodenext dist emit ([8f49d00](https://github.com/MetalDz/Eloquent-ORM.js/commit/8f49d005f3fc837124650395514f9958f214b99f))
+* emit nodenext-safe imports from generators ([2d93aef](https://github.com/MetalDz/Eloquent-ORM.js/commit/2d93aefe81d8695a5d9a6d126d78cdbcea58d032))
+* make nodenext blocker inventory deterministic across ci and local ([ce55188](https://github.com/MetalDz/Eloquent-ORM.js/commit/ce55188f96272a28ccb3f6849df74a82ea43a143))
+
 ## [1.0.10](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.9...v1.0.10) (2026-03-29)
 
 
