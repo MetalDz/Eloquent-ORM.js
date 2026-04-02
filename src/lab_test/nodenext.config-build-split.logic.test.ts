@@ -14,6 +14,7 @@ describe("NodeNext config and build split", () => {
     expect(content).toContain("published `dist/*` build remains CommonJS");
     expect(content).toContain("`tsconfig.base.json`");
     expect(content).toContain("`tsconfig.build.json`");
+    expect(content).toContain("`tsconfig.esm.json`");
     expect(content).toContain("`tsconfig.nodenext.json`");
     expect(content).toContain("does **not** mean the whole repo already passes under NodeNext");
     expect(content).toContain("CommonJS build stability stays protected");
@@ -38,6 +39,12 @@ describe("NodeNext config and build split", () => {
       extends?: string;
       compilerOptions?: Record<string, unknown>;
     };
+    const esmBuildConfig = JSON.parse(
+      fs.readFileSync(path.resolve(cwd, "tsconfig.esm.json"), "utf8"),
+    ) as {
+      extends?: string;
+      compilerOptions?: Record<string, unknown>;
+    };
     const nodeNextConfig = JSON.parse(
       fs.readFileSync(path.resolve(cwd, "tsconfig.nodenext.json"), "utf8"),
     ) as {
@@ -48,10 +55,17 @@ describe("NodeNext config and build split", () => {
     expect(packageJson.scripts?.["typecheck:nodenext"]).toBe(
       "tsc -p tsconfig.nodenext.json --noEmit --skipLibCheck",
     );
+    expect(packageJson.scripts?.build).toContain("tsc -p tsconfig.build.json");
+    expect(packageJson.scripts?.build).toContain("tsc -p tsconfig.esm.json");
+    expect(packageJson.scripts?.build).not.toContain("generate-esm-entrypoints.cjs");
     expect(baseConfig.compilerOptions?.target).toBe("es2020");
     expect(buildConfig.extends).toBe("./tsconfig.base.json");
     expect(buildConfig.compilerOptions?.module).toBe("CommonJS");
     expect(buildConfig.compilerOptions?.moduleResolution).toBe("node");
+    expect(esmBuildConfig.extends).toBe("./tsconfig.base.json");
+    expect(esmBuildConfig.compilerOptions?.module).toBe("NodeNext");
+    expect(esmBuildConfig.compilerOptions?.moduleResolution).toBe("NodeNext");
+    expect(esmBuildConfig.compilerOptions?.outDir).toBe("esm");
     expect(nodeNextConfig.extends).toBe("./tsconfig.base.json");
     expect(nodeNextConfig.compilerOptions?.module).toBe("NodeNext");
     expect(nodeNextConfig.compilerOptions?.moduleResolution).toBe("NodeNext");

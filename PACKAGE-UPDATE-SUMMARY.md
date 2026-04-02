@@ -23,13 +23,13 @@ Old Release:
 ## Latest Release Headline
 
 <!-- latest-package-headline:start -->
-- Patched. Root ESM imports no longer touch Factory eagerly, preserving CommonJS and NodeNext compatibility.
+- Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.
 <!-- latest-package-headline:end -->
 
 ## Latest Release Summary
 
 <!-- latest-package-update:start -->
-- Fix the published root ESM surface so non-factory root imports no longer trigger the factory runtime, preserving CommonJS consumers and stabilizing NodeNext/Jest ESM usage.
+- Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
 <!-- latest-package-update:end -->
 
 ## Synced Quick Info
@@ -39,9 +39,9 @@ Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `v1.0.10`
 - Latest release: `v1.0.10 latest`
-- What's new: [Patched. Root ESM imports no longer touch Factory eagerly, preserving CommonJS and NodeNext compatibility.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
+- What's new: [Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
 - Old release: `v1.0.9`
-- Latest update: Fix the published root ESM surface so non-factory root imports no longer trigger the factory runtime, preserving CommonJS consumers and stabilizing NodeNext/Jest ESM usage.
+- Latest update: Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history

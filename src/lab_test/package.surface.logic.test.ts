@@ -81,6 +81,9 @@ describe("Package surface hardening", () => {
 
   test("root package exports the generator-facing helpers", () => {
     const indexSource = fs.readFileSync(path.resolve(process.cwd(), "src/index.ts"), "utf8");
+    const esmEntrySource = fs.readFileSync(path.resolve(process.cwd(), "esm-src/index.mts"), "utf8");
+    const esmFactoryEntrySource = fs.readFileSync(path.resolve(process.cwd(), "esm-src/Factory.mts"), "utf8");
+    const esmModelEntrySource = fs.readFileSync(path.resolve(process.cwd(), "esm-src/Model.mts"), "utf8");
     const esmIndexSource = fs.readFileSync(path.resolve(process.cwd(), "esm/index.mjs"), "utf8");
     const esmFactorySource = fs.readFileSync(path.resolve(process.cwd(), "esm/Factory.mjs"), "utf8");
     const patchScriptSource = fs.readFileSync(
@@ -89,6 +92,11 @@ describe("Package surface hardening", () => {
     );
     expect(indexSource).toContain('export { PivotHelperMixin } from "./core/orm/mixins/PivotHelperMixin.js";');
     expect(indexSource).toContain('} from "./cli/utils/factories/Factory.js";');
+    expect(esmEntrySource).toContain('import cjsPackage from "../dist/index.js";');
+    expect(esmEntrySource).toContain('import { Factory } from "./Factory.mjs";');
+    expect(esmFactoryEntrySource).toContain('import { createRequire } from "node:module";');
+    expect(esmFactoryEntrySource).toContain('cachedFaker = require("@faker-js/faker").faker');
+    expect(esmModelEntrySource).toContain('import cjsModelPackage from "../dist/Model.js";');
     expect(esmIndexSource).toContain('import { Factory } from "./Factory.mjs";');
     expect(esmIndexSource).not.toContain("...cjsPackage");
     expect(esmIndexSource).toContain("export default {");

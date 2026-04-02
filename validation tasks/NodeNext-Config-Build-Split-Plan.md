@@ -16,6 +16,8 @@ Split config responsibilities so the repo can move toward a NodeNext source tree
   - remains CommonJS-oriented until the import migration is complete
 - `tsconfig.build.json`
   - explicit CommonJS build output for `dist/*`
+- `tsconfig.esm.json`
+  - explicit ESM build output for the published `esm/*` surface
 - `tsconfig.nodenext.json`
   - explicit NodeNext target contract for the source-tree migration
 
@@ -24,6 +26,7 @@ This split does **not** mean the whole repo already passes under NodeNext.
 
 At this stage:
 - CommonJS build stability stays protected
+- published ESM entrypoints compile from a dedicated TypeScript build
 - NodeNext typecheck exists as the migration target
 - the import rewrite and generator/template migration still come later
 

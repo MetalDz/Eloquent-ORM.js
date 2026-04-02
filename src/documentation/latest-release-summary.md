@@ -10,12 +10,12 @@ Last updated: 2026-03-29
 
 ## What's New
 <!-- latest-package-headline:start -->
-- Patched. Root ESM imports no longer touch Factory eagerly, preserving CommonJS and NodeNext compatibility.
+- Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.
 <!-- latest-package-headline:end -->
 
 ## Exact Changes
 <!-- latest-package-update:start -->
-- Fix the published root ESM surface so non-factory root imports no longer trigger the factory runtime, preserving CommonJS consumers and stabilizing NodeNext/Jest ESM usage.
+- Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
 <!-- latest-package-update:end -->
 
 ## References
