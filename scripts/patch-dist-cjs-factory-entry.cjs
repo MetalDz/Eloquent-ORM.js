@@ -2,10 +2,10 @@ const fs = require("fs");
 const path = require("path");
 
 const eagerFactoryExportPattern =
-  /var Factory_1 = require\("\.\/cli\/utils\/factories\/Factory"\);\r?\nObject\.defineProperty\(exports, "Factory", \{ enumerable: true, get: function \(\) \{ return Factory_1\.Factory; \} \}\);/;
+  /var Factory(?:_js_1|_1) = require\("\.\/cli\/utils\/factories\/Factory(?:\.js)?"\);\r?\nObject\.defineProperty\(exports, "Factory", \{ enumerable: true, get: function \(\) \{ return Factory(?:_js_1|_1)\.Factory; \} \}\);/;
 
 const lazyFactoryExport =
-  'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return require("./cli/utils/factories/Factory").Factory; } });';
+  'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return require("./cli/utils/factories/Factory.js").Factory; } });';
 
 function patchDistCjsFactoryEntry(options = {}) {
   const cwd = options.cwd || process.cwd();

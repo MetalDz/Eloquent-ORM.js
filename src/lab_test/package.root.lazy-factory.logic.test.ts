@@ -15,15 +15,15 @@ describe("Package root lazy Factory export", () => {
     const distIndexPath = path.join(distDir, "index.js");
 
     fs.mkdirSync(distDir, { recursive: true });
-    fs.writeFileSync(
-      distIndexPath,
-      [
-        '"use strict";',
-        'var Factory_1 = require("./cli/utils/factories/Factory");',
-        'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return Factory_1.Factory; } });',
-        "",
-      ].join("\n"),
-      "utf8",
+      fs.writeFileSync(
+        distIndexPath,
+        [
+          '"use strict";',
+          'var Factory_js_1 = require("./cli/utils/factories/Factory.js");',
+          'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return Factory_js_1.Factory; } });',
+          "",
+        ].join("\n"),
+        "utf8",
     );
 
     try {
@@ -37,9 +37,9 @@ describe("Package root lazy Factory export", () => {
 
       expect(first.changed).toBe(true);
       expect(first.filePath).toBe(distIndexPath);
-      expect(patched).not.toContain('var Factory_1 = require("./cli/utils/factories/Factory");');
+      expect(patched).not.toContain('var Factory_js_1 = require("./cli/utils/factories/Factory.js");');
       expect(patched).toContain(
-        'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return require("./cli/utils/factories/Factory").Factory; } });',
+        'Object.defineProperty(exports, "Factory", { enumerable: true, get: function () { return require("./cli/utils/factories/Factory.js").Factory; } });',
       );
 
       const second = patchDistCjsFactoryEntry({ cwd: tempDir });
