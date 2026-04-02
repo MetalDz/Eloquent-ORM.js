@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 
 const SNAPSHOT_DATE = "2026-03-30";
 const SOURCE_EXTENSIONS = new Set([".ts"]);
@@ -27,6 +28,35 @@ function walkFiles(rootDir, extensions, output = []) {
   }
 
   return output;
+}
+
+function listTrackedFiles(cwd, roots, extensions) {
+  const gitProbe = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+    cwd,
+    encoding: "utf8",
+    shell: false,
+  });
+
+  if (gitProbe.error || gitProbe.status !== 0) {
+    return null;
+  }
+
+  const tracked = spawnSync("git", ["ls-files", "--", ...roots], {
+    cwd,
+    encoding: "utf8",
+    shell: false,
+  });
+
+  if (tracked.error || tracked.status !== 0) {
+    return null;
+  }
+
+  return tracked.stdout
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .filter((relativePath) => !extensions || extensions.has(path.extname(relativePath)))
+    .map((relativePath) => path.join(cwd, relativePath));
 }
 
 function toRelativePath(cwd, filePath) {
@@ -255,13 +285,19 @@ function buildNodeNextBlockerInventory(options = {}) {
   const sourceRoots = ["src", "bin"];
   const generatorTemplateRoots = ["src/cli", "src/cli/templates"];
 
-  const sourceFiles = [
+  const trackedSourceFiles = listTrackedFiles(cwd, sourceRoots, SOURCE_EXTENSIONS);
+  const trackedCliFiles = listTrackedFiles(cwd, ["src/cli"], SOURCE_EXTENSIONS);
+  const trackedTemplateFiles = listTrackedFiles(cwd, ["src/cli/templates"], TEMPLATE_EXTENSIONS);
+  const trackedTestFiles = listTrackedFiles(cwd, ["src/lab_test"], SOURCE_EXTENSIONS);
+
+  const sourceFiles = trackedSourceFiles || [
     ...walkFiles(path.join(cwd, "src"), SOURCE_EXTENSIONS),
     ...walkFiles(path.join(cwd, "bin"), SOURCE_EXTENSIONS),
   ];
-  const cliFiles = walkFiles(path.join(cwd, "src", "cli"), SOURCE_EXTENSIONS);
-  const templateFiles = walkFiles(path.join(cwd, "src", "cli", "templates"), TEMPLATE_EXTENSIONS);
-  const testFiles = walkFiles(path.join(cwd, "src", "lab_test"), SOURCE_EXTENSIONS);
+  const cliFiles = trackedCliFiles || walkFiles(path.join(cwd, "src", "cli"), SOURCE_EXTENSIONS);
+  const templateFiles =
+    trackedTemplateFiles || walkFiles(path.join(cwd, "src", "cli", "templates"), TEMPLATE_EXTENSIONS);
+  const testFiles = trackedTestFiles || walkFiles(path.join(cwd, "src", "lab_test"), SOURCE_EXTENSIONS);
 
   const source = scanFiles(
     cwd,
