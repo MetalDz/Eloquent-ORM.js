@@ -1,14 +1,10 @@
+import fs from "fs";
 import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
-import { loadAppModel } from "./support/appModelResolver.js";
-
-jest.mock("../core/connection/ConnectionFactory", () => ({
-  getAdapter: jest.fn(),
-  getConnection: jest.fn(),
-}));
-
-const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
-const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
+import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver.js";
+import {
+  clearRuntimeConnectionFactoryHarnessCache,
+  loadRuntimeConnectionFactoryModule,
+} from "./support/runtimeConnectionFactoryHarness.js";
 
 function loadAppSmokeModel() {
   return loadAppModel<{
@@ -65,6 +61,18 @@ function makeSqlAdapter(): DriverAdapter & {
   };
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): () => void {
+  const original = fs.readFileSync(filePath, "utf8");
+  const pinned = original.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+  return () => {
+    fs.writeFileSync(filePath, original, "utf8");
+  };
+}
+
 describe("ORM hardening phase 4 real-model read and persistence integration", () => {
   const originalDbConnection = process.env.DB_CONNECTION;
   const originalDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
@@ -73,6 +81,7 @@ describe("ORM hardening phase 4 real-model read and persistence integration", ()
     jest.clearAllMocks();
     process.env.DB_CONNECTION = "mysql";
     process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+    clearRuntimeConnectionFactoryHarnessCache();
   });
 
   afterAll(() => {
@@ -90,7 +99,7 @@ describe("ORM hardening phase 4 real-model read and persistence integration", ()
   });
 
   test("AppSmoke supports finder hydration, serialization, and persisted updates through the SQL runtime path", async () => {
-    const AppSmoke = loadAppSmokeModel();
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
     const adapter = makeSqlAdapter();
     adapter.queryOne.mockResolvedValueOnce({
       id: 41,
@@ -98,48 +107,63 @@ describe("ORM hardening phase 4 real-model read and persistence integration", ()
       created_at: "2026-03-14T00:00:00Z",
       updated_at: "2026-03-14T00:00:00Z",
     });
-    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+    runtimeConnectionFactory.getAdapter = jest.fn(
+      async () => adapter as unknown as DriverAdapter
+    );
+    runtimeConnectionFactory.getConnection = jest.fn(
+      async () => adapter as unknown as DriverAdapter
+    );
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
-    const found = await AppSmoke.findOneBy("name", "Smoke Alpha");
-    expect(found).toBeInstanceOf(AppSmoke);
-    expect(adapter.queryOne).toHaveBeenCalledWith(
-      "SELECT * FROM `appsmokes` WHERE `name` = ? LIMIT 1",
-      ["Smoke Alpha"]
-    );
+    const appSmokePath = resolveAppModelPath("AppSmoke");
+    const restoreAppSmoke = pinGeneratedSqlConnection(appSmokePath, "mysql");
 
-    const foundModel = found as InstanceType<typeof AppSmoke> & Record<string, unknown>;
-    expect(foundModel.toObject()).toEqual(
-      expect.objectContaining({
-        id: 41,
-        name: "Smoke Alpha",
-      })
-    );
-    expect(foundModel.toJSON()).toEqual(
-      expect.objectContaining({
-        id: 41,
-        name: "Smoke Alpha",
-      })
-    );
+    try {
+      process.env.DB_CONNECTION = "mysql";
+      const AppSmoke = loadAppSmokeModel();
+      const found = await AppSmoke.findOneBy("name", "Smoke Alpha");
+      expect(found).toBeInstanceOf(AppSmoke);
+      expect(adapter.queryOne).toHaveBeenCalledWith(
+        "SELECT * FROM `appsmokes` WHERE `name` = ? LIMIT 1",
+        ["Smoke Alpha"]
+      );
 
-    foundModel.fill({ name: "Smoke Beta" });
-    await foundModel.save();
-    expect(adapter.execute).toHaveBeenNthCalledWith(
-      1,
-      "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
-      ["Smoke Beta", 41]
-    );
+      const foundModel = found as InstanceType<typeof AppSmoke> & Record<string, unknown>;
+      expect(foundModel.toObject()).toEqual(
+        expect.objectContaining({
+          id: 41,
+          name: "Smoke Alpha",
+        })
+      );
+      expect(foundModel.toJSON()).toEqual(
+        expect.objectContaining({
+          id: 41,
+          name: "Smoke Alpha",
+        })
+      );
 
-    await foundModel.patch({ name: "Smoke Gamma" });
-    expect(adapter.execute).toHaveBeenNthCalledWith(
-      2,
-      "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
-      ["Smoke Gamma", 41]
-    );
-    expect(foundModel.name).toBe("Smoke Gamma");
+      foundModel.fill({ name: "Smoke Beta" });
+      await foundModel.save();
+      expect(adapter.execute).toHaveBeenNthCalledWith(
+        1,
+        "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
+        ["Smoke Beta", 41]
+      );
+
+      await foundModel.patch({ name: "Smoke Gamma" });
+      expect(adapter.execute).toHaveBeenNthCalledWith(
+        2,
+        "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
+        ["Smoke Gamma", 41]
+      );
+      expect(foundModel.name).toBe("Smoke Gamma");
+    } finally {
+      restoreAppSmoke();
+    }
   });
 
   test("GeoLocalisation supports finder hydration, serialization, and persisted updates through the Mongo runtime path", async () => {
-    const GeoLocalisation = loadGeoLocalisationModel();
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
     const toArray = jest.fn();
     const limit = jest.fn();
     const cursor = { limit, toArray };
@@ -161,8 +185,14 @@ describe("ORM hardening phase 4 real-model read and persistence integration", ()
         updated_at: "2026-03-14T00:00:00Z",
       },
     ]);
-    mockedGetConnection.mockResolvedValue(mongoDb as never);
+    runtimeConnectionFactory.getConnection = jest.fn(async () => mongoDb as never);
+    runtimeConnectionFactory.getAdapter = jest.fn(async () => {
+      throw new Error("Mongo hardening test should not resolve a SQL adapter.");
+    });
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
+    process.env.DB_CONNECTION = "mongo";
+    const GeoLocalisation = loadGeoLocalisationModel();
     const found = await GeoLocalisation.findOneBy("name", "Geo Alpha");
     expect(found).toBeInstanceOf(GeoLocalisation);
     expect(collection.find).toHaveBeenCalledWith({ name: "Geo Alpha" });

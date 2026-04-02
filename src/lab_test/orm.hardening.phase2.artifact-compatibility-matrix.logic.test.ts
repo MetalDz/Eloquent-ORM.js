@@ -64,7 +64,7 @@ describe("ORM hardening phase 2 - artifact compatibility matrix", () => {
     const storagePath = path.resolve(process.cwd(), "src/cli/utils/ArtifactStorage.ts");
     const content = fs.readFileSync(storagePath, "utf8");
 
-    expect(content).toContain('from "./ArtifactCompatibility";');
+    expect(content).toContain('from "./ArtifactCompatibility.js";');
     expect(content).toContain("collapseStorageKinds");
     expect(content).toContain("resolveArtifactCompatibility");
     expect(content).toContain("type StorageKind");

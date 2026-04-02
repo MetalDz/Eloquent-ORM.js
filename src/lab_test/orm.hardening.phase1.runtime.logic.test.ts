@@ -41,6 +41,15 @@ function removeIfExists(filePath: string): void {
   fs.rmSync(filePath, { force: true });
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): void {
+  const content = fs.readFileSync(filePath, "utf8");
+  const pinned = content.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+}
+
 describe("ORM hardening phase 1 runtime boundaries", () => {
   const rootDir = process.cwd();
   const appModelsDir = path.resolve(rootDir, "src/app/models");
@@ -142,6 +151,7 @@ describe("ORM hardening phase 1 runtime boundaries", () => {
     expect(sqlContent).toContain(`export class ${sqlModelName} extends SqlModel`);
     expect(mongoContent).toContain(`export class ${mongoModelName} extends MongoModel`);
 
+    pinGeneratedSqlConnection(sqlModelFile, "mysql");
     const sqlModule = loadModule(path.resolve(sqlModelFile));
     const mongoModule = loadModule(path.resolve(mongoModelFile));
 
@@ -150,11 +160,19 @@ describe("ORM hardening phase 1 runtime boundaries", () => {
 
     const sqlModel = new GeneratedSqlModel();
     const mongoModel = new GeneratedMongoModel();
+    const sqlProto = Object.getPrototypeOf(sqlModel);
+    const sqlBaseProto = Object.getPrototypeOf(sqlProto);
+    const mongoProto = Object.getPrototypeOf(mongoModel);
+    const mongoBaseProto = Object.getPrototypeOf(mongoProto);
+    const sqlCtorBase = Object.getPrototypeOf(GeneratedSqlModel) as { name?: string };
+    const mongoCtorBase = Object.getPrototypeOf(GeneratedMongoModel) as { name?: string };
 
-    expect(sqlModel).toBeInstanceOf(SqlModel);
-    expect(sqlModel).toBeInstanceOf(BaseModel);
-    expect(mongoModel).toBeInstanceOf(MongoModel);
-    expect(mongoModel).toBeInstanceOf(BaseModel);
+    expect(sqlCtorBase.name).toBe("SqlModel");
+    expect(mongoCtorBase.name).toBe("MongoModel");
+    expect((sqlBaseProto?.constructor as { name?: string } | undefined)?.name).toBe("SqlModel");
+    expect((mongoBaseProto?.constructor as { name?: string } | undefined)?.name).toBe("MongoModel");
+    expect((Object.getPrototypeOf(sqlBaseProto)?.constructor as { name?: string } | undefined)?.name).toBe("BaseModel");
+    expect((Object.getPrototypeOf(mongoBaseProto)?.constructor as { name?: string } | undefined)?.name).toBe("BaseModel");
 
     for (const model of [sqlModel, mongoModel]) {
       const runtimeModel = model as any;

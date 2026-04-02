@@ -3,6 +3,10 @@ import os from "os";
 import path from "path";
 import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
+import {
+  clearRuntimeConnectionFactoryHarnessCache,
+  loadRuntimeConnectionFactoryModule,
+} from "./support/runtimeConnectionFactoryHarness.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -13,12 +17,6 @@ jest.mock("chalk", () => ({
       apply: (_target, _thisArg, args: unknown[]) => String(args[0] ?? ""),
     }
   ),
-}));
-
-jest.mock("../core/connection/ConnectionFactory", () => ({
-  getAdapter: jest.fn(),
-  getConnection: jest.fn(),
-  closeAllConnections: jest.fn(async () => undefined),
 }));
 
 function makeSqlAdapter(): DriverAdapter & {
@@ -62,6 +60,15 @@ function clearModule(filePath: string): void {
   } catch {
     // ignore cache misses during cleanup
   }
+}
+
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): void {
+  const content = fs.readFileSync(filePath, "utf8");
+  const pinned = content.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
 }
 
 function setupScenarioContext(options: { useMongo: boolean }) {
@@ -157,6 +164,7 @@ describe("Scenario-generated model instance persistence", () => {
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     process.env.DB_CONNECTION = "mysql";
     process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+    clearRuntimeConnectionFactoryHarnessCache();
   });
 
   afterEach(() => {
@@ -189,11 +197,14 @@ describe("Scenario-generated model instance persistence", () => {
 
     const ctx = setupScenarioContext({ useMongo: false });
     try {
-      const connectionFactory = await import("../core/connection/ConnectionFactory.js");
-      const currentGetAdapter = connectionFactory.getAdapter as jest.MockedFunction<
-        typeof connectionFactory.getAdapter
-      >;
-      currentGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+      const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
+      runtimeConnectionFactory.getAdapter = jest.fn(
+        async () => adapter as unknown as DriverAdapter
+      );
+      runtimeConnectionFactory.getConnection = jest.fn(
+        async () => adapter as unknown as DriverAdapter
+      );
+      runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
       const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("blog", { force: true });
@@ -205,6 +216,8 @@ describe("Scenario-generated model instance persistence", () => {
       expect(content).toContain('await model.patch({ name: "Example 3" });');
 
       clearModule(userFile);
+      pinGeneratedSqlConnection(userFile, "mysql");
+      process.env.DB_CONNECTION = "mysql";
       const generatedModule = loadModule(userFile);
       const UserModel = generatedModule.User as {
         new (): {
@@ -285,11 +298,12 @@ describe("Scenario-generated model instance persistence", () => {
 
     const ctx = setupScenarioContext({ useMongo: true });
     try {
-      const connectionFactory = await import("../core/connection/ConnectionFactory.js");
-      const currentGetConnection = connectionFactory.getConnection as jest.MockedFunction<
-        typeof connectionFactory.getConnection
-      >;
-      currentGetConnection.mockResolvedValue(mongoDb as never);
+      const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
+      runtimeConnectionFactory.getConnection = jest.fn(async () => mongoDb as never);
+      runtimeConnectionFactory.getAdapter = jest.fn(async () => {
+        throw new Error("Mongo scenario test should not resolve a SQL adapter.");
+      });
+      runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
       const { makeScenario } = await import("../cli/commands/makeScenario.js");
       await makeScenario("blog", { force: true, mongo: true });
@@ -300,6 +314,7 @@ describe("Scenario-generated model instance persistence", () => {
       expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
 
       clearModule(userFile);
+      process.env.DB_CONNECTION = "mongo";
       const generatedModule = loadModule(userFile);
       const UserModel = generatedModule.User as {
         new (): {

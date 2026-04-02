@@ -6,12 +6,12 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1306,
-    "uniqueFiles": 350,
+    "totalMatches": 1302,
+    "uniqueFiles": 345,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1180
+        "matches": 1176
       },
       {
         "kind": "require() local imports",
@@ -21,8 +21,8 @@
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 217,
-        "matches": 906
+        "files": 218,
+        "matches": 908
       },
       {
         "area": "src/cli",
@@ -41,8 +41,8 @@
       },
       {
         "area": "src/test",
-        "files": 18,
-        "matches": 27
+        "files": 12,
+        "matches": 21
       },
       {
         "area": "other",
@@ -367,7 +367,7 @@
         "kinds": {
           "exact import-string assertions": 8
         },
-        "firstLine": 91
+        "firstLine": 100
       },
       {
         "file": "src/lab_test/orm.hardening.phase1.cli-action-runtime.logic.test.ts",

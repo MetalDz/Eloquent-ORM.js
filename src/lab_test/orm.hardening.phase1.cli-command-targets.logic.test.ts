@@ -69,10 +69,10 @@ describe("ORM hardening phase 1 CLI command target resolution extraction", () =>
     const migrationSource = fs.readFileSync(migrationRegistrationPath, "utf8");
 
     expect(cliSource).not.toContain('from "./utils/resolveConnectionFlags"');
-    expect(seedScenarioSource).toContain('from "./CliCommandTargets"');
+    expect(seedScenarioSource).toContain('from "./CliCommandTargets.js"');
     expect(seedScenarioSource).toContain("resolveCliPrimaryConnectionName(options)");
     expect(seedScenarioSource.match(/resolveCliConnectionNames\(options\)/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(migrationSource).toContain('from "./CliCommandTargets"');
+    expect(migrationSource).toContain('from "./CliCommandTargets.js"');
     expect(migrationSource.match(/resolveCliConnectionNames\(options\)/g)?.length).toBeGreaterThanOrEqual(4);
   });
 });

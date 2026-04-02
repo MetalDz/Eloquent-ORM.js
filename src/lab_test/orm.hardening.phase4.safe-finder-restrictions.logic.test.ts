@@ -1,7 +1,8 @@
+import fs from "fs";
 import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
 import { BaseModel } from "../core/model/BaseModel.js";
 import { column, relation, validate } from "../core/schema/SchemaBlueprint.js";
-import { loadAppModel } from "./support/appModelResolver.js";
+import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver.js";
 
 jest.mock("../core/connection/ConnectionFactory", () => ({
   getAdapter: jest.fn(),
@@ -26,6 +27,18 @@ function loadGeoLocalisationModel() {
   return loadAppModel<AppSafeFinderStatic>("GeoLocalisation").exported;
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): () => void {
+  const original = fs.readFileSync(filePath, "utf8");
+  const pinned = original.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+  return () => {
+    fs.writeFileSync(filePath, original, "utf8");
+  };
+}
+
 describe("ORM hardening phase 4 safe finder restrictions", () => {
   const originalDbConnection = process.env.DB_CONNECTION;
 
@@ -43,22 +56,30 @@ describe("ORM hardening phase 4 safe finder restrictions", () => {
   });
 
   test("real SQL app models reject unknown safe-finder fields before adapter access", async () => {
-    const AppSmoke = loadAppSmokeModel();
+    const appSmokePath = resolveAppModelPath("AppSmoke");
+    const restoreAppSmoke = pinGeneratedSqlConnection(appSmokePath, "mysql");
 
-    expect(() => AppSmoke.where("missing", "value")).toThrow(
-      "Unknown filter field 'missing' on AppSmoke."
-    );
-    expect(() => AppSmoke.orderBy("missing")).toThrow(
-      "Unknown sort field 'missing' on AppSmoke."
-    );
-    expect(() => AppSmoke.findAllBy({ missing: "value" })).toThrow(
-      "Unknown filter field 'missing' on AppSmoke."
-    );
-    await expect(AppSmoke.existsBy({ missing: "value" })).rejects.toThrow(
-      "Unknown filter field 'missing' on AppSmoke."
-    );
+    try {
+      process.env.DB_CONNECTION = "mysql";
+      const AppSmoke = loadAppSmokeModel();
 
-    expect(mockedGetAdapter).not.toHaveBeenCalled();
+      expect(() => AppSmoke.where("missing", "value")).toThrow(
+        "Unknown filter field 'missing' on AppSmoke."
+      );
+      expect(() => AppSmoke.orderBy("missing")).toThrow(
+        "Unknown sort field 'missing' on AppSmoke."
+      );
+      expect(() => AppSmoke.findAllBy({ missing: "value" })).toThrow(
+        "Unknown filter field 'missing' on AppSmoke."
+      );
+      await expect(AppSmoke.existsBy({ missing: "value" })).rejects.toThrow(
+        "Unknown filter field 'missing' on AppSmoke."
+      );
+
+      expect(mockedGetAdapter).not.toHaveBeenCalled();
+    } finally {
+      restoreAppSmoke();
+    }
   });
 
   test("real Mongo app models reject unknown safe-finder fields before connection access", async () => {

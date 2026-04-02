@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
 
-import { loadModule } from "../../cli/utils/typescript/tsRuntime.js";
+import {
+  clearLoadedModuleCache,
+  loadModule,
+} from "../../cli/utils/typescript/tsRuntime.js";
 
 type ResolveOptions = {
   preferFixture?: boolean;
@@ -38,6 +41,7 @@ export function loadAppModel<TExport>(modelName: string, options: ResolveOptions
   } catch {
     // ignore cache misses
   }
+  clearLoadedModuleCache(filePath);
 
   const mod = loadModule(filePath) as Record<string, unknown>;
   return {

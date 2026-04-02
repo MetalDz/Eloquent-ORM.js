@@ -99,9 +99,9 @@ describe("ORM hardening phase 1 CLI action runtime extraction", () => {
       0,
     );
 
-    expect(sources[1]).toContain('from "./CliActionRuntime"');
-    expect(sources[2]).toContain('from "./CliActionRuntime"');
-    expect(sources[3]).toContain('from "./CliActionRuntime"');
+    expect(sources[1]).toContain('from "./CliActionRuntime.js"');
+    expect(sources[2]).toContain('from "./CliActionRuntime.js"');
+    expect(sources[3]).toContain('from "./CliActionRuntime.js"');
     expect(totalRunCliActionCalls).toBeGreaterThanOrEqual(6);
   });
 });

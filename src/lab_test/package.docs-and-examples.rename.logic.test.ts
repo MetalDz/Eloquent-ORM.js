@@ -56,7 +56,9 @@ describe("Package docs and examples rename", () => {
     for (const relativePath of existingExampleFiles) {
       const content = fs.readFileSync(path.resolve(rootDir, relativePath), "utf8");
       expect(
-        content.includes(`"${packageName}"`) || content.includes('"../../../index"')
+        content.includes(`"${packageName}"`) ||
+          content.includes('"../../../index"') ||
+          content.includes('"../../../index.js"')
       ).toBe(true);
       expect(content).not.toContain('"eloquentjs"');
     }

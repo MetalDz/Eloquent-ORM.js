@@ -35,6 +35,14 @@ function isPackageSourceTreeFile(filePath: string): boolean {
   );
 }
 
+function isTypeScriptSourceFile(filePath: string): boolean {
+  return /\.(?:[cm]?ts|tsx)$/i.test(filePath);
+}
+
+function runningInsideJest(): boolean {
+  return typeof process.env.JEST_WORKER_ID === "string";
+}
+
 function resolveExistingModulePath(basePath: string): string | null {
   const extension = path.extname(basePath).toLowerCase();
   const withoutExtension =
@@ -234,7 +242,15 @@ function loadTranspiledTsModule(
 
     const resolved = resolveLocalRequest(request, absolutePath);
     if (resolved) {
-      if (resolved.endsWith(".ts")) {
+      if (isTypeScriptSourceFile(resolved)) {
+        if (runningInsideJest()) {
+          try {
+            return fallbackRequire(request);
+          } catch {
+            // Keep the manual transpile fallback for NodeNext-style local source
+            // imports that Jest/ts-node cannot resolve directly.
+          }
+        }
         return loadTypeScriptModule(resolved, runtimeAvailable);
       }
       return requireFromFile(resolved);

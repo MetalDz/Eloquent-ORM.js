@@ -2,7 +2,10 @@ import fs from "fs";
 import path from "path";
 import { loadModule } from "../cli/utils/typescript/tsRuntime.js";
 import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
+import {
+  clearRuntimeConnectionFactoryHarnessCache,
+  loadRuntimeConnectionFactoryModule,
+} from "./support/runtimeConnectionFactoryHarness.js";
 
 jest.mock("chalk", () => ({
   __esModule: true,
@@ -14,15 +17,6 @@ jest.mock("chalk", () => ({
     }
   ),
 }));
-
-jest.mock("../core/connection/ConnectionFactory", () => ({
-  getAdapter: jest.fn(),
-  getConnection: jest.fn(),
-  closeAllConnections: jest.fn(async () => undefined),
-}));
-
-const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
-const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
 
 function makeSqlAdapter(): DriverAdapter & {
   query: jest.Mock;
@@ -65,6 +59,15 @@ function removeIfExists(filePath: string): void {
   fs.rmSync(filePath, { force: true });
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): void {
+  const content = fs.readFileSync(filePath, "utf8");
+  const pinned = content.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+}
+
 describe("Generated model instance persistence via make:model", () => {
   const rootDir = process.cwd();
   const appModelsDir = path.resolve(rootDir, "src/app/models");
@@ -82,6 +85,7 @@ describe("Generated model instance persistence via make:model", () => {
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     process.env.DB_CONNECTION = "mysql";
     process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+    clearRuntimeConnectionFactoryHarnessCache();
     removeIfExists(sqlModelFile);
     removeIfExists(mongoModelFile);
   });
@@ -115,7 +119,11 @@ describe("Generated model instance persistence via make:model", () => {
         name: "SQL Alpha",
       },
     });
-    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
+    const mockedGetAdapter = jest.fn(async () => adapter as unknown as DriverAdapter);
+    runtimeConnectionFactory.getAdapter = mockedGetAdapter;
+    runtimeConnectionFactory.getConnection = jest.fn(async () => adapter as unknown as DriverAdapter);
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
     const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel(sqlModelName, { force: true });
@@ -126,6 +134,8 @@ describe("Generated model instance persistence via make:model", () => {
     expect(content).toContain('model.update({ name: "Example 2" });');
     expect(content).toContain('await model.patch({ name: "Example 3" });');
 
+    pinGeneratedSqlConnection(sqlModelFile, "mysql");
+    process.env.DB_CONNECTION = "mysql";
     const generatedModule = loadModule(path.resolve(sqlModelFile));
     const GeneratedSqlModel = generatedModule[sqlModelName] as {
       new (): {
@@ -216,7 +226,12 @@ describe("Generated model instance persistence via make:model", () => {
     const mongoDb = {
       collection: jest.fn(() => collection),
     };
-    mockedGetConnection.mockResolvedValue(mongoDb as never);
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
+    runtimeConnectionFactory.getConnection = jest.fn(async () => mongoDb as never);
+    runtimeConnectionFactory.getAdapter = jest.fn(async () => {
+      throw new Error("Mongo model test should not resolve a SQL adapter.");
+    });
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
     const { makeModel } = await import("../cli/commands/makeModel.js");
     await makeModel(mongoModelName, { mongo: true, force: true });
@@ -226,6 +241,7 @@ describe("Generated model instance persistence via make:model", () => {
     expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
     expect(content).toContain(`const model = new ${mongoModelName}();`);
 
+    process.env.DB_CONNECTION = "mongo";
     const generatedModule = loadModule(path.resolve(mongoModelFile));
     const GeneratedMongoModel = generatedModule[mongoModelName] as {
       new (): {

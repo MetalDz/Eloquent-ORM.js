@@ -25,6 +25,15 @@ function removeIfExists(filePath: string): void {
   fs.rmSync(filePath, { force: true });
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): void {
+  const content = fs.readFileSync(filePath, "utf8");
+  const pinned = content.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+}
+
 describe("ORM hardening phase 3 generated app/test model stack", () => {
   const rootDir = process.cwd();
   const appModelsDir = path.resolve(rootDir, "src/app/models");
@@ -120,6 +129,10 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
       expect(content).toContain(item.expectedCoreImport);
       expect(content).toContain(item.expectedSchemaImport);
       expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
+
+      if (item.expectedBaseClass === "SqlModel") {
+        pinGeneratedSqlConnection(item.filePath, "mysql");
+      }
 
       const generatedModule = loadModule(path.resolve(item.filePath));
       const GeneratedModel = generatedModule[item.modelName] as {

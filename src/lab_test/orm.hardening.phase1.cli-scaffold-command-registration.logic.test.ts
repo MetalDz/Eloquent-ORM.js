@@ -38,7 +38,7 @@ describe("ORM hardening phase 1 - CLI scaffold command registration extraction",
     const content = fs.readFileSync(cliPath, "utf8");
 
     expect(content).toContain(
-      'import { registerCliScaffoldCommands } from "./utils/CliScaffoldCommandRegistration";',
+      'import { registerCliScaffoldCommands } from "./utils/CliScaffoldCommandRegistration.js";',
     );
     expect(content).toContain("registerCliScaffoldCommands(program);");
     expect(content).not.toContain('.command("make:model <name>")');

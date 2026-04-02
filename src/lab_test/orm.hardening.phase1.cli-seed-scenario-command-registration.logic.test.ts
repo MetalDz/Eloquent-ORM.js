@@ -39,7 +39,7 @@ describe("ORM hardening phase 1 - CLI seed scenario command registration extract
     const content = fs.readFileSync(cliPath, "utf8");
 
     expect(content).toContain(
-      'import { registerCliSeedScenarioCommands } from "./utils/CliSeedScenarioCommandRegistration";',
+      'import { registerCliSeedScenarioCommands } from "./utils/CliSeedScenarioCommandRegistration.js";',
     );
     expect(content).toContain("registerCliSeedScenarioCommands(program);");
     expect(content).not.toContain('.command("db:seed")');

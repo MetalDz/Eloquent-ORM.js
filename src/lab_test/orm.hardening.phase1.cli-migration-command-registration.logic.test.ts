@@ -40,7 +40,7 @@ describe("ORM hardening phase 1 - CLI migration command registration extraction"
     const content = fs.readFileSync(cliPath, "utf8");
 
     expect(content).toContain(
-      'import { registerCliMigrationCommands } from "./utils/CliMigrationCommandRegistration";',
+      'import { registerCliMigrationCommands } from "./utils/CliMigrationCommandRegistration.js";',
     );
     expect(content).toContain("registerCliMigrationCommands(program);");
     expect(content).not.toContain('.command("make:migration [model]")');

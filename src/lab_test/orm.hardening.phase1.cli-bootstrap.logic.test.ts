@@ -107,7 +107,7 @@ describe("ORM hardening phase 1 CLI bootstrap extraction", () => {
   test("eloquent CLI delegates bootstrap decisions to the extracted helper module", () => {
     const source = fs.readFileSync(cliPath, "utf8");
 
-    expect(source).toContain('from "./utils/CliBootstrapSupport"');
+    expect(source).toContain('from "./utils/CliBootstrapSupport.js"');
     expect(source).toContain("export async function runCli(");
     expect(source).toContain("applyCliTestConnectionOverride(argv, env);");
     expect(source).toContain("shouldAutoLoadFactoriesForCli(argv)");

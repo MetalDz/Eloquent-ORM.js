@@ -68,7 +68,7 @@ describe("ORM hardening phase 1 - CoreModel safe finder support extraction", () 
     const content = fs.readFileSync(modelPath, "utf8");
 
     expect(content).toContain(
-      'import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFinderSupport";',
+      'import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFinderSupport.js";',
     );
     expect(content).toContain("return createSafeFinderQuery(");
     expect(content).toContain("return applySafeFinderFilters(this.safeFinder(), filters).get();");

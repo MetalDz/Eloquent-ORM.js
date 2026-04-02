@@ -1,14 +1,10 @@
 import fs from "fs";
-import { getAdapter } from "../core/connection/ConnectionFactory.js";
 import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
 import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver.js";
-
-jest.mock("../core/connection/ConnectionFactory", () => ({
-  getAdapter: jest.fn(),
-  getConnection: jest.fn(),
-}));
-
-const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
+import {
+  clearRuntimeConnectionFactoryHarnessCache,
+  loadRuntimeConnectionFactoryModule,
+} from "./support/runtimeConnectionFactoryHarness.js";
 
 function loadAppSmokeModel() {
   return loadAppModel<{
@@ -64,12 +60,25 @@ function makePgAdapter(): DriverAdapter & {
   };
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "pg_test"): () => void {
+  const original = fs.readFileSync(filePath, "utf8");
+  const pinned = original.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+  return () => {
+    fs.writeFileSync(filePath, original, "utf8");
+  };
+}
+
 describe("AppSmoke safe finder integration", () => {
   const originalDbConnection = process.env.DB_CONNECTION;
 
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.DB_CONNECTION = "pg_test";
+    clearRuntimeConnectionFactoryHarnessCache();
   });
 
   afterAll(() => {
@@ -81,28 +90,43 @@ describe("AppSmoke safe finder integration", () => {
   });
 
   test("real app model inherits safe finder methods for schema-backed fields", async () => {
-    const AppSmoke = loadAppSmokeModel();
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
     const adapter = makePgAdapter();
     adapter.query.mockResolvedValue([{ id: 1, name: "Smoke" }]);
     adapter.queryOne.mockResolvedValue({ id: 2, name: "Smoke" });
-    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
-
-    const rows = await AppSmoke.where("name", "Smoke")
-      .orderBy("created_at", "desc")
-      .limit(5)
-      .get();
-    expect(rows[0]).toBeInstanceOf(AppSmoke);
-    expect(adapter.query).toHaveBeenCalledWith(
-      'SELECT * FROM "appsmokes" WHERE "name" = $1 ORDER BY "created_at" DESC LIMIT 5',
-      ["Smoke"]
+    runtimeConnectionFactory.getAdapter = jest.fn(
+      async () => adapter as unknown as DriverAdapter
     );
-
-    const first = await AppSmoke.findOneBy("name", "Smoke");
-    expect(first).toBeInstanceOf(AppSmoke);
-    expect(adapter.queryOne).toHaveBeenCalledWith(
-      'SELECT * FROM "appsmokes" WHERE "name" = $1 LIMIT 1',
-      ["Smoke"]
+    runtimeConnectionFactory.getConnection = jest.fn(
+      async () => adapter as unknown as DriverAdapter
     );
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
+    const appSmokePath = resolveAppModelPath("AppSmoke");
+    const restoreAppSmoke = pinGeneratedSqlConnection(appSmokePath, "pg_test");
+
+    try {
+      process.env.DB_CONNECTION = "pg_test";
+      const AppSmoke = loadAppSmokeModel();
+
+      const rows = await AppSmoke.where("name", "Smoke")
+        .orderBy("created_at", "desc")
+        .limit(5)
+        .get();
+      expect(rows[0]).toBeInstanceOf(AppSmoke);
+      expect(adapter.query).toHaveBeenCalledWith(
+        'SELECT * FROM "appsmokes" WHERE "name" = $1 ORDER BY "created_at" DESC LIMIT 5',
+        ["Smoke"]
+      );
+
+      const first = await AppSmoke.findOneBy("name", "Smoke");
+      expect(first).toBeInstanceOf(AppSmoke);
+      expect(adapter.queryOne).toHaveBeenCalledWith(
+        'SELECT * FROM "appsmokes" WHERE "name" = $1 LIMIT 1',
+        ["Smoke"]
+      );
+    } finally {
+      restoreAppSmoke();
+    }
   });
 
   test("AppSmoke model file documents active/inactive/published opt-in usage", () => {

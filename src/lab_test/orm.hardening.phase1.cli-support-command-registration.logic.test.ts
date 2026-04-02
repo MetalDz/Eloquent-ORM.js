@@ -35,7 +35,7 @@ describe("ORM hardening phase 1 - CLI support command registration extraction", 
     const content = fs.readFileSync(cliPath, "utf8");
 
     expect(content).toContain(
-      'import { registerCliSupportCommands } from "./utils/CliSupportCommandRegistration";',
+      'import { registerCliSupportCommands } from "./utils/CliSupportCommandRegistration.js";',
     );
     expect(content).toContain("registerCliSupportCommands(program);");
     expect(content).not.toContain('.command("cache:clear")');

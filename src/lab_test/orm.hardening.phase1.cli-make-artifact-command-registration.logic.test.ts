@@ -38,7 +38,7 @@ describe("ORM hardening phase 1 - CLI make artifact command registration extract
     const content = fs.readFileSync(cliPath, "utf8");
 
     expect(content).toContain(
-      'import { registerCliMakeArtifactCommands } from "./utils/CliMakeArtifactCommandRegistration";',
+      'import { registerCliMakeArtifactCommands } from "./utils/CliMakeArtifactCommandRegistration.js";',
     );
     expect(content).toContain("registerCliMakeArtifactCommands(program);");
     expect(content).not.toContain('.command("make:seed <model>")');

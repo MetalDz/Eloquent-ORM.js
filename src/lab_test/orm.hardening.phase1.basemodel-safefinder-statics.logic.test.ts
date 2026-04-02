@@ -36,7 +36,7 @@ describe("ORM hardening phase 1 - BaseModel safe finder static extraction", () =
     const modelPath = path.resolve(process.cwd(), "src/core/model/BaseModel.ts");
     const content = fs.readFileSync(modelPath, "utf8");
 
-    expect(content).toContain('import { BaseModelSafeFinderStaticsMixin } from "./BaseModelSafeFinderStatics";');
+    expect(content).toContain('import { BaseModelSafeFinderStaticsMixin } from "./BaseModelSafeFinderStatics.js";');
     expect(content).toContain("const SafeFinderStaticModel = BaseModelSafeFinderStaticsMixin(ComposedModel);");
     expect(content).toContain("> extends SafeFinderStaticModel");
     expect(content).not.toContain("static where<T extends typeof BaseModel>(");

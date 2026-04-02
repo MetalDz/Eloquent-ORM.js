@@ -1,14 +1,10 @@
+import fs from "fs";
 import type { DriverAdapter } from "../core/connection/DriverAdapter.js";
-import { getAdapter, getConnection } from "../core/connection/ConnectionFactory.js";
-import { loadAppModel } from "./support/appModelResolver.js";
-
-jest.mock("../core/connection/ConnectionFactory", () => ({
-  getAdapter: jest.fn(),
-  getConnection: jest.fn(),
-}));
-
-const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
-const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
+import { loadAppModel, resolveAppModelPath } from "./support/appModelResolver.js";
+import {
+  clearRuntimeConnectionFactoryHarnessCache,
+  loadRuntimeConnectionFactoryModule,
+} from "./support/runtimeConnectionFactoryHarness.js";
 
 function loadAppSmokeModel() {
   return loadAppModel<{
@@ -75,6 +71,18 @@ function makeSqlAdapter(): DriverAdapter & {
   };
 }
 
+function pinGeneratedSqlConnection(filePath: string, connectionName = "mysql"): () => void {
+  const original = fs.readFileSync(filePath, "utf8");
+  const pinned = original.replace(
+    /process\.env\.DB_CONNECTION\s*\?\?\s*"[^"]+"/g,
+    `"${connectionName}"`
+  );
+  fs.writeFileSync(filePath, pinned, "utf8");
+  return () => {
+    fs.writeFileSync(filePath, original, "utf8");
+  };
+}
+
 describe("Real model instance persistence integration", () => {
   const originalDbConnection = process.env.DB_CONNECTION;
   const originalDisableHooks = process.env.ELOQUENT_DISABLE_MODEL_HOOKS;
@@ -83,6 +91,7 @@ describe("Real model instance persistence integration", () => {
     jest.clearAllMocks();
     process.env.DB_CONNECTION = "mysql";
     process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+    clearRuntimeConnectionFactoryHarnessCache();
   });
 
   afterAll(() => {
@@ -100,7 +109,7 @@ describe("Real model instance persistence integration", () => {
   });
 
   test("AppSmoke supports fill().save().patch() through the SQL runtime path", async () => {
-    const AppSmoke = loadAppSmokeModel();
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
     const adapter = makeSqlAdapter();
     adapter.insert
       .mockResolvedValueOnce({
@@ -131,66 +140,81 @@ describe("Real model instance persistence integration", () => {
           name: "Smoke Static",
         },
       });
-    mockedGetAdapter.mockResolvedValue(adapter as unknown as DriverAdapter);
-
-    const model = new AppSmoke();
-
-    model.fill({ name: "Smoke Alpha" });
-    await model.save();
-
-    expect(adapter.insert).toHaveBeenCalledWith(
-      "INSERT INTO `appsmokes` (`name`) VALUES (?)",
-      ["Smoke Alpha"]
+    runtimeConnectionFactory.getAdapter = jest.fn(
+      async () => adapter as unknown as DriverAdapter
     );
-    expect(model.id).toBe(21);
-
-    model.update({ name: "Smoke Beta" });
-    await model.save();
-
-    expect(adapter.execute).toHaveBeenNthCalledWith(
-      1,
-      "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
-      ["Smoke Beta", 21]
+    runtimeConnectionFactory.getConnection = jest.fn(
+      async () => adapter as unknown as DriverAdapter
     );
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
-    await model.patch({ name: "Smoke Gamma" });
+    const appSmokePath = resolveAppModelPath("AppSmoke");
+    const restoreAppSmoke = pinGeneratedSqlConnection(appSmokePath, "mysql");
 
-    expect(adapter.execute).toHaveBeenNthCalledWith(
-      2,
-      "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
-      ["Smoke Gamma", 21]
-    );
-    expect(model.name).toBe("Smoke Gamma");
+    try {
+      process.env.DB_CONNECTION = "mysql";
+      const AppSmoke = loadAppSmokeModel();
+      const model = new AppSmoke();
 
-    model.fill({ name: "ab" });
-    await expect(model.save()).rejects.toThrow("Validation failed for appsmokes");
+      model.fill({ name: "Smoke Alpha" });
+      await model.save();
 
-    const createdMany = await AppSmoke.createMany([
-      { name: "Smoke Bulk A" },
-      { name: "Smoke Bulk B" },
-    ]);
-    expect(createdMany).toHaveLength(2);
-    expect(createdMany[0].id).toBe(22);
-    expect(createdMany[1].id).toBe(23);
+      expect(adapter.insert).toHaveBeenCalledWith(
+        "INSERT INTO `appsmokes` (`name`) VALUES (?)",
+        ["Smoke Alpha"]
+      );
+      expect(model.id).toBe(21);
 
-    await AppSmoke.updateMany([22, 23], { name: "Smoke Bulk Updated" });
-    await AppSmoke.patchMany([
-      { id: 22, name: "Smoke Patch A" },
-      { id: 23, name: "Smoke Patch B" },
-    ]);
-    await AppSmoke.deleteMany([22, 23]);
-    await AppSmoke.restoreMany([22, 23]);
+      model.update({ name: "Smoke Beta" });
+      await model.save();
 
-    const created = await AppSmoke.create({ name: "Smoke Static" });
-    expect(created).toBeInstanceOf(AppSmoke);
+      expect(adapter.execute).toHaveBeenNthCalledWith(
+        1,
+        "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
+        ["Smoke Beta", 21]
+      );
 
-    adapter.queryOne.mockResolvedValueOnce({ id: 21, name: "Smoke Gamma" });
-    const found = await AppSmoke.find(21);
-    expect(found).toBeInstanceOf(AppSmoke);
+      await model.patch({ name: "Smoke Gamma" });
+
+      expect(adapter.execute).toHaveBeenNthCalledWith(
+        2,
+        "UPDATE `appsmokes` SET `name` = ? WHERE `id` = ?",
+        ["Smoke Gamma", 21]
+      );
+      expect(model.name).toBe("Smoke Gamma");
+
+      model.fill({ name: "ab" });
+      await expect(model.save()).rejects.toThrow("Validation failed for appsmokes");
+
+      const createdMany = await AppSmoke.createMany([
+        { name: "Smoke Bulk A" },
+        { name: "Smoke Bulk B" },
+      ]);
+      expect(createdMany).toHaveLength(2);
+      expect(createdMany[0].id).toBe(22);
+      expect(createdMany[1].id).toBe(23);
+
+      await AppSmoke.updateMany([22, 23], { name: "Smoke Bulk Updated" });
+      await AppSmoke.patchMany([
+        { id: 22, name: "Smoke Patch A" },
+        { id: 23, name: "Smoke Patch B" },
+      ]);
+      await AppSmoke.deleteMany([22, 23]);
+      await AppSmoke.restoreMany([22, 23]);
+
+      const created = await AppSmoke.create({ name: "Smoke Static" });
+      expect(created).toBeInstanceOf(AppSmoke);
+
+      adapter.queryOne.mockResolvedValueOnce({ id: 21, name: "Smoke Gamma" });
+      const found = await AppSmoke.find(21);
+      expect(found).toBeInstanceOf(AppSmoke);
+    } finally {
+      restoreAppSmoke();
+    }
   });
 
   test("GeoLocalisation supports fill().save().patch() through the Mongo runtime path", async () => {
-    const GeoLocalisation = loadGeoLocalisationModel();
+    const runtimeConnectionFactory = loadRuntimeConnectionFactoryModule();
     const collection = {
       insertOne: jest
         .fn(async () => ({ insertedId: "mongo-geo-21" }))
@@ -204,8 +228,14 @@ describe("Real model instance persistence integration", () => {
     const mongoDb = {
       collection: jest.fn(() => collection),
     };
-    mockedGetConnection.mockResolvedValue(mongoDb as never);
+    runtimeConnectionFactory.getConnection = jest.fn(async () => mongoDb as never);
+    runtimeConnectionFactory.getAdapter = jest.fn(async () => {
+      throw new Error("Mongo integration test should not resolve a SQL adapter.");
+    });
+    runtimeConnectionFactory.closeAllConnections = jest.fn(async () => undefined);
 
+    process.env.DB_CONNECTION = "mongo";
+    const GeoLocalisation = loadGeoLocalisationModel();
     const model = new GeoLocalisation();
 
     model.fill({ name: "Geo Alpha" });

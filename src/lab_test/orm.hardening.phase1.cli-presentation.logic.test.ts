@@ -30,7 +30,7 @@ describe("ORM hardening phase 1 - CLI presentation extraction", () => {
     const cliPath = path.resolve(process.cwd(), "src/cli/eloquent.ts");
     const content = fs.readFileSync(cliPath, "utf8");
 
-    expect(content).toContain('import { printCliBanner } from "./utils/CliPresentation";');
+    expect(content).toContain('import { printCliBanner } from "./utils/CliPresentation.js";');
     expect(content).toContain("printCliBanner();");
   });
 });

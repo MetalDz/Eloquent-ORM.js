@@ -36,7 +36,7 @@ describe("ORM hardening phase 1 - CLI help catalog extraction", () => {
     );
     const content = fs.readFileSync(helperPath, "utf8");
 
-    expect(content).toContain('import { CLI_COMMAND_CATALOG } from "./CliCommandCatalog";');
+    expect(content).toContain('import { CLI_COMMAND_CATALOG } from "./CliCommandCatalog.js";');
     expect(content).toContain("console.table(CLI_COMMAND_CATALOG);");
     expect(content).not.toContain('Command: "make:model <name>"');
   });
