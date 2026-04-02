@@ -305,4 +305,31 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
 
     fs.rmSync(ctx.root, { recursive: true, force: true });
   });
+
+  test("default exit path reports plural model failures and exits with code 1", async () => {
+    const ctx = setupContext();
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    fs.writeFileSync(path.join(ctx.modelsDir, "User.ts"), "export class User {}", "utf8");
+    fs.writeFileSync(path.join(ctx.modelsDir, "Post.ts"), "export class Post {}", "utf8");
+
+    ctx.loadModule.mockImplementation(() => {
+      throw "plural-load-failed";
+    });
+
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementation(((code?: number) => {
+        throw new Error(`exit:${String(code)}`);
+      }) as never);
+
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
+
+    await expect(makeMigration("all")).rejects.toThrow("exit:1");
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Migration generation failed for 2 models:"),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    fs.rmSync(ctx.root, { recursive: true, force: true });
+  });
 });

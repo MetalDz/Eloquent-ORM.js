@@ -51,6 +51,7 @@ function resolveExistingModulePath(basePath: string): string | null {
   const seen = new Set<string>();
 
   const addCandidate = (candidate: string): void => {
+    /* istanbul ignore next -- defensive guard; current candidate generation is unique */
     if (seen.has(candidate)) {
       return;
     }

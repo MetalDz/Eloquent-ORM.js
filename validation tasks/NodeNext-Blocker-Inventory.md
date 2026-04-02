@@ -10,13 +10,13 @@ Snapshot date: `2026-03-30`
 - template roots scanned: `src/cli`, `src/cli/templates`
 
 ## Direct source blocker counts
-- local relative import/require matches in `src` and `bin`: `1302`
+- local relative import/require matches in `src` and `bin`: `1304`
 - unique TypeScript files affected: `345`
-- import/export local specifiers: `1176`
-- require() local imports: `126`
+- import/export local specifiers: `1177`
+- require() local imports: `127`
 
 ## Direct source hotspot breakdown
-- `src/lab_test`: `218 files / 908 matches`
+- `src/lab_test`: `218 files / 910 matches`
 - `src/cli`: `48 files / 210 matches`
 - `src/core`: `41 files / 112 matches`
 - `src/app`: `23 files / 39 matches`
@@ -56,7 +56,7 @@ Snapshot date: `2026-03-30`
 - `src/core/model/BaseModel.ts`: `23 matches`
 - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`: `23 matches`
 - `src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`: `21 matches`
-- `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `17 matches`
+- `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `19 matches`
 - `src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts`: `16 matches`
 - `src/lab_test/branch.coverage.70.utilities.logic.test.ts`: `16 matches`
 - `src/lab_test/lts.phase5.cli-registration-security-utility-coverage.logic.test.ts`: `15 matches`

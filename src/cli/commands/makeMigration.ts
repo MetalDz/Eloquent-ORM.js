@@ -685,6 +685,7 @@ export async function down(db: { query(sql: string): Promise<void> }) {
     console.error(chalk.red(failureSummary));
     if (options.exit !== false) {
       process.exit(1);
+      /* istanbul ignore next -- process.exit terminates the process in runtime */
       return;
     }
     throw new Error(failureSummary);

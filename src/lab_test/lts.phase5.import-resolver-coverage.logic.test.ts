@@ -87,6 +87,10 @@ describe("LTS phase 5 ImportResolver coverage", () => {
     const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
     expect(ImportResolver.publicApiImportPath()).toBe("../index");
+    expect(ImportResolver.usesNodeEsmRuntime()).toBe(false);
+    expect((ImportResolver as unknown as { usingInstalledPackage(): boolean }).usingInstalledPackage()).toBe(
+      false,
+    );
   });
 
   test("inside the repo the public API import path resolves relative to the generated file", async () => {

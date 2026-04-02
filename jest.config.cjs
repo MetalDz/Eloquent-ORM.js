@@ -2,7 +2,7 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  coverageProvider: "v8",
+  coverageProvider: "babel",
   roots: ["<rootDir>/src"],
   testMatch: ["**/lab_test/**/*.test.ts"],
   moduleNameMapper: {
@@ -21,10 +21,10 @@ module.exports = {
   coverageReporters: ["text-summary", "json-summary"],
   coverageThreshold: {
     global: {
-      lines: 99,
-      statements: 99,
-      functions: 99,
-      branches: 99,
+      lines: 100,
+      statements: 100,
+      functions: 100,
+      branches: 100,
     },
   },
 };

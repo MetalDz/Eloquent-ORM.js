@@ -6,23 +6,23 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1302,
+    "totalMatches": 1304,
     "uniqueFiles": 345,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1176
+        "matches": 1177
       },
       {
         "kind": "require() local imports",
-        "matches": 126
+        "matches": 127
       }
     ],
     "byArea": [
       {
         "area": "src/lab_test",
         "files": 218,
-        "matches": 908
+        "matches": 910
       },
       {
         "area": "src/cli",
@@ -81,10 +81,10 @@
       {
         "file": "src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts",
         "area": "src/lab_test",
-        "matches": 17,
+        "matches": 19,
         "kinds": {
-          "require() local imports": 14,
-          "import/export local specifiers": 3
+          "require() local imports": 15,
+          "import/export local specifiers": 4
         },
         "firstLine": 30
       },

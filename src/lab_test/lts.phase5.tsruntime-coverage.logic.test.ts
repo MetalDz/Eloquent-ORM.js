@@ -425,6 +425,41 @@ describe("LTS phase 5 tsRuntime coverage", () => {
     }
   });
 
+  test("manual transpile resolves local TypeScript imports even when not running under Jest", () => {
+    const previousWorkerId = process.env.JEST_WORKER_ID;
+    delete process.env.JEST_WORKER_ID;
+
+    jest.doMock("ts-node", () => {
+      throw new Error("ts-node unavailable");
+    });
+
+    let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
+    jest.isolateModules(() => {
+      runtime = require("../cli/utils/typescript/tsRuntime") as typeof import("../cli/utils/typescript/tsRuntime.js");
+    });
+
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "eloquent-lts-phase5-tsruntime-no-jest-"));
+    const depFile = path.join(tempRoot, "dep.ts");
+    const mainFile = path.join(tempRoot, "main.ts");
+
+    fs.writeFileSync(depFile, "export const value = 41;\n", "utf8");
+    fs.writeFileSync(
+      mainFile,
+      ['import { value } from "./dep";', "export const loaded = value + 1;"].join("\n"),
+      "utf8",
+    );
+
+    try {
+      expect(runtime!.loadModule(mainFile)).toEqual({ loaded: 42 });
+    } finally {
+      if (previousWorkerId === undefined) delete process.env.JEST_WORKER_ID;
+      else process.env.JEST_WORKER_ID = previousWorkerId;
+      runtime!.clearLoadedModuleCache(depFile);
+      runtime!.clearLoadedModuleCache(mainFile);
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   test("non-TypeScript modules are required directly", () => {
     let runtime: typeof import("../cli/utils/typescript/tsRuntime.js");
     jest.isolateModules(() => {

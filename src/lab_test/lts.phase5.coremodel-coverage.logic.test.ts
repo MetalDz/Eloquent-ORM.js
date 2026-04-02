@@ -379,6 +379,11 @@ describe("LTS phase 5 CoreModel coverage", () => {
         find(id: number | string, pk?: string): Promise<Record<string, unknown> | null>;
       }).find(9, "uuid"),
     ).resolves.toEqual({ id: 9, pk: "uuid" });
+    await expect(
+      (StaticDirectModel as typeof StaticDirectModel & {
+        find(id: number | string, pk?: string): Promise<Record<string, unknown> | null>;
+      }).find(10),
+    ).resolves.toEqual({ id: 10, pk: "id" });
 
     const missingPk = new StaticDirectModel() as any;
     missingPk._exists = true;
