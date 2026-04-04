@@ -173,6 +173,50 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     fs.rmSync(ctx.root, { recursive: true, force: true });
   });
 
+  test("covers generic schema extra helper naming when extra SQL is not a table or index", async () => {
+    const ctx = setupContext();
+    fs.writeFileSync(path.join(ctx.modelsDir, "User.ts"), "export class User {}", "utf8");
+
+    ctx.loadModule.mockReturnValue({
+      User: {
+        tableName: "users",
+        softDeletes: false,
+        schema: {
+          id: column("increments"),
+        } satisfies Record<string, SchemaField>,
+      },
+    });
+    ctx.toCreateSQL.mockResolvedValue({
+      mainSQL: "   ",
+      extraTables: ['ALTER TABLE "users" ADD CONSTRAINT users_email_check CHECK ("email" <> \'\');'],
+      rollbackMainSQL: "   ",
+      rollbackExtraTables: [],
+    });
+
+    const { makeMigration } = await import("../cli/commands/makeMigration.js");
+    await makeMigration("User", {
+      test: true,
+      pivotSeparate: true,
+      connectionName: "custom_conn" as any,
+      exit: false,
+    });
+
+    const migrationDir = path.join(ctx.testMigrationsRoot, "custom_conn");
+    const helperFile = fs
+      .readdirSync(migrationDir)
+      .find((fileName) => fileName.includes("_add_schema_extras.ts"));
+    expect(helperFile).toBeDefined();
+
+    const helperContent = fs.readFileSync(path.join(migrationDir, helperFile!), "utf8");
+    expect(helperContent).toContain("Auto-generated INDEX helper migration for schema extras");
+    expect(helperContent).toContain(
+      'ALTER TABLE "users" ADD CONSTRAINT users_email_check CHECK ("email" <> \'\');'
+    );
+    expect(helperContent).toContain("-- rollback SQL unavailable for schema extras");
+
+    fs.rmSync(ctx.root, { recursive: true, force: true });
+  });
+
   test("covers soft-delete column detection variants and no-op relation dependency guards", async () => {
     const ctx = setupContext();
     fs.writeFileSync(path.join(ctx.modelsDir, "User.ts"), "export class User {}", "utf8");
