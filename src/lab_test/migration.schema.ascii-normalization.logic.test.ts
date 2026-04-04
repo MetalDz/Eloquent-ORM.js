@@ -82,12 +82,15 @@ describe("migration/schema ASCII normalization", () => {
       "INFO: Migrations Path:",
       "INFO: No new columns or schema changes - skipping.",
       "INFO: Migration unchanged:",
-      "INFO: Pivot migration unchanged:",
+      "INFO: ${pendingPivot.logLabel} unchanged:",
+      'logLabel: "Pivot migration"',
+      'logLabel: "Helper migration"',
       "INFO: All database connections closed.",
       "WARN: Could not close DB connections cleanly.",
       "OK: Migration generation complete in",
       "Auto-generated ${prefix.toUpperCase()} migration for",
       "Auto-generated CREATE migration for",
+      'Auto-generated ${pendingPivot.logLabel === "Pivot migration" ? "CREATE migration" : "INDEX helper migration"} for ${pendingPivot.headerLabel!}',
     ];
 
     for (const snippet of requiredSnippets) {

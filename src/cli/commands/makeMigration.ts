@@ -84,8 +84,13 @@ function hasSameGeneratedBody(filePath: string, nextContent: string): boolean {
 type PendingPivotMigration = {
   connectionName: string;
   migrationsDir: string;
-  pivotTable: string;
-  content: string;
+  fileSuffix: string;
+  logLabel: string;
+  targetName?: string;
+  headerLabel?: string;
+  upSql?: string[];
+  downSql?: string[];
+  content?: string;
 };
 
 type MongoIndexDefinition = {
@@ -101,6 +106,53 @@ type MongoPivotDefinition = {
 
 function pascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+type ExtraMigrationDescriptor = {
+  targetName: string;
+  fileSuffix: string;
+  headerLabel: string;
+  logLabel: string;
+  fallbackRollbackSql: string;
+};
+
+function classifyExtraMigrationSql(sql: string): ExtraMigrationDescriptor {
+  const createTableMatch = sql.match(
+    /CREATE TABLE(?: IF NOT EXISTS)?\s+[`"]?([A-Za-z0-9_]+)/i
+  );
+  if (createTableMatch) {
+    const tableName = createTableMatch[1];
+    return {
+      targetName: tableName,
+      fileSuffix: `create_${tableName}_table`,
+      headerLabel: tableName,
+      logLabel: "Pivot migration",
+      fallbackRollbackSql: `DROP TABLE IF EXISTS ${tableName};`,
+    };
+  }
+
+  const createIndexMatch = sql.match(
+    /CREATE(?: UNIQUE)? INDEX(?: IF NOT EXISTS)?\s+[`"]?([A-Za-z0-9_]+)[`"]?\s+ON\s+[`"]?([A-Za-z0-9_]+)/i
+  );
+  if (createIndexMatch) {
+    const indexName = createIndexMatch[1];
+    const tableName = createIndexMatch[2];
+    return {
+      targetName: tableName,
+      fileSuffix: `add_${tableName}_indexes`,
+      headerLabel: `${tableName} indexes`,
+      logLabel: "Helper migration",
+      fallbackRollbackSql: `DROP INDEX IF EXISTS ${indexName};`,
+    };
+  }
+
+  return {
+    targetName: "schema_extras",
+    fileSuffix: "add_schema_extras",
+    headerLabel: "schema extras",
+    logLabel: "Helper migration",
+    fallbackRollbackSql: "-- rollback SQL unavailable for schema extras",
+  };
 }
 
 function getBelongsToDependencies(
@@ -494,7 +546,8 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
             pendingPivotMigrations.set(`${connectionName}:${pivot.collectionName}`, {
               connectionName,
               migrationsDir,
-              pivotTable: pivot.collectionName,
+              fileSuffix: `create_${pivot.collectionName}_table`,
+              logLabel: "Pivot migration",
               content: pivotContent,
             });
           }
@@ -615,33 +668,25 @@ export async function down(db: { query(sql: string): Promise<void> }) {
 
       if (pivotSeparate && extraTables.length > 0) {
         for (const [pivotIndex, originalSql] of extraTables.entries()) {
-          const match = originalSql.match(
-            /CREATE TABLE(?: IF NOT EXISTS)?\s+[`"]?([A-Za-z0-9_]+)/i
-          );
-          const pivotTable = match?.[1] ?? "pivot";
-          const safePivotSql = originalSql.replace(/`/g, "\\`");
-          const safeRollbackPivotSql = (
-            rollbackExtraTables[pivotIndex] ?? `DROP TABLE IF EXISTS ${pivotTable};`
-          ).replace(/`/g, "\\`");
-          const pivotHeader = `/**
- * Auto-generated CREATE migration for ${pivotTable}
- * Connection: ${connectionName}
- * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
- * Generated at ${new Date().toISOString()}
- */`;
-          const pivotContent = `${pivotHeader}
-export async function up(db: { query(sql: string): Promise<void> }) {
-  await db.query(\`${safePivotSql}\`);
-}
-
-export async function down(db: { query(sql: string): Promise<void> }) {
-  await db.query(\`${safeRollbackPivotSql}\`);
-}`;
-          pendingPivotMigrations.set(`${connectionName}:${pivotTable}`, {
+          const descriptor = classifyExtraMigrationSql(originalSql);
+          const rollbackSql =
+            rollbackExtraTables[pivotIndex] ?? descriptor.fallbackRollbackSql;
+          const pendingKey = `${connectionName}:${descriptor.fileSuffix}`;
+          const existingPending = pendingPivotMigrations.get(pendingKey);
+          if (existingPending) {
+            existingPending.upSql!.push(originalSql);
+            existingPending.downSql!.unshift(rollbackSql);
+            continue;
+          }
+          pendingPivotMigrations.set(pendingKey, {
             connectionName,
             migrationsDir,
-            pivotTable,
-            content: pivotContent,
+            targetName: descriptor.targetName,
+            fileSuffix: descriptor.fileSuffix,
+            headerLabel: descriptor.headerLabel,
+            logLabel: descriptor.logLabel,
+            upSql: [originalSql],
+            downSql: [rollbackSql],
           });
         }
       }
@@ -653,30 +698,54 @@ export async function down(db: { query(sql: string): Promise<void> }) {
   }
 
   for (const pendingPivot of pendingPivotMigrations.values()) {
+    const content =
+      pendingPivot.content ??
+      (() => {
+        const escapeForTemplateLiteral = (sql: string): string =>
+          sql.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+        const header = `/**
+ * Auto-generated ${pendingPivot.logLabel === "Pivot migration" ? "CREATE migration" : "INDEX helper migration"} for ${pendingPivot.headerLabel!}
+ * Connection: ${pendingPivot.connectionName}
+ * Mode: ${isTest ? "TEST" : "DEVELOPMENT"}
+ * Generated at ${new Date().toISOString()}
+ */`;
+        return `${header}
+export async function up(db: { query(sql: string): Promise<void> }) {
+  ${pendingPivot.upSql!
+    .map((sql) => `await db.query(\`${escapeForTemplateLiteral(sql)}\`);`)
+    .join("\n  ")}
+}
+
+export async function down(db: { query(sql: string): Promise<void> }) {
+  ${pendingPivot.downSql!
+    .map((sql) => `await db.query(\`${escapeForTemplateLiteral(sql)}\`);`)
+    .join("\n  ")}
+}`;
+      })();
     const allFiles = fs
       .readdirSync(pendingPivot.migrationsDir)
       .filter((f) => f.endsWith(".ts") || f.endsWith(".js"));
-    const existingPivotFiles = allFiles
-      .filter((f) => /_create_[A-Za-z0-9_]+_table\.ts$/.test(f))
-      .filter((f) => f.includes(`_create_${pendingPivot.pivotTable}_table.ts`));
-    if (pendingPivot.pivotTable !== "pivot") {
+    const existingPivotFiles = allFiles.filter((f) =>
+      f.includes(`_${pendingPivot.fileSuffix}.ts`)
+    );
+    if (pendingPivot.logLabel !== "Pivot migration") {
       const genericPivotFiles = allFiles.filter((f) => f.includes("_create_pivot_table.ts"));
       existingPivotFiles.push(...genericPivotFiles);
     }
     const uniquePivotFiles = [...new Set(existingPivotFiles)];
     const unchangedPivot = uniquePivotFiles.find((fileName) =>
-      hasSameGeneratedBody(path.join(pendingPivot.migrationsDir, fileName), pendingPivot.content)
+      hasSameGeneratedBody(path.join(pendingPivot.migrationsDir, fileName), content)
     );
     if (unchangedPivot) {
-      console.log(chalk.gray(`INFO: Pivot migration unchanged: ${unchangedPivot}`));
+      console.log(chalk.gray(`INFO: ${pendingPivot.logLabel} unchanged: ${unchangedPivot}`));
       continue;
     }
 
     const pivotTimestamp = nextTimestamp();
-    const pivotFile = `${pivotTimestamp}_create_${pendingPivot.pivotTable}_table.ts`;
+    const pivotFile = `${pivotTimestamp}_${pendingPivot.fileSuffix}.ts`;
     const pivotPath = path.join(pendingPivot.migrationsDir, pivotFile);
-    fs.writeFileSync(pivotPath, pendingPivot.content, "utf8");
-    console.log(chalk.green(`OK: Pivot migration saved: ${pivotPath}`));
+    fs.writeFileSync(pivotPath, content, "utf8");
+    console.log(chalk.green(`OK: ${pendingPivot.logLabel} saved: ${pivotPath}`));
   }
 
   try {

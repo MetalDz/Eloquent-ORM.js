@@ -107,7 +107,7 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     };
   }
 
-  test("covers development pivot-only flow with fallback pivot naming and fallback rollback SQL", async () => {
+  test("covers helper index migration naming, grouping, and fallback rollback SQL", async () => {
     const ctx = setupContext();
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     fs.writeFileSync(path.join(ctx.modelsDir, "User.ts"), "export class User {}", "utf8");
@@ -129,7 +129,10 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     });
     ctx.toCreateSQL.mockResolvedValue({
       mainSQL: "   ",
-      extraTables: ["SELECT 1"],
+      extraTables: [
+        'CREATE INDEX user_email_idx ON "users" ("email");',
+        'CREATE UNIQUE INDEX user_provider_unique ON "users" ("email", "provider");',
+      ],
       rollbackMainSQL: "   ",
       rollbackExtraTables: [],
     });
@@ -141,15 +144,28 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
       connectionName: "custom_conn" as any,
       exit: false,
     });
+    await makeMigration("User", {
+      test: false,
+      pivotSeparate: true,
+      connectionName: "custom_conn" as any,
+      exit: false,
+    });
 
     const migrationDir = path.join(ctx.appMigrationsRoot, "custom_conn");
-    const pivotFile = fs
+    const helperFile = fs
       .readdirSync(migrationDir)
-      .find((fileName) => fileName.includes("_create_pivot_table.ts"));
-    expect(pivotFile).toBeDefined();
+      .find((fileName) => fileName.includes("_add_users_indexes.ts"));
+    expect(helperFile).toBeDefined();
 
-    const pivotContent = fs.readFileSync(path.join(migrationDir, pivotFile!), "utf8");
-    expect(pivotContent).toContain("DROP TABLE IF EXISTS pivot;");
+    const helperContent = fs.readFileSync(path.join(migrationDir, helperFile!), "utf8");
+    expect(helperContent).toContain("Auto-generated INDEX helper migration for users indexes");
+    expect(helperContent).toContain('CREATE INDEX user_email_idx ON "users" ("email");');
+    expect(helperContent).toContain(
+      'CREATE UNIQUE INDEX user_provider_unique ON "users" ("email", "provider");'
+    );
+    expect(helperContent).toContain("DROP INDEX IF EXISTS user_provider_unique;");
+    expect(helperContent).toContain("DROP INDEX IF EXISTS user_email_idx;");
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Helper migration unchanged"));
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining("Migration generation complete in DEVELOPMENT mode")
     );
