@@ -270,7 +270,8 @@ export { SqlModel as Model };
  * Re-export morph helpers for convenience
  */
 
-export { MorphableMixin, MorphableBaseModel, MorphRegistry };
+export { MorphableMixin, MorphRegistry };
+export type { MorphableBaseModel };
 
 // Attribute typing for models (ModelInstance adds only typed attrs to avoid merge conflicts).
 export type ModelAttrs<TAttrs extends Record<string, unknown>> = {

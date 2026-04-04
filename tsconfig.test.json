@@ -1,13 +1,12 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "noEmit": true
   },
   "include": [
     "src/**/*.ts",
-    "src/test",
-    "src/pivot.factory.test.ts"
+    "src/**/*.d.ts"
   ]
 }

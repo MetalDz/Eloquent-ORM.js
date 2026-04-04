@@ -1,6 +1,6 @@
 # Latest Release Summary / v1.0.11
 
-Last updated: 2026-03-29
+Last updated: 2026-04-04
 
 ## Goal
 - Give consumers one stable official-docs URL for the latest release headline and the exact current package changes.
@@ -10,12 +10,12 @@ Last updated: 2026-03-29
 
 ## What's New
 <!-- latest-package-headline:start -->
-- Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.
+- Minor release. The ORM now supports model-declared relational DDL metadata and safe PostgreSQL smart-update diffs that preserve unmanaged foreign keys.
 <!-- latest-package-headline:end -->
 
 ## Exact Changes
 <!-- latest-package-update:start -->
-- Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
+- Add first-class model `database` metadata for foreign keys and indexes, emit relational DDL from the model source of truth, preserve unmanaged PostgreSQL foreign keys during smart-update diffs, keep the source-tree TypeScript contract on NodeNext while `dist/*` stays CommonJS, and restore `100%` statement, branch, function, and line coverage.
 <!-- latest-package-update:end -->
 
 ## References

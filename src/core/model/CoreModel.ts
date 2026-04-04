@@ -5,7 +5,10 @@ import type { DriverAdapter } from "../connection/DriverAdapter.js";
 import type { Db } from "mongodb";
 
 import type { SchemaValidatorOptions } from "../schema/SchemaValidator.js";
-import type { SchemaField } from "../schema/SchemaBlueprint.js";
+import type {
+  ModelDatabaseDefinition,
+  SchemaField,
+} from "../schema/SchemaBlueprint.js";
 import {
   SafeFinderDirection,
   SafeFinderFilters,
@@ -74,6 +77,9 @@ export abstract class CoreModel<
 
   /** Optional schema definition (set by subclass) */
   static schema?: Record<string, SchemaField>;
+
+  /** Optional relational DDL metadata for constraints and indexes */
+  static database?: ModelDatabaseDefinition;
 
   /** Validation lifecycle hooks (beforeValidate / afterValidate) */
   static validationHooks?: SchemaValidatorOptions["hooks"];

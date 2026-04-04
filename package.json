@@ -83,7 +83,7 @@
     "clean": "node -e \"const fs=require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('esm', { recursive: true, force: true })\"",
     "build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run clean && tsc -p tsconfig.build.json && tsc -p tsconfig.esm.json && node scripts/patch-dist-cjs-factory-entry.cjs",
     "typecheck": "tsc -p . --noEmit --skipLibCheck",
-    "typecheck:nodenext": "tsc -p tsconfig.nodenext.json --noEmit --skipLibCheck",
+    "typecheck:nodenext": "tsc -p . --noEmit --skipLibCheck",
     "docs:dev": "npm run docs:sync-package-metadata && npm run docs:sync-config && node scripts/run-mintlify.cjs dev",
     "docs:build": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",
     "docs:validate": "npm run docs:sync-package-metadata && npm run docs:sync-supported && npm run docs:sync-config && node scripts/run-mintlify.cjs validate",

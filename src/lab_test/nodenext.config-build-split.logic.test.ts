@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 describe("NodeNext config and build split", () => {
-  test("plan locks the safe config split before the import rewrite", () => {
+  test("plan locks the root NodeNext source-of-truth without breaking the dual build", () => {
     const planPath = path.resolve(
       process.cwd(),
       "validation tasks/NodeNext-Config-Build-Split-Plan.md",
@@ -11,12 +11,13 @@ describe("NodeNext config and build split", () => {
 
     expect(content).toContain("# NodeNext Config Build Split Plan");
     expect(content).toContain("Status: LOCKED");
+    expect(content).toContain("root `tsconfig.json` is the NodeNext source-tree truth");
     expect(content).toContain("published `dist/*` build remains CommonJS");
     expect(content).toContain("`tsconfig.base.json`");
     expect(content).toContain("`tsconfig.build.json`");
     expect(content).toContain("`tsconfig.esm.json`");
-    expect(content).toContain("`tsconfig.nodenext.json`");
-    expect(content).toContain("does **not** mean the whole repo already passes under NodeNext");
+    expect(content).toContain("`tsconfig.test.json`");
+    expect(content).toContain("there is no separate `tsconfig.nodenext.json` source of truth anymore");
     expect(content).toContain("CommonJS build stability stays protected");
   });
 
@@ -45,20 +46,30 @@ describe("NodeNext config and build split", () => {
       extends?: string;
       compilerOptions?: Record<string, unknown>;
     };
-    const nodeNextConfig = JSON.parse(
-      fs.readFileSync(path.resolve(cwd, "tsconfig.nodenext.json"), "utf8"),
+    const testConfig = JSON.parse(
+      fs.readFileSync(path.resolve(cwd, "tsconfig.test.json"), "utf8"),
+    ) as {
+      extends?: string;
+      compilerOptions?: Record<string, unknown>;
+    };
+    const rootConfig = JSON.parse(
+      fs.readFileSync(path.resolve(cwd, "tsconfig.json"), "utf8"),
     ) as {
       extends?: string;
       compilerOptions?: Record<string, unknown>;
     };
 
     expect(packageJson.scripts?.["typecheck:nodenext"]).toBe(
-      "tsc -p tsconfig.nodenext.json --noEmit --skipLibCheck",
+      "tsc -p . --noEmit --skipLibCheck",
     );
     expect(packageJson.scripts?.build).toContain("tsc -p tsconfig.build.json");
     expect(packageJson.scripts?.build).toContain("tsc -p tsconfig.esm.json");
     expect(packageJson.scripts?.build).not.toContain("generate-esm-entrypoints.cjs");
     expect(baseConfig.compilerOptions?.target).toBe("es2020");
+    expect(rootConfig.extends).toBe("./tsconfig.base.json");
+    expect(rootConfig.compilerOptions?.module).toBe("NodeNext");
+    expect(rootConfig.compilerOptions?.moduleResolution).toBe("NodeNext");
+    expect(rootConfig.compilerOptions?.noEmit).toBe(true);
     expect(buildConfig.extends).toBe("./tsconfig.base.json");
     expect(buildConfig.compilerOptions?.module).toBe("CommonJS");
     expect(buildConfig.compilerOptions?.moduleResolution).toBe("node");
@@ -66,10 +77,12 @@ describe("NodeNext config and build split", () => {
     expect(esmBuildConfig.compilerOptions?.module).toBe("NodeNext");
     expect(esmBuildConfig.compilerOptions?.moduleResolution).toBe("NodeNext");
     expect(esmBuildConfig.compilerOptions?.outDir).toBe("esm");
-    expect(nodeNextConfig.extends).toBe("./tsconfig.base.json");
-    expect(nodeNextConfig.compilerOptions?.module).toBe("NodeNext");
-    expect(nodeNextConfig.compilerOptions?.moduleResolution).toBe("NodeNext");
-    expect(nodeNextConfig.compilerOptions?.noEmit).toBe(true);
+    expect(testConfig.extends).toBe("./tsconfig.base.json");
+    expect(testConfig.compilerOptions?.module).toBe("CommonJS");
+    expect(testConfig.compilerOptions?.moduleResolution).toBe("node");
+    expect(testConfig.compilerOptions?.noEmit).toBe(true);
+    expect(fs.existsSync(path.resolve(cwd, "tsconfig.nodenext.json"))).toBe(false);
     expect(jestConfigSource).toContain('"^(\\\\.{1,2}/.*)\\\\.js$": "$1"');
+    expect(jestConfigSource).toContain('tsconfig: "<rootDir>/tsconfig.test.json"');
   });
 });

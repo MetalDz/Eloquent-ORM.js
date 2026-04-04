@@ -71,6 +71,31 @@ export interface RelationOptions {
   cascade?: boolean;
 }
 
+export type RelationalAction = "CASCADE" | "RESTRICT" | "SET NULL" | "NO ACTION" | "SET DEFAULT";
+
+export interface DatabaseForeignKeyDefinition {
+  name?: string;
+  column: string;
+  references: {
+    table: string;
+    column?: string;
+  };
+  onDelete?: RelationalAction;
+  onUpdate?: RelationalAction;
+}
+
+export interface DatabaseIndexDefinition {
+  name?: string;
+  columns: string[];
+  unique?: boolean;
+  where?: string;
+}
+
+export interface ModelDatabaseDefinition {
+  foreignKeys?: DatabaseForeignKeyDefinition[];
+  indexes?: DatabaseIndexDefinition[];
+}
+
 /* --------------------------------- Mixins --------------------------------- */
 export type MixinName =
   | "SoftDeletes"

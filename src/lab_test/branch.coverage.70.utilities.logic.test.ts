@@ -116,10 +116,10 @@ describe("Branch coverage 70% - Phase 1 utilities", () => {
     const { ImportResolver: InsideResolver } = require("../cli/utils/ImportResolver") as {
       ImportResolver: { coreImportPath(isTest: boolean): string; schemaImportPath(isTest: boolean): string };
     };
-    expect(InsideResolver.coreImportPath(true)).toBe("../../../core/model/BaseModel");
-    expect(InsideResolver.coreImportPath(false)).toBe("../../core/model/BaseModel");
-    expect(InsideResolver.schemaImportPath(true)).toBe("../../../core/schema/SchemaBlueprint");
-    expect(InsideResolver.schemaImportPath(false)).toBe("../../core/schema/SchemaBlueprint");
+    expect(InsideResolver.coreImportPath(true)).toBe("../../../core/model/BaseModel.js");
+    expect(InsideResolver.coreImportPath(false)).toBe("../../core/model/BaseModel.js");
+    expect(InsideResolver.schemaImportPath(true)).toBe("../../../core/schema/SchemaBlueprint.js");
+    expect(InsideResolver.schemaImportPath(false)).toBe("../../core/schema/SchemaBlueprint.js");
   });
 
   test("TypeScriptCompiler.compile falls back to defaults when tsconfig is missing", () => {

@@ -1,8 +1,10 @@
 ﻿/** @type {import('jest').Config} */
 module.exports = {
-  preset: "ts-jest",
   testEnvironment: "node",
   coverageProvider: "babel",
+  transform: {
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.test.json" }],
+  },
   roots: ["<rootDir>/src"],
   testMatch: ["**/lab_test/**/*.test.ts"],
   moduleNameMapper: {

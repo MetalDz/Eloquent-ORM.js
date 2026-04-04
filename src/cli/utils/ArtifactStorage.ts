@@ -19,6 +19,21 @@ function resolveExistingPath(filePath: string): string | null {
     return filePath;
   }
 
+  const parsedPath = path.parse(filePath);
+  if (parsedPath.ext === ".js" || parsedPath.ext === ".mjs" || parsedPath.ext === ".cjs") {
+    const sourceCandidate = path.join(parsedPath.dir, parsedPath.name);
+    if (fs.existsSync(sourceCandidate)) {
+      return sourceCandidate;
+    }
+
+    for (const ext of [".ts", ".js"]) {
+      const candidate = `${sourceCandidate}${ext}`;
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
   for (const ext of [".ts", ".js"]) {
     const candidate = `${filePath}${ext}`;
     if (fs.existsSync(candidate)) {

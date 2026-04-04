@@ -3,7 +3,11 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import { SchemaBuilder } from "../../core/schema/SchemaBuilder.js";
-import { RelationDefinition, SchemaField } from "../../core/schema/SchemaBlueprint.js";
+import {
+  ModelDatabaseDefinition,
+  RelationDefinition,
+  SchemaField,
+} from "../../core/schema/SchemaBlueprint.js";
 import { PathMap } from "../utils/PathMap.js";
 import { resolveConnectionName } from "../../core/connection/resolveConnectionName.js";
 import { TypeScriptCompiler } from "../utils/typescript/TypeScriptCompiler.js";
@@ -32,6 +36,7 @@ type LoadedModel = {
   modelClassName: string;
   ModelClass: {
     schema: Record<string, SchemaField>;
+    database?: ModelDatabaseDefinition;
     tableName: string;
     connectionName?: string;
     softDeletes?: boolean;
@@ -306,6 +311,7 @@ export async function makeMigration(
       const ModelClass = modelModule[modelClassName] as
         | {
             schema?: Record<string, SchemaField>;
+            database?: ModelDatabaseDefinition;
             tableName?: string;
             connectionName?: string;
             softDeletes?: boolean;
@@ -320,10 +326,11 @@ export async function makeMigration(
         file,
         modelClassName,
         ModelClass: {
-          schema: ModelClass.schema,
-          tableName: ModelClass.tableName,
-          connectionName: ModelClass.connectionName,
-          softDeletes: ModelClass.softDeletes,
+            schema: ModelClass.schema,
+            database: ModelClass.database,
+            tableName: ModelClass.tableName,
+            connectionName: ModelClass.connectionName,
+            softDeletes: ModelClass.softDeletes,
         },
       });
     } catch (err) {
@@ -511,7 +518,8 @@ export async function down(db: { dropCollection(name: string): Promise<void> }) 
         driver,
         !needsBaselineCreate,
         connectionName,
-        needsBaselineCreate
+        needsBaselineCreate,
+        ModelClass.database
       );
 
       if ((!mainSQL || mainSQL.trim() === "") && extraTables.length === 0) {

@@ -2,12 +2,18 @@ import fs from "fs";
 import path from "path";
 
 describe("NodeNext blocker inventory", () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    jest.resetModules();
+    jest.unmock("fs");
+  });
+
   test("generated inventory snapshot stays in sync with the audit generator", () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const actualFs = jest.requireActual("fs") as typeof fs;
     const {
       buildNodeNextBlockerInventory,
       renderMarkdownReport,
-    } = require("../../scripts/generate-nodenext-blocker-inventory.cjs") as {
+    } = jest.requireActual("../../scripts/generate-nodenext-blocker-inventory.cjs") as {
       buildNodeNextBlockerInventory: (options?: { cwd?: string }) => unknown;
       renderMarkdownReport: (inventory: unknown) => string;
     };
@@ -17,11 +23,11 @@ describe("NodeNext blocker inventory", () => {
     const expectedJson = `${JSON.stringify(inventory, null, 2)}\n`;
     const expectedMarkdown = renderMarkdownReport(inventory);
 
-    const committedJson = fs.readFileSync(
+    const committedJson = actualFs.readFileSync(
       path.resolve(cwd, "validation tasks", "NodeNext-Blocker-Inventory.json"),
       "utf8",
     );
-    const committedMarkdown = fs.readFileSync(
+    const committedMarkdown = actualFs.readFileSync(
       path.resolve(cwd, "validation tasks", "NodeNext-Blocker-Inventory.md"),
       "utf8",
     );

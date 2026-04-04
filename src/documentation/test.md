@@ -18,7 +18,6 @@
     "esModuleInterop": true,            // Enables `import fs from 'fs'`
     "resolveJsonModule": true,          // Allows importing JSON configs
     "skipLibCheck": true,               // Skip checking .d.ts files
-    "downlevelIteration": true,         // Ensures correct iteration for Maps/Sets in older targets
 
     /* ---------- CLI / Debug ---------- */
     "sourceMap": true,                  // Enables debugging support

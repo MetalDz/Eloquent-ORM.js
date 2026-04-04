@@ -150,7 +150,6 @@ export function ensureTsRuntime(): boolean {
       compilerOptions: {
         module: "commonjs",
         target: "es2020",
-        downlevelIteration: true,
         moduleResolution: "node",
         skipLibCheck: true,
       },
@@ -222,7 +221,6 @@ function loadTranspiledTsModule(
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2020,
-      downlevelIteration: true,
       moduleResolution: ts.ModuleResolutionKind.NodeJs,
       skipLibCheck: true,
       esModuleInterop: true,

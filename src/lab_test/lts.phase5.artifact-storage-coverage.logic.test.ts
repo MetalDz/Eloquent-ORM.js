@@ -103,22 +103,29 @@ describe("LTS phase 5 ArtifactStorage coverage", () => {
     jest.spyOn(PathMap, "factories").mockReturnValue(factoriesDir);
 
     const directModelPath = path.join(modelsDir, "DirectModel.ts");
+    const directMongoModelPath = path.join(modelsDir, "DirectMongoModel.ts");
     const regexModelPath = path.join(modelsDir, "RegexModel.ts");
     const fallbackModelPath = path.join(modelsDir, "FallbackModel.ts");
     const unknownModelPath = path.join(modelsDir, "UnknownModel.ts");
     const unreadableModelPath = path.join(modelsDir, "UnreadableModel.ts");
+    const bareModelPath = path.join(modelsDir, "BareModel");
     const directFactoryPath = path.join(factoriesDir, "DirectFactory.ts");
     const unreadableFactoryPath = path.join(factoriesDir, "UnreadableFactory.ts");
     const unreadableModelFactoryPath = path.join(factoriesDir, "UnreadableModelFactory.ts");
     const loaderFactoryPath = path.join(factoriesDir, "LoaderFactory.ts");
     const loaderUnknownFactoryPath = path.join(factoriesDir, "LoaderUnknownFactory.ts");
     const blankImportFactoryPath = path.join(factoriesDir, "BlankImportFactory.ts");
+    const nodenextFactoryPath = path.join(factoriesDir, "NodeNextFactory.ts");
+    const bareSourceFactoryPath = path.join(factoriesDir, "BareSourceFactory.ts");
     const missingModelFactoryPath = path.join(factoriesDir, "MissingModelFactory.ts");
+    const missingNodeNextModelFactoryPath = path.join(factoriesDir, "MissingNodeNextModelFactory.ts");
     const blankImportSeederPath = path.join(seedsDir, "BlankImportSeeder.ts");
+    const nodenextSeederPath = path.join(seedsDir, "NodeNextSeeder.ts");
     const emptySeederPath = path.join(seedsDir, "EmptySeeder.ts");
     const missingFactorySeederPath = path.join(seedsDir, "MissingFactorySeeder.ts");
 
     fs.writeFileSync(directModelPath, 'export class DirectModel extends SqlModel {}', "utf8");
+    fs.writeFileSync(directMongoModelPath, 'export class DirectMongoModel extends MongoModel {}', "utf8");
     fs.writeFileSync(
       regexModelPath,
       'export class RegexModel { static connectionName = process.env.DB_CONNECTION ?? "mongo_test"; }',
@@ -127,6 +134,7 @@ describe("LTS phase 5 ArtifactStorage coverage", () => {
     fs.writeFileSync(fallbackModelPath, "export class FallbackModel {}", "utf8");
     fs.writeFileSync(unknownModelPath, "export class UnknownModel {}", "utf8");
     fs.writeFileSync(unreadableModelPath, "export class UnreadableModel {}", "utf8");
+    fs.writeFileSync(bareModelPath, "export class BareModel extends SqlModel {}", "utf8");
 
     fs.writeFileSync(
       directFactoryPath,
@@ -151,14 +159,34 @@ describe("LTS phase 5 ArtifactStorage coverage", () => {
       "utf8",
     );
     fs.writeFileSync(
+      nodenextFactoryPath,
+      'import { DirectModel } from "../models/DirectModel.js";\nexport class NodeNextFactory {}',
+      "utf8",
+    );
+    fs.writeFileSync(
+      bareSourceFactoryPath,
+      'import { BareModel } from "../models/BareModel.js";\nexport class BareSourceFactory {}',
+      "utf8",
+    );
+    fs.writeFileSync(
       missingModelFactoryPath,
       'import { MissingModel } from "../models/MissingModel";\nexport class MissingModelFactory {}',
+      "utf8",
+    );
+    fs.writeFileSync(
+      missingNodeNextModelFactoryPath,
+      'import { MissingNodeNextModel } from "../models/MissingNodeNextModel.js";\nexport class MissingNodeNextModelFactory {}',
       "utf8",
     );
 
     fs.writeFileSync(
       blankImportSeederPath,
       'import { IgnoreMe } from "../factories/   ";\nimport { DirectFactory } from "../factories/DirectFactory";\nexport async function BlankImportSeeder() {}',
+      "utf8",
+    );
+    fs.writeFileSync(
+      nodenextSeederPath,
+      'import { NodeNextFactory } from "../factories/NodeNextFactory.js";\nexport async function NodeNextSeeder() {}',
       "utf8",
     );
     fs.writeFileSync(emptySeederPath, "export async function EmptySeeder() {}", "utf8");
@@ -213,6 +241,7 @@ describe("LTS phase 5 ArtifactStorage coverage", () => {
     try {
       expect(resolveModelStorageKind("MissingModel", false)).toBe("unknown");
       expect(resolveModelStorageKind("DirectModel.ts", false)).toBe("sql");
+      expect(resolveModelStorageKind("DirectMongoModel.ts", false)).toBe("mongo");
       expect(resolveModelStorageKind("RegexModel", false)).toBe("mongo");
       expect(resolveModelStorageKind("FallbackModel", false)).toBe("sql");
       expect(resolveModelStorageKind("UnknownModel", false)).toBe("unknown");
@@ -222,7 +251,10 @@ describe("LTS phase 5 ArtifactStorage coverage", () => {
       );
       expect(resolveFactoryStorageKindFromFile(directFactoryPath, false)).toBe("sql");
       expect(resolveFactoryStorageKindFromFile(blankImportFactoryPath, false)).toBe("sql");
+      expect(resolveFactoryStorageKindFromFile(nodenextFactoryPath, false)).toBe("sql");
+      expect(resolveFactoryStorageKindFromFile(bareSourceFactoryPath, false)).toBe("sql");
       expect(resolveFactoryStorageKindFromFile(missingModelFactoryPath, false)).toBe("unknown");
+      expect(resolveFactoryStorageKindFromFile(missingNodeNextModelFactoryPath, false)).toBe("unknown");
       expect(resolveFactoryStorageKindFromFile(unreadableFactoryPath, false)).toBe("mongo");
       expect(resolveFactoryStorageKindFromFile(unreadableModelFactoryPath, false)).toBe("unknown");
       expect(resolveFactoryStorageKindFromFile(loaderFactoryPath, false)).toBe("mongo");
@@ -233,6 +265,7 @@ describe("LTS phase 5 ArtifactStorage coverage", () => {
       );
       expect(resolveSeederStorageKindFromFile(emptySeederPath, false)).toBe("unknown");
       expect(resolveSeederStorageKindFromFile(blankImportSeederPath, false)).toBe("sql");
+      expect(resolveSeederStorageKindFromFile(nodenextSeederPath, false)).toBe("sql");
       expect(resolveSeederStorageKindFromFile(missingFactorySeederPath, false)).toBe("unknown");
     } finally {
       fs.rmSync(root, { recursive: true, force: true });

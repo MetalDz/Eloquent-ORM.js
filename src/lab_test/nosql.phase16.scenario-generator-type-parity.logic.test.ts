@@ -99,9 +99,9 @@ describe("NoSQL phase 16 scenario generator type parity", () => {
       expect(postModel).toContain('favoritedBy: relation("belongsToMany", "User", {})');
 
       const seederContent = fs.readFileSync(path.join(seedsDir, "BlogScenarioSeeder.ts"), "utf8");
-      expect(seederContent).toContain('import { UserFactory } from "../factories/UserFactory";');
-      expect(seederContent).toContain('import { PostFactory } from "../factories/PostFactory";');
-      expect(seederContent).toContain('import { CommentFactory } from "../factories/CommentFactory";');
+      expect(seederContent).toContain('import { UserFactory } from "../factories/UserFactory.js";');
+      expect(seederContent).toContain('import { PostFactory } from "../factories/PostFactory.js";');
+      expect(seederContent).toContain('import { CommentFactory } from "../factories/CommentFactory.js";');
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

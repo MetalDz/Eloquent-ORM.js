@@ -25,7 +25,6 @@ export class TypeScriptCompiler {
         compilerOptions: {
           module: "commonjs",
           target: "es2020",
-          downlevelIteration: true,
           moduleResolution: "node",
           skipLibCheck: true,
         },

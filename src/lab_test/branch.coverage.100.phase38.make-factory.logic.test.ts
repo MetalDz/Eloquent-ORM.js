@@ -136,10 +136,10 @@ describe("Branch coverage 100% - phase 38 makeFactory branches", () => {
     const main = fs.readFileSync(mainPath, "utf8");
     const pivot = fs.readFileSync(pivotPath, "utf8");
 
-    expect(main).toContain('from "../models/Post"');
-    expect(main).toContain('import { UserFactory } from "../factories/UserFactory";');
-    expect(main).toContain('import { TagFactory } from "../factories/TagFactory";');
-    expect(main).toContain('import { CommentFactory } from "../factories/CommentFactory";');
+    expect(main).toContain('from "../models/Post.js"');
+    expect(main).toContain('import { UserFactory } from "../factories/UserFactory.js";');
+    expect(main).toContain('import { TagFactory } from "../factories/TagFactory.js";');
+    expect(main).toContain('import { CommentFactory } from "../factories/CommentFactory.js";');
     expect(main).toContain("field:title=person.fullName()");
     expect(main).toContain("field:meta=lorem.word()");
     expect(main).toContain("create Post with a new User");

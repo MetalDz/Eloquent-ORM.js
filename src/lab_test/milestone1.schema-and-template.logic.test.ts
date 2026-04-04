@@ -1,22 +1,140 @@
 import fs from "fs";
 import path from "path";
 import { SchemaBuilder } from "../core/schema/SchemaBuilder.js";
+import * as ConnectionFactoryModule from "../core/connection/ConnectionFactory.js";
 import {
   column,
   mixin,
   relation,
   type SchemaField,
 } from "../core/schema/SchemaBlueprint.js";
-import { getAdapter } from "../core/connection/ConnectionFactory.js";
 
-jest.mock("../core/connection/ConnectionFactory", () => ({
-  getAdapter: jest.fn(),
-}));
+let mockedGetAdapter: jest.SpiedFunction<typeof ConnectionFactoryModule.getAdapter>;
 
-const mockedGetAdapter = getAdapter as jest.MockedFunction<typeof getAdapter>;
+function mysqlQueryMock(options?: {
+  existingTables?: string[];
+  columnsByTable?: Record<string, unknown[]>;
+  foreignKeysByTable?: Record<string, unknown[]>;
+  indexesByTable?: Record<string, unknown[]>;
+}) {
+  const {
+    existingTables = [],
+    columnsByTable = {},
+    foreignKeysByTable = {},
+    indexesByTable = {},
+  } = options ?? {};
+
+  return jest.fn(async (sql: string, params?: unknown[]) => {
+    if (sql.startsWith("SHOW TABLES LIKE")) {
+      const target = String(params?.[0] ?? "");
+      return existingTables.includes(target) ? [{ table: target }] : [];
+    }
+
+    const columnsMatch = sql.match(/SHOW COLUMNS FROM `([^`]+)`;/);
+    if (columnsMatch) {
+      return columnsByTable[columnsMatch[1]] ?? [];
+    }
+
+    if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
+      const target = String(params?.[0] ?? "");
+      return foreignKeysByTable[target] ?? [];
+    }
+
+    const indexesMatch = sql.match(/SHOW INDEX FROM `([^`]+)`;/);
+    if (indexesMatch) {
+      return indexesByTable[indexesMatch[1]] ?? [];
+    }
+
+    throw new Error(`Unexpected MySQL SQL: ${sql}`);
+  });
+}
+
+function pgQueryMock(options?: {
+  columnsByTable?: Record<string, unknown[]>;
+  foreignKeysByTable?: Record<string, unknown[]>;
+  indexesByTable?: Record<string, unknown[]>;
+  existingTables?: string[];
+}) {
+  const {
+    columnsByTable = {},
+    foreignKeysByTable = {},
+    indexesByTable = {},
+    existingTables = [],
+  } = options ?? {};
+
+  return jest.fn(async (sql: string, params?: unknown[]) => {
+    if (sql.includes("FROM information_schema.columns")) {
+      const target = String(params?.[0] ?? "");
+      return columnsByTable[target] ?? [];
+    }
+
+    if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
+      const target = String(params?.[0] ?? "");
+      return foreignKeysByTable[target] ?? [];
+    }
+
+    if (sql.includes("FROM pg_indexes")) {
+      const target = String(params?.[0] ?? "");
+      return indexesByTable[target] ?? [];
+    }
+
+    if (sql.includes("FROM information_schema.tables")) {
+      const target = String(params?.[0] ?? "");
+      return existingTables.includes(target) ? [{ table_name: target }] : [];
+    }
+
+    throw new Error(`Unexpected PG SQL: ${sql}`);
+  });
+}
+
+function sqliteQueryMock(options?: {
+  existingTables?: string[];
+  columnsByTable?: Record<string, unknown[]>;
+  foreignKeysByTable?: Record<string, unknown[]>;
+  indexesByTable?: Record<string, unknown[]>;
+  indexColumnsByName?: Record<string, unknown[]>;
+}) {
+  const {
+    existingTables = [],
+    columnsByTable = {},
+    foreignKeysByTable = {},
+    indexesByTable = {},
+    indexColumnsByName = {},
+  } = options ?? {};
+
+  return jest.fn(async (sql: string, params?: unknown[]) => {
+    const tableInfoMatch = sql.match(/^PRAGMA table_info\("([^"]+)"\)/);
+    if (tableInfoMatch) {
+      return columnsByTable[tableInfoMatch[1]] ?? [];
+    }
+
+    const foreignKeysMatch = sql.match(/^PRAGMA foreign_key_list\("([^"]+)"\)/);
+    if (foreignKeysMatch) {
+      return foreignKeysByTable[foreignKeysMatch[1]] ?? [];
+    }
+
+    const indexListMatch = sql.match(/^PRAGMA index_list\("([^"]+)"\)/);
+    if (indexListMatch) {
+      return indexesByTable[indexListMatch[1]] ?? [];
+    }
+
+    const indexInfoMatch = sql.match(/^PRAGMA index_info\("([^"]+)"\)/);
+    if (indexInfoMatch) {
+      return indexColumnsByName[indexInfoMatch[1]] ?? [];
+    }
+
+    if (sql.includes("FROM sqlite_master")) {
+      const target = String(params?.[0] ?? "");
+      return existingTables.includes(target) ? [{ name: target }] : [];
+    }
+
+    throw new Error(`Unexpected SQLite SQL: ${sql}`);
+  });
+}
 
 describe("Milestone 1: schema rollback + pivot template", () => {
   beforeEach(() => {
+    mockedGetAdapter = jest.spyOn(ConnectionFactoryModule, "getAdapter");
     jest.spyOn(console, "log").mockImplementation(() => undefined);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -28,12 +146,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder generates rollback SQL for create + pivot", async () => {
-    const query = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [];
-      }
-      throw new Error(`Unexpected SQL: ${sql}`);
-    });
+    const query = mysqlQueryMock();
 
     mockedGetAdapter.mockResolvedValue({
       query,
@@ -55,12 +168,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder generates inverse rollback SQL for smart update", async () => {
-    const query = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "users" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `users`;")) {
-        return [
+    const query = mysqlQueryMock({
+      existingTables: ["users"],
+      columnsByTable: {
+        users: [
           {
             Field: "id",
             Type: "int",
@@ -77,9 +188,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "",
           },
-        ];
-      }
-      throw new Error(`Unexpected SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValue({
@@ -103,12 +213,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder emits sqlite and pg relation SQL with dialect-aware types", async () => {
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("comments")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
-    });
+    const sqliteQuery = sqliteQueryMock();
 
     mockedGetAdapter.mockResolvedValueOnce({
       query: sqliteQuery,
@@ -134,15 +239,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(sqliteResult.mainSQL).toContain('"commentable_type" TEXT');
     expect(sqliteResult.rollbackMainSQL).toBe('DROP TABLE IF EXISTS "comments";');
 
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
-    });
+    const pgQuery = pgQueryMock();
 
     mockedGetAdapter.mockResolvedValueOnce({
       query: pgQuery,
@@ -169,13 +266,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder smart update adds pivot table only when missing", async () => {
-    const mysqlQuery = jest.fn(async (sql: string, params?: unknown[]) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        const target = String(params?.[0] ?? "");
-        return target === "post_user_pivot" ? [] : [{ table: "users" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `users`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["users"],
+      columnsByTable: {
+        users: [
           {
             Field: "id",
             Type: "int",
@@ -184,12 +278,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "auto_increment",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -217,15 +307,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder smart update skips pivot table creation when it already exists", async () => {
-    const mysqlQuery = jest.fn(async (sql: string, params?: unknown[]) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        const target = String(params?.[0] ?? "");
-        return target === "post_user_pivot"
-          ? [{ table: "post_user_pivot" }]
-          : [{ table: "users" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `users`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["users", "post_user_pivot"],
+      columnsByTable: {
+        users: [
           {
             Field: "id",
             Type: "int",
@@ -234,12 +319,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "auto_increment",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -266,9 +347,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder adds PG belongsTo column and FK constraint during smart update", async () => {
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [
+    const pgQuery = pgQueryMock({
+      columnsByTable: {
+        posts: [
           {
             column_name: "id",
             data_type: "integer",
@@ -279,12 +360,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             numeric_precision: 32,
             numeric_scale: 0,
           },
-        ];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -315,9 +392,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder drops PG belongsTo FK constraint before dropping the column", async () => {
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [
+    const pgQuery = pgQueryMock({
+      columnsByTable: {
+        posts: [
           {
             column_name: "id",
             data_type: "integer",
@@ -338,19 +415,18 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             numeric_precision: 32,
             numeric_scale: 0,
           },
-        ];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [
+        ],
+      },
+      foreignKeysByTable: {
+        posts: [
           {
             constraint_name: "posts_user_id_foreign",
             column_name: "user_id",
             referenced_table_name: "users",
             referenced_column_name: "id",
           },
-        ];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -382,12 +458,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder adds MySQL belongsTo column and FK constraint during smart update", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "posts" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `posts`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["posts"],
+      columnsByTable: {
+        posts: [
           {
             Field: "id",
             Type: "int",
@@ -396,12 +470,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "auto_increment",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -432,12 +502,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder drops MySQL belongsTo FK constraint before dropping the column", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "posts" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `posts`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["posts"],
+      columnsByTable: {
+        posts: [
           {
             Field: "id",
             Type: "int",
@@ -454,19 +522,18 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [
+        ],
+      },
+      foreignKeysByTable: {
+        posts: [
           {
             constraint_name: "posts_user_id_foreign",
             column_name: "user_id",
             referenced_table_name: "users",
             referenced_column_name: "id",
           },
-        ];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -498,16 +565,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder keeps SQLite smart updates constraint-safe for belongsTo changes", async () => {
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("posts")')) {
-        return [
-          { name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 },
-        ];
-      }
-      if (sql.startsWith('PRAGMA foreign_key_list("posts")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
+    const sqliteQuery = sqliteQueryMock({
+      columnsByTable: {
+        posts: [{ name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 }],
+      },
     });
 
     mockedGetAdapter.mockResolvedValueOnce({
@@ -536,12 +597,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder emits SoftDeletes column on create across MySQL/PG/SQLite", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
-    });
+    const mysqlQuery = mysqlQueryMock();
     mockedGetAdapter.mockResolvedValueOnce({
       query: mysqlQuery,
       placeholder: () => "?",
@@ -562,15 +618,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(mysqlResult.mainSQL).toContain("`deleted_at` TIMESTAMP NULL DEFAULT NULL");
     expect(mysqlResult.rollbackMainSQL).toBe("DROP TABLE IF EXISTS `users`;");
 
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
-    });
+    const pgQuery = pgQueryMock();
     mockedGetAdapter.mockResolvedValueOnce({
       query: pgQuery,
       placeholder: (index: number) => `$${index}`,
@@ -591,15 +639,7 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(pgResult.mainSQL).toContain('"deleted_at" TIMESTAMP NULL DEFAULT NULL');
     expect(pgResult.rollbackMainSQL).toBe('DROP TABLE IF EXISTS "users";');
 
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("users")')) {
-        return [];
-      }
-      if (sql.startsWith('PRAGMA foreign_key_list("users")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
-    });
+    const sqliteQuery = sqliteQueryMock();
     mockedGetAdapter.mockResolvedValueOnce({
       query: sqliteQuery,
       placeholder: () => "?",
@@ -622,12 +662,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder adds SoftDeletes column during smart update across MySQL/PG/SQLite", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "users" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `users`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["users"],
+      columnsByTable: {
+        users: [
           {
             Field: "id",
             Type: "int",
@@ -636,12 +674,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "auto_increment",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: mysqlQuery,
@@ -662,9 +696,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(mysqlResult.mainSQL).toContain("ADD COLUMN `deleted_at` TIMESTAMP");
     expect(mysqlResult.rollbackMainSQL).toContain("DROP COLUMN `deleted_at`");
 
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [
+    const pgQuery = pgQueryMock({
+      columnsByTable: {
+        users: [
           {
             column_name: "id",
             data_type: "integer",
@@ -675,12 +709,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             numeric_precision: 32,
             numeric_scale: 0,
           },
-        ];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: pgQuery,
@@ -701,14 +731,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(pgResult.mainSQL).toContain('ADD COLUMN "deleted_at" TIMESTAMP NULL DEFAULT NULL');
     expect(pgResult.rollbackMainSQL).toContain('DROP COLUMN "deleted_at"');
 
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("users")')) {
-        return [{ name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 }];
-      }
-      if (sql.startsWith('PRAGMA foreign_key_list("users")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
+    const sqliteQuery = sqliteQueryMock({
+      columnsByTable: {
+        users: [{ name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 }],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: sqliteQuery,
@@ -731,12 +757,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder drops SoftDeletes column when schema removes it across MySQL/PG/SQLite", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "users" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `users`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["users"],
+      columnsByTable: {
+        users: [
           {
             Field: "id",
             Type: "int",
@@ -753,12 +777,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: mysqlQuery,
@@ -778,9 +798,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(mysqlResult.mainSQL).toContain("DROP COLUMN `deleted_at`");
     expect(mysqlResult.rollbackMainSQL).toContain("ADD COLUMN `deleted_at` TIMESTAMP");
 
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [
+    const pgQuery = pgQueryMock({
+      columnsByTable: {
+        users: [
           {
             column_name: "id",
             data_type: "integer",
@@ -801,12 +821,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             numeric_precision: null,
             numeric_scale: null,
           },
-        ];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: pgQuery,
@@ -826,9 +842,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(pgResult.mainSQL).toContain('DROP COLUMN "deleted_at"');
     expect(pgResult.rollbackMainSQL).toContain('ADD COLUMN "deleted_at" TIMESTAMP');
 
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("users")')) {
-        return [
+    const sqliteQuery = sqliteQueryMock({
+      columnsByTable: {
+        users: [
           { name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 },
           {
             name: "deleted_at",
@@ -837,12 +853,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             dflt_value: "NULL",
             pk: 0,
           },
-        ];
-      }
-      if (sql.startsWith('PRAGMA foreign_key_list("users")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: sqliteQuery,
@@ -864,12 +876,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder diffs morphTo columns across MySQL/PG/SQLite smart updates", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "comments" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `comments`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["comments"],
+      columnsByTable: {
+        comments: [
           {
             Field: "id",
             Type: "int",
@@ -878,12 +888,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "auto_increment",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: mysqlQuery,
@@ -906,9 +912,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(mysqlResult.rollbackMainSQL).toContain("DROP COLUMN `commentable_id`");
     expect(mysqlResult.rollbackMainSQL).toContain("DROP COLUMN `commentable_type`");
 
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [
+    const pgQuery = pgQueryMock({
+      columnsByTable: {
+        comments: [
           {
             column_name: "id",
             data_type: "integer",
@@ -919,12 +925,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             numeric_precision: 32,
             numeric_scale: 0,
           },
-        ];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: pgQuery,
@@ -947,14 +949,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
     expect(pgResult.rollbackMainSQL).toContain('DROP COLUMN "commentable_id"');
     expect(pgResult.rollbackMainSQL).toContain('DROP COLUMN "commentable_type"');
 
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("comments")')) {
-        return [{ name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 }];
-      }
-      if (sql.startsWith('PRAGMA foreign_key_list("comments")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
+    const sqliteQuery = sqliteQueryMock({
+      columnsByTable: {
+        comments: [{ name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 }],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: sqliteQuery,
@@ -979,12 +977,10 @@ describe("Milestone 1: schema rollback + pivot template", () => {
   });
 
   test("SchemaBuilder drops morphTo columns when relation is removed across MySQL/PG/SQLite", async () => {
-    const mysqlQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith("SHOW TABLES LIKE")) {
-        return [{ table: "comments" }];
-      }
-      if (sql.includes("SHOW COLUMNS FROM `comments`;")) {
-        return [
+    const mysqlQuery = mysqlQueryMock({
+      existingTables: ["comments"],
+      columnsByTable: {
+        comments: [
           {
             Field: "id",
             Type: "int",
@@ -1009,12 +1005,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             Default: null,
             Extra: "",
           },
-        ];
-      }
-      if (sql.includes("FROM information_schema.KEY_COLUMN_USAGE")) {
-        return [];
-      }
-      throw new Error(`Unexpected MySQL SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: mysqlQuery,
@@ -1038,9 +1030,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
       "ADD COLUMN `commentable_type` VARCHAR(255)"
     );
 
-    const pgQuery = jest.fn(async (sql: string) => {
-      if (sql.includes("FROM information_schema.columns")) {
-        return [
+    const pgQuery = pgQueryMock({
+      columnsByTable: {
+        comments: [
           {
             column_name: "id",
             data_type: "integer",
@@ -1071,12 +1063,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             numeric_precision: null,
             numeric_scale: null,
           },
-        ];
-      }
-      if (sql.includes("constraint_type = 'FOREIGN KEY'")) {
-        return [];
-      }
-      throw new Error(`Unexpected PG SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: pgQuery,
@@ -1100,9 +1088,9 @@ describe("Milestone 1: schema rollback + pivot template", () => {
       'ADD COLUMN "commentable_type" VARCHAR(255)'
     );
 
-    const sqliteQuery = jest.fn(async (sql: string) => {
-      if (sql.startsWith('PRAGMA table_info("comments")')) {
-        return [
+    const sqliteQuery = sqliteQueryMock({
+      columnsByTable: {
+        comments: [
           { name: "id", type: "INTEGER", notnull: 1, dflt_value: null, pk: 1 },
           {
             name: "commentable_id",
@@ -1118,12 +1106,8 @@ describe("Milestone 1: schema rollback + pivot template", () => {
             dflt_value: null,
             pk: 0,
           },
-        ];
-      }
-      if (sql.startsWith('PRAGMA foreign_key_list("comments")')) {
-        return [];
-      }
-      throw new Error(`Unexpected SQLite SQL: ${sql}`);
+        ],
+      },
     });
     mockedGetAdapter.mockResolvedValueOnce({
       query: sqliteQuery,

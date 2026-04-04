@@ -6,12 +6,12 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1247,
+    "totalMatches": 1259,
     "uniqueFiles": 310,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1120
+        "matches": 1132
       },
       {
         "kind": "require() local imports",
@@ -22,7 +22,7 @@
       {
         "area": "src/lab_test",
         "files": 218,
-        "matches": 913
+        "matches": 924
       },
       {
         "area": "src/cli",
@@ -32,7 +32,7 @@
       {
         "area": "src/core",
         "files": 41,
-        "matches": 112
+        "matches": 113
       },
       {
         "area": "other",
@@ -77,6 +77,15 @@
           "import/export local specifiers": 4
         },
         "firstLine": 30
+      },
+      {
+        "file": "src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 17,
+        "kinds": {
+          "import/export local specifiers": 17
+        },
+        "firstLine": 4
       },
       {
         "file": "src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts",
@@ -132,15 +141,6 @@
           "import/export local specifiers": 14
         },
         "firstLine": 1
-      },
-      {
-        "file": "src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts",
-        "area": "src/lab_test",
-        "matches": 13,
-        "kinds": {
-          "import/export local specifiers": 13
-        },
-        "firstLine": 4
       },
       {
         "file": "src/lab_test/support/cli.integration.harness.ts",

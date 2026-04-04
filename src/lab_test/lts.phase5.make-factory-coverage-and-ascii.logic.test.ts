@@ -112,7 +112,7 @@ describe("LTS phase 5 makeFactory coverage and ASCII", () => {
       path.join(factoriesDir, "DefaultedFactory.ts"),
       "utf8",
     );
-    expect(output).toContain('from "../../models/Defaulted"');
+    expect(output).toContain('from "../../models/Defaulted.js"');
     expect(output).toContain("hasRelations=false");
   });
 

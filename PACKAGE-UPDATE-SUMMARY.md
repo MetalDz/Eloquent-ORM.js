@@ -23,13 +23,13 @@ Old Release:
 ## Latest Release Headline
 
 <!-- latest-package-headline:start -->
-- Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.
+- Minor release. The ORM now supports model-declared relational DDL metadata and safe PostgreSQL smart-update diffs that preserve unmanaged foreign keys.
 <!-- latest-package-headline:end -->
 
 ## Latest Release Summary
 
 <!-- latest-package-update:start -->
-- Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
+- Add first-class model `database` metadata for foreign keys and indexes, emit relational DDL from the model source of truth, preserve unmanaged PostgreSQL foreign keys during smart-update diffs, keep the source-tree TypeScript contract on NodeNext while `dist/*` stays CommonJS, and restore `100%` statement, branch, function, and line coverage.
 <!-- latest-package-update:end -->
 
 ## Synced Quick Info
@@ -39,9 +39,9 @@ Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `v1.0.11`
 - Latest release: `v1.0.11 latest`
-- What's new: [Patched. The published ESM surface now builds from dedicated TypeScript entrypoints, keeping CommonJS stable and removing wrapper-generation drift.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
+- What's new: [Minor release. The ORM now supports model-declared relational DDL metadata and safe PostgreSQL smart-update diffs that preserve unmanaged foreign keys.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
 - Old release: `v1.0.10`
-- Latest update: Replace the generated ESM wrapper script with a true TypeScript ESM build pipeline, compiling dedicated `esm-src/*.mts` entrypoints into the published `esm/*` surface while preserving the CommonJS `dist/*` runtime contract.
+- Latest update: Add first-class model `database` metadata for foreign keys and indexes, emit relational DDL from the model source of truth, preserve unmanaged PostgreSQL foreign keys during smart-update diffs, keep the source-tree TypeScript contract on NodeNext while `dist/*` stays CommonJS, and restore `100%` statement, branch, function, and line coverage.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history

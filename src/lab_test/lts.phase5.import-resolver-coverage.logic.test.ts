@@ -86,8 +86,8 @@ describe("LTS phase 5 ImportResolver coverage", () => {
 
     const { ImportResolver } = await import("../cli/utils/ImportResolver.js");
 
-    expect(ImportResolver.publicApiImportPath()).toBe("../index");
-    expect(ImportResolver.usesNodeEsmRuntime()).toBe(false);
+    expect(ImportResolver.publicApiImportPath()).toBe("../index.js");
+    expect(ImportResolver.usesNodeEsmRuntime()).toBe(true);
     expect((ImportResolver as unknown as { usingInstalledPackage(): boolean }).usingInstalledPackage()).toBe(
       false,
     );
@@ -102,17 +102,17 @@ describe("LTS phase 5 ImportResolver coverage", () => {
       ImportResolver.publicApiImportPath(
         path.join(rootDir, "src", "app", "database", "factories", "UserFactory.ts"),
       ),
-    ).toBe("../../../index");
+    ).toBe("../../../index.js");
     expect(
       ImportResolver.publicApiImportPath(
         path.join(rootDir, "src", "test", "database", "factories", "UserFactory.ts"),
       ),
-    ).toBe("../../../index");
+    ).toBe("../../../index.js");
     expect(
       ImportResolver.publicApiImportPath(
         path.join(rootDir, "src", "app", "registerModels.ts"),
       ),
-    ).toBe("../index");
+    ).toBe("../index.js");
   });
 
   test("inside the repo same-directory imports are normalized with a leading ./ prefix", async () => {
@@ -124,7 +124,7 @@ describe("LTS phase 5 ImportResolver coverage", () => {
       ImportResolver.publicApiImportPath(
         path.join(rootDir, "src", "registerModels.ts"),
       ),
-    ).toBe("./index");
+    ).toBe("./index.js");
   });
 
   test("NodeNext-aware helpers add .js only to relative runtime imports", async () => {

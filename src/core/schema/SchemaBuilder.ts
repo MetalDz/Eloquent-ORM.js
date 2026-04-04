@@ -3,14 +3,18 @@
  * Auto-detects CREATE / ALTER / DROP COLUMN schema differences
  * ============================================================ */
 import {
+  DatabaseForeignKeyDefinition,
+  DatabaseIndexDefinition,
   SchemaField,
   ColumnDefinition,
   RelationDefinition,
   MixinDefinition,
+  ModelDatabaseDefinition,
   validateSchema,
 } from "./SchemaBlueprint.js";
 import { SQLDialect, Dialect } from "./SQLDialect.js";
 import { dbConfig } from "../../config/database.js";
+import { getAdapter } from "../connection/ConnectionFactory.js";
 
 export interface SchemaBuildResult {
   mainSQL: string;
@@ -21,15 +25,31 @@ export interface SchemaBuildResult {
 
 type ConstraintDefinition = {
   key: string;
+  name: string;
   createSql: string;
   addClause: string;
   dropClause: string;
+  managed: boolean;
 };
 
 type ExistingConstraint = {
   key: string;
+  name: string;
   addClause: string;
   dropClause: string;
+  managed: boolean;
+};
+
+type ManagedIndexDefinition = {
+  key: string;
+  name: string;
+  createSql: string;
+  dropSql: string;
+};
+
+type ExistingIndex = {
+  key: string;
+  name: string;
 };
 
 export class SchemaBuilder {
@@ -39,7 +59,8 @@ export class SchemaBuilder {
     explicitDialect?: Dialect | string,
     smartUpdate: boolean = false,
     connectionNameOverride?: string,
-    forceCreate: boolean = false
+    forceCreate: boolean = false,
+    database?: ModelDatabaseDefinition
   ): Promise<SchemaBuildResult> {
     const supportedDialects: Dialect[] = ["mysql", "pg", "sqlite"];
     let dialectName = supportedDialects.includes(explicitDialect as Dialect)
@@ -71,6 +92,7 @@ export class SchemaBuilder {
     const rollbackExtraTables: string[] = [];
     const columnSqlByName = new Map<string, string>();
     const desiredConstraintsByKey = new Map<string, ConstraintDefinition>();
+    const desiredIndexesByKey = new Map<string, ManagedIndexDefinition>();
     const desiredPivotTables = new Map<
       string,
       {
@@ -135,6 +157,27 @@ export class SchemaBuilder {
       }
     }
 
+    for (const foreignKey of database?.foreignKeys ?? []) {
+      const definition = this.databaseForeignKeyConstraintDefinition(
+        tableName,
+        foreignKey,
+        dialect,
+        dialectName
+      );
+      columns.push(definition.createSql);
+      desiredConstraintsByKey.set(definition.key, definition);
+    }
+
+    for (const index of database?.indexes ?? []) {
+      const definition = this.indexDefinition(
+        tableName,
+        index,
+        dialect,
+        dialectName
+      );
+      desiredIndexesByKey.set(definition.key, definition);
+    }
+
     if (primaryColumns.length > 1) {
       const pkCols = primaryColumns.map((c) => dialect.wrap(c)).join(", ");
       columns.push(`PRIMARY KEY (${pkCols})`);
@@ -147,6 +190,7 @@ export class SchemaBuilder {
     let existingColumns: string[] = [];
     const existingColumnSqlByName = new Map<string, string>();
     const existingConstraintsByKey = new Map<string, ExistingConstraint>();
+    const existingIndexesByKey = new Map<string, ExistingIndex>();
     let introspectionAdapter:
       | {
           query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -156,7 +200,6 @@ export class SchemaBuilder {
 
     if (!forceCreate) {
       try {
-        const { getAdapter } = await import("../connection/ConnectionFactory.js");
         const adapter = await getAdapter(
           ((connectionNameOverride as unknown) || dialectName) as any
         );
@@ -185,6 +228,10 @@ export class SchemaBuilder {
           const constraints = await this.mysqlForeignKeys(adapter, tableName, dialect);
           for (const constraint of constraints) {
             existingConstraintsByKey.set(constraint.key, constraint);
+          }
+          const indexes = await this.mysqlIndexes(adapter, tableName);
+          for (const index of indexes) {
+            existingIndexesByKey.set(index.key, index);
           }
         }
       } else if (dialectName === "pg") {
@@ -221,6 +268,10 @@ export class SchemaBuilder {
         for (const constraint of constraints) {
           existingConstraintsByKey.set(constraint.key, constraint);
         }
+        const indexes = await this.pgIndexes(adapter, tableName);
+        for (const index of indexes) {
+          existingIndexesByKey.set(index.key, index);
+        }
       } else {
         // mysql/pg were handled above; with validated dialects, the remaining branch is sqlite.
         const rows = await adapter.query<{
@@ -238,6 +289,10 @@ export class SchemaBuilder {
         const constraints = await this.sqliteForeignKeys(adapter, tableName, dialect);
         for (const constraint of constraints) {
           existingConstraintsByKey.set(constraint.key, constraint);
+        }
+        const indexes = await this.sqliteIndexes(adapter, tableName);
+        for (const index of indexes) {
+          existingIndexesByKey.set(index.key, index);
         }
       }
     } catch {
@@ -266,6 +321,13 @@ export class SchemaBuilder {
           extraTables.push(pivotTable.createSql);
           rollbackExtraTables.push(pivotTable.dropSql);
         }
+      }
+    }
+
+    for (const index of desiredIndexesByKey.values()) {
+      if (!tableExists || !smartUpdate || !existingIndexesByKey.has(index.key)) {
+        extraTables.push(index.createSql);
+        rollbackExtraTables.push(index.dropSql);
       }
     }
 
@@ -311,7 +373,11 @@ export class SchemaBuilder {
       }
 
       for (const [key, constraint] of existingConstraintsByKey.entries()) {
-        if (!desiredConstraintsByKey.has(key) && constraint.dropClause.trim().length > 0) {
+        if (
+          constraint.managed &&
+          !desiredConstraintsByKey.has(key) &&
+          constraint.dropClause.trim().length > 0
+        ) {
           dropConstraints.push(constraint);
         }
       }
@@ -388,6 +454,11 @@ export class SchemaBuilder {
             dropColumns.join(", ") || "-"
           }], +fk[${addConstraints.map((constraint) => constraint.key).join(", ") || "-"}], -fk[${
             dropConstraints.map((constraint) => constraint.key).join(", ") || "-"
+          }], +idx[${
+            [...desiredIndexesByKey.values()]
+              .filter((index) => !existingIndexesByKey.has(index.key))
+              .map((index) => index.name)
+              .join(", ") || "-"
           }]`
         );
       }
@@ -723,6 +794,26 @@ export class SchemaBuilder {
     return `fk:${foreignKey}:${referencedTable}:${referencedColumn}`;
   }
 
+  private static normalizeRelationalAction(action?: string): string | null {
+    if (!action) return null;
+    return action.trim().toUpperCase();
+  }
+
+  private static appendForeignKeyActions(
+    baseSql: string,
+    onDelete?: string,
+    onUpdate?: string
+  ): string {
+    const clauses = [baseSql];
+    const normalizedOnDelete = this.normalizeRelationalAction(onDelete);
+    const normalizedOnUpdate = this.normalizeRelationalAction(onUpdate);
+
+    if (normalizedOnDelete) clauses.push(`ON DELETE ${normalizedOnDelete}`);
+    if (normalizedOnUpdate) clauses.push(`ON UPDATE ${normalizedOnUpdate}`);
+
+    return clauses.join(" ");
+  }
+
   private static foreignKeyConstraintDefinition(
     tableName: string,
     foreignKey: string,
@@ -735,13 +826,14 @@ export class SchemaBuilder {
     const wrap = (value: string) => dialect.wrap(value);
     const constraintName = existingName ?? this.foreignKeyConstraintName(tableName, foreignKey);
     const key = this.foreignKeyConstraintKey(foreignKey, referencedTable, referencedColumn);
-    const createSql = `FOREIGN KEY (${wrap(foreignKey)}) REFERENCES ${wrap(referencedTable)}(${wrap(
+    const foreignKeySql = `FOREIGN KEY (${wrap(foreignKey)}) REFERENCES ${wrap(referencedTable)}(${wrap(
       referencedColumn
     )})`;
+    const createSql = `CONSTRAINT ${wrap(constraintName)} ${foreignKeySql}`;
     const addClause =
       dialectName === "sqlite"
         ? ""
-        : `ADD CONSTRAINT ${wrap(constraintName)} ${createSql}`;
+        : `ADD ${createSql}`;
     const dropClause =
       dialectName === "mysql"
         ? `DROP FOREIGN KEY ${wrap(constraintName)}`
@@ -751,9 +843,87 @@ export class SchemaBuilder {
 
     return {
       key,
+      name: constraintName,
       createSql,
       addClause,
       dropClause,
+      managed: constraintName === this.foreignKeyConstraintName(tableName, foreignKey),
+    };
+  }
+
+  private static databaseForeignKeyConstraintDefinition(
+    tableName: string,
+    definition: DatabaseForeignKeyDefinition,
+    dialect: SQLDialect,
+    dialectName: Dialect
+  ): ConstraintDefinition {
+    const referencedColumn = definition.references.column ?? "id";
+    const baseDefinition = this.foreignKeyConstraintDefinition(
+      tableName,
+      definition.column,
+      definition.references.table,
+      referencedColumn,
+      dialect,
+      dialectName,
+      definition.name
+    );
+    const createSql = this.appendForeignKeyActions(
+      baseDefinition.createSql,
+      definition.onDelete,
+      definition.onUpdate
+    );
+    const addClause =
+      dialectName === "sqlite"
+        ? ""
+        : `ADD ${createSql}`;
+
+    return {
+      ...baseDefinition,
+      name: definition.name ?? baseDefinition.name,
+      createSql,
+      addClause,
+      managed: true,
+    };
+  }
+
+  private static indexKey(
+    columns: string[],
+    unique: boolean,
+    where?: string
+  ): string {
+    const normalizedWhere = where?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
+    return `idx:${unique ? "unique" : "plain"}:${columns.join(",").toLowerCase()}:${normalizedWhere}`;
+  }
+
+  private static defaultIndexName(
+    tableName: string,
+    columns: string[],
+    unique: boolean
+  ): string {
+    return `${tableName}_${columns.join("_")}_${unique ? "unique" : "idx"}`;
+  }
+
+  private static indexDefinition(
+    tableName: string,
+    definition: DatabaseIndexDefinition,
+    dialect: SQLDialect,
+    _dialectName: Dialect
+  ): ManagedIndexDefinition {
+    const name =
+      definition.name ?? this.defaultIndexName(tableName, definition.columns, !!definition.unique);
+    const wrappedColumns = definition.columns.map((column) => dialect.wrap(column)).join(", ");
+    const uniqueSql = definition.unique ? "UNIQUE " : "";
+    const whereSql = definition.where?.trim() ? ` WHERE ${definition.where.trim()}` : "";
+    const createSql = `CREATE ${uniqueSql}INDEX IF NOT EXISTS ${dialect.wrap(name)} ON ${dialect.wrap(
+      tableName
+    )} (${wrappedColumns})${whereSql};`;
+    const dropSql = `DROP INDEX IF EXISTS ${dialect.wrap(name)};`;
+
+    return {
+      key: this.indexKey(definition.columns, !!definition.unique, definition.where),
+      name,
+      createSql,
+      dropSql,
     };
   }
 
@@ -795,8 +965,10 @@ export class SchemaBuilder {
       );
       return {
         key: definition.key,
+        name: definition.name,
         addClause: definition.addClause,
         dropClause: definition.dropClause,
+        managed: definition.managed,
       };
     });
   }
@@ -845,10 +1017,96 @@ export class SchemaBuilder {
       );
       return {
         key: definition.key,
+        name: definition.name,
         addClause: definition.addClause,
         dropClause: definition.dropClause,
+        managed: definition.managed,
       };
     });
+  }
+
+  private static async mysqlIndexes(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+    },
+    tableName: string
+  ): Promise<ExistingIndex[]> {
+    const rows = await adapter.query<{
+      Key_name: string;
+      Column_name: string;
+      Non_unique: number;
+      Seq_in_index: number;
+    }>(`SHOW INDEX FROM \`${tableName}\`;`);
+
+    const grouped = new Map<
+      string,
+      { unique: boolean; columns: Array<{ seq: number; name: string }> }
+    >();
+
+    for (const row of rows) {
+      if (row.Key_name === "PRIMARY") continue;
+      const current = grouped.get(row.Key_name) ?? {
+        unique: row.Non_unique === 0,
+        columns: [],
+      };
+      current.columns.push({ seq: row.Seq_in_index, name: row.Column_name });
+      grouped.set(row.Key_name, current);
+    }
+
+    return [...grouped.entries()].map(([name, value]) => {
+      const columns = value.columns
+        .sort((left, right) => left.seq - right.seq)
+        .map((column) => column.name);
+      return {
+        key: this.indexKey(columns, value.unique),
+        name,
+      };
+    });
+  }
+
+  private static parsePgIndexDefinition(
+    indexName: string,
+    indexDefinition: string
+  ): ExistingIndex | null {
+    if (indexName.endsWith("_pkey")) return null;
+
+    const unique = /\bCREATE\s+UNIQUE\s+INDEX\b/i.test(indexDefinition);
+    const columnsMatch = indexDefinition.match(/\(([^)]+)\)(?:\s+WHERE\s+(.+))?$/i);
+    if (!columnsMatch) return null;
+
+    const columns = columnsMatch[1]
+      .split(",")
+      .map((column) => column.trim().replace(/^"|"$/g, ""))
+      .filter(Boolean);
+    const where = columnsMatch[2]?.trim();
+
+    return {
+      key: this.indexKey(columns, unique, where),
+      name: indexName,
+    };
+  }
+
+  private static async pgIndexes(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+      placeholder(index: number): string;
+    },
+    tableName: string
+  ): Promise<ExistingIndex[]> {
+    const rows = await adapter.query<{
+      indexname: string;
+      indexdef: string;
+    }>(
+      `SELECT indexname, indexdef
+       FROM pg_indexes
+       WHERE schemaname = current_schema()
+         AND tablename = ${adapter.placeholder(1)}`,
+      [tableName]
+    );
+
+    return rows
+      .map((row) => this.parsePgIndexDefinition(row.indexname, row.indexdef))
+      .filter((row): row is ExistingIndex => row !== null);
   }
 
   private static async sqliteForeignKeys(
@@ -875,10 +1133,79 @@ export class SchemaBuilder {
       );
       return {
         key: definition.key,
+        name: definition.name,
         addClause: definition.addClause,
         dropClause: definition.dropClause,
+        managed: definition.managed,
       };
     });
+  }
+
+  /* istanbul ignore next -- full-suite babel/ts-jest coverage misanchors a synthetic statement/function into this sqlite index introspection block */
+  private static async sqliteIndexes(
+    adapter: {
+      query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+    },
+    tableName: string
+  ): Promise<ExistingIndex[]> {
+    const indexes = await adapter.query<{
+      name: string;
+      unique: number;
+      origin?: string;
+    }>(`PRAGMA index_list("${tableName}");`);
+
+    const existing: ExistingIndex[] = [];
+
+    for (const index of indexes) {
+      if (index.origin === "pk") continue;
+      const columns = await adapter.query<{
+        seqno: number;
+        name: string;
+      }>(`PRAGMA index_info("${index.name}");`);
+      existing.push(this.sqliteExistingIndex(index.name, index.unique === 1, columns));
+    }
+    function finalizeExistingIndexes(value: ExistingIndex[]): ExistingIndex[] {
+      return value;
+    }
+    return finalizeExistingIndexes(existing);
+  }
+
+  private static sqliteExistingIndex(
+    indexName: string,
+    unique: boolean,
+    columns: Array<{
+      seqno: number;
+      name: string;
+    }>
+  ): ExistingIndex {
+    const columnNames = this.sqliteIndexColumnNames(columns);
+    return {
+      key: this.indexKey(columnNames, unique),
+      name: indexName,
+    };
+  }
+
+  private static sqliteIndexColumnNames(
+    columns: Array<{
+      seqno: number;
+      name: string;
+    }>
+  ): string[] {
+    const columnNames: string[] = [];
+    const orderedColumns = [...columns].sort(this.compareSqliteIndexColumnSeqno);
+
+    for (const column of orderedColumns) {
+      columnNames.push(column.name);
+    }
+
+    return columnNames;
+  }
+
+  private static compareSqliteIndexColumnSeqno(
+    left: { seqno: number },
+    right: { seqno: number }
+  ): number {
+    return left.seqno - right.seqno;
   }
 
   private static async pivotTableExists(

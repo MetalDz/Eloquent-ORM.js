@@ -10,15 +10,15 @@ Snapshot date: `2026-03-30`
 - template roots scanned: `src/cli`, `src/cli/templates`
 
 ## Direct source blocker counts
-- local relative import/require matches in `src` and `bin`: `1247`
+- local relative import/require matches in `src` and `bin`: `1259`
 - unique TypeScript files affected: `310`
-- import/export local specifiers: `1120`
+- import/export local specifiers: `1132`
 - require() local imports: `127`
 
 ## Direct source hotspot breakdown
-- `src/lab_test`: `218 files / 913 matches`
+- `src/lab_test`: `218 files / 924 matches`
 - `src/cli`: `48 files / 210 matches`
-- `src/core`: `41 files / 112 matches`
+- `src/core`: `41 files / 113 matches`
 - `other`: `3 files / 12 matches`
 
 ## Generator and template emission blockers
@@ -55,13 +55,13 @@ Snapshot date: `2026-03-30`
 - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`: `23 matches`
 - `src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`: `21 matches`
 - `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `19 matches`
+- `src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts`: `17 matches`
 - `src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts`: `16 matches`
 - `src/lab_test/branch.coverage.70.utilities.logic.test.ts`: `16 matches`
 - `src/lab_test/lts.phase5.cli-registration-security-utility-coverage.logic.test.ts`: `15 matches`
 - `src/lab_test/lts.phase5.residual-helper-mixin-coverage.logic.test.ts`: `15 matches`
 - `src/lab_test/make.registry.logic.test.ts`: `15 matches`
 - `src/lab_test/branch.coverage.100.phase32.cache-query-morph-redactor.logic.test.ts`: `14 matches`
-- `src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts`: `13 matches`
 - `src/lab_test/support/cli.integration.harness.ts`: `13 matches`
 - `src/cli/commands/makeScenario.ts`: `12 matches`
 - `src/cli/eloquent.ts`: `12 matches`
