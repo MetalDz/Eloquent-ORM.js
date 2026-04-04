@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.11...v1.1.0) (2026-04-04)
+
+
+### Features
+
+* add relational ddl metadata and safe schema diff ownership ([aa7c23f](https://github.com/MetalDz/Eloquent-ORM.js/commit/aa7c23f540abaf0c064cbe6540bd9a5e9b9965cd))
+
 ## [1.0.11](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.10...v1.0.11) (2026-04-02)
 
 
