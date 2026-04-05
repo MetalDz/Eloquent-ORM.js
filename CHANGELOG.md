@@ -1,3 +1,12 @@
+## [1.1.2](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.1...v1.1.2) (2026-04-05)
+
+
+### Bug Fixes
+
+* align model migration sync guard with source test runtime ([b68c1ee](https://github.com/MetalDz/Eloquent-ORM.js/commit/b68c1eed21e2b98a3bfec77db7b160b9f6aea3b5))
+* align pg defaults migration ordering and cli version reporting ([92f7033](https://github.com/MetalDz/Eloquent-ORM.js/commit/92f703308f00e1b15297e0730791a704971ce083))
+* restore full coverage for migration helper utilities ([c2732cf](https://github.com/MetalDz/Eloquent-ORM.js/commit/c2732cf9b6496ffaedf52f9c01bb323184efc6d9))
+
 ## [1.1.1](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.0...v1.1.1) (2026-04-05)
 
 
