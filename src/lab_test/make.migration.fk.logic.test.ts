@@ -222,4 +222,63 @@ export async function down() {}
     expect(createPostFiles.length).toBe(1);
     expect(updatePostFiles.length).toBe(1);
   });
+
+  test("orders create migrations by static database foreign key dependencies", async () => {
+    fs.rmSync(path.join(modelsDir, "Post.ts"), { force: true });
+    fs.rmSync(path.join(modelsDir, "User.ts"), { force: true });
+    fs.writeFileSync(
+      path.join(modelsDir, "AccountAppeal.ts"),
+      "export class AccountAppeal {}",
+      "utf8"
+    );
+    fs.writeFileSync(
+      path.join(modelsDir, "AccountRestriction.ts"),
+      "export class AccountRestriction {}",
+      "utf8"
+    );
+
+    mockedLoadModule.mockImplementation((modulePath: string) => {
+      if (modulePath.endsWith("AccountRestriction.ts")) {
+        return {
+          AccountRestriction: {
+            tableName: "account_restrictions",
+            connectionName: "pg_test",
+            schema: {
+              id: column("uuid", undefined, { primary: true }),
+            } satisfies Record<string, SchemaField>,
+          },
+        };
+      }
+
+      return {
+        AccountAppeal: {
+          tableName: "account_appeals",
+          connectionName: "pg_test",
+          schema: {
+            id: column("uuid", undefined, { primary: true }),
+            restriction_id: column("uuid"),
+          } satisfies Record<string, SchemaField>,
+          database: {
+            foreignKeys: [
+              {
+                column: "restriction_id",
+                references: { table: "account_restrictions", column: "id" },
+              },
+            ],
+          },
+        },
+      };
+    });
+
+    await makeMigration("all", { test: true, exit: false });
+
+    const accountCreateFiles = fs
+      .readdirSync(migrationsDir)
+      .filter((file) => file.includes("create_account_") && file.endsWith(".ts"))
+      .sort();
+
+    expect(accountCreateFiles).toHaveLength(2);
+    expect(accountCreateFiles[0]).toContain("create_account_restrictions_table.ts");
+    expect(accountCreateFiles[1]).toContain("create_account_appeals_table.ts");
+  });
 });

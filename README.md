@@ -19,9 +19,9 @@ Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
 - Version: `v1.1.1`
 - Latest release: `v1.1.1 latest`
-- What's new: [Fix release. Migration helpers now use descriptive pivot and table-scoped index filenames instead of a generic `create_pivot_table` fallback.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
+- What's new: [Fix release. PostgreSQL boolean defaults, dependency-safe create ordering, and CLI version reporting are now aligned with the package contract.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
 - Old release: `v1.0.11`
-- Latest update: Keep the relational DDL and safe-diff model contract from `1.1.0`, fix migration helper generation so real `belongsToMany` pivots emit descriptive `create_<pivotTable>_table` files, group relational index helpers into table-scoped `add_<table>_indexes` migrations instead of a generic `create_pivot_table` fallback, and preserve the clean NodeNext source-tree, CommonJS `dist/*` build, and `100%` coverage baseline.
+- Latest update: Keep the relational DDL and safe-diff model contract from `1.1.0`, emit PostgreSQL boolean defaults as `TRUE` / `FALSE` instead of `0` / `1`, order brand-new create migrations by dependencies declared in both `static schema` and `static database.foreignKeys`, resolve the shipped CLI banner version from `package.json` instead of the stale `v1.0` literal, and lock the CLI SemVer rule in the published versioning policy while preserving the clean NodeNext source-tree, CommonJS `dist/*` build, and `100%` coverage baseline.
 - Official docs: https://alphaconsultings.mintlify.app
 - Quick start: https://alphaconsultings.mintlify.app/getting-started/quick-start
 - Release history: https://alphaconsultings.mintlify.app/release/history

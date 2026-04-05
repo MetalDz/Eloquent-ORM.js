@@ -20,7 +20,8 @@ describe("ORM hardening phase 1 - CLI presentation extraction", () => {
     const content = fs.readFileSync(helperPath, "utf8");
 
     expect(content).toContain('chalk.cyan(figlet.textSync("Eloquent ORM JS"');
-    expect(content).toContain("Developer CLI for Eloquent ORM JS (v1.0)");
+    expect(content).toContain('import { resolveCliVersion } from "./CliVersion.js";');
+    expect(content).toContain("Developer CLI for Eloquent ORM JS (v${cliVersion})");
     expect(content).toContain('horizontalLayout: "fitted"');
     expect(content).not.toContain("Ready to manage your EloquentJS models and database!");
     expect(content).toContain("export function printCliBanner");

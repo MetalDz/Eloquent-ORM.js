@@ -239,6 +239,7 @@ describe("Branch coverage 100% - phase 14 SchemaBuilder deep edges", () => {
     expect(SB.formatDefaultLiteral(null)).toBe("NULL");
     expect(SB.formatDefaultLiteral(42)).toBe("42");
     expect(SB.formatDefaultLiteral(true)).toBe("1");
+    expect(SB.formatDefaultLiteral(true, "pg")).toBe("TRUE");
 
     const mysqlUnique = SB.mysqlColumnSQL(
       {

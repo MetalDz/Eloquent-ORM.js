@@ -1,6 +1,6 @@
 # Versioning Policy
 
-Last updated: 2026-03-14
+Last updated: 2026-04-05
 
 ## Goal
 - Keep package releases predictable for consumers and make SemVer behavior explicit before any LTS line is promoted.
@@ -10,6 +10,8 @@ Last updated: 2026-03-14
   - `major`: breaking public API, CLI contract, generator output, migration contract, or runtime behavior changes
   - `minor`: new backward-compatible features and additive capabilities
   - `patch`: backward-compatible fixes only
+- The shipped CLI banner/version tracks the published package version.
+- CLI-only changes are semver-classified by user-facing impact under the same package release policy.
 
 ## Breaking Change Rules
 - A change must be released as a new major version when it breaks:
@@ -29,6 +31,7 @@ Last updated: 2026-03-14
   - new documented APIs
   - new backward-compatible options
   - new drivers/features that do not alter existing contracts
+- CLI-only additive features or new backward-compatible flags are `minor`.
 - Minor releases must not silently repurpose existing flags or exports.
 
 ## Patch Release Rules
@@ -37,6 +40,7 @@ Last updated: 2026-03-14
   - security fixes
   - documentation corrections
   - internal refactors that do not change documented behavior
+- backward-compatible CLI fixes, including banner/version reporting corrections
 - Patch releases must not contain silent contract drift.
 
 ## Deprecation Policy

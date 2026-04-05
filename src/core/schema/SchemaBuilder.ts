@@ -549,7 +549,7 @@ export class SchemaBuilder {
     if (options.primary && (type as string ) !== "increments") parts.push("PRIMARY KEY");
 
     if (options.default !== undefined) {
-      parts.push(`DEFAULT ${this.formatDefaultLiteral(options.default)}`);
+      parts.push(`DEFAULT ${this.formatDefaultLiteral(options.default, dialectName)}`);
     }
 
     return parts.join(" ");
@@ -659,10 +659,13 @@ export class SchemaBuilder {
    * MIXINS
    * ============================================================ */
 
-  private static formatDefaultLiteral(value: unknown): string {
+  private static formatDefaultLiteral(value: unknown, dialectName: Dialect = "mysql"): string {
     if (value === null || value === undefined) return "NULL";
     if (typeof value === "number" || typeof value === "bigint") return String(value);
-    if (typeof value === "boolean") return value ? "1" : "0";
+    if (typeof value === "boolean") {
+      if (dialectName === "pg") return value ? "TRUE" : "FALSE";
+      return value ? "1" : "0";
+    }
     const raw = String(value);
     const upper = raw.toUpperCase();
     if (
@@ -695,7 +698,7 @@ export class SchemaBuilder {
     const parts = [`${dialect.wrap(column.Field)} ${column.Type.toUpperCase()}`];
     if (column.Null === "NO") parts.push("NOT NULL");
     if (column.Default !== null && column.Default !== undefined) {
-      parts.push(`DEFAULT ${this.formatDefaultLiteral(column.Default)}`);
+      parts.push(`DEFAULT ${this.formatDefaultLiteral(column.Default, "mysql")}`);
     }
     if (typeof column.Extra === "string" && column.Extra.toLowerCase().includes("auto_increment")) {
       parts.push("AUTO_INCREMENT");

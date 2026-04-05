@@ -10,22 +10,22 @@ Snapshot date: `2026-03-30`
 - template roots scanned: `src/cli`, `src/cli/templates`
 
 ## Direct source blocker counts
-- local relative import/require matches in `src` and `bin`: `1259`
-- unique TypeScript files affected: `310`
-- import/export local specifiers: `1132`
-- require() local imports: `127`
+- local relative import/require matches in `src` and `bin`: `1264`
+- unique TypeScript files affected: `312`
+- import/export local specifiers: `1135`
+- require() local imports: `129`
 
 ## Direct source hotspot breakdown
-- `src/lab_test`: `218 files / 924 matches`
-- `src/cli`: `48 files / 210 matches`
+- `src/lab_test`: `219 files / 928 matches`
+- `src/cli`: `49 files / 211 matches`
 - `src/core`: `41 files / 113 matches`
 - `other`: `3 files / 12 matches`
 
 ## Generator and template emission blockers
-- relative import/require string matches in generator sources and templates: `210`
-- unique generator/template files affected: `48`
+- relative import/require string matches in generator sources and templates: `211`
+- unique generator/template files affected: `49`
 - `src/cli/commands`: `20 files / 116 matches`
-- `src/cli/utils`: `27 files / 82 matches`
+- `src/cli/utils`: `28 files / 83 matches`
 - `src/cli/other`: `1 files / 12 matches`
 
 ## Test assertion blockers

@@ -52,6 +52,7 @@ describe("Branch coverage 100% - phase 25 SchemaBuilder invariant branches", () 
     const SB = SchemaBuilder as any;
 
     expect(SB.formatDefaultLiteral(false)).toBe("0");
+    expect(SB.formatDefaultLiteral(false, "pg")).toBe("FALSE");
     expect(
       SB.pgTypeSQL({
         data_type: "USER-DEFINED",

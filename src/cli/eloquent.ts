@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * EloquentJS Artisan v1.0 CLI
+ * EloquentJS Alpha CLI
  * Author: MEKHERBECHE Fares
  * Description:
  *   Official CLI for EloquentJS ORM - generates models, controllers,

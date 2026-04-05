@@ -6,28 +6,28 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1259,
-    "uniqueFiles": 310,
+    "totalMatches": 1264,
+    "uniqueFiles": 312,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1132
+        "matches": 1135
       },
       {
         "kind": "require() local imports",
-        "matches": 127
+        "matches": 129
       }
     ],
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 218,
-        "matches": 924
+        "files": 219,
+        "matches": 928
       },
       {
         "area": "src/cli",
-        "files": 48,
-        "matches": 210
+        "files": 49,
+        "matches": 211
       },
       {
         "area": "src/core",
@@ -186,8 +186,8 @@
       "src/cli",
       "src/cli/templates"
     ],
-    "totalMatches": 210,
-    "uniqueFiles": 48,
+    "totalMatches": 211,
+    "uniqueFiles": 49,
     "byArea": [
       {
         "area": "src/cli/commands",
@@ -196,8 +196,8 @@
       },
       {
         "area": "src/cli/utils",
-        "files": 27,
-        "matches": 82
+        "files": 28,
+        "matches": 83
       },
       {
         "area": "src/cli/other",

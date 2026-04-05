@@ -10,6 +10,8 @@ description: SemVer policy and release rules for this package.
 - major: breaking public API/CLI/generator/migration changes
 - minor: additive and compatible features
 - patch: backward-compatible fixes
+- the shipped CLI banner/version tracks the published package version
+- CLI-only changes follow the same SemVer rules based on user-facing impact
 
 ## Breaking changes
 
@@ -25,6 +27,7 @@ When breaking:
 - new APIs
 - new options
 - new drivers/features without contract changes
+- new backward-compatible CLI flags or additive CLI features
 
 ## Patch changes
 
@@ -32,6 +35,7 @@ When breaking:
 - security fixes
 - docs corrections
 - internal refactors without public contract drift
+- backward-compatible CLI fixes, including banner/version reporting corrections
 
 ## Deprecation
 

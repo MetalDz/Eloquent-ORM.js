@@ -92,6 +92,15 @@ describe("Branch coverage 100% - phase 9 SchemaBuilder branches", () => {
     expect(SB.formatDefaultLiteral("'quoted'")).toBe("'quoted'");
     expect(SB.formatDefaultLiteral('"quoted"')).toBe('"quoted"');
     expect(SB.formatDefaultLiteral("plain")).toBe("'plain'");
+    expect(SB.formatDefaultLiteral(true, "pg")).toBe("TRUE");
+    expect(
+      SB.columnSQL(
+        "is_active",
+        column("boolean", undefined, { default: true }),
+        "pg",
+        new SQLDialect("pg")
+      )
+    ).toContain("DEFAULT TRUE");
 
     expect(
       SB.mysqlColumnSQL(

@@ -863,6 +863,9 @@ describe("LTS phase 5 CLI registration / security / utility coverage", () => {
       __esModule: true,
       default: { textSync },
     }));
+    jest.doMock("../cli/utils/CliVersion", () => ({
+      resolveCliVersion: () => "9.9.9",
+    }));
 
     let printCliBanner!: (writeLine?: (...args: unknown[]) => void) => void;
     jest.isolateModules(() => {
@@ -881,7 +884,7 @@ describe("LTS phase 5 CLI registration / security / utility coverage", () => {
     expect(writeLine).toHaveBeenNthCalledWith(1, "ASCII-BANNER");
     expect(writeLine).toHaveBeenNthCalledWith(
       2,
-      "  Developer CLI for Eloquent ORM JS (v1.0)\n",
+      "  Developer CLI for Eloquent ORM JS (v9.9.9)\n",
     );
     expect(console.log).toHaveBeenCalledWith("ASCII-BANNER");
   });

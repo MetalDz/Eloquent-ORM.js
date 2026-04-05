@@ -155,26 +155,35 @@ function classifyExtraMigrationSql(sql: string): ExtraMigrationDescriptor {
   };
 }
 
-function getBelongsToDependencies(
-  schema: Record<string, unknown>,
-  knownModels: Set<string>
+function getModelDependencies(
+  model: LoadedModel,
+  modelsByName: Map<string, LoadedModel>,
+  modelNameByTableName: Map<string, string>
 ): string[] {
   const deps = new Set<string>();
-  for (const value of Object.values(schema)) {
+  for (const value of Object.values(model.ModelClass.schema)) {
     if (!value || typeof value !== "object") continue;
 
     const relation = value as SchemaRelation;
     if (relation.kind !== "relation" || relation.relation !== "belongsTo") continue;
-    if (!relation.model || !knownModels.has(relation.model)) continue;
+    if (!relation.model || !modelsByName.has(relation.model)) continue;
     deps.add(relation.model);
+  }
+
+  for (const foreignKey of model.ModelClass.database?.foreignKeys ?? []) {
+    const dependency = modelNameByTableName.get(foreignKey.references.table);
+    if (!dependency || dependency === model.modelClassName) continue;
+    deps.add(dependency);
   }
 
   return [...deps];
 }
 
 function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
-  const modelNames = new Set(models.map((item) => item.modelClassName));
   const byName = new Map(models.map((item) => [item.modelClassName, item]));
+  const modelNameByTableName = new Map(
+    models.map((item) => [item.ModelClass.tableName, item.modelClassName])
+  );
   const visited = new Set<string>();
   const visiting = new Set<string>();
   const ordered: LoadedModel[] = [];
@@ -185,10 +194,7 @@ function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
 
     visiting.add(modelName);
     const model = byName.get(modelName)!;
-    const dependencies = getBelongsToDependencies(
-      model.ModelClass.schema,
-      modelNames
-    );
+    const dependencies = getModelDependencies(model, byName, modelNameByTableName);
     for (const dependency of dependencies) {
       visit(dependency);
     }
