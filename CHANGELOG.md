@@ -1,3 +1,11 @@
+## [1.1.1](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.0...v1.1.1) (2026-04-05)
+
+
+### Bug Fixes
+
+* use descriptive helper migration names for pivots and indexes ([13baedc](https://github.com/MetalDz/Eloquent-ORM.js/commit/13baedc78296de7c22e8f2ab1834411a738957d7))
+* use descriptive helper migration names for pivots and indexes ([7faeb4c](https://github.com/MetalDz/Eloquent-ORM.js/commit/7faeb4cf736c5c4f50429204c70713bb167cd5a9))
+
 # [1.1.0](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.0.11...v1.1.0) (2026-04-04)
 
 
