@@ -309,6 +309,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(packageDocs).toContain("../test/factories-seeds");
     expect(packageDocs).toContain("../test/scenarios");
     expect(packageDocs).toContain("../test/cli-pack-smoke");
+    expect(packageDocs).toContain("../orm/database-metadata");
     expect(packageDocs).toContain("../orm/multi-connection-strategy");
     expect(packageDocs).toContain("../orm/soft-deletes");
     expect(packageDocs).toContain("./common-scenarios");
@@ -332,6 +333,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(runtimeQuerying).toContain("const allUsers = await new User().all();");
     expect(runtimeModels).toContain("MySQL: conventional production web-app default");
     expect(runtimeModels).toContain("Mongo models");
+    expect(runtimeModels).toContain("[Database metadata](../orm/database-metadata)");
     expect(runtimeControllers).toContain("Controllers are the HTTP edge of the runtime.");
     expect(runtimeControllers).toContain("User.deleteById(...)");
     expect(runtimeServices).toContain("Services are the main application boundary for runtime behavior.");
@@ -373,6 +375,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(testCliPackSmoke).toContain("[CLI Test Matrix](../cli/test-matrix)");
     expect(docsConfig).toContain('"theme": "mint"');
     expect(docsConfig).toContain('"orm/soft-deletes"');
+    expect(docsConfig).toContain('"orm/database-metadata"');
     expect(docsConfig).toContain('"orm/multi-connection-strategy"');
     expect(docsConfig).toContain('"runtime/index"');
     expect(docsConfig).toContain('"runtime/crud"');

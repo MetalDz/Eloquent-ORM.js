@@ -1,0 +1,148 @@
+---
+title: Database Metadata
+description: Use static database for physical DDL while static schema stays the runtime model contract.
+---
+
+# Database Metadata
+
+Use `static schema` and `static database` for different responsibilities.
+
+- `static schema`
+  - columns
+  - validation
+  - runtime relation semantics through `relation(...)`
+- `static database`
+  - foreign keys
+  - composite unique indexes
+  - composite normal indexes
+  - named database constraints the ORM must generate or preserve
+
+This split keeps the architecture clean for large projects:
+
+- `schema` stays the application and runtime model contract
+- `database` stays the physical SQL contract
+
+## Why this exists
+
+`relation(...)` describes model intent, but not every relational database rule should be inferred from runtime relation metadata alone.
+
+Examples:
+
+- a named PostgreSQL foreign key
+- a composite unique index
+- a composite lookup index used for auth, sessions, or idempotency
+- a safe smart-update diff that must preserve unmanaged database constraints
+
+For those cases, use `static database`.
+
+## Example
+
+```ts
+import { SqlModel } from "@alpha.consultings/eloquent-orm.js/Model";
+import { column, relation } from "@alpha.consultings/eloquent-orm.js";
+
+type DeviceSessionAttrs = {
+  id?: string;
+  user_id?: string;
+  refresh_token_hash?: string;
+  revoked_at?: string | Date | null;
+};
+
+export class DeviceSession extends SqlModel<DeviceSessionAttrs> {
+  static tableName = "device_sessions";
+  static connectionName = "pg";
+
+  static schema = {
+    id: column("uuid", undefined, { primary: true }),
+    user_id: column("uuid", undefined, { notNull: true }),
+    refresh_token_hash: column("string", 255, { notNull: true }),
+    revoked_at: column("timestamp"),
+    user: relation("belongsTo", "User", { foreignKey: "user_id" }),
+  };
+
+  static database = {
+    foreignKeys: [
+      {
+        column: "user_id",
+        references: { table: "users", column: "id" },
+        onDelete: "CASCADE",
+        name: "device_sessions_user_id_fk",
+      },
+    ],
+    indexes: [
+      {
+        type: "unique",
+        columns: ["user_id", "refresh_token_hash"],
+        name: "device_sessions_user_refresh_hash_unique",
+      },
+      {
+        type: "index",
+        columns: ["user_id", "revoked_at"],
+        name: "device_sessions_user_revoked_idx",
+      },
+    ],
+  };
+
+  constructor() {
+    super("device_sessions", "pg");
+  }
+}
+```
+
+## Clean usage rule
+
+Use this rule consistently:
+
+- put simple scalar columns in `static schema`
+- add `relation(...)` only when the model needs runtime relation behavior
+- put physical database enforcement in `static database`
+
+Do not restate simple columns inside `static database`.
+
+Do not rely on `relation(...)` alone for critical database enforcement.
+
+## Relation helpers still matter
+
+Core relation helpers are still the runtime relation contract:
+
+```ts
+relation("hasMany", "Post", { foreignKey: "user_id" })
+relation("belongsTo", "User", { foreignKey: "user_id" })
+relation("belongsToMany", "Tag", {
+  pivotTable: "post_tags",
+  pivotLocalKey: "post_id",
+  pivotForeignKey: "tag_id",
+})
+relation("morphOne", "Image", { morphName: "imageable" })
+relation("morphMany", "Comment", { morphName: "commentable" })
+relation("morphTo", "Commentable", { morphName: "commentable" })
+```
+
+Only `belongsToMany` implies a pivot table. Helper migrations for composite indexes or relational extras are not pivot tables and should be named by target table or purpose.
+
+## Model-first migration flow
+
+Follow this order:
+
+1. update the model
+2. generate migrations with `eloquent make:migration`
+3. run migrations
+4. rerun generation and expect no schema differences
+
+Manual migration edits should be the final fallback only when the generator cannot yet express the intended SQL contract.
+
+## Safe smart-update behavior
+
+The ORM tracks `static database` metadata during smart-update diffs.
+
+That means:
+
+- ORM-managed foreign keys and indexes can be updated cleanly
+- unmanaged database constraints are preserved by default
+- the diff engine should not generate destructive cleanup just because a live database has extra relational DDL the model does not own
+
+## See also
+
+- [Relations](./relations)
+- [Migrations](./migrations)
+- [Model Registry](./model-registry)

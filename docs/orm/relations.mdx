@@ -140,9 +140,11 @@ In Mongo flows, join-heavy SQL constraints are replaced by document/reference se
 - Keep relation keys/aliases stable (`user_id`, `post_id`, `morphName`, `morphAlias`) to protect query compatibility.
 - Keep SQL many-to-many explicit with pivot metadata.
 - Keep Mongo models aligned to document boundaries and avoid SQL-only assumptions.
+- Use [`static database`](./database-metadata) for physical foreign keys and composite indexes. `relation(...)` is the runtime relation contract, not the full SQL DDL contract.
 
 ## Learn more
 
+- [Database metadata](./database-metadata)
 - [Model basics](../api/models)
 - [Compatibility notes](./compatibility)
 - [NoSQL usage guide](./nosql)

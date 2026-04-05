@@ -29,3 +29,9 @@ Use `--test` and connection flags for CI-safe migration execution.
 ## Safety
 
 Prefer backup-and-verify for production paths and explicit environment control.
+
+## Model-first rule
+
+Use models as the source of truth first, then generate migrations from them.
+
+When you need physical foreign keys, composite indexes, or named relational constraints, define them in [`static database`](./database-metadata) and then run `make:migration`.

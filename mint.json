@@ -60,6 +60,7 @@
       "group": "ORM",
       "pages": [
         "orm/relations",
+        "orm/database-metadata",
         "orm/multi-connection-strategy",
         "orm/mixin-scenarios",
         "orm/soft-deletes",
