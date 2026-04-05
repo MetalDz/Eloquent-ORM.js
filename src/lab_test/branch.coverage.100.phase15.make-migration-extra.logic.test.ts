@@ -193,7 +193,7 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
       rollbackExtraTables: [],
     });
 
-    const { makeMigration } = await import("../cli/commands/makeMigration.js");
+    const { makeMigration } = require("../cli/commands/makeMigration") as typeof import("../cli/commands/makeMigration.js");
     await makeMigration("User", {
       test: true,
       pivotSeparate: true,
@@ -215,6 +215,22 @@ describe("Branch coverage 100% - phase 15 makeMigration extra branches", () => {
     expect(helperContent).toContain("-- rollback SQL unavailable for schema extras");
 
     fs.rmSync(ctx.root, { recursive: true, force: true });
+  });
+
+  test("directly classifies generic schema extras when SQL is not a table or index", () => {
+    const { classifyExtraMigrationSql } = require("../cli/utils/migrations/ExtraMigrationClassifier") as typeof import("../cli/utils/migrations/ExtraMigrationClassifier.js");
+
+    expect(
+      classifyExtraMigrationSql(
+        'ALTER TABLE "users" ADD CONSTRAINT users_email_check CHECK ("email" <> \'\');'
+      )
+    ).toEqual({
+      targetName: "schema_extras",
+      fileSuffix: "add_schema_extras",
+      headerLabel: "schema extras",
+      logLabel: "Helper migration",
+      fallbackRollbackSql: "-- rollback SQL unavailable for schema extras",
+    });
   });
 
   test("covers soft-delete column detection variants and no-op relation dependency guards", async () => {

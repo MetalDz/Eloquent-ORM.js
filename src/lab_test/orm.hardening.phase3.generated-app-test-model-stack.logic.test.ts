@@ -58,6 +58,8 @@ describe("ORM hardening phase 3 generated app/test model stack", () => {
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     process.env.DB_CONNECTION = "mysql";
     process.env.ELOQUENT_DISABLE_MODEL_HOOKS = "true";
+    fs.mkdirSync(appModelsDir, { recursive: true });
+    fs.mkdirSync(testModelsDir, { recursive: true });
     for (const filePath of generatedFiles) {
       removeIfExists(filePath);
     }

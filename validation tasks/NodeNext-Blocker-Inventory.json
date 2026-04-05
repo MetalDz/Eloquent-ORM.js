@@ -6,28 +6,28 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1264,
-    "uniqueFiles": 312,
+    "totalMatches": 1279,
+    "uniqueFiles": 316,
     "byKind": [
       {
         "kind": "import/export local specifiers",
-        "matches": 1135
+        "matches": 1144
       },
       {
         "kind": "require() local imports",
-        "matches": 129
+        "matches": 135
       }
     ],
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 219,
-        "matches": 928
+        "files": 222,
+        "matches": 940
       },
       {
         "area": "src/cli",
-        "files": 49,
-        "matches": 211
+        "files": 50,
+        "matches": 214
       },
       {
         "area": "src/core",
@@ -186,18 +186,18 @@
       "src/cli",
       "src/cli/templates"
     ],
-    "totalMatches": 211,
-    "uniqueFiles": 49,
+    "totalMatches": 214,
+    "uniqueFiles": 50,
     "byArea": [
       {
         "area": "src/cli/commands",
         "files": 20,
-        "matches": 116
+        "matches": 118
       },
       {
         "area": "src/cli/utils",
-        "files": 28,
-        "matches": 83
+        "files": 29,
+        "matches": 84
       },
       {
         "area": "src/cli/other",
@@ -234,6 +234,15 @@
         "firstLine": 5
       },
       {
+        "file": "src/cli/commands/makeMigration.ts",
+        "area": "src/cli/commands",
+        "matches": 10,
+        "kinds": {
+          "import/export local specifiers": 10
+        },
+        "firstLine": 5
+      },
+      {
         "file": "src/cli/commands/dbSeed.ts",
         "area": "src/cli/commands",
         "matches": 9,
@@ -259,15 +268,6 @@
           "import/export local specifiers": 9
         },
         "firstLine": 3
-      },
-      {
-        "file": "src/cli/commands/makeMigration.ts",
-        "area": "src/cli/commands",
-        "matches": 8,
-        "kinds": {
-          "import/export local specifiers": 8
-        },
-        "firstLine": 5
       },
       {
         "file": "src/cli/commands/migrateRollback.ts",
@@ -357,7 +357,7 @@
         "kinds": {
           "exact import-string assertions": 8
         },
-        "firstLine": 100
+        "firstLine": 102
       },
       {
         "file": "src/lab_test/orm.hardening.phase1.cli-action-runtime.logic.test.ts",

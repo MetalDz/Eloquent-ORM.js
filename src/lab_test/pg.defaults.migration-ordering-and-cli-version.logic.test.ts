@@ -4,6 +4,11 @@ import path from "path";
 describe("pg defaults, migration ordering, and cli version contract", () => {
   const rootDir = process.cwd();
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.resetModules();
+  });
+
   test("validation note records the completed fix scope and semver rule", () => {
     const notePath = path.resolve(
       rootDir,
@@ -34,5 +39,61 @@ describe("pg defaults, migration ordering, and cli version contract", () => {
       expect(content).toContain("patch");
       expect(content).toContain("minor");
     }
+  });
+
+  test("CliVersion resolves and caches the package version from package.json", () => {
+    const readFileSync = jest.fn(() => JSON.stringify({ version: "1.2.3" }));
+    jest.doMock("fs", () => ({
+      __esModule: true,
+      default: { readFileSync },
+      readFileSync,
+    }));
+
+    let resolveCliVersion!: () => string;
+    jest.isolateModules(() => {
+      ({ resolveCliVersion } = require("../cli/utils/CliVersion"));
+    });
+
+    expect(resolveCliVersion()).toBe("1.2.3");
+    expect(resolveCliVersion()).toBe("1.2.3");
+    expect(readFileSync).toHaveBeenCalledTimes(1);
+  });
+
+  test("CliVersion falls back to 0.0.0 when package.json cannot be read", () => {
+    const readFileSync = jest.fn(() => {
+      throw new Error("read failed");
+    });
+    jest.doMock("fs", () => ({
+      __esModule: true,
+      default: { readFileSync },
+      readFileSync,
+    }));
+
+    let resolveCliVersion!: () => string;
+    jest.isolateModules(() => {
+      ({ resolveCliVersion } = require("../cli/utils/CliVersion"));
+    });
+
+    expect(resolveCliVersion()).toBe("0.0.0");
+    expect(resolveCliVersion()).toBe("0.0.0");
+    expect(readFileSync).toHaveBeenCalledTimes(1);
+  });
+
+  test("CliVersion falls back to 0.0.0 when package.json has a blank version", () => {
+    const readFileSync = jest.fn(() => JSON.stringify({ version: "   " }));
+    jest.doMock("fs", () => ({
+      __esModule: true,
+      default: { readFileSync },
+      readFileSync,
+    }));
+
+    let resolveCliVersion!: () => string;
+    jest.isolateModules(() => {
+      ({ resolveCliVersion } = require("../cli/utils/CliVersion"));
+    });
+
+    expect(resolveCliVersion()).toBe("0.0.0");
+    expect(resolveCliVersion()).toBe("0.0.0");
+    expect(readFileSync).toHaveBeenCalledTimes(1);
   });
 });

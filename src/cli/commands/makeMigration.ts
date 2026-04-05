@@ -17,6 +17,8 @@ import {
 } from "../../core/connection/ConnectionFactory.js";
 import { dbConfig } from "../../config/database.js";
 import { loadModule } from "../utils/typescript/tsRuntime.js";
+import { classifyExtraMigrationSql } from "../utils/migrations/ExtraMigrationClassifier.js";
+import { sortModelsByDependencies } from "../utils/migrations/ModelDependencySorter.js";
 
 interface MigrationOptions {
   test?: boolean;
@@ -24,12 +26,6 @@ interface MigrationOptions {
   pivotSeparate?: boolean;
   connectionName?: ConnectionName;
 }
-
-type SchemaRelation = {
-  kind?: string;
-  relation?: string;
-  model?: string;
-};
 
 type LoadedModel = {
   file: string;
@@ -106,108 +102,6 @@ type MongoPivotDefinition = {
 
 function pascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-type ExtraMigrationDescriptor = {
-  targetName: string;
-  fileSuffix: string;
-  headerLabel: string;
-  logLabel: string;
-  fallbackRollbackSql: string;
-};
-
-function classifyExtraMigrationSql(sql: string): ExtraMigrationDescriptor {
-  const createTableMatch = sql.match(
-    /CREATE TABLE(?: IF NOT EXISTS)?\s+[`"]?([A-Za-z0-9_]+)/i
-  );
-  if (createTableMatch) {
-    const tableName = createTableMatch[1];
-    return {
-      targetName: tableName,
-      fileSuffix: `create_${tableName}_table`,
-      headerLabel: tableName,
-      logLabel: "Pivot migration",
-      fallbackRollbackSql: `DROP TABLE IF EXISTS ${tableName};`,
-    };
-  }
-
-  const createIndexMatch = sql.match(
-    /CREATE(?: UNIQUE)? INDEX(?: IF NOT EXISTS)?\s+[`"]?([A-Za-z0-9_]+)[`"]?\s+ON\s+[`"]?([A-Za-z0-9_]+)/i
-  );
-  if (createIndexMatch) {
-    const indexName = createIndexMatch[1];
-    const tableName = createIndexMatch[2];
-    return {
-      targetName: tableName,
-      fileSuffix: `add_${tableName}_indexes`,
-      headerLabel: `${tableName} indexes`,
-      logLabel: "Helper migration",
-      fallbackRollbackSql: `DROP INDEX IF EXISTS ${indexName};`,
-    };
-  }
-
-  return {
-    targetName: "schema_extras",
-    fileSuffix: "add_schema_extras",
-    headerLabel: "schema extras",
-    logLabel: "Helper migration",
-    fallbackRollbackSql: "-- rollback SQL unavailable for schema extras",
-  };
-}
-
-function getModelDependencies(
-  model: LoadedModel,
-  modelsByName: Map<string, LoadedModel>,
-  modelNameByTableName: Map<string, string>
-): string[] {
-  const deps = new Set<string>();
-  for (const value of Object.values(model.ModelClass.schema)) {
-    if (!value || typeof value !== "object") continue;
-
-    const relation = value as SchemaRelation;
-    if (relation.kind !== "relation" || relation.relation !== "belongsTo") continue;
-    if (!relation.model || !modelsByName.has(relation.model)) continue;
-    deps.add(relation.model);
-  }
-
-  for (const foreignKey of model.ModelClass.database?.foreignKeys ?? []) {
-    const dependency = modelNameByTableName.get(foreignKey.references.table);
-    if (!dependency || dependency === model.modelClassName) continue;
-    deps.add(dependency);
-  }
-
-  return [...deps];
-}
-
-function sortModelsByDependencies(models: LoadedModel[]): LoadedModel[] {
-  const byName = new Map(models.map((item) => [item.modelClassName, item]));
-  const modelNameByTableName = new Map(
-    models.map((item) => [item.ModelClass.tableName, item.modelClassName])
-  );
-  const visited = new Set<string>();
-  const visiting = new Set<string>();
-  const ordered: LoadedModel[] = [];
-
-  const visit = (modelName: string): void => {
-    if (visited.has(modelName)) return;
-    if (visiting.has(modelName)) return;
-
-    visiting.add(modelName);
-    const model = byName.get(modelName)!;
-    const dependencies = getModelDependencies(model, byName, modelNameByTableName);
-    for (const dependency of dependencies) {
-      visit(dependency);
-    }
-    ordered.push(model);
-    visiting.delete(modelName);
-    visited.add(modelName);
-  };
-
-  for (const model of models) {
-    visit(model.modelClassName);
-  }
-
-  return ordered;
 }
 
 function singularizeTableName(name: string): string {

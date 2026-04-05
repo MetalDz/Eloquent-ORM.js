@@ -19,6 +19,10 @@ describe("migration/schema ASCII normalization", () => {
     rootDir,
     "src/cli/commands/makeMigration.ts",
   );
+  const extraMigrationClassifierPath = path.resolve(
+    rootDir,
+    "src/cli/utils/migrations/ExtraMigrationClassifier.ts",
+  );
   const schemaBuilderPath = path.resolve(
     rootDir,
     "src/core/schema/SchemaBuilder.ts",
@@ -60,7 +64,7 @@ describe("migration/schema ASCII normalization", () => {
   });
 
   test("targeted migration and schema sources are ASCII-only", () => {
-    for (const sourceFile of [makeMigrationPath, schemaBuilderPath]) {
+    for (const sourceFile of [makeMigrationPath, extraMigrationClassifierPath, schemaBuilderPath]) {
       const content = fs.readFileSync(sourceFile, "utf8").replace(/^\uFEFF/, "");
       expect(content).not.toMatch(/[^\x00-\x7F]/);
       expect(content).not.toContain("â");
@@ -83,8 +87,6 @@ describe("migration/schema ASCII normalization", () => {
       "INFO: No new columns or schema changes - skipping.",
       "INFO: Migration unchanged:",
       "INFO: ${pendingPivot.logLabel} unchanged:",
-      'logLabel: "Pivot migration"',
-      'logLabel: "Helper migration"',
       "INFO: All database connections closed.",
       "WARN: Could not close DB connections cleanly.",
       "OK: Migration generation complete in",
@@ -96,6 +98,15 @@ describe("migration/schema ASCII normalization", () => {
     for (const snippet of requiredSnippets) {
       expect(content).toContain(snippet);
     }
+  });
+
+  test("extra migration classifier keeps the normalized ASCII helper labels", () => {
+    const content = fs.readFileSync(extraMigrationClassifierPath, "utf8");
+
+    expect(content).toContain('logLabel: "Pivot migration"');
+    expect(content).toContain('logLabel: "Helper migration"');
+    expect(content).toContain('fileSuffix: "add_schema_extras"');
+    expect(content).toContain('fallbackRollbackSql: "-- rollback SQL unavailable for schema extras"');
   });
 
   test("SchemaBuilder uses the normalized ASCII error and info text", async () => {

@@ -1,14 +1,5 @@
 import fs from "fs";
-import os from "os";
 import path from "path";
-import {
-  appModelsDir,
-  appRootDir,
-  bootstrapAppFixtures,
-  connectionMigrationsDir,
-  ensureDir,
-  resetSqliteDatabase,
-} from "./support/cli.integration.harness.js";
 
 jest.mock("chalk", () => {
   const passthrough = (value: unknown): string => String(value);
@@ -18,6 +9,15 @@ jest.mock("chalk", () => {
   });
   return { __esModule: true, default: identity };
 });
+
+const { PathMap } = require("../../dist/cli/utils/PathMap.js") as {
+  PathMap: {
+    ensureDirs(): void;
+    models(isTest?: boolean): string;
+    appMigrations(connectionName?: string): string;
+    migrations(isTest?: boolean, connectionName?: string): string;
+  };
+};
 
 const { makeMigration } = require("../../dist/cli/commands/makeMigration.js") as {
   makeMigration: (
@@ -41,12 +41,100 @@ const { migrateRun } = require("../../dist/cli/commands/migrateRun.js") as {
   ) => Promise<void>;
 };
 
+const repoRoot = process.cwd();
+const fixtureRootDir = path.resolve(repoRoot, "src", "__model_migration_sync__");
+const fixtureModelsDir = path.join(fixtureRootDir, "models");
+const fixtureMigrationsRoot = path.join(fixtureRootDir, "database", "migrations");
+const sqliteMigrationsDir = path.join(fixtureMigrationsRoot, "sqlite");
+const sqliteDatabasePath = path.join(fixtureRootDir, "cli.integration.app.sqlite");
+
+function ensureDir(dirPath: string): void {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function resetSqliteDatabase(filePath: string): void {
+  if (fs.existsSync(filePath)) {
+    fs.rmSync(filePath, { force: true });
+  }
+}
+
+function writeFixture(filePath: string, content: string): void {
+  ensureDir(path.dirname(filePath));
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
+function bootstrapFixtureModels(): void {
+  writeFixture(
+    path.join(fixtureModelsDir, "User.ts"),
+    `import { SqlModel } from "../../core/model/BaseModel.js";
+import { column, relation } from "../../core/schema/SchemaBlueprint.js";
+
+type UserAttrs = {
+  id?: number | null;
+  name?: string | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+};
+
+export class User extends SqlModel<UserAttrs> {
+  static tableName = "users";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255, { notNull: true }),
+    created_at: column("timestamp"),
+    updated_at: column("timestamp"),
+    posts: relation("hasMany", "Post", { foreignKey: "user_id" }),
+    favorites: relation("belongsToMany", "Post"),
+  };
+
+  constructor() {
+    super("users", process.env.DB_CONNECTION ?? "sqlite");
+  }
+}
+`
+  );
+
+  writeFixture(
+    path.join(fixtureModelsDir, "Post.ts"),
+    `import { SqlModel } from "../../core/model/BaseModel.js";
+import { column, relation } from "../../core/schema/SchemaBlueprint.js";
+
+type PostAttrs = {
+  id?: number | null;
+  name?: string | null;
+  user_id?: number | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+};
+
+export class Post extends SqlModel<PostAttrs> {
+  static tableName = "posts";
+  static connectionName = process.env.DB_CONNECTION ?? "sqlite";
+  static schema = {
+    id: column("increments", undefined, { primary: true }),
+    name: column("string", 255, { notNull: true }),
+    user_id: column("int", undefined, { notNull: true }),
+    created_at: column("timestamp"),
+    updated_at: column("timestamp"),
+    author: relation("belongsTo", "User", { foreignKey: "user_id" }),
+    favoritedBy: relation("belongsToMany", "User"),
+  };
+
+  constructor() {
+    super("posts", process.env.DB_CONNECTION ?? "sqlite");
+  }
+}
+`
+  );
+}
+
 function fixtureModelTableNames(): string[] {
   return fs
-    .readdirSync(appModelsDir)
+    .readdirSync(fixtureModelsDir)
     .filter((file) => file.endsWith(".ts"))
     .map((file) => {
-      const content = fs.readFileSync(path.join(appModelsDir, file), "utf8");
+      const content = fs.readFileSync(path.join(fixtureModelsDir, file), "utf8");
       const tableNameMatch = content.match(/static tableName = "([^"]+)"/);
       if (!tableNameMatch) {
         throw new Error(`Missing static tableName in fixture model: ${file}`);
@@ -64,31 +152,46 @@ function migrationFiles(dirPath: string): string[] {
 }
 
 describe("Model/migration sync guard", () => {
-  let appRootBackupDir: string | null = null;
   let originalDbConnection: string | undefined;
   let originalSqlitePath: string | undefined;
 
   beforeAll(() => {
-    const appBackupRoot = fs.mkdtempSync(
-      path.join(os.tmpdir(), "eloquent-model-migration-sync-")
-    );
-    appRootBackupDir = path.join(appBackupRoot, "app");
-    if (fs.existsSync(appRootDir)) {
-      fs.cpSync(appRootDir, appRootBackupDir, { recursive: true });
-    }
-
-    fs.rmSync(appRootDir, { recursive: true, force: true });
-    ensureDir(appRootDir);
-    bootstrapAppFixtures();
-
     originalDbConnection = process.env.DB_CONNECTION;
     originalSqlitePath = process.env.SQLITE_PATH;
     process.env.DB_CONNECTION = "sqlite";
-    process.env.SQLITE_PATH = "./cli.integration.app.sqlite";
+    process.env.SQLITE_PATH = sqliteDatabasePath;
+  });
+
+  beforeEach(() => {
+    jest.restoreAllMocks();
+
+    fs.rmSync(fixtureRootDir, { recursive: true, force: true });
+    ensureDir(fixtureModelsDir);
+    ensureDir(sqliteMigrationsDir);
+    bootstrapFixtureModels();
+    resetSqliteDatabase(sqliteDatabasePath);
+
+    jest.spyOn(PathMap, "ensureDirs").mockImplementation(() => {
+      ensureDir(fixtureModelsDir);
+      ensureDir(sqliteMigrationsDir);
+    });
+    jest.spyOn(PathMap, "models").mockImplementation((isTest = false) =>
+      isTest ? path.resolve(repoRoot, "src/test/database/models") : fixtureModelsDir
+    );
+    jest.spyOn(PathMap, "appMigrations").mockImplementation((connectionName?: string) =>
+      connectionName ? path.join(fixtureMigrationsRoot, connectionName) : fixtureMigrationsRoot
+    );
+    jest.spyOn(PathMap, "migrations").mockImplementation((isTest = false, connectionName?: string) => {
+      if (isTest) {
+        return path.resolve(repoRoot, "src/test/database/migrations", connectionName ?? "");
+      }
+      return connectionName ? path.join(fixtureMigrationsRoot, connectionName) : fixtureMigrationsRoot;
+    });
   });
 
   afterAll(() => {
-    resetSqliteDatabase("./cli.integration.app.sqlite");
+    resetSqliteDatabase(sqliteDatabasePath);
+    fs.rmSync(fixtureRootDir, { recursive: true, force: true });
 
     if (originalDbConnection === undefined) {
       delete process.env.DB_CONNECTION;
@@ -101,21 +204,9 @@ describe("Model/migration sync guard", () => {
     } else {
       process.env.SQLITE_PATH = originalSqlitePath;
     }
-
-    if (!appRootBackupDir) return;
-
-    fs.rmSync(appRootDir, { recursive: true, force: true });
-    if (fs.existsSync(appRootBackupDir)) {
-      fs.cpSync(appRootBackupDir, appRootDir, { recursive: true });
-      fs.rmSync(path.dirname(appRootBackupDir), { recursive: true, force: true });
-    }
   });
 
   test("fixture app sqlite migrations stay aligned with the generated model set", async () => {
-    const sqliteMigrationsDir = connectionMigrationsDir(false, "sqlite");
-    fs.rmSync(sqliteMigrationsDir, { recursive: true, force: true });
-    resetSqliteDatabase("./cli.integration.app.sqlite");
-
     const firstLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     try {
       await makeMigration("all", {
