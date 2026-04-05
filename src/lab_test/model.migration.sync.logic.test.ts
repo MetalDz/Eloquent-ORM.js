@@ -10,7 +10,7 @@ jest.mock("chalk", () => {
   return { __esModule: true, default: identity };
 });
 
-const { PathMap } = require("../../dist/cli/utils/PathMap.js") as {
+const { PathMap } = require("../cli/utils/PathMap.js") as {
   PathMap: {
     ensureDirs(): void;
     models(isTest?: boolean): string;
@@ -19,7 +19,7 @@ const { PathMap } = require("../../dist/cli/utils/PathMap.js") as {
   };
 };
 
-const { makeMigration } = require("../../dist/cli/commands/makeMigration.js") as {
+const { makeMigration } = require("../cli/commands/makeMigration.js") as {
   makeMigration: (
     modelName: string,
     options?: {
@@ -31,7 +31,7 @@ const { makeMigration } = require("../../dist/cli/commands/makeMigration.js") as
   ) => Promise<void>;
 };
 
-const { migrateRun } = require("../../dist/cli/commands/migrateRun.js") as {
+const { migrateRun } = require("../cli/commands/migrateRun.js") as {
   migrateRun: (
     isTest?: boolean,
     modelName?: string,
