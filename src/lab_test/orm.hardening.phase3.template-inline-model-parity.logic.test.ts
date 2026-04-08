@@ -145,6 +145,18 @@ describe("ORM hardening phase 3 template-inline model parity", () => {
           expect(content).toContain(snippet);
         }
 
+        expect(template).toContain(
+          'created_at: column("timestamp", undefined, { useTz: true }),'
+        );
+        expect(template).toContain(
+          'updated_at: column("timestamp", undefined, { useTz: true }),'
+        );
+        expect(content).toContain(
+          'created_at: column("timestamp", undefined, { useTz: true }),'
+        );
+        expect(content).toContain(
+          'updated_at: column("timestamp", undefined, { useTz: true }),'
+        );
         expect(content).toContain(expectedBaseClass);
       } finally {
         removeDir(ctx.root);

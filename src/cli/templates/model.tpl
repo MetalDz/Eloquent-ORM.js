@@ -21,8 +21,8 @@ export class {{ModelName}} extends {{modelBaseClass}}<{{ModelName}}Attrs> {
   static schema = {
     id: column("increments", undefined, { primary: true }),
     name: validate(column("string", 255), { required: true, min: 3 }),
-    created_at: column("timestamp"),
-    updated_at: column("timestamp"),
+    created_at: column("timestamp", undefined, { useTz: true }),
+    updated_at: column("timestamp", undefined, { useTz: true }),
 
     /*
      * RELATIONS EXAMPLES (uncomment and adapt):

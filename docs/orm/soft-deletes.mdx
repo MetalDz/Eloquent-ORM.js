@@ -17,6 +17,12 @@ Valid schema patterns:
 deleted_at: column("softDeletes")
 ```
 
+For PostgreSQL-focused apps, prefer the explicit timezone-aware form:
+
+```ts
+deleted_at: column("softDeletes", undefined, { useTz: true })
+```
+
 or:
 
 ```ts

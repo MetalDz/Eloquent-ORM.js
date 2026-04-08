@@ -131,6 +131,12 @@ describe("Generated model instance persistence via make:model", () => {
     const content = fs.readFileSync(sqlModelFile, "utf8");
     expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
     expect(content).toContain(`const model = new ${sqlModelName}();`);
+    expect(content).toContain(
+      'created_at: column("timestamp", undefined, { useTz: true }),'
+    );
+    expect(content).toContain(
+      'updated_at: column("timestamp", undefined, { useTz: true }),'
+    );
     expect(content).toContain('model.update({ name: "Example 2" });');
     expect(content).toContain('await model.patch({ name: "Example 3" });');
 

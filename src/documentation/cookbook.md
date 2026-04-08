@@ -42,8 +42,8 @@ export class User extends SqlModel<UserAttrs> {
     id: column("increments", undefined, { primary: true }),
     name: column("string", 255),
     email: column("string", 255, { unique: true }),
-    created_at: column("timestamp"),
-    updated_at: column("timestamp"),
+    created_at: column("timestamp", undefined, { useTz: true }),
+    updated_at: column("timestamp", undefined, { useTz: true }),
   };
 
   constructor() {
@@ -186,6 +186,7 @@ Keep the service/controller surface the same as SQL. Keep driver-specific logic 
 ## Recipe 4: Soft Delete Admin Restore Flow
 
 Use this when a consumer needs recoverable deletes for admin tooling.
+For PostgreSQL-focused apps, keep the soft-delete column explicit and timezone-aware.
 
 Generate:
 
@@ -197,7 +198,7 @@ eloquent make:service User
 Model schema:
 
 ```ts
-deleted_at: column("softDeletes")
+deleted_at: column("softDeletes", undefined, { useTz: true })
 ```
 
 Service:

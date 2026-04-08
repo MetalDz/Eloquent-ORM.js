@@ -119,6 +119,13 @@ describeIfBuilt("CLI integration: generators", () => {
     assertCliSuccess(createResult, createArgs);
     expect(createResult.combined).toContain("Model created");
     expect(fs.existsSync(appModelFile)).toBe(true);
+    const createdModelContent = fs.readFileSync(appModelFile, "utf8");
+    expect(createdModelContent).toContain(
+      'created_at: column("timestamp", undefined, { useTz: true }),'
+    );
+    expect(createdModelContent).toContain(
+      'updated_at: column("timestamp", undefined, { useTz: true }),'
+    );
 
     const secondResult = runCli(createArgs);
     assertCliSuccess(secondResult, createArgs);

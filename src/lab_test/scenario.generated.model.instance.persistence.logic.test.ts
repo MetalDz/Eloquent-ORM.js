@@ -212,6 +212,12 @@ describe("Scenario-generated model instance persistence", () => {
       const userFile = path.join(ctx.modelsDir, "User.ts");
       const content = fs.readFileSync(userFile, "utf8");
       expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
+      expect(content).toContain(
+        'created_at: column("timestamp", undefined, { useTz: true }),'
+      );
+      expect(content).toContain(
+        'updated_at: column("timestamp", undefined, { useTz: true }),'
+      );
       expect(content).toContain('model.update({ name: "Example 2" });');
       expect(content).toContain('await model.patch({ name: "Example 3" });');
 
@@ -312,6 +318,12 @@ describe("Scenario-generated model instance persistence", () => {
       const content = fs.readFileSync(userFile, "utf8");
       expect(content).toContain("extends MongoModel");
       expect(content).toContain("INSTANCE PERSISTENCE EXAMPLES");
+      expect(content).toContain(
+        'created_at: column("timestamp", undefined, { useTz: true }),'
+      );
+      expect(content).toContain(
+        'updated_at: column("timestamp", undefined, { useTz: true }),'
+      );
 
       clearModule(userFile);
       process.env.DB_CONNECTION = "mongo";

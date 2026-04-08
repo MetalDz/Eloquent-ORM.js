@@ -46,6 +46,13 @@ type ScenarioManifest = {
   seedName: string;
 };
 
+function defaultTimestampSchemaLines(): string[] {
+  return [
+    'created_at: column("timestamp", undefined, { useTz: true }),',
+    'updated_at: column("timestamp", undefined, { useTz: true }),',
+  ];
+}
+
 function clearRequireCache(filePath: string): void {
   clearLoadedModuleCache(path.resolve(filePath));
 }
@@ -209,8 +216,7 @@ const blogPreset: ScenarioPreset = {
       schemaLines: [
         "id: column(\"increments\", undefined, { primary: true }),",
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "posts: relation(\"hasMany\", \"Post\", { foreignKey: \"user_id\" }),",
         "favorites: relation(\"belongsToMany\", \"Post\", {}),",
@@ -231,8 +237,7 @@ const blogPreset: ScenarioPreset = {
         "id: column(\"increments\", undefined, { primary: true }),",
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
         "user_id: column(\"int\", undefined, { notNull: true }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "author: relation(\"belongsTo\", \"User\", { foreignKey: \"user_id\" }),",
         "favoritedBy: relation(\"belongsToMany\", \"User\", {}),",
@@ -255,8 +260,7 @@ const blogPreset: ScenarioPreset = {
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
         "commentable_id: column(\"int\", undefined, { notNull: true }),",
         "commentable_type: column(\"string\", 255, { notNull: true }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "commentable: relation(\"morphTo\", \"Commentable\", { morphName: \"commentable\" }),",
       ],
@@ -309,8 +313,7 @@ const mediaPreset: ScenarioPreset = {
       schemaLines: [
         "id: column(\"increments\", undefined, { primary: true }),",
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "photos: relation(\"hasMany\", \"Photo\", { foreignKey: \"user_id\" }),",
         "videos: relation(\"hasMany\", \"Video\", { foreignKey: \"user_id\" }),",
@@ -331,8 +334,7 @@ const mediaPreset: ScenarioPreset = {
         "id: column(\"increments\", undefined, { primary: true }),",
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
         "user_id: column(\"int\", undefined, { notNull: true }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "author: relation(\"belongsTo\", \"User\", { foreignKey: \"user_id\" }),",
         "comments: relation(\"morphMany\", \"Comment\", { morphName: \"commentable\" }),",
@@ -352,8 +354,7 @@ const mediaPreset: ScenarioPreset = {
         "id: column(\"increments\", undefined, { primary: true }),",
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
         "user_id: column(\"int\", undefined, { notNull: true }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "author: relation(\"belongsTo\", \"User\", { foreignKey: \"user_id\" }),",
         "comments: relation(\"morphMany\", \"Comment\", { morphName: \"commentable\" }),",
@@ -375,8 +376,7 @@ const mediaPreset: ScenarioPreset = {
         "name: validate(column(\"string\", 255), { required: true, min: 3 }),",
         "commentable_id: column(\"int\", undefined, { notNull: true }),",
         "commentable_type: column(\"string\", 255, { notNull: true }),",
-        "created_at: column(\"timestamp\"),",
-        "updated_at: column(\"timestamp\"),",
+        ...defaultTimestampSchemaLines(),
         "",
         "commentable: relation(\"morphTo\", \"Commentable\", { morphName: \"commentable\" }),",
       ],

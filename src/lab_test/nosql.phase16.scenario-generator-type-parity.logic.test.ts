@@ -91,6 +91,12 @@ describe("NoSQL phase 16 scenario generator type parity", () => {
 
       const userModel = fs.readFileSync(path.join(modelsDir, "User.ts"), "utf8");
       expect(userModel).toContain('import { column, relation, validate, type SchemaField }');
+      expect(userModel).toContain(
+        'created_at: column("timestamp", undefined, { useTz: true }),'
+      );
+      expect(userModel).toContain(
+        'updated_at: column("timestamp", undefined, { useTz: true }),'
+      );
       expect(userModel).toContain('posts: relation("hasMany", "Post", { foreignKey: "user_id" })');
       expect(userModel).toContain('comments: relation("morphMany", "Comment", { morphName: "commentable" })');
 

@@ -267,6 +267,9 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(cookbook).toContain("return User.deleteById(id);");
     expect(cookbook).toContain("await user.restore();");
     expect(cookbook).toContain("await Post.updateById(id, { published: true });");
+    expect(cookbook).toContain('created_at: column("timestamp", undefined, { useTz: true })');
+    expect(cookbook).toContain('updated_at: column("timestamp", undefined, { useTz: true })');
+    expect(cookbook).toContain('deleted_at: column("softDeletes", undefined, { useTz: true })');
     expect(multiConnection).toContain("This ORM supports multiple named connections in one app");
     expect(multiConnection).toContain("DB_CONNECTION=mysql,pg");
     expect(multiConnection).toContain("static connectionName = \"mysql\"");
