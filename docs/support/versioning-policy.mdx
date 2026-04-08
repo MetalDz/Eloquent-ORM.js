@@ -21,6 +21,13 @@ When breaking:
 - include upgrade note
 - provide migration path when feasible
 
+## Package rename and scope migration
+
+- renaming the package or changing its npm scope is always `major`
+- treat package identity changes as consumer migrations, not registry-only maintenance
+- review install command changes, import path changes, generated-code impact, docs/example updates, and dependency migration guidance before approving a rename
+- do not rename the package only to satisfy GitHub Packages publishing; prefer npmjs as canonical, or move the repo under a matching GitHub owner/org if GitHub Packages is required
+
 ## Minor changes
 
 - new commands

@@ -141,20 +141,40 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm run release
 
+      - name: Decide GitHub Packages publish eligibility
+        id: github_packages
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          PACKAGE_NAME="$(node -p "require('./package.json').name")"
+          PACKAGE_SCOPE="${PACKAGE_NAME#@}"
+          PACKAGE_SCOPE="${PACKAGE_SCOPE%%/*}"
+          OWNER_LOWER="$(printf '%s' "$REPO_OWNER" | tr '[:upper:]' '[:lower:]')"
+          SCOPE_LOWER="$(printf '%s' "$PACKAGE_SCOPE" | tr '[:upper:]' '[:lower:]')"
+          echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          if [ "$SCOPE_LOWER" = "$OWNER_LOWER" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "GitHub Packages skipped: package scope @$PACKAGE_SCOPE does not match repository owner @$REPO_OWNER."
+          fi
+
       - name: Setup Node.js for GitHub Packages
+        if: steps.github_packages.outputs.enabled == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com
-          scope: "@alpha.consultings"
           always-auth: true
 
       - name: Publish to GitHub Packages
+        if: steps.github_packages.outputs.enabled == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          if npm view "@alpha.consultings/eloquent-orm.js@$VERSION" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+          PACKAGE_NAME="${{ steps.github_packages.outputs.package_name }}"
+          if npm view "$PACKAGE_NAME@$VERSION" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
             echo "GitHub Packages already has version $VERSION; skipping."
           else
             npm publish --registry=https://npm.pkg.github.com

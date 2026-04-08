@@ -25,6 +25,19 @@ Last updated: 2026-04-05
   - an upgrade note
   - a migration path when feasible
 
+## Package Rename And Scope Migration
+- Renaming the package or changing its npm scope is always a `major` release.
+- Treat package identity changes as ecosystem migrations, not registry-only maintenance.
+- A package rename/scope move must include explicit review of:
+  - install command changes
+  - import path changes in generated code and consumer applications
+  - README/docs/example updates
+  - lockfile and dependency-name migration guidance
+  - npmjs history split versus GitHub Packages owner-scope requirements
+- Do not rename the package only to satisfy GitHub Packages publishing. Prefer:
+  - keeping npmjs as the canonical registry, or
+  - moving the repository under a matching GitHub owner/org, if GitHub Packages is required
+
 ## Minor Release Rules
 - Minor releases may add:
   - new commands
