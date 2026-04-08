@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: write
       issues: write
+      packages: write
       pull-requests: write
     services:
       mysql:
@@ -139,3 +140,22 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm run release
+
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          scope: "@alpha.consultings"
+          always-auth: true
+
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "@alpha.consultings/eloquent-orm.js@$VERSION" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "GitHub Packages already has version $VERSION; skipping."
+          else
+            npm publish --registry=https://npm.pkg.github.com
+          fi
