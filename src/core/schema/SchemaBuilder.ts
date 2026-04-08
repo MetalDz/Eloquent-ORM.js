@@ -498,6 +498,58 @@ export class SchemaBuilder {
   /* ============================================================
    * COLUMN BUILDER
    * ============================================================ */
+  private static timestampSqlType(
+    dialectName: Dialect,
+    options?: Pick<ColumnDefinition["options"], "useTz">
+  ): string {
+    if (dialectName === "sqlite") return "DATETIME";
+    if (dialectName === "pg") return options?.useTz ? "TIMESTAMPTZ" : "TIMESTAMP";
+    return "TIMESTAMP";
+  }
+
+  private static currentTimestampSql(dialectName: Dialect): string {
+    if (dialectName === "sqlite") return "CURRENT_TIMESTAMP";
+    if (dialectName === "pg") return "NOW()";
+    return "CURRENT_TIMESTAMP";
+  }
+
+  private static timestampColumnDefinition(
+    columnName: string,
+    options: ColumnDefinition["options"],
+    dialectName: Dialect,
+    dialect: SQLDialect,
+    overrides?: {
+      defaultNow?: boolean;
+      allowNull?: boolean;
+      forceDefaultNull?: boolean;
+    }
+  ): string {
+    const parts = [
+      `${dialect.wrap(columnName)} ${this.timestampSqlType(dialectName, options)}`,
+    ];
+    const allowNull = overrides?.allowNull === true;
+    const explicitDefaultProvided = options.default !== undefined;
+    const defaultNow =
+      overrides?.defaultNow ??
+      (options.defaultNow !== undefined ? options.defaultNow : true);
+
+    if (options.notNull === true && !allowNull) {
+      parts.push("NOT NULL");
+    } else if (allowNull) {
+      parts.push("NULL");
+    }
+
+    if (explicitDefaultProvided) {
+      parts.push(`DEFAULT ${this.formatDefaultLiteral(options.default, dialectName)}`);
+    } else if (overrides?.forceDefaultNull === true) {
+      parts.push("DEFAULT NULL");
+    } else if (defaultNow) {
+      parts.push(`DEFAULT ${this.currentTimestampSql(dialectName)}`);
+    }
+
+    return parts.join(" ");
+  }
+
   private static columnSQL(
     name: string,
     c: ColumnDefinition,
@@ -521,24 +573,43 @@ export class SchemaBuilder {
       text: { mysql: "TEXT", pg: "TEXT", sqlite: "TEXT" },
       decimal: { mysql: "DECIMAL(10,2)", pg: "NUMERIC(10,2)", sqlite: "REAL" },
       json: { mysql: "JSON", pg: "JSONB", sqlite: "TEXT" },
-      timestamp: {
-        mysql: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-        pg: "TIMESTAMP DEFAULT NOW()",
-        sqlite: "DATETIME DEFAULT CURRENT_TIMESTAMP",
-      },
     };
 
     if (type === "increments") return `${col} ${typeMap.increments[dialectName]}`;
+
+    if (type === "timestamp") {
+      return this.timestampColumnDefinition(name, options, dialectName, dialect);
+    }
 
     if (typeMap[type]) {
       let sqlType = typeMap[type][dialectName];
       if (type === "string" && options.length) sqlType += `(${options.length})`;
       parts.push(`${col} ${sqlType}`);
     } else if (type === "softDeletes") {
-      return `${dialect.wrap("deleted_at")} ${typeMap.timestamp[dialectName]} NULL`;
+      return this.timestampColumnDefinition(
+        "deleted_at",
+        options,
+        dialectName,
+        dialect,
+        {
+          defaultNow: false,
+          allowNull: true,
+          forceDefaultNull: true,
+        }
+      );
     } else if (type === "timestamps") {
-      const createdAt = `${dialect.wrap("created_at")} ${typeMap.timestamp[dialectName]}`;
-      const updatedAt = `${dialect.wrap("updated_at")} ${typeMap.timestamp[dialectName]}`;
+      const createdAt = this.timestampColumnDefinition(
+        "created_at",
+        options,
+        dialectName,
+        dialect
+      );
+      const updatedAt = this.timestampColumnDefinition(
+        "updated_at",
+        options,
+        dialectName,
+        dialect
+      );
       return `${createdAt}, ${updatedAt}`;
     } else {
       parts.push(`${col} TEXT`);
@@ -1253,9 +1324,17 @@ export class SchemaBuilder {
     switch (m.name) {
       case "SoftDeletes":
         return [
-          `${dialect.wrap("deleted_at")} ${
-            dialectName === "sqlite" ? "DATETIME" : "TIMESTAMP"
-          } NULL DEFAULT NULL`,
+          this.timestampColumnDefinition(
+            "deleted_at",
+            {},
+            dialectName,
+            dialect,
+            {
+              defaultNow: false,
+              allowNull: true,
+              forceDefaultNull: true,
+            }
+          ),
         ];
       default:
         return [];

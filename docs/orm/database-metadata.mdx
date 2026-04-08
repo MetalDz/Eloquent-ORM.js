@@ -22,6 +22,26 @@ This split keeps the architecture clean for large projects:
 - `schema` stays the application and runtime model contract
 - `database` stays the physical SQL contract
 
+## Timestamp rule
+
+Timestamp columns still belong in `static schema`.
+
+Use `static database` for relational DDL only, and keep timestamp semantics explicit in the schema:
+
+```ts
+created_at: column("timestamp", undefined, { useTz: true })
+updated_at: column("timestamp", undefined, { useTz: true })
+reviewed_at: column("timestamp", undefined, { useTz: true, defaultNow: false })
+expires_at: column("timestamp", undefined, { useTz: true, defaultNow: false })
+deleted_at: column("softDeletes", undefined, { useTz: true })
+```
+
+Use this rule:
+
+- `useTz: true` when PostgreSQL must emit `TIMESTAMPTZ`
+- `defaultNow: false` for business timestamps that must stay empty until the application sets them
+- `softDeletes` should never auto-default to the current time
+
 ## Why this exists
 
 `relation(...)` describes model intent, but not every relational database rule should be inferred from runtime relation metadata alone.

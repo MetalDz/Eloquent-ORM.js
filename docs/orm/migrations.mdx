@@ -35,3 +35,24 @@ Prefer backup-and-verify for production paths and explicit environment control.
 Use models as the source of truth first, then generate migrations from them.
 
 When you need physical foreign keys, composite indexes, or named relational constraints, define them in [`static database`](./database-metadata) and then run `make:migration`.
+
+## Timestamp columns
+
+Timestamp semantics stay in `static schema`, not `static database`.
+
+- `column("timestamp")` keeps the legacy ORM default:
+  - SQL runtime timestamp column
+  - current-time default unless you opt out
+- use `{ useTz: true }` when PostgreSQL must emit `TIMESTAMPTZ`
+- use `{ defaultNow: false }` for business timestamps that must start empty until the application sets them
+- `column("softDeletes")` never defaults to the current time
+
+Examples:
+
+```ts
+created_at: column("timestamp", undefined, { useTz: true })
+updated_at: column("timestamp", undefined, { useTz: true })
+read_at: column("timestamp", undefined, { useTz: true, defaultNow: false })
+expires_at: column("timestamp", undefined, { useTz: true, defaultNow: false })
+deleted_at: column("softDeletes", undefined, { useTz: true })
+```

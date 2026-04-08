@@ -27,6 +27,8 @@ export interface ColumnOptions {
   unique?: boolean;
   unsigned?: boolean;
   default?: string | number | boolean | null;
+  useTz?: boolean;
+  defaultNow?: boolean;
   primary?: boolean;
   index?: boolean;
   comment?: string;
