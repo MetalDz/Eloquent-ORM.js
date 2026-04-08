@@ -1,3 +1,11 @@
+## [1.1.4](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.3...v1.1.4) (2026-04-08)
+
+
+### Bug Fixes
+
+* ci publish releases to github packages with regression guards ([5e9d51b](https://github.com/MetalDz/Eloquent-ORM.js/commit/5e9d51b19991b4009dff4e32171892a8ba7421b6))
+* ci publish releases to github packages with regression guards ([b984fc6](https://github.com/MetalDz/Eloquent-ORM.js/commit/b984fc6c771fd2ab73daaeaf757202557f242371))
+
 ## [1.1.3](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.2...v1.1.3) (2026-04-08)
 
 
