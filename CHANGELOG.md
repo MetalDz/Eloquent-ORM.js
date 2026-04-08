@@ -1,3 +1,11 @@
+## [1.1.3](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.2...v1.1.3) (2026-04-08)
+
+
+### Bug Fixes
+
+* add explicit timestamp controls for pg schema generation ([7921b93](https://github.com/MetalDz/Eloquent-ORM.js/commit/7921b933f01c3d2a02b20071cc06515febc7c0fa))
+* restore coverage/coverage-summary.json ([7f185d0](https://github.com/MetalDz/Eloquent-ORM.js/commit/7f185d0608fcd190bb8a47a9e12ca2cd5d7c5f78))
+
 ## [1.1.2](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.1...v1.1.2) (2026-04-05)
 
 
