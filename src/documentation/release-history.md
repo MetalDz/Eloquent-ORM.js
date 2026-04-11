@@ -1,4 +1,4 @@
-# Release History / v1.1.4 / Latest Release Notes
+# Release History / v1.2.0 / Latest Release Notes
 
 Last updated: 2026-03-27
 
@@ -9,7 +9,7 @@ Last updated: 2026-03-27
 - The latest package summary is maintained in `PACKAGE-UPDATE-SUMMARY.md` at the repository root.
 - The official-docs entry point for that summary is [Latest release summary](./latest-release-summary.md).
 - That same source summary is synced into the root `README.md` quick-info block.
-- Current package version: `1.1.4`
+- Current package version: `1.2.0`
 
 ## Older Release Information
 - Full published version history lives in `CHANGELOG.md`.

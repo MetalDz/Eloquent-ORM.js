@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.4...v1.2.0) (2026-04-11)
+
+
+### Features
+
+* add native transaction and locking support ([3e7010e](https://github.com/MetalDz/Eloquent-ORM.js/commit/3e7010efe552731d6c6dc8a5c7dc7367506dcf82))
+
 ## [1.1.4](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.3...v1.1.4) (2026-04-08)
 
 

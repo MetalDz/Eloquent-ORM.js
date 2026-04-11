@@ -1,4 +1,4 @@
-# Latest Release Summary / v1.1.4
+# Latest Release Summary / v1.2.0
 
 Last updated: 2026-04-04
 
@@ -6,7 +6,7 @@ Last updated: 2026-04-04
 - Give consumers one stable official-docs URL for the latest release headline and the exact current package changes.
 
 ## Current release version
-- Current package version: `1.1.4`
+- Current package version: `1.2.0`
 
 ## What's New
 <!-- latest-package-headline:start -->

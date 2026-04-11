@@ -1,6 +1,6 @@
 # Package Update Summary
 
-Version: `1.1.4`
+Version: `1.2.0`
 
 This file is the source of truth for the release-focused quick info block that appears in `README.md`.
 
@@ -37,7 +37,7 @@ Old Release:
 <!-- package-quick-info:start -->
 Quick info:
 - Package: `@alpha.consultings/eloquent-orm.js`
-- Version: `v1.1.4`
+- Version: `v1.2.0`
 - Latest release: `v1.1.4 latest`
 - What's new: [Fix release. PostgreSQL boolean defaults, dependency-safe create ordering, and CLI version reporting are now aligned with the package contract.](https://alphaconsultings.mintlify.app/release/latest-release-summary)
 - Old release: `v1.1.3`
