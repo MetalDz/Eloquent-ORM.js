@@ -10,6 +10,11 @@ import { EagerLoadingMixin } from "../orm/mixins/EagerLoadingMixin.js";
 import { SerializeMixin } from "../orm/mixins/SerializeMixin.js";
 import { getAdapter, getConnection, ConnectionName } from "../connection/ConnectionFactory.js";
 import type { DriverAdapter } from "../connection/DriverAdapter.js";
+import {
+  transaction,
+  type TransactionContext,
+  type TransactionOptions,
+} from "../connection/TransactionManager.js";
 import type { Db } from "mongodb";
 import { dbConfig } from "../../config/database.js";
 import { BelongsTo } from "../orm/relations/BelongsTo.js";
@@ -46,6 +51,10 @@ export interface ORMCoreContract {
   tableName: string;
   connectionName: string;
   getDB(): Promise<unknown>;
+  withTransaction<R>(
+    fn: ((context: TransactionContext) => Promise<R>) | (() => Promise<R>),
+    options?: TransactionOptions
+  ): Promise<R>;
 
   fill(data: ORMRecord): this;
   save(pk?: string): Promise<void>;
@@ -157,6 +166,17 @@ export abstract class BaseModel<
     const entries = Object.entries(MorphRegistry.list());
     const entry = entries.find(([, name]) => name === this.name);
     return entry ? entry[0] : this.name;
+  }
+
+  public async withTransaction<R>(
+    fn: ((context: TransactionContext) => Promise<R>) | (() => Promise<R>),
+    options?: TransactionOptions
+  ): Promise<R> {
+    return await transaction(
+      this.connectionName as ConnectionName,
+      async (context) => await (fn as (ctx?: TransactionContext) => Promise<R>)(context),
+      options
+    );
   }
 
   // -----------------------------

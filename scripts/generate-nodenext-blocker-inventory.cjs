@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+const ts = require("typescript");
 
-const SNAPSHOT_DATE = "2026-03-30";
+const SNAPSHOT_DATE = "2026-04-10";
 const SOURCE_EXTENSIONS = new Set([".ts"]);
 const TEMPLATE_EXTENSIONS = new Set([".tpl", ".ts", ".md", ".mdx"]);
 const IGNORED_SOURCE_DIRECTORIES = new Set([
@@ -12,9 +13,11 @@ const IGNORED_SOURCE_DIRECTORIES = new Set([
   "node_modules",
 ]);
 const DIRECT_IMPORT_EXPORT_PATTERN = /\bfrom\s+["'](\.{1,2}\/[^"']+)["']/g;
+const DIRECT_DYNAMIC_IMPORT_PATTERN = /\bimport\(\s*["'](\.{1,2}\/[^"']+)["']\s*\)/g;
 const DIRECT_REQUIRE_PATTERN = /require\(\s*["'](\.{1,2}\/[^"']+)["']\s*\)/g;
 const LITERAL_IMPORT_PATTERN =
   /["'`](?:from\s+["'](\.{1,2}\/[^"'`]+)["']|require\(\s*["'](\.{1,2}\/[^"'`]+)["']\s*\))/g;
+const RUNTIME_SAFE_SPECIFIER_PATTERN = /\.(?:js|mjs|cjs|json)$/i;
 
 function shouldIgnoreDirectory(cwd, directoryPath) {
   const relativePath = path.relative(cwd, directoryPath).replace(/\\/g, "/");
@@ -51,6 +54,22 @@ function readLines(filePath) {
   return fs.readFileSync(filePath, "utf8").split(/\r?\n/);
 }
 
+function isRelativeSpecifier(specifier) {
+  return typeof specifier === "string" && (specifier.startsWith("./") || specifier.startsWith("../"));
+}
+
+function classifyImportSpecifierKind(specifier, isDynamic = false) {
+  if (RUNTIME_SAFE_SPECIFIER_PATTERN.test(specifier)) {
+    return isDynamic
+      ? "runtime-qualified dynamic local specifiers"
+      : "runtime-qualified import/export local specifiers";
+  }
+
+  return isDynamic
+    ? "extensionless dynamic local specifiers"
+    : "extensionless import/export local specifiers";
+}
+
 function findLineMatches(lines, matchers) {
   const records = [];
 
@@ -70,6 +89,90 @@ function findLineMatches(lines, matchers) {
     }
   });
 
+  return records;
+}
+
+function findTsSourceMatches(cwd, filePath, classifyArea) {
+  const content = fs.readFileSync(filePath, "utf8");
+  const lines = content.split(/\r?\n/);
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const relativePath = toRelativePath(cwd, filePath);
+  const area = classifyArea(relativePath);
+  const records = [];
+
+  function pushRecord(kind, node, specifier) {
+    const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+    records.push({
+      kind,
+      lineNumber: position.line + 1,
+      line: (lines[position.line] || "").trim(),
+      specifier,
+      file: relativePath,
+      area,
+    });
+  }
+
+  function readStringLiteralText(node) {
+    if (!node || !ts.isStringLiteralLike(node)) {
+      return "";
+    }
+
+    return node.text;
+  }
+
+  function visit(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+      const specifier = readStringLiteralText(node.moduleSpecifier);
+      if (isRelativeSpecifier(specifier)) {
+        pushRecord(classifyImportSpecifierKind(specifier, false), node, specifier);
+      }
+    }
+
+    if (ts.isCallExpression(node)) {
+      if (
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length === 1 &&
+        ts.isStringLiteralLike(node.arguments[0])
+      ) {
+        const specifier = node.arguments[0].text;
+        if (isRelativeSpecifier(specifier)) {
+          pushRecord(classifyImportSpecifierKind(specifier, true), node, specifier);
+        }
+      }
+
+      if (
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "require" &&
+        node.arguments.length === 1 &&
+        ts.isStringLiteralLike(node.arguments[0])
+      ) {
+        const specifier = node.arguments[0].text;
+        if (isRelativeSpecifier(specifier)) {
+          pushRecord("local require() calls", node, specifier);
+        }
+      }
+    }
+
+    if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
+      const literal = node.argument.literal;
+      if (ts.isStringLiteralLike(literal)) {
+        const specifier = literal.text;
+        if (isRelativeSpecifier(specifier)) {
+          pushRecord(classifyImportSpecifierKind(specifier, true), node, specifier);
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
   return records;
 }
 
@@ -110,6 +213,40 @@ function scanFiles(cwd, filePaths, matchers, classifyArea) {
     files.push({
       file: relativePath,
       area: classifyArea(relativePath),
+      matches: matches.length,
+      kinds: summarizeKinds(matches),
+      firstLine: matches[0].lineNumber,
+    });
+    records.push(...matches);
+  }
+
+  return {
+    totalMatches: records.length,
+    uniqueFiles: files.length,
+    byArea: summarizeByArea(files),
+    byKind: summarizeByKind(records),
+    topFiles: files
+      .slice()
+      .sort((left, right) => right.matches - left.matches || left.file.localeCompare(right.file))
+      .slice(0, 15),
+    records,
+  };
+}
+
+function scanTsSourceFiles(cwd, filePaths, classifyArea) {
+  const files = [];
+  const records = [];
+
+  for (const filePath of filePaths) {
+    const matches = findTsSourceMatches(cwd, filePath, classifyArea);
+
+    if (matches.length === 0) {
+      continue;
+    }
+
+    files.push({
+      file: matches[0].file,
+      area: matches[0].area,
       matches: matches.length,
       kinds: summarizeKinds(matches),
       firstLine: matches[0].lineNumber,
@@ -220,7 +357,7 @@ function renderMarkdownReport(inventory) {
     `- source roots scanned: \`${inventory.source.roots.join("`, `")}\``,
     `- template roots scanned: \`${inventory.generatorTemplates.roots.join("`, `")}\``,
     "",
-    "## Direct source blocker counts",
+    "## Direct source migration surface",
     `- local relative import/require matches in \`src\` and \`bin\`: \`${inventory.source.totalMatches}\``,
     `- unique TypeScript files affected: \`${inventory.source.uniqueFiles}\``,
     ...inventory.source.byKind.map((entry) => `- ${entry.kind}: \`${entry.matches}\``),
@@ -256,6 +393,7 @@ function renderMarkdownReport(inventory) {
     "",
     "## What this inventory is for",
     "- separate direct source imports from generator/template emitters",
+    "- distinguish already-runtime-qualified `.js`/`.mjs`/`.cjs`/`.json` local specifiers from unresolved extensionless ones",
     "- separate test assertion churn from runtime code churn",
     "- identify the NodeNext migration hotspots before touching `tsconfig` or mass-rewriting imports",
   ];
@@ -281,13 +419,9 @@ function buildNodeNextBlockerInventory(options = {}) {
   );
   const testFiles = walkFiles(cwd, path.join(cwd, "src", "lab_test"), SOURCE_EXTENSIONS);
 
-  const source = scanFiles(
+  const source = scanTsSourceFiles(
     cwd,
     sourceFiles,
-    [
-      { kind: "import/export local specifiers", pattern: DIRECT_IMPORT_EXPORT_PATTERN },
-      { kind: "require() local imports", pattern: DIRECT_REQUIRE_PATTERN },
-    ],
     classifySourceArea,
   );
 

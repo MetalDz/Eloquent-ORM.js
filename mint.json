@@ -33,6 +33,7 @@
         "runtime/models",
         "runtime/controllers",
         "runtime/services",
+        "runtime/transactions",
         "runtime/cache"
       ]
     },

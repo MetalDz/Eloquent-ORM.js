@@ -190,3 +190,8 @@ export async function closeMongoClient(connection: ConnectionInstance): Promise<
   mongoClientByDb.delete(db);
   return true;
 }
+
+export function getMongoClient(connection: ConnectionInstance): MongoClient | null {
+  const db = connection as Db;
+  return mongoClientByDb.get(db) ?? null;
+}

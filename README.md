@@ -222,6 +222,39 @@ CLI cache helpers:
 - `npx eloquent cache:stats` (inspect runtime cache stats)
 - `npx eloquent cache:clear` (clear all cache entries)
 
+## Native runtime transactions and locking
+
+The public runtime now includes native transaction helpers for SQL and MongoDB:
+
+```ts
+import {
+  transaction,
+  lockedTransaction,
+} from "@alpha.consultings/eloquent-orm.js";
+
+await transaction("pg", async (tx) => {
+  await tx.execute("UPDATE users SET status = $1 WHERE id = $2", ["active", 42]);
+});
+
+await lockedTransaction("pg", "users:42:status", async (tx) => {
+  await tx.execute("UPDATE users SET status = $1 WHERE id = $2", ["active", 42]);
+});
+```
+
+MongoDB transactions are also supported through the same public API:
+
+```ts
+await transaction("mongo", async (tx) => {
+  await tx.collection("wallets").updateOne(
+    { user_id: "u1" },
+    { $inc: { balance_minor: -500 } },
+    { session: tx.session },
+  );
+});
+```
+
+Model instances also expose `withTransaction(...)` as a convenience wrapper over the model connection.
+
 ## Documentation
 
 The full consumer documentation is organized around the main usage paths:

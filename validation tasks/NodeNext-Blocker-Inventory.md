@@ -2,24 +2,26 @@
 
 Status: GENERATED SNAPSHOT
 
-Snapshot date: `2026-03-30`
+Snapshot date: `2026-04-10`
 
 ## Scope
 - package: `@alpha.consultings/eloquent-orm.js`
 - source roots scanned: `src`, `bin`
 - template roots scanned: `src/cli`, `src/cli/templates`
 
-## Direct source blocker counts
-- local relative import/require matches in `src` and `bin`: `1284`
-- unique TypeScript files affected: `318`
-- import/export local specifiers: `1149`
-- require() local imports: `135`
+## Direct source migration surface
+- local relative import/require matches in `src` and `bin`: `1376`
+- unique TypeScript files affected: `324`
+- runtime-qualified import/export local specifiers: `1033`
+- runtime-qualified dynamic local specifiers: `213`
+- local require() calls: `130`
 
 ## Direct source hotspot breakdown
-- `src/lab_test`: `224 files / 945 matches`
-- `src/cli`: `50 files / 214 matches`
-- `src/core`: `41 files / 113 matches`
-- `other`: `3 files / 12 matches`
+- `src/lab_test`: `228 files / 1030 matches`
+- `src/cli`: `50 files / 213 matches`
+- `src/core`: `42 files / 119 matches`
+- `other`: `3 files / 13 matches`
+- `bin`: `1 files / 1 matches`
 
 ## Generator and template emission blockers
 - relative import/require string matches in generator sources and templates: `214`
@@ -51,23 +53,24 @@ Snapshot date: `2026-03-30`
 - `src/cli/commands/makeMigration.ts` (exists): Migration generation loads TypeScript models directly and must keep honoring NodeNext consumer code.
 
 ## Top direct-source files
-- `src/core/model/BaseModel.ts`: `23 matches`
+- `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `39 matches`
+- `src/core/model/BaseModel.ts`: `24 matches`
 - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`: `23 matches`
 - `src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`: `21 matches`
-- `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `19 matches`
-- `src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts`: `17 matches`
+- `src/lab_test/branch.coverage.100.phase35.core-utilities.logic.test.ts`: `19 matches`
+- `src/lab_test/transaction.manager.logic.test.ts`: `19 matches`
+- `src/lab_test/branch.coverage.100.phase5.logic.test.ts`: `16 matches`
 - `src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts`: `16 matches`
 - `src/lab_test/branch.coverage.70.utilities.logic.test.ts`: `16 matches`
+- `src/lab_test/branch.coverage.100.phase33.relations-tsruntime.logic.test.ts`: `15 matches`
 - `src/lab_test/lts.phase5.cli-registration-security-utility-coverage.logic.test.ts`: `15 matches`
 - `src/lab_test/lts.phase5.residual-helper-mixin-coverage.logic.test.ts`: `15 matches`
-- `src/lab_test/make.registry.logic.test.ts`: `15 matches`
+- `src/lab_test/branch.coverage.100.phase2.logic.test.ts`: `14 matches`
 - `src/lab_test/branch.coverage.100.phase32.cache-query-morph-redactor.logic.test.ts`: `14 matches`
-- `src/lab_test/support/cli.integration.harness.ts`: `13 matches`
-- `src/cli/commands/makeScenario.ts`: `12 matches`
-- `src/cli/eloquent.ts`: `12 matches`
-- `src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts`: `12 matches`
+- `src/lab_test/db.seed.connection.env.logic.test.ts`: `14 matches`
 
 ## What this inventory is for
 - separate direct source imports from generator/template emitters
+- distinguish already-runtime-qualified `.js`/`.mjs`/`.cjs`/`.json` local specifiers from unresolved extensionless ones
 - separate test assertion churn from runtime code churn
 - identify the NodeNext migration hotspots before touching `tsconfig` or mass-rewriting imports

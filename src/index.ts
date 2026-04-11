@@ -60,6 +60,16 @@ export { SchemaBuilder, type SchemaBuildResult } from "./core/schema/SchemaBuild
 
 export { CacheManager } from "./core/cache/CacheManager.js";
 export { setupCache } from "./core/cache/setupCache.js";
+export {
+  transaction,
+  lockedTransaction,
+  type TransactionContext,
+  type TransactionOptions,
+  type LockingOptions,
+  type SqlTransaction,
+  type SqlTransactionDriver,
+  type MongoTransactionContext,
+} from "./core/connection/TransactionManager.js";
 
 export {
   registerModels,

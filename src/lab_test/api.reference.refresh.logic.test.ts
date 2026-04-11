@@ -15,13 +15,16 @@ describe("API reference refresh", () => {
 
     const requiredSnippets = [
       "# EloquentJS Public API Reference",
-      "Last updated: 2026-03-16",
+      "Last updated: 2026-04-11",
       `## Root Package: \`${packageName}\``,
       `## Model Subpath: \`${packageName}/Model\``,
       `\`${packageName}/Model\` does not expose a default export.`,
       `\`${packageName}/Model\` does not expose the root \`Model\` alias.`,
       `import { Model } from "${packageName}"`,
       `import { SqlModel, MongoModel, type ModelInstance } from "${packageName}/Model";`,
+      "- `transaction`",
+      "- `lockedTransaction`",
+      "Use `transaction(...)` for grouped SQL or Mongo runtime writes.",
       "New public exports must be added through `src/index.ts` or `src/Model.ts` and documented here.",
     ];
 

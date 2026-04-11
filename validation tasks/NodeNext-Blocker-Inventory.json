@@ -1,52 +1,71 @@
 {
-  "snapshotDate": "2026-03-30",
+  "snapshotDate": "2026-04-10",
   "packageName": "@alpha.consultings/eloquent-orm.js",
   "source": {
     "roots": [
       "src",
       "bin"
     ],
-    "totalMatches": 1284,
-    "uniqueFiles": 318,
+    "totalMatches": 1376,
+    "uniqueFiles": 324,
     "byKind": [
       {
-        "kind": "import/export local specifiers",
-        "matches": 1149
+        "kind": "runtime-qualified import/export local specifiers",
+        "matches": 1033
       },
       {
-        "kind": "require() local imports",
-        "matches": 135
+        "kind": "runtime-qualified dynamic local specifiers",
+        "matches": 213
+      },
+      {
+        "kind": "local require() calls",
+        "matches": 130
       }
     ],
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 224,
-        "matches": 945
+        "files": 228,
+        "matches": 1030
       },
       {
         "area": "src/cli",
         "files": 50,
-        "matches": 214
+        "matches": 213
       },
       {
         "area": "src/core",
-        "files": 41,
-        "matches": 113
+        "files": 42,
+        "matches": 119
       },
       {
         "area": "other",
         "files": 3,
-        "matches": 12
+        "matches": 13
+      },
+      {
+        "area": "bin",
+        "files": 1,
+        "matches": 1
       }
     ],
     "topFiles": [
       {
+        "file": "src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 39,
+        "kinds": {
+          "runtime-qualified dynamic local specifiers": 26,
+          "local require() calls": 13
+        },
+        "firstLine": 28
+      },
+      {
         "file": "src/core/model/BaseModel.ts",
         "area": "src/core",
-        "matches": 23,
+        "matches": 24,
         "kinds": {
-          "import/export local specifiers": 23
+          "runtime-qualified import/export local specifiers": 24
         },
         "firstLine": 2
       },
@@ -55,7 +74,7 @@
         "area": "src/lab_test",
         "matches": 23,
         "kinds": {
-          "import/export local specifiers": 23
+          "runtime-qualified import/export local specifiers": 23
         },
         "firstLine": 4
       },
@@ -64,35 +83,47 @@
         "area": "src/lab_test",
         "matches": 21,
         "kinds": {
-          "import/export local specifiers": 21
+          "runtime-qualified import/export local specifiers": 21
         },
         "firstLine": 5
       },
       {
-        "file": "src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts",
+        "file": "src/lab_test/branch.coverage.100.phase35.core-utilities.logic.test.ts",
         "area": "src/lab_test",
         "matches": 19,
         "kinds": {
-          "require() local imports": 15,
-          "import/export local specifiers": 4
+          "runtime-qualified import/export local specifiers": 7,
+          "runtime-qualified dynamic local specifiers": 8,
+          "local require() calls": 4
         },
-        "firstLine": 30
+        "firstLine": 1
       },
       {
-        "file": "src/lab_test/lts.phase5.artifact-storage-coverage.logic.test.ts",
+        "file": "src/lab_test/transaction.manager.logic.test.ts",
         "area": "src/lab_test",
-        "matches": 17,
+        "matches": 19,
         "kinds": {
-          "import/export local specifiers": 17
+          "runtime-qualified import/export local specifiers": 1,
+          "runtime-qualified dynamic local specifiers": 18
         },
-        "firstLine": 4
+        "firstLine": 1
+      },
+      {
+        "file": "src/lab_test/branch.coverage.100.phase5.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 16,
+        "kinds": {
+          "local require() calls": 8,
+          "runtime-qualified dynamic local specifiers": 8
+        },
+        "firstLine": 29
       },
       {
         "file": "src/lab_test/branch.coverage.70.orm-mixins.logic.test.ts",
         "area": "src/lab_test",
         "matches": 16,
         "kinds": {
-          "import/export local specifiers": 16
+          "runtime-qualified import/export local specifiers": 16
         },
         "firstLine": 1
       },
@@ -101,8 +132,19 @@
         "area": "src/lab_test",
         "matches": 16,
         "kinds": {
-          "import/export local specifiers": 2,
-          "require() local imports": 14
+          "runtime-qualified import/export local specifiers": 2,
+          "local require() calls": 14
+        },
+        "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/branch.coverage.100.phase33.relations-tsruntime.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 15,
+        "kinds": {
+          "runtime-qualified import/export local specifiers": 6,
+          "runtime-qualified dynamic local specifiers": 6,
+          "local require() calls": 3
         },
         "firstLine": 4
       },
@@ -111,7 +153,7 @@
         "area": "src/lab_test",
         "matches": 15,
         "kinds": {
-          "require() local imports": 15
+          "local require() calls": 15
         },
         "firstLine": 134
       },
@@ -120,64 +162,38 @@
         "area": "src/lab_test",
         "matches": 15,
         "kinds": {
-          "import/export local specifiers": 15
-        },
-        "firstLine": 8
-      },
-      {
-        "file": "src/lab_test/make.registry.logic.test.ts",
-        "area": "src/lab_test",
-        "matches": 15,
-        "kinds": {
-          "import/export local specifiers": 15
+          "runtime-qualified import/export local specifiers": 15
         },
         "firstLine": 4
+      },
+      {
+        "file": "src/lab_test/branch.coverage.100.phase2.logic.test.ts",
+        "area": "src/lab_test",
+        "matches": 14,
+        "kinds": {
+          "runtime-qualified import/export local specifiers": 10,
+          "runtime-qualified dynamic local specifiers": 4
+        },
+        "firstLine": 1
       },
       {
         "file": "src/lab_test/branch.coverage.100.phase32.cache-query-morph-redactor.logic.test.ts",
         "area": "src/lab_test",
         "matches": 14,
         "kinds": {
-          "import/export local specifiers": 14
+          "runtime-qualified import/export local specifiers": 14
         },
         "firstLine": 1
       },
       {
-        "file": "src/lab_test/support/cli.integration.harness.ts",
+        "file": "src/lab_test/db.seed.connection.env.logic.test.ts",
         "area": "src/lab_test",
-        "matches": 13,
+        "matches": 14,
         "kinds": {
-          "import/export local specifiers": 13
+          "local require() calls": 7,
+          "runtime-qualified dynamic local specifiers": 7
         },
-        "firstLine": 296
-      },
-      {
-        "file": "src/cli/commands/makeScenario.ts",
-        "area": "src/cli",
-        "matches": 12,
-        "kinds": {
-          "import/export local specifiers": 12
-        },
-        "firstLine": 4
-      },
-      {
-        "file": "src/cli/eloquent.ts",
-        "area": "src/cli",
-        "matches": 12,
-        "kinds": {
-          "import/export local specifiers": 12
-        },
-        "firstLine": 14
-      },
-      {
-        "file": "src/lab_test/branch.coverage.100.phase5.cache-hooks.logic.test.ts",
-        "area": "src/lab_test",
-        "matches": 12,
-        "kinds": {
-          "import/export local specifiers": 10,
-          "require() local imports": 2
-        },
-        "firstLine": 4
+        "firstLine": 11
       }
     ]
   },

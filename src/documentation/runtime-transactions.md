@@ -1,0 +1,114 @@
+# Runtime Transactions
+
+Last updated: 2026-04-11
+
+Use runtime transactions when a service must keep several writes consistent.
+
+## Public helpers
+
+- `transaction(connectionName, work, options?)`
+- `lockedTransaction(connectionName, lockKey, work, options?)`
+- `model.withTransaction(work, options?)`
+
+## SQL transaction example
+
+```ts
+import { transaction } from "@alpha.consultings/eloquent-orm.js";
+
+await transaction("pg", async (tx) => {
+  await tx.execute(
+    "UPDATE appointments SET status = $1 WHERE id = $2",
+    ["confirmed", 42],
+  );
+
+  await tx.execute(
+    "INSERT INTO audit_logs (actor_id, event_code) VALUES ($1, $2)",
+    [7, "appointment.confirmed"],
+  );
+});
+```
+
+## SQL locking example
+
+```ts
+import { lockedTransaction } from "@alpha.consultings/eloquent-orm.js";
+
+await lockedTransaction("pg", "appointments:slot:2026-04-11:09:00", async (tx) => {
+  const existing = await tx.queryOne(
+    "SELECT id FROM appointments WHERE practitioner_id = $1 AND appointment_date = $2 AND appointment_time = $3",
+    [18, "2026-04-11", "09:00"],
+  );
+
+  if (existing) {
+    throw new Error("slot already booked");
+  }
+
+  await tx.execute(
+    "INSERT INTO appointments (practitioner_id, appointment_date, appointment_time) VALUES ($1, $2, $3)",
+    [18, "2026-04-11", "09:00"],
+  );
+});
+```
+
+Current native lock support:
+
+- PostgreSQL: advisory transaction lock
+- MySQL: named lock + SQL transaction
+- SQLite: no `lockedTransaction(...)` helper
+- MongoDB: no `lockedTransaction(...)` helper
+
+## Mongo transaction example
+
+```ts
+import { transaction } from "@alpha.consultings/eloquent-orm.js";
+
+await transaction(
+  "mongo",
+  async (tx) => {
+    await tx.collection("wallets").updateOne(
+      { user_id: "u1" },
+      { $inc: { balance_minor: -500 } },
+      { session: tx.session },
+    );
+
+    await tx.collection("ledger_entries").insertOne(
+      {
+        user_id: "u1",
+        amount_minor: 500,
+        direction: "debit",
+      },
+      { session: tx.session },
+    );
+  },
+  {
+    mongo: { maxCommitTimeMS: 5000 },
+  },
+);
+```
+
+Mongo note:
+
+- the helper exposes `db`, `session`, and `collection(name)`
+- each write must pass `{ session: tx.session }`
+- multi-document transactions still require a transaction-capable Mongo deployment
+
+## Model-owned convenience helper
+
+```ts
+const user = new User();
+
+await user.withTransaction(async (tx) => {
+  if (tx.driver === "mongo") {
+    throw new Error("expected SQL context");
+  }
+
+  await tx.execute("DELETE FROM sessions WHERE user_id = $1", [42]);
+});
+```
+
+## Practical rule
+
+- keep transaction orchestration in services
+- use `transaction(...)` for grouped writes
+- use `lockedTransaction(...)` only for real race-sensitive flows
+- do not put transaction control in controllers

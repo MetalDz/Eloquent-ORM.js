@@ -14,6 +14,7 @@ import {
   MorphableMixin,
 } from "../core/model/BaseModel.js";
 import { getConnection } from "../core/connection/ConnectionFactory.js";
+import * as TransactionManager from "../core/connection/TransactionManager.js";
 
 const mockedGetConnection = getConnection as jest.MockedFunction<typeof getConnection>;
 
@@ -111,5 +112,53 @@ describe("LTS phase 5 BaseModel coverage", () => {
     listSpy.mockReturnValue({});
     expect(new FallbackAliasModel().getMorphClass()).toBe("FallbackAliasModel");
     listSpy.mockRestore();
+  });
+
+  test("BaseModel.withTransaction delegates to the public transaction runner", async () => {
+    const transactionSpy = jest
+      .spyOn(TransactionManager, "transaction")
+      .mockImplementation(async (_name, work) => {
+        return await work({
+          connectionName: "mysql_test" as never,
+          driver: "mysql",
+          kind: "sql",
+          name: "mysql_test",
+          query: jest.fn(async () => []),
+          queryOne: jest.fn(async () => null),
+          execute: jest.fn(async () => undefined),
+          insert: jest.fn(async () => ({ id: 1 })),
+          placeholder: (index: number) => `?${index}`,
+          placeholders: (count: number) => Array.from({ length: count }, () => "?").join(", "),
+          inClause: (field: string, values: unknown[], startIndex = 1) => ({
+            sql: `${field} IN (${Array.from({ length: values.length }, () => "?").join(", ")})`,
+            params: values,
+            nextIndex: startIndex + values.length,
+          }),
+          wrapId: (id: string) => `\`${id}\``,
+        });
+      });
+
+    class TransactionModel extends BaseModel {
+      constructor() {
+        super("transaction_models", "mysql_test");
+      }
+    }
+
+    const model = new TransactionModel();
+    const result = await model.withTransaction(async (context) => {
+      if (context.driver === "mongo") {
+        throw new Error("expected SQL transaction context");
+      }
+
+      await context.execute("SELECT 1", []);
+      return "done";
+    });
+
+    expect(result).toBe("done");
+    expect(transactionSpy).toHaveBeenCalledWith(
+      "mysql_test",
+      expect.any(Function),
+      undefined,
+    );
   });
 });

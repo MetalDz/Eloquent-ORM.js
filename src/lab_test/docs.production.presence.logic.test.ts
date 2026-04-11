@@ -42,11 +42,13 @@ describe("production documentation presence and baseline content", () => {
       "column",
       "isModelRegistered",
       "isModelRegistryStrictMode",
+      "lockedTransaction",
       "mixin",
       "registerModels",
       "relation",
       "setModelRegistryStrictMode",
       "setupCache",
+      "transaction",
       "validate",
       "validateSchema",
     ];

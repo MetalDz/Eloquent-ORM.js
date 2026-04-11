@@ -35,6 +35,7 @@ describe("LTS phase 5 index entrypoint coverage", () => {
     let factoryModule: Record<string, unknown> | undefined;
     let pivotHelperModule: Record<string, unknown> | undefined;
     let modelRegistrationModule: Record<string, unknown> | undefined;
+    let transactionManagerModule: Record<string, unknown> | undefined;
 
     jest.isolateModules(() => {
       jest.doMock("../cli/utils/factories/Factory", () => ({
@@ -63,6 +64,10 @@ describe("LTS phase 5 index entrypoint coverage", () => {
         string,
         unknown
       >;
+      transactionManagerModule = require("../core/connection/TransactionManager") as Record<
+        string,
+        unknown
+      >;
       modelRegistrationModule = require(
         "../core/orm/mixins/utils/modelRegistration",
       ) as Record<string, unknown>;
@@ -78,6 +83,7 @@ describe("LTS phase 5 index entrypoint coverage", () => {
     expect(setupCacheModule).toBeDefined();
     expect(factoryModule).toBeDefined();
     expect(pivotHelperModule).toBeDefined();
+    expect(transactionManagerModule).toBeDefined();
     expect(modelRegistrationModule).toBeDefined();
 
     const runtimeExportNames = [
@@ -98,6 +104,8 @@ describe("LTS phase 5 index entrypoint coverage", () => {
       "SchemaBuilder",
       "CacheManager",
       "setupCache",
+      "transaction",
+      "lockedTransaction",
       "registerModels",
       "isModelRegistered",
       "setModelRegistryStrictMode",
@@ -126,6 +134,8 @@ describe("LTS phase 5 index entrypoint coverage", () => {
     expect(entry?.SchemaBuilder).toBe(schemaBuilderModule?.SchemaBuilder);
     expect(entry?.CacheManager).toBe(cacheManagerModule?.CacheManager);
     expect(entry?.setupCache).toBe(setupCacheModule?.setupCache);
+    expect(entry?.transaction).toBe(transactionManagerModule?.transaction);
+    expect(entry?.lockedTransaction).toBe(transactionManagerModule?.lockedTransaction);
     expect(entry?.registerModels).toBe(modelRegistrationModule?.registerModels);
     expect(entry?.isModelRegistered).toBe(modelRegistrationModule?.isModelRegistered);
     expect(entry?.setModelRegistryStrictMode).toBe(

@@ -387,7 +387,7 @@ describe("Branch coverage 70% - Phase 2 cache and connection", () => {
     expect(mockClient.end).toHaveBeenCalled();
   });
 
-  test("DatabaseConnection covers mysql/pg/sqlite/mongo switches and closeMongoClient", async () => {
+  test("DatabaseConnection covers mysql/pg/sqlite/mongo switches, tracked mongo clients, and closeMongoClient", async () => {
     jest.resetModules();
 
     const createPool = jest.fn(() => ({ kind: "mysqlPool" }));
@@ -412,9 +412,10 @@ describe("Branch coverage 70% - Phase 2 cache and connection", () => {
     jest.spyOn(console, "log").mockImplementation(() => undefined);
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { connectDB, closeMongoClient } = require("../core/connection/DatabaseConnection") as {
+    const { connectDB, closeMongoClient, getMongoClient } = require("../core/connection/DatabaseConnection") as {
       connectDB: (name: string) => Promise<unknown>;
       closeMongoClient: (connection: unknown) => Promise<boolean>;
+      getMongoClient: (connection: unknown) => unknown;
     };
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { dbConfig } = require("../config/database") as {
@@ -433,8 +434,11 @@ describe("Branch coverage 70% - Phase 2 cache and connection", () => {
 
     const mongoConn = await connectDB("mongo");
     expect(mongoConnect).toHaveBeenCalled();
+    expect(getMongoClient(mongoConn)).toBeDefined();
     await expect(closeMongoClient(mongoConn)).resolves.toBe(true);
     expect(mongoClose).toHaveBeenCalled();
+    expect(getMongoClient(mongoConn)).toBeNull();
+    expect(getMongoClient({})).toBeNull();
     await expect(closeMongoClient({})).resolves.toBe(false);
 
     dbConfig.connections.__invalid = { driver: "unsupported" };

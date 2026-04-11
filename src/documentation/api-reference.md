@@ -1,6 +1,6 @@
 # EloquentJS Public API Reference
 
-Last updated: 2026-03-16
+Last updated: 2026-04-11
 
 ## Stability Contract
 - Only exports from `src/index.ts` are public and semver-tracked.
@@ -33,6 +33,8 @@ Last updated: 2026-03-16
 ### Cache
 - `CacheManager`
 - `setupCache`
+- `transaction`
+- `lockedTransaction`
 
 ### Model Registration and Hook Guarding
 - `registerModels`
@@ -66,6 +68,12 @@ Last updated: 2026-03-16
 - `CustomRuleFunction`
 - `CustomRuleResult`
 - `SchemaBuildResult`
+- `TransactionContext`
+- `TransactionOptions`
+- `LockingOptions`
+- `SqlTransaction`
+- `SqlTransactionDriver`
+- `MongoTransactionContext`
 - `RegisterModelsOptions`
 
 ## Model Subpath: `@alpha.consultings/eloquent-orm.js/Model`
@@ -115,6 +123,9 @@ import { SqlModel, MongoModel, type ModelInstance } from "@alpha.consultings/elo
 ### Runtime Controls
 - Toggle strict model registration via `setModelRegistryStrictMode(true|false)`.
 - Query registration state with `isModelRegistered` and `isModelRegistryStrictMode`.
+- Use `transaction(...)` for grouped SQL or Mongo runtime writes.
+- Use `lockedTransaction(...)` for MySQL/PostgreSQL race-sensitive write sections.
+- Use `model.withTransaction(...)` when the model connection should own the transaction context.
 
 ## Notes
 - CLI command functions are not exported as public package API.

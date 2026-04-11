@@ -35,6 +35,8 @@ description: Public package and model exports with compatibility guarantees.
 ### Cache and registration
 - `CacheManager`
 - `setupCache`
+- `transaction`
+- `lockedTransaction`
 - `registerModels`
 - `isModelRegistered`
 - `setModelRegistryStrictMode`
@@ -43,6 +45,8 @@ description: Public package and model exports with compatibility guarantees.
 ### Types
 - `ORMRecord`, `ModelAttrs`, `ModelInstance`, `TypedRelation`, `PivotRelation`
 - `PlainObject`, `ModelCtor`, `FactoryCtor`, `ModelEventHooks`
+- `TransactionContext`, `TransactionOptions`, `LockingOptions`
+- `SqlTransaction`, `SqlTransactionDriver`, `MongoTransactionContext`
 - schema and validation types used by schema builders and factories
 
 ## Subpath export: `@alpha.consultings/eloquent-orm.js/Model`
@@ -70,6 +74,12 @@ import { Model } from "@alpha.consultings/eloquent-orm.js";
 import { Model, column, registerModels, type ModelInstance } from "@alpha.consultings/eloquent-orm.js";
 import { SqlModel, MongoModel, type ModelInstance as MongoInstance } from "@alpha.consultings/eloquent-orm.js/Model";
 ```
+
+## Runtime transaction helpers
+
+- `transaction(...)`: native SQL or Mongo transaction runner
+- `lockedTransaction(...)`: native MySQL/PostgreSQL lock + transaction runner
+- `model.withTransaction(...)`: convenience wrapper bound to the model connection
 
 ## Notes
 

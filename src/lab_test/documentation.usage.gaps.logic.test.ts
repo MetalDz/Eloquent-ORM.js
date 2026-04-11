@@ -221,6 +221,10 @@ describe("documentation usage gaps smoke coverage", () => {
       path.resolve(rootDir, "docs/runtime/services.mdx"),
       "utf8",
     );
+    const runtimeTransactions = fs.readFileSync(
+      path.resolve(rootDir, "docs/runtime/transactions.mdx"),
+      "utf8",
+    );
     const runtimeCache = fs.readFileSync(
       path.resolve(rootDir, "docs/runtime/cache.mdx"),
       "utf8",
@@ -297,6 +301,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(indexDoc).toContain("runtime/crud");
     expect(indexDoc).toContain("runtime/controllers");
     expect(indexDoc).toContain("runtime/services");
+    expect(indexDoc).toContain("runtime/transactions");
     expect(indexDoc).toContain("test/index");
     expect(indexDoc).toContain("orm/multi-connection-strategy");
     expect(indexDoc).toContain("orm/soft-deletes");
@@ -307,6 +312,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(packageDocs).toContain("../runtime/querying");
     expect(packageDocs).toContain("../runtime/controllers");
     expect(packageDocs).toContain("../runtime/services");
+    expect(packageDocs).toContain("../runtime/transactions");
     expect(packageDocs).toContain("../test/index");
     expect(packageDocs).toContain("../test/jest-runtime");
     expect(packageDocs).toContain("../test/factories-seeds");
@@ -322,6 +328,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(runtimeIndex).toContain("[Runtime Querying](./querying)");
     expect(runtimeIndex).toContain("[Runtime Controllers](./controllers)");
     expect(runtimeIndex).toContain("[Runtime Services](./services)");
+    expect(runtimeIndex).toContain("[Runtime Transactions](./transactions)");
     expect(runtimeIndex).toContain("User.createMany(...)");
     expect(runtimeCrud).toContain("Use one of these two creation paths:");
     expect(runtimeCrud).toContain("const created = await User.create({");
@@ -343,6 +350,11 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(runtimeServices).toContain("return User.create(data);");
     expect(runtimeServices).toContain("return User.createMany(rows);");
     expect(runtimeServices).toContain("return User.restoreById(id);");
+    expect(runtimeTransactions).toContain("lockedTransaction");
+    expect(runtimeTransactions).toContain("## Mongo transaction example");
+    expect(runtimeTransactions).toContain('mongo: { maxCommitTimeMS: 5000 }');
+    expect(runtimeTransactions).toContain("model.withTransaction");
+    expect(runtimeTransactions).toContain("multi-document transactions still require a transaction-capable Mongo deployment");
     expect(runtimeCache).toContain("MEMCACHED_HOST=127.0.0.1");
     expect(runtimeCache).toContain("const created = await User.create(data);");
     expect(testIndex).toContain("Jest unit and logic tests");
@@ -386,6 +398,7 @@ describe("documentation usage gaps smoke coverage", () => {
     expect(docsConfig).toContain('"runtime/models"');
     expect(docsConfig).toContain('"runtime/controllers"');
     expect(docsConfig).toContain('"runtime/services"');
+    expect(docsConfig).toContain('"runtime/transactions"');
     expect(docsConfig).toContain('"runtime/cache"');
     expect(docsConfig).toContain('"test/index"');
     expect(docsConfig).toContain('"test/jest-runtime"');
