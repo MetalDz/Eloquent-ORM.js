@@ -8,6 +8,8 @@ describe("pack-smoke root export surface", () => {
 
     expect(content).toContain("const expectedPublicExports = [");
     expect(content).toContain('"Model",');
+    expect(content).toContain('"transaction",');
+    expect(content).toContain('"lockedTransaction",');
     expect(content).toContain("function verifyPublicExports(sample) {");
     expect(content).toContain(
       "[package import] export surface mismatch\\nExpected: ${expectedPublicExports.join(\",\")}\\nActual: ${actualExports.join(\",\")}"
