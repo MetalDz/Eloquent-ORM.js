@@ -1,6 +1,6 @@
 # EloquentJS Package Docs
 
-Version: `1.2.0`
+Version: `1.3.0`
 
 Last updated: 2026-03-14
 

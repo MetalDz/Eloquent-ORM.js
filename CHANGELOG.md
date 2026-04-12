@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.2.0...v1.3.0) (2026-04-12)
+
+
+### Features
+
+* add transaction-scoped ORM helpers and SQL lock support ([f743ef6](https://github.com/MetalDz/Eloquent-ORM.js/commit/f743ef6d4b76e24dd3ec4fe56525e7b6593f5a58))
+
 # [1.2.0](https://github.com/MetalDz/Eloquent-ORM.js/compare/v1.1.4...v1.2.0) (2026-04-11)
 
 
