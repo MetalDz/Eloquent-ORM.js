@@ -28,6 +28,47 @@ await transaction("pg", async (tx) => {
 });
 ```
 
+## Transaction-bound model helpers
+
+Use `Model.useTransaction(tx)` when you want ORM reads and writes to stay inside the active transaction.
+
+```ts
+import { transaction } from "@alpha.consultings/eloquent-orm.js";
+
+await transaction("pg", async (tx) => {
+  const appointment = await Appointment.useTransaction(tx)
+    .where("practitioner_id", 18)
+    .where("appointment_date", "2026-04-11")
+    .forUpdate()
+    .skipLocked()
+    .first();
+
+  if (!appointment) {
+    await Appointment.useTransaction(tx).create({
+      practitioner_id: 18,
+      appointment_date: "2026-04-11",
+      appointment_time: "09:00",
+    });
+  }
+});
+```
+
+Lock-helper rules:
+
+- `forUpdate()` and `forShare()` are available only on transaction-bound SQL finders
+- `skipLocked()` requires `forUpdate()` or `forShare()` first
+- PostgreSQL: `FOR UPDATE`, `FOR SHARE`, `SKIP LOCKED`
+- MySQL: `FOR UPDATE`, `FOR SHARE`, `SKIP LOCKED`
+- SQLite: row-lock helpers are rejected
+- MongoDB: row-lock helpers are rejected
+- raw `tx.execute(...)` remains available for advanced SQL paths
+
+Nested-helper rules:
+
+- a model already bound to `tx` may call `.useTransaction(tx)` again as a no-op
+- rebinding that model to a different transaction on the same connection fails fast
+- hydrated finder results keep the active transaction/session for later `save()` / `delete()` calls
+
 ## SQL locking example
 
 ```ts

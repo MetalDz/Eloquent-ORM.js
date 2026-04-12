@@ -199,14 +199,20 @@ Status: `CURRENT`
 - [ ] Verify install/run/migrate/seed reproducibility after publish.
 
 ### Step 6.4: Dependency security cleanup
-- [ ] Resolve current high-severity Dependabot alerts before release.
-- [ ] Rebuild lockfile and verify `npm test`, `npm run build`, and `npm run test:pack-smoke` after dependency updates.
+  - [ ] Resolve current high-severity Dependabot alerts before release.
+  - [ ] Rebuild lockfile and verify `npm test`, `npm run build`, and `npm run test:pack-smoke` after dependency updates.
+  - [ ] Keep development-only lockfile alerts triaged separately from published runtime blockers.
+  
+  Current tracking rule:
+  - [ ] Treat `npm audit --omit=dev --audit-level=high` as the runtime release gate.
+  - [ ] Track GitHub `package-lock.json` development alerts separately when they come from docs/release/test tooling.
+  - [ ] Prefer upgrading owning top-level tooling packages before adding deep `overrides`.
 
-Current open alerts to track:
-- [ ] `tar`: Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS
-- [ ] `tar`: node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal
-- [ ] `tar`: node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization
-- [ ] `tar`: Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction
+  Current development-alert owners to revisit during dependency refresh:
+  - [ ] `@mintlify/previewing`
+  - [ ] `@mintlify/scraping`
+  - [ ] `@mintlify/common`
+  - [ ] `@mintlify/validation`
 - [ ] `minimatch`: ReDoS via repeated wildcards with non-matching literal in pattern
 - [ ] `minimatch`: ReDoS via multiple non-adjacent `GLOBSTAR` segments
 - [ ] `minimatch`: ReDoS via nested `*()` extglobs generating catastrophic backtracking regexes

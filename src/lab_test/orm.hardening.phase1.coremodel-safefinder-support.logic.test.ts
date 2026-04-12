@@ -31,6 +31,82 @@ describe("ORM hardening phase 1 - CoreModel safe finder support extraction", () 
       async getDB(): Promise<unknown> {
         return null;
       }
+
+      useTransaction() {
+        return this;
+      }
+
+      getTransactionContext() {
+        return undefined;
+      }
+
+      async save(): Promise<void> {
+        return undefined;
+      }
+
+      async create(): Promise<DummyModel | null> {
+        return null;
+      }
+
+      async delete(): Promise<void> {
+        return undefined;
+      }
+
+      async find(): Promise<DummyModel | null> {
+        return null;
+      }
+
+      where(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.where() should not be called in this test.");
+      }
+
+      with(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.with() should not be called in this test.");
+      }
+
+      active(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.active() should not be called in this test.");
+      }
+
+      inactive(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.inactive() should not be called in this test.");
+      }
+
+      published(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.published() should not be called in this test.");
+      }
+
+      orderBy(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.orderBy() should not be called in this test.");
+      }
+
+      limit(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.limit() should not be called in this test.");
+      }
+
+      async get(): Promise<DummyModel[]> {
+        return [];
+      }
+
+      async first(): Promise<DummyModel | null> {
+        return null;
+      }
+
+      findBy(): SafeFinderQuery<DummyModel> {
+        throw new Error("DummyModel.findBy() should not be called in this test.");
+      }
+
+      async findOneBy(): Promise<DummyModel | null> {
+        return null;
+      }
+
+      async findAllBy(): Promise<DummyModel[]> {
+        return [];
+      }
+
+      async existsBy() {
+        return false;
+      }
     }
 
     const model = new DummyModel();

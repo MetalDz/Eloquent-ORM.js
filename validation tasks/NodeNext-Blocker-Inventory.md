@@ -10,16 +10,16 @@ Snapshot date: `2026-04-10`
 - template roots scanned: `src/cli`, `src/cli/templates`
 
 ## Direct source migration surface
-- local relative import/require matches in `src` and `bin`: `1376`
-- unique TypeScript files affected: `324`
-- runtime-qualified import/export local specifiers: `1033`
-- runtime-qualified dynamic local specifiers: `213`
-- local require() calls: `130`
+- local relative import/require matches in `src` and `bin`: `1414`
+- unique TypeScript files affected: `327`
+- runtime-qualified import/export local specifiers: `1043`
+- runtime-qualified dynamic local specifiers: `238`
+- local require() calls: `133`
 
 ## Direct source hotspot breakdown
-- `src/lab_test`: `228 files / 1030 matches`
+- `src/lab_test`: `231 files / 1064 matches`
 - `src/cli`: `50 files / 213 matches`
-- `src/core`: `42 files / 119 matches`
+- `src/core`: `42 files / 123 matches`
 - `other`: `3 files / 13 matches`
 - `bin`: `1 files / 1 matches`
 
@@ -54,7 +54,7 @@ Snapshot date: `2026-04-10`
 
 ## Top direct-source files
 - `src/lab_test/lts.phase5.tsruntime-coverage.logic.test.ts`: `39 matches`
-- `src/core/model/BaseModel.ts`: `24 matches`
+- `src/core/model/BaseModel.ts`: `25 matches`
 - `src/lab_test/nosql.cli.phase3.parity.logic.test.ts`: `23 matches`
 - `src/lab_test/branch.coverage.70.cli-commands.logic.test.ts`: `21 matches`
 - `src/lab_test/branch.coverage.100.phase35.core-utilities.logic.test.ts`: `19 matches`

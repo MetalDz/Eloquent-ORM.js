@@ -1,6 +1,6 @@
 # Dependency Security Audit Tracking Plan
 
-Last updated: 2026-03-06
+Last updated: 2026-04-11
 
 ## Goal
 - Track and close the production dependency audit failure reported by:
@@ -120,6 +120,49 @@ Last updated: 2026-03-06
 ## Constraints
 - No silent suppression of the audit gate.
 - Keep CI audit enforcement active after remediation.
+
+## 2026-04-11 Development Alert Triage
+- Current GitHub alerts for `basic-ftp`, `tar`, `lodash`, `lodash-es`, `js-yaml`, `qs`, `body-parser`, `express`, `send`, `serve-static`, `cookie`, and `picomatch` are mostly rooted in the development/docs toolchain, not the shipped ORM runtime.
+- The main owning packages in the current lockfile are:
+  - `@mintlify/previewing`
+    - old `express@4.18.2`
+    - `body-parser@1.20.1`
+    - `qs@6.11.0`
+    - `send@0.18.0`
+    - `serve-static@1.15.0`
+    - `cookie@0.5.0`
+    - `tar@6.1.15`
+  - `@mintlify/scraping`
+    - `basic-ftp@5.2.0` through `puppeteer -> proxy-agent -> pac-proxy-agent -> get-uri`
+  - `@mintlify/common` and `@mintlify/validation`
+    - older `lodash@4.17.21`
+    - `js-yaml@4.1.0`
+- The direct published runtime contract remains narrower:
+  - shipped artifacts are `dist`, `esm`, CLI templates, `README.md`, `CHANGELOG.md`, and `PACKAGE-UPDATE-SUMMARY.md`
+  - runtime `dependencies` do not directly include the alert packages above
+- This means the current advisory set is primarily:
+  - CI / maintainer workstation / docs-preview risk
+  - not a confirmed consumer runtime blocker for the published ORM package
+
+## Future Update / Upgrade Rule
+- Keep the production release gate focused on:
+  - `npm audit --omit=dev --audit-level=high`
+- Track development-only lockfile alerts separately from production release blockers.
+- When GitHub flags development alerts again:
+  1. identify the owning top-level package with `npm ls ... --all`
+  2. classify whether it is:
+     - shipped runtime risk
+     - dev-only tooling risk
+  3. prefer upstream package upgrades first:
+     - especially `@mintlify/cli`
+     - `@mintlify/validation`
+     - any related `@mintlify/*` packages
+  4. use `overrides` only as a temporary fallback when the upstream package cannot yet be upgraded cleanly
+  5. after any lockfile change, re-run:
+     - `npm test`
+     - `npm run build`
+     - `npm run test:pack-smoke`
+- Do not move this classification into official docs unless the advisory affects the published consumer runtime contract.
 
 ## Test Evidence
 - Run:

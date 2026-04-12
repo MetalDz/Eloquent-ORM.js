@@ -5,6 +5,7 @@ import type {
   SafeFinderModelInstance,
   SafeFinderQuery,
 } from "./SafeFinder.js";
+import type { TransactionContext } from "../connection/TransactionManager.js";
 
 type AbstractConstructor<T = object> = abstract new (...args: any[]) => T;
 
@@ -14,6 +15,13 @@ export function BaseModelSafeFinderStaticsMixin<
   Base: TBase,
 ) {
   abstract class BaseModelSafeFinderStatics extends Base {
+    static useTransaction<T extends typeof BaseModelSafeFinderStatics>(
+      this: T,
+      context: TransactionContext,
+    ): InstanceType<T> {
+      return (CoreModel.useTransaction as any).call(this, context);
+    }
+
     static create(
       this: new (...args: any[]) => SafeFinderModelInstance,
       data: Record<string, unknown>,

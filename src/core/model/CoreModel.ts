@@ -34,12 +34,14 @@ import {
   validateModelData,
 } from "./CoreModelValidationEvents.js";
 import { applySafeFinderFilters, createSafeFinderQuery } from "./CoreModelSafeFinderSupport.js";
+import type { TransactionContext } from "../connection/TransactionManager.js";
 
 /**
  * Types for model contract (kept generic)
  */
 
 export type ModelBaseContract = new (...args: any[]) => {
+  useTransaction(context: TransactionContext): unknown;
   create(data: Record<string, unknown>): Promise<unknown | null>;
   update(data: Record<string, unknown>, pk?: string): unknown;
   update(id: number | string, data: Record<string, unknown>, pk?: string): Promise<void>;
@@ -74,6 +76,7 @@ export abstract class CoreModel<
   public connectionName: ConnectionName;
   protected _exists = false;
   protected _originalAttributes: Record<string, unknown> = {};
+  protected _transactionContext?: TransactionContext;
 
   /** Optional schema definition (set by subclass) */
   static schema?: Record<string, SchemaField>;
@@ -102,6 +105,14 @@ export abstract class CoreModel<
   protected static newInstance<T extends typeof CoreModel>(this: T): InstanceType<T> {
     const Ctor = this as unknown as { new (): InstanceType<T> };
     return new Ctor();
+  }
+
+  static useTransaction<T extends typeof CoreModel>(
+    this: T,
+    context: TransactionContext
+  ): InstanceType<T> {
+    const instance = this.newInstance();
+    return instance.useTransaction(context) as InstanceType<T>;
   }
 
   /**
@@ -135,6 +146,13 @@ export abstract class CoreModel<
     return createSafeFinderQuery(
       instance as InstanceType<T>,
       this as unknown as SafeFinderModelStatic<InstanceType<T>>
+    );
+  }
+
+  protected safeFinderInstance(): SafeFinderQuery<this> {
+    return createSafeFinderQuery(
+      this,
+      this.constructor as unknown as SafeFinderModelStatic<this>
     );
   }
 
@@ -341,14 +359,109 @@ export abstract class CoreModel<
     return (await applySafeFinderFilters(this.safeFinder(), filters).first()) !== null;
   }
 
+  where(field: string, value: unknown): SafeFinderQuery<this> {
+    return this.safeFinderInstance().where(field, value);
+  }
+
+  with(...relations: string[]): SafeFinderQuery<this> {
+    return this.safeFinderInstance().with(...relations);
+  }
+
+  active(...args: unknown[]): SafeFinderQuery<this> {
+    return this.safeFinderInstance().active(...args);
+  }
+
+  inactive(...args: unknown[]): SafeFinderQuery<this> {
+    return this.safeFinderInstance().inactive(...args);
+  }
+
+  published(...args: unknown[]): SafeFinderQuery<this> {
+    return this.safeFinderInstance().published(...args);
+  }
+
+  orderBy(field: string, direction: SafeFinderDirection = "asc"): SafeFinderQuery<this> {
+    return this.safeFinderInstance().orderBy(field, direction);
+  }
+
+  limit(count: number): SafeFinderQuery<this> {
+    return this.safeFinderInstance().limit(count);
+  }
+
+  get(): Promise<this[]> {
+    return this.safeFinderInstance().get();
+  }
+
+  first(): Promise<this | null> {
+    return this.safeFinderInstance().first();
+  }
+
+  findBy(field: string, value: unknown): SafeFinderQuery<this> {
+    return this.where(field, value);
+  }
+
+  findOneBy(field: string, value: unknown): Promise<this | null> {
+    return this.where(field, value).first();
+  }
+
+  findAllBy(filters: SafeFinderFilters): Promise<this[]> {
+    return applySafeFinderFilters(this.safeFinderInstance(), filters).get();
+  }
+
+  async existsBy(filters: SafeFinderFilters): Promise<boolean> {
+    return (await applySafeFinderFilters(this.safeFinderInstance(), filters).first()) !== null;
+  }
+
   /**
    * Get DB connection (lazy + cached)
    */
   public async getDB() {
-    if (this.connectionName === "mongo") {
+    if (this._transactionContext) {
+      if (this._transactionContext.connectionName !== this.connectionName) {
+        throw new Error(
+          `Cannot use transaction for connection '${this._transactionContext.connectionName}' on model '${this.constructor.name}' using connection '${this.connectionName}'.`
+        );
+      }
+
+      if (this._transactionContext.driver === "mongo") {
+        return this._transactionContext.db;
+      }
+
+      return this._transactionContext;
+    }
+
+    if (this.getDriverName() === "mongo") {
       return await getConnection(this.connectionName);
     }
     return await getAdapter(this.connectionName);
+  }
+
+  public useTransaction<T extends this>(context: TransactionContext): T {
+    if (context.connectionName !== this.connectionName) {
+      throw new Error(
+        `Cannot bind transaction for connection '${context.connectionName}' to model '${this.constructor.name}' using connection '${this.connectionName}'.`
+      );
+    }
+
+    if (this._transactionContext) {
+      if (this._transactionContext === context) {
+        return this as T;
+      }
+
+      throw new Error(
+        `Cannot rebind model '${this.constructor.name}' from one active transaction to another on connection '${this.connectionName}'.`
+      );
+    }
+
+    const clone = Object.assign(
+      Object.create(Object.getPrototypeOf(this)) as T,
+      this
+    );
+    clone._transactionContext = context;
+    return clone;
+  }
+
+  public getTransactionContext(): TransactionContext | undefined {
+    return this._transactionContext;
   }
 
   private getDriverName(): string {
@@ -454,6 +567,38 @@ export abstract class CoreModel<
     const assignable = this.sanitizeAssignableData(data, "fill");
     Object.assign(this as Record<string, unknown>, assignable);
     return this;
+  }
+
+  private bindHydratedRecord<TRecord extends this | null>(record: TRecord): TRecord {
+    if (!record || !this._transactionContext) {
+      return record;
+    }
+
+    return record.useTransaction(this._transactionContext) as TRecord;
+  }
+
+  private bindHydratedRecords<TRecord extends this>(records: TRecord[]): TRecord[] {
+    if (!this._transactionContext) {
+      return records;
+    }
+
+    return records.map((record) => record.useTransaction(this._transactionContext!)) as TRecord[];
+  }
+
+  private getMongoCollectionBinding(db: unknown): {
+    collection: any;
+    options?: { session: unknown };
+  } {
+    if (this._transactionContext?.driver === "mongo") {
+      return {
+        collection: this._transactionContext.collection(this.tableName),
+        options: { session: this._transactionContext.session },
+      };
+    }
+
+    return {
+      collection: (db as any).collection(this.tableName),
+    };
   }
 
   async save(pk?: string): Promise<void> {
@@ -587,16 +732,21 @@ export abstract class CoreModel<
         const sql = `SELECT * FROM ${table} WHERE ${col} = ${adapter.placeholder(1)}`;
         const row = await adapter.queryOne<Record<string, unknown>>(sql, [id]);
         const Model = this.constructor as typeof CoreModel;
-        return Model.hydrateRow(row) as this | null;
+        return this.bindHydratedRecord(Model.hydrateRow(row) as this | null);
       }
 
       case "mongo":
         {
-          const row = await (db as any)
-            .collection(this.tableName)
-            .findOne(this.buildMongoPrimaryFilter(pk, id));
+          const { collection, options } = this.getMongoCollectionBinding(db);
+          const filter = this.buildMongoPrimaryFilter(pk, id);
+          const row =
+            options === undefined
+              ? await collection.findOne(filter)
+              : await collection.findOne(filter, options);
           const Model = this.constructor as typeof CoreModel;
-          return Model.hydrateRow(row as Record<string, unknown> | null) as this | null;
+          return this.bindHydratedRecord(
+            Model.hydrateRow(row as Record<string, unknown> | null) as this | null
+          );
         }
 
       default:
@@ -619,14 +769,18 @@ export abstract class CoreModel<
         const sql = `SELECT * FROM ${table}`;
         const rows = await adapter.query<Record<string, unknown>>(sql);
         const Model = this.constructor as typeof CoreModel;
-        return Model.hydrateMany(rows) as this[];
+        return this.bindHydratedRecords(Model.hydrateMany(rows) as this[]);
       }
 
       case "mongo":
         {
-          const rows = await (db as any).collection(this.tableName).find({}).toArray();
+          const { collection, options } = this.getMongoCollectionBinding(db);
+          const cursor = options === undefined ? collection.find({}) : collection.find({}, options);
+          const rows = await cursor.toArray();
           const Model = this.constructor as typeof CoreModel;
-          return Model.hydrateMany(rows as Record<string, unknown>[]) as this[];
+          return this.bindHydratedRecords(
+            Model.hydrateMany(rows as Record<string, unknown>[]) as this[]
+          );
         }
 
       default:
@@ -677,7 +831,11 @@ export abstract class CoreModel<
       }
 
       case "mongo": {
-        const result = await (db as any).collection(this.tableName).insertOne(data);
+        const { collection, options } = this.getMongoCollectionBinding(db);
+        const result =
+          options === undefined
+            ? await collection.insertOne(data)
+            : await collection.insertOne(data, options);
         createdRecord = { id: result.insertedId, ...data };
         break;
       }
@@ -688,7 +846,9 @@ export abstract class CoreModel<
 
     // 4) Fire afterCreate (no cancellation)
     const Model = this.constructor as typeof CoreModel;
-    const hydrated = Model.hydrateRow(createdRecord) as this | null;
+    const hydrated = this.bindHydratedRecord(
+      Model.hydrateRow(createdRecord) as this | null
+    );
 
     await this.fireEvent("afterCreate", hydrated as Record<string, unknown> | null);
 
@@ -752,9 +912,13 @@ export abstract class CoreModel<
       }
 
       case "mongo": {
-        await (db as any)
-          .collection(this.tableName)
-          .updateOne(this.buildMongoPrimaryFilter(pk, id), { $set: data });
+        const { collection, options } = this.getMongoCollectionBinding(db);
+        const filter = this.buildMongoPrimaryFilter(pk, id);
+        if (options === undefined) {
+          await collection.updateOne(filter, { $set: data });
+        } else {
+          await collection.updateOne(filter, { $set: data }, options);
+        }
         break;
       }
 
@@ -802,9 +966,15 @@ export abstract class CoreModel<
       }
 
       case "mongo":
-        await (db as any)
-          .collection(this.tableName)
-          .deleteOne(this.buildMongoPrimaryFilter(primaryKey, targetId));
+        {
+          const { collection, options } = this.getMongoCollectionBinding(db);
+          const filter = this.buildMongoPrimaryFilter(primaryKey, targetId);
+          if (options === undefined) {
+            await collection.deleteOne(filter);
+          } else {
+            await collection.deleteOne(filter, options);
+          }
+        }
         break;
 
       default:

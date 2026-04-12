@@ -6,27 +6,27 @@
       "src",
       "bin"
     ],
-    "totalMatches": 1376,
-    "uniqueFiles": 324,
+    "totalMatches": 1414,
+    "uniqueFiles": 327,
     "byKind": [
       {
         "kind": "runtime-qualified import/export local specifiers",
-        "matches": 1033
+        "matches": 1043
       },
       {
         "kind": "runtime-qualified dynamic local specifiers",
-        "matches": 213
+        "matches": 238
       },
       {
         "kind": "local require() calls",
-        "matches": 130
+        "matches": 133
       }
     ],
     "byArea": [
       {
         "area": "src/lab_test",
-        "files": 228,
-        "matches": 1030
+        "files": 231,
+        "matches": 1064
       },
       {
         "area": "src/cli",
@@ -36,7 +36,7 @@
       {
         "area": "src/core",
         "files": 42,
-        "matches": 119
+        "matches": 123
       },
       {
         "area": "other",
@@ -63,9 +63,9 @@
       {
         "file": "src/core/model/BaseModel.ts",
         "area": "src/core",
-        "matches": 24,
+        "matches": 25,
         "kinds": {
-          "runtime-qualified import/export local specifiers": 24
+          "runtime-qualified import/export local specifiers": 25
         },
         "firstLine": 2
       },

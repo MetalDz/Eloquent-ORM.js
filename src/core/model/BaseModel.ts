@@ -15,6 +15,11 @@ import {
   type TransactionContext,
   type TransactionOptions,
 } from "../connection/TransactionManager.js";
+import type {
+  SafeFinderDirection,
+  SafeFinderFilters,
+  SafeFinderQuery,
+} from "./SafeFinder.js";
 import type { Db } from "mongodb";
 import { dbConfig } from "../../config/database.js";
 import { BelongsTo } from "../orm/relations/BelongsTo.js";
@@ -51,6 +56,8 @@ export interface ORMCoreContract {
   tableName: string;
   connectionName: string;
   getDB(): Promise<unknown>;
+  useTransaction(context: TransactionContext): this;
+  getTransactionContext(): TransactionContext | undefined;
   withTransaction<R>(
     fn: ((context: TransactionContext) => Promise<R>) | (() => Promise<R>),
     options?: TransactionOptions
@@ -59,13 +66,28 @@ export interface ORMCoreContract {
   fill(data: ORMRecord): this;
   save(pk?: string): Promise<void>;
   patch(data: ORMRecord, pk?: string): Promise<void>;
-  create(data: ORMRecord): Promise<unknown | null>;
+  create(data: ORMRecord): Promise<this | null>;
   update(data: ORMRecord, pk?: string): this;
   update(id: string | number, data: ORMRecord, pk?: string): Promise<void>;
   delete(): Promise<void>;
   delete(id: string | number, pk?: string): Promise<void>;
-  find(id: string | number, pk?: string): Promise<unknown | null>;
-  all(): Promise<unknown[]>;
+  find(id: string | number, pk?: string): Promise<this | null>;
+  all(): Promise<this[]>;
+  where(field: string, value: unknown): SafeFinderQuery<this>;
+  with(...relations: string[]): SafeFinderQuery<this>;
+  active(...args: unknown[]): SafeFinderQuery<this>;
+  inactive(...args: unknown[]): SafeFinderQuery<this>;
+  published(...args: unknown[]): SafeFinderQuery<this>;
+  orderBy(field: string, direction?: SafeFinderDirection): SafeFinderQuery<this>;
+  limit(count: number): SafeFinderQuery<this>;
+  get(): Promise<this[]>;
+  first(): Promise<this | null>;
+  findBy(field: string, value: unknown): SafeFinderQuery<this>;
+  findOneBy(field: string, value: unknown): Promise<this | null>;
+  findAllBy(filters: SafeFinderFilters): Promise<this[]>;
+  existsBy(filters: SafeFinderFilters): Promise<boolean>;
+  toObject?: () => Record<string, unknown>;
+  toJSON?: () => Record<string, unknown>;
 }
 
 export const BASE_MODEL_COMPOSITION_ORDER = [
@@ -277,7 +299,7 @@ export abstract class SqlModel<
   }
 
   public override async getDB(): Promise<DriverAdapter> {
-    return await getAdapter(this.connectionName as Exclude<ConnectionName, "mongo">);
+    return (await super.getDB()) as DriverAdapter;
   }
 }
 
@@ -328,6 +350,6 @@ export abstract class MongoModel<
   }
 
   public override async getDB(): Promise<Db> {
-    return await getConnection(this.connectionName as ConnectionName);
+    return (await super.getDB()) as Db;
   }
 }

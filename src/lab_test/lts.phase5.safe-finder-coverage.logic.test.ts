@@ -17,6 +17,79 @@ function makeSqlAdapter() {
 
 type TestModel = SafeFinderModelInstance & Record<string, unknown>;
 
+function createTestModel(
+  adapterOrDb: unknown,
+  overrides: Partial<TestModel> = {},
+): TestModel {
+  const model: TestModel = {
+    tableName: "users",
+    connectionName: "sqlite_test",
+    async getDB() {
+      return adapterOrDb;
+    },
+    useTransaction() {
+      return model;
+    },
+    getTransactionContext() {
+      return undefined;
+    },
+    async save() {
+      return undefined;
+    },
+    async create() {
+      return null;
+    },
+    async delete() {
+      return undefined;
+    },
+    async find() {
+      return null;
+    },
+    where: jest.fn(() => {
+      throw new Error("where() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["where"],
+    with: jest.fn(() => {
+      throw new Error("with() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["with"],
+    active: jest.fn(() => {
+      throw new Error("active() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["active"],
+    inactive: jest.fn(() => {
+      throw new Error("inactive() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["inactive"],
+    published: jest.fn(() => {
+      throw new Error("published() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["published"],
+    orderBy: jest.fn(() => {
+      throw new Error("orderBy() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["orderBy"],
+    limit: jest.fn(() => {
+      throw new Error("limit() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["limit"],
+    async get() {
+      return [];
+    },
+    async first() {
+      return null;
+    },
+    findBy: jest.fn(() => {
+      throw new Error("findBy() stub should not be called directly in this test fixture.");
+    }) as unknown as TestModel["findBy"],
+    async findOneBy() {
+      return null;
+    },
+    async findAllBy() {
+      return [];
+    },
+    async existsBy() {
+      return false;
+    },
+    ...overrides,
+  };
+
+  return model;
+}
+
 describe("LTS phase 5 SafeFinder coverage", () => {
   test("plan tracks the dedicated SafeFinder coverage slice", () => {
     const planPath = path.resolve(
@@ -33,13 +106,7 @@ describe("LTS phase 5 SafeFinder coverage", () => {
 
   test("status-column fallback scopes execute the status branch for active, inactive, and published", async () => {
     const adapter = makeSqlAdapter();
-    const model: TestModel = {
-      tableName: "users",
-      connectionName: "sqlite_test",
-      async getDB() {
-        return adapter;
-      },
-    };
+    const model = createTestModel(adapter);
     const modelClass = {
       name: "StatusFallbackModel",
       schema: {
@@ -71,15 +138,44 @@ describe("LTS phase 5 SafeFinder coverage", () => {
     );
   });
 
+  test("boolean-column fallback scopes execute the active/published branches", async () => {
+    const adapter = makeSqlAdapter();
+    const model = createTestModel(adapter);
+    const modelClass = {
+      name: "BooleanFallbackModel",
+      schema: {
+        id: { kind: "column" },
+        active: { kind: "column" },
+        published: { kind: "column" },
+      },
+      hydrateRow: (row: Record<string, unknown> | null) => row as TestModel | null,
+      hydrateMany: (rows: Record<string, unknown>[]) => rows as TestModel[],
+    };
+
+    await new SafeFinderQuery(model, modelClass as any).active().get();
+    await new SafeFinderQuery(model, modelClass as any).inactive().get();
+    await new SafeFinderQuery(model, modelClass as any).published().get();
+
+    expect(adapter.query).toHaveBeenNthCalledWith(
+      1,
+      "SELECT * FROM `users` WHERE `active` = ?1",
+      [true],
+    );
+    expect(adapter.query).toHaveBeenNthCalledWith(
+      2,
+      "SELECT * FROM `users` WHERE `active` = ?1",
+      [false],
+    );
+    expect(adapter.query).toHaveBeenNthCalledWith(
+      3,
+      "SELECT * FROM `users` WHERE `published` = ?1",
+      [true],
+    );
+  });
+
   test("scope functions that return void still keep the safe finder chain alive", async () => {
     const adapter = makeSqlAdapter();
-    const model: TestModel = {
-      tableName: "users",
-      connectionName: "sqlite_test",
-      async getDB() {
-        return adapter;
-      },
-    };
+    const model = createTestModel(adapter);
     const modelClass = {
       name: "VoidScopeModel",
       schema: {
@@ -102,13 +198,13 @@ describe("LTS phase 5 SafeFinder coverage", () => {
   });
 
   test("unsupported drivers reject both get() and first()", async () => {
-    const model: TestModel = {
-      tableName: "users",
-      connectionName: "mystery_driver",
-      async getDB() {
-        return {};
+    const model = createTestModel(
+      {},
+      {
+        tableName: "users",
+        connectionName: "mystery_driver",
       },
-    };
+    );
     const modelClass = {
       name: "UnsupportedDriverModel",
       schema: {
@@ -130,13 +226,7 @@ describe("LTS phase 5 SafeFinder coverage", () => {
     const adapter = makeSqlAdapter();
     adapter.query.mockResolvedValue([{ id: 1 }]);
 
-    const noSchemaModel: TestModel = {
-      tableName: "users",
-      connectionName: "sqlite_test",
-      async getDB() {
-        return adapter;
-      },
-    };
+    const noSchemaModel = createTestModel(adapter);
     const noSchemaClass = {
       name: "NoSchemaModel",
       hydrateRow: (row: Record<string, unknown> | null) => row as TestModel | null,
@@ -147,16 +237,11 @@ describe("LTS phase 5 SafeFinder coverage", () => {
       "NoSchemaModel must define a schema to use the safe finder API.",
     );
 
-    const noEagerModel: TestModel = {
-      tableName: "users",
-      connectionName: "sqlite_test",
+    const noEagerModel = createTestModel(adapter, {
       posts() {
         return {};
       },
-      async getDB() {
-        return adapter;
-      },
-    };
+    });
     const noEagerClass = {
       name: "NoEagerSupportModel",
       schema: {
@@ -177,13 +262,7 @@ describe("LTS phase 5 SafeFinder coverage", () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ id: 9, created_at: "2026-03-15T00:00:00Z" });
 
-    const hydratedNullModel: TestModel = {
-      tableName: "users",
-      connectionName: "sqlite_test",
-      async getDB() {
-        return adapter;
-      },
-    };
+    const hydratedNullModel = createTestModel(adapter);
     const hydratedNullClass = {
       name: "HydratedNullModel",
       schema: {
@@ -198,19 +277,14 @@ describe("LTS phase 5 SafeFinder coverage", () => {
       new SafeFinderQuery(hydratedNullModel, hydratedNullClass as any).first(),
     ).resolves.toBeNull();
 
-    const emptyEagerModel: TestModel = {
-      tableName: "users",
-      connectionName: "sqlite_test",
+    const emptyEagerModel = createTestModel(adapter, {
       posts() {
         return {};
       },
       async eagerLoadRelations() {
         return [];
       },
-      async getDB() {
-        return adapter;
-      },
-    };
+    });
     const emptyEagerClass = {
       name: "EmptyEagerSqlFirstModel",
       schema: {
@@ -251,13 +325,10 @@ describe("LTS phase 5 SafeFinder coverage", () => {
     const collection = { find: jest.fn(() => cursor) };
     const db = { collection: jest.fn(() => collection) };
 
-    const model: TestModel = {
+    const model = createTestModel(db, {
       tableName: "geo_locations",
       connectionName: "mongo_test",
-      async getDB() {
-        return db;
-      },
-    };
+    });
     const modelClass = {
       name: "MongoSortedGetModel",
       schema: {
@@ -292,7 +363,7 @@ describe("LTS phase 5 SafeFinder coverage", () => {
     const collection = { find: jest.fn(() => cursor) };
     const db = { collection: jest.fn(() => collection) };
 
-    const model: TestModel = {
+    const model = createTestModel(db, {
       tableName: "geo_locations",
       connectionName: "mongo_test",
       posts() {
@@ -301,10 +372,7 @@ describe("LTS phase 5 SafeFinder coverage", () => {
       async eagerLoadRelations() {
         return [];
       },
-      async getDB() {
-        return db;
-      },
-    };
+    });
     const modelClass = {
       name: "MongoSortedFirstModel",
       schema: {
@@ -342,13 +410,10 @@ describe("LTS phase 5 SafeFinder coverage", () => {
     const collection = { find: jest.fn(() => cursor) };
     const db = { collection: jest.fn(() => collection) };
 
-    const model: TestModel = {
+    const model = createTestModel(db, {
       tableName: "geo_locations",
       connectionName: "mongo_test",
-      async getDB() {
-        return db;
-      },
-    };
+    });
     const modelClass = {
       name: "MongoAscendingFirstModel",
       schema: {
@@ -366,5 +431,250 @@ describe("LTS phase 5 SafeFinder coverage", () => {
     expect(result).toEqual({ id: "geo-3", created_at: "2026-03-15T02:00:00Z" });
     expect(sort).toHaveBeenCalledWith({ created_at: 1 });
     expect(limit).toHaveBeenCalledWith(1);
+  });
+
+  test("mongo get() passes the active session to collection.find() when transaction-bound", async () => {
+    const toArray = jest.fn(async () => [{ id: "geo-4" }]);
+    type Cursor = {
+      sort: jest.Mock;
+      limit: jest.Mock;
+      toArray: jest.Mock;
+    };
+    const cursor = {} as Cursor;
+    const limit = jest.fn(() => cursor);
+    const sort = jest.fn(() => cursor);
+    cursor.sort = sort;
+    cursor.limit = limit;
+    cursor.toArray = toArray;
+
+    const find = jest.fn(() => cursor);
+    const session = { id: "mongo-session" };
+    const model = createTestModel(
+      {
+        collection: jest.fn(() => ({
+          find,
+        })),
+      },
+      {
+        connectionName: "mongo",
+        getTransactionContext() {
+          return {
+            connectionName: "mongo",
+            driver: "mongo",
+            session,
+          } as any;
+        },
+      },
+    );
+    const modelClass = {
+      name: "MongoTxGetModel",
+      schema: {
+        id: { kind: "column" },
+      },
+      hydrateRow: (row: Record<string, unknown> | null) => row as TestModel | null,
+      hydrateMany: (rows: Record<string, unknown>[]) => rows as TestModel[],
+    };
+
+    await expect(new SafeFinderQuery(model, modelClass as any).get()).resolves.toEqual([
+      { id: "geo-4" },
+    ]);
+    expect(find).toHaveBeenCalledWith({}, { session });
+  });
+
+  test("relation, scope, and locking guard paths cover the remaining strict branches", async () => {
+    const adapter = makeSqlAdapter();
+    const model = createTestModel(adapter, {
+      connectionName: "mysql_test",
+    });
+    const modelClass = {
+      name: "StrictGuardModel",
+      schema: {
+        id: { kind: "column" },
+      },
+      hydrateRow: (row: Record<string, unknown> | null) => row as TestModel | null,
+      hydrateMany: (rows: Record<string, unknown>[]) => rows as TestModel[],
+    };
+
+    expect(() => new SafeFinderQuery(model, modelClass as any).with("")).toThrow(
+      "with() expects non-empty relation names on StrictGuardModel.",
+    );
+    expect(() => new SafeFinderQuery(model, modelClass as any).with("posts..author")).toThrow(
+      "Invalid relation path 'posts..author' on StrictGuardModel.",
+    );
+    expect(() => new SafeFinderQuery(model, modelClass as any).with("posts")).toThrow(
+      "Relation 'posts' is not defined on StrictGuardModel.",
+    );
+
+    expect(() => new SafeFinderQuery(model, modelClass as any).active()).toThrow(
+      "No active scope available on StrictGuardModel. Define static scopeActive(query) or add a 'status'/'active' column.",
+    );
+    expect(() => new SafeFinderQuery(model, modelClass as any).inactive()).toThrow(
+      "No inactive scope available on StrictGuardModel. Define static scopeInactive(query) or add a 'status'/'active' column.",
+    );
+    expect(() => new SafeFinderQuery(model, modelClass as any).published()).toThrow(
+      "No published scope available on StrictGuardModel. Define static scopePublished(query) or add a 'published'/'status' column.",
+    );
+
+    const query = new SafeFinderQuery(model, modelClass as any) as any;
+    query.skipLockedRequested = true;
+    expect(() => query.buildSqlLockClause()).toThrow(
+      "skipLocked() requires forUpdate() or forShare() first.",
+    );
+
+    const mismatchedTxModel = createTestModel(adapter, {
+      connectionName: "mysql_test",
+      getTransactionContext() {
+        return {
+          connectionName: "mysql_test",
+          driver: "pg",
+        } as any;
+      },
+    });
+
+    expect(() =>
+      new SafeFinderQuery(mismatchedTxModel, modelClass as any).forUpdate(),
+    ).toThrow("forUpdate() requires a transaction matching the model driver 'mysql'.");
+
+    const unsupportedDriverModel = createTestModel(adapter, {
+      connectionName: "sqlserver_test",
+      getTransactionContext() {
+        return {
+          connectionName: "sqlserver_test",
+          driver: "sqlserver",
+        } as any;
+      },
+    });
+
+    expect(() =>
+      new SafeFinderQuery(unsupportedDriverModel, modelClass as any).forUpdate(),
+    ).toThrow("forUpdate() is supported only for pg and mysql finders.");
+
+    const lockConflictModel = createTestModel(adapter, {
+      connectionName: "mysql_test",
+      getTransactionContext() {
+        return {
+          connectionName: "mysql_test",
+          driver: "mysql",
+        } as any;
+      },
+    });
+
+    expect(() =>
+      new SafeFinderQuery(lockConflictModel, modelClass as any).forUpdate().forShare(),
+    ).toThrow("forShare() cannot be combined with forUpdate().");
+
+    const mongoDriverMismatchModel = createTestModel(adapter, {
+      connectionName: "mysql_test",
+      getTransactionContext() {
+        return {
+          connectionName: "mysql_test",
+          driver: "mongo",
+        } as any;
+      },
+    });
+
+    expect(() =>
+      new SafeFinderQuery(mongoDriverMismatchModel, modelClass as any).forUpdate(),
+    ).toThrow("forUpdate() is not supported for mongo finders.");
+
+    const sqliteDriverMismatchModel = createTestModel(adapter, {
+      connectionName: "mysql_test",
+      getTransactionContext() {
+        return {
+          connectionName: "mysql_test",
+          driver: "sqlite",
+        } as any;
+      },
+    });
+
+    expect(() =>
+      new SafeFinderQuery(sqliteDriverMismatchModel, modelClass as any).forUpdate(),
+    ).toThrow("forUpdate() is not supported for sqlite finders.");
+
+    const tx = {
+      connectionName: "mysql_test",
+      driver: "mysql",
+    } as any;
+    const noBindModel = createTestModel(adapter, {
+      connectionName: "mysql_test",
+      getTransactionContext() {
+        return tx;
+      },
+    });
+    const noBindClass = {
+      name: "NoBindModel",
+      schema: {
+        id: { kind: "column" },
+      },
+      hydrateRow: (row: Record<string, unknown> | null) =>
+        row ? ({ ...row } as TestModel) : null,
+      hydrateMany: (rows: Record<string, unknown>[]) =>
+        rows.map((row) => ({ ...row } as TestModel)),
+    };
+
+    adapter.queryOne.mockResolvedValueOnce({ id: 9 });
+    adapter.query.mockResolvedValueOnce([{ id: 10 }]);
+
+    await expect(new SafeFinderQuery(noBindModel, noBindClass as any).first()).resolves.toEqual({
+      id: 9,
+    });
+    await expect(new SafeFinderQuery(noBindModel, noBindClass as any).get()).resolves.toEqual([
+      { id: 10 },
+    ]);
+
+    const scopedAdapter = makeSqlAdapter();
+    const scopedModel = createTestModel(scopedAdapter);
+    const scopedModelClass = {
+      name: "ScopedReturnModel",
+      schema: {
+        id: { kind: "column" },
+      },
+      scopeActive(query: SafeFinderQuery<TestModel>) {
+        return query.where("id", 1);
+      },
+      hydrateRow: (row: Record<string, unknown> | null) => row as TestModel | null,
+      hydrateMany: (rows: Record<string, unknown>[]) => rows as TestModel[],
+    };
+
+    await new SafeFinderQuery(scopedModel, scopedModelClass as any).active().get();
+    expect(scopedAdapter.query).toHaveBeenCalledWith(
+      "SELECT * FROM `users` WHERE `id` = ?1",
+      [1],
+    );
+  });
+
+  test("private eager-loading and lock helpers cover passthrough early-return branches", async () => {
+    const adapter = makeSqlAdapter();
+    const tx = {
+      connectionName: "mysql_test",
+      driver: "mysql",
+    };
+    const model = createTestModel(adapter, {
+      getTransactionContext() {
+        return tx as any;
+      },
+    });
+    const modelClass = {
+      name: "PrivateHelperModel",
+      schema: {
+        id: { kind: "column" },
+      },
+      hydrateRow: (row: Record<string, unknown> | null) => row as TestModel | null,
+      hydrateMany: (rows: Record<string, unknown>[]) => rows as TestModel[],
+    };
+
+    const query = new SafeFinderQuery(model, modelClass as any) as any;
+    const plainRecord = { id: 1 };
+    const txAwareRecord = {
+      id: 2,
+      useTransaction: jest.fn(() => ({ id: 2, bound: true })),
+    };
+
+    await expect(query.applyEagerLoading([])).resolves.toEqual([]);
+    expect(query.bindHydratedModel(null)).toBeNull();
+    expect(query.bindHydratedModels([plainRecord])).toEqual([plainRecord]);
+    expect(query.bindHydratedModels([txAwareRecord])).toEqual([{ id: 2, bound: true }]);
+    expect(txAwareRecord.useTransaction).toHaveBeenCalledWith(tx);
+    expect(query.buildSqlLockClause()).toBe("");
   });
 });
